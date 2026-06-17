@@ -74,8 +74,13 @@ const links = [
   .nav__gh:hover { color: var(--text); }
 
   @media (max-width: 560px) {
+    .nav__inner { height: 58px; }
     .nav__links { gap: 18px; }
     .nav__link[href="https://jsr.io/@zuke"] { display: none; }
+  }
+  @media (max-width: 380px) {
+    .nav__links { gap: 14px; }
+    .nav__link { font-size: 0.88rem; }
   }
 </style>
 

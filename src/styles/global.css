@@ -124,6 +124,12 @@ code {
   padding-block: clamp(64px, 9vw, 120px);
 }
 
+/* tighter gutters and vertical rhythm on phones */
+@media (max-width: 600px) {
+  .container { padding-inline: 18px; }
+  .section { padding-block: clamp(48px, 13vw, 80px); }
+}
+
 .eyebrow {
   display: inline-block;
   font-family: var(--font-mono);

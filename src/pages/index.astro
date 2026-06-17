@@ -457,6 +457,12 @@ const icons: Record<string, string> = {
   .cta :global(.copy) { max-width: 460px; margin: 0 auto; text-align: left; }
   .cta__btns { display: flex; gap: 14px; justify-content: center; margin-top: 26px; flex-wrap: wrap; }
 
+  /* let grid children shrink so wide code/SVG scroll internally
+     instead of forcing the column (and page) wider than the viewport */
+  .hero__grid > *,
+  .shell-grid > *,
+  .dag-grid > * { min-width: 0; }
+
   /* responsive */
   @media (max-width: 940px) {
     .hero__grid, .dag-grid, .shell-grid { grid-template-columns: 1fr; gap: 36px; }
@@ -467,7 +473,15 @@ const icons: Record<string, string> = {
     .core-row__items { grid-template-columns: 1fr; }
     .shell-grid .codecard { order: 2; }
   }
-  @media (max-width: 560px) {
+  @media (max-width: 600px) {
     .feat-grid, .tools-grid { grid-template-columns: 1fr; }
+    .hero__strip { gap: 9px 12px; font-size: 0.78rem; margin-top: 44px; }
+    .hero__cta { gap: 10px; }
+    .hero__cta .btn { flex: 1 1 auto; justify-content: center; }
+    .hero__install { max-width: none; }
+    .cta :global(.copy) { max-width: none; }
+  }
+  @media (max-width: 380px) {
+    .hero__title { font-size: 2rem; }
   }
 </style>

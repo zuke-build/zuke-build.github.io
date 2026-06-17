@@ -172,6 +172,8 @@ if (import.meta.main) await run(ReleaseBuild);`,
     background: linear-gradient(180deg, var(--panel), var(--bg-soft));
     scroll-margin-top: 90px;
   }
+  /* allow the code column to shrink so long lines scroll inside the card */
+  .ex > * { min-width: 0; }
   .ex__tag {
     display: inline-block;
     font-family: var(--font-mono);
@@ -218,6 +220,11 @@ if (import.meta.main) await run(ReleaseBuild);`,
   .ex-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
 
   @media (max-width: 860px) {
-    .ex { grid-template-columns: 1fr; gap: 22px; }
+    .ex { grid-template-columns: 1fr; gap: 22px; align-items: stretch; }
+  }
+  @media (max-width: 560px) {
+    .ex { padding: 20px; }
+    .ex-cta { padding: 26px 22px; }
+    .ex-cta__btns .btn { flex: 1 1 auto; justify-content: center; }
   }
 </style>

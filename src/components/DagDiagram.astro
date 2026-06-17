@@ -145,4 +145,11 @@ const path = ([a, b]: string[]) => {
     .dag__flow, .dag__box, .dag__pulse { animation: none; }
     .dag__flow { stroke-dasharray: none; opacity: 0.8; }
   }
+
+  /* On narrow screens, scroll the graph horizontally so node labels stay
+     legible rather than scaling down to an unreadable size. */
+  @media (max-width: 560px) {
+    .dag { overflow-x: auto; overflow-y: hidden; }
+    .dag__svg { min-width: 460px; }
+  }
 </style>
