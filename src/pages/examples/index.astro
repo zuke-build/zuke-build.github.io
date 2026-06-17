@@ -1,0 +1,223 @@
+---
+import { Code } from "astro:components";
+import Base from "../../layouts/Base.astro";
+
+const examples = [
+  {
+    id: "astro-site",
+    tag: "Node / Astro",
+    title: "Static site build",
+    desc: "Drive an npm-based static site through Zuke — this very website is built exactly like this.",
+    code: `import { Build, run, target } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { NpmTasks } from "jsr:@zuke/npm";
+
+class SiteBuild extends Build {
+  clean = target()
+    .description("Remove previous build output")
+    .executes(async () => { await $\`rm -rf dist\`.noThrow(); });
+
+  install = target()
+    .description("Clean-install from the lockfile")
+    .executes(async () => { await NpmTasks.ci(); });
+
+  check = target()
+    .description("Type-check the Astro project")
+    .dependsOn(this.install)
+    .executes(async () => { await NpmTasks.run((s) => s.script("check")); });
+
+  build = target()
+    .description("Build the static site into dist/")
+    .dependsOn(this.clean, this.check)
+    .executes(async () => { await NpmTasks.run((s) => s.script("build")); });
+}
+
+if (import.meta.main) await run(SiteBuild);`,
+  },
+  {
+    id: "deno-lib",
+    tag: "Deno library",
+    title: "CI gate for a Deno package",
+    desc: "Format, lint, type-check, and test with a coverage gate — the kind of pipeline you'd run on every pull request.",
+    code: `import { Build, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class CiBuild extends Build {
+  format = target()
+    .description("Verify formatting")
+    .executes(async () => { await DenoTasks.fmt((s) => s.check()); });
+
+  lint = target()
+    .description("Lint sources")
+    .executes(async () => { await DenoTasks.lint(); });
+
+  typecheck = target()
+    .description("Type-check the public entrypoint")
+    .executes(async () => { await DenoTasks.check((s) => s.paths("mod.ts")); });
+
+  test = target()
+    .description("Run tests with coverage")
+    .dependsOn(this.typecheck)
+    .executes(async () => { await DenoTasks.test((s) => s.coverage("cov")); });
+
+  // 'ci' fans out to everything; Zuke runs each prerequisite once.
+  ci = target()
+    .description("Full CI gate")
+    .dependsOn(this.format, this.lint, this.test)
+    .executes(() => {});
+}
+
+if (import.meta.main) await run(CiBuild);`,
+  },
+  {
+    id: "docker-publish",
+    tag: "Docker / release",
+    title: "Build & publish a container",
+    desc: "Stamp an image with the current git SHA, build it, and push to a registry — mixing tool wrappers with the $ shell.",
+    code: `import { Build, run, target } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { DockerTasks } from "jsr:@zuke/docker";
+
+class ReleaseBuild extends Build {
+  image = target()
+    .description("Build the application image")
+    .executes(async () => {
+      const sha = await $\`git rev-parse --short HEAD\`.text();
+      await DockerTasks.build((s) =>
+        s.tag(\`registry.example.com/app:\${sha}\`).file("Dockerfile")
+      );
+    });
+
+  publish = target()
+    .description("Push the image to the registry")
+    .dependsOn(this.image)
+    .executes(async () => {
+      const sha = await $\`git rev-parse --short HEAD\`.text();
+      await DockerTasks.push((s) => s.image(\`registry.example.com/app:\${sha}\`));
+    });
+}
+
+if (import.meta.main) await run(ReleaseBuild);`,
+  },
+];
+---
+
+<Base
+  title="Examples · Zuke"
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, and a Docker build-and-publish flow."
+>
+  <section class="ex-hero">
+    <div class="container">
+      <span class="eyebrow">Examples</span>
+      <h1>Real builds, start to finish.</h1>
+      <p class="lead">
+        Each example is a complete <code>zuke.ts</code> you can drop into a
+        project and run with <code>./zuke &lt;target&gt;</code>. They show targets,
+        typed dependencies, tool wrappers, and the <code>$</code> shell working
+        together.
+      </p>
+    </div>
+  </section>
+
+  <section class="container ex-list">
+    {examples.map((ex) => (
+      <article class="ex" id={ex.id} data-reveal>
+        <div class="ex__meta">
+          <span class="ex__tag">{ex.tag}</span>
+          <h2>{ex.title}</h2>
+          <p>{ex.desc}</p>
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={ex.code} lang="ts" theme="night-owl" />
+        </div>
+      </article>
+    ))}
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="ex-cta panel" data-reveal>
+        <div>
+          <h2>Make it your own</h2>
+          <p>Scaffold a build and start from a working template.</p>
+        </div>
+        <div class="ex-cta__btns">
+          <a class="btn btn-primary" href="/docs">Get started →</a>
+          <a class="btn btn-ghost" href="https://github.com/zuke-build/zuke">View source</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .ex-hero { padding-top: clamp(48px, 7vw, 88px); padding-bottom: 24px; }
+  .ex-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.1rem); margin-bottom: 16px; }
+
+  .ex-list { display: grid; gap: 28px; padding-block: 32px 8px; }
+  .ex {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 32px;
+    align-items: center;
+    padding: 26px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+    scroll-margin-top: 90px;
+  }
+  .ex__tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    background: var(--gradient-soft);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .ex__meta h2 { font-size: 1.4rem; margin-bottom: 10px; }
+  .ex__meta p { font-size: 0.95rem; margin: 0; }
+
+  .codecard { overflow: hidden; box-shadow: var(--shadow-glow); }
+  .codecard__bar {
+    display: flex; align-items: center; gap: 7px;
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .codecard__dot { width: 11px; height: 11px; border-radius: 99px; background: #2a3559; }
+  .codecard__dot:nth-child(1) { background: #ff5f56; }
+  .codecard__dot:nth-child(2) { background: #ffbd2e; }
+  .codecard__dot:nth-child(3) { background: #27c93f; }
+  .codecard__name { margin-left: 8px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+  .codecard :global(pre.astro-code) { border: 0 !important; border-radius: 0; margin: 0; font-size: 0.82rem; }
+
+  .ex-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 34px 36px;
+    background:
+      radial-gradient(70% 130% at 50% 0%, rgba(79,140,255,0.12), transparent 60%),
+      linear-gradient(180deg, var(--panel), var(--bg-soft));
+  }
+  .ex-cta h2 { font-size: 1.6rem; margin-bottom: 6px; }
+  .ex-cta p { margin: 0; }
+  .ex-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  @media (max-width: 860px) {
+    .ex { grid-template-columns: 1fr; gap: 22px; }
+  }
+</style>

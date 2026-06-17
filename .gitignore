@@ -1,0 +1,17 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# deno / zuke bootstrap
+.deno/
+cov_profile/
+*.lcov
+
+# logs & env
+*.log
+.env
+.env.*
+.DS_Store

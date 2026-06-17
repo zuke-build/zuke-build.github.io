@@ -1,0 +1,114 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "install", label: "Install" },
+  { id: "scaffold", label: "Scaffold a build" },
+  { id: "first-target", label: "Your first target" },
+  { id: "run", label: "Running targets" },
+  { id: "next", label: "Next steps" },
+];
+
+const installSnippet = `# Install the CLI globally with Deno
+deno install -A -g -n zuke jsr:@zuke/cli
+
+# Scaffold zuke.ts, launchers, and config in your project
+zuke setup
+
+# Run it — the ./zuke launcher bootstraps Deno if needed
+./zuke`;
+
+const buildSnippet = `import { Build, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class MyBuild extends Build {
+  clean = target()
+    .description("Remove build output")
+    .executes(async () => {
+      await $\`rm -rf dist\`;
+    });
+
+  compile = target()
+    .description("Type-check the project")
+    .dependsOn(this.clean)
+    .executes(async () => {
+      await DenoTasks.check((s) => s.paths("mod.ts"));
+    });
+}
+
+if (import.meta.main) {
+  await run(MyBuild);
+}`;
+
+const runSnippet = `./zuke compile      # run a target (and its dependencies)
+./zuke --list       # list every available target
+./zuke              # run the default target`;
+---
+
+<DocsLayout
+  title="Getting started"
+  description="Install Zuke, scaffold a build file, and run your first typed target."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke is a code-first, strongly-typed build automation system for Deno &amp;
+    TypeScript. Builds are plain TypeScript classes — targets are class fields,
+    dependencies are real references, and Zuke runs everything in topological
+    order. This guide gets you from zero to your first green build.
+  </p>
+
+  <h2 id="install">Install</h2>
+  <p>
+    Zuke runs on <a href="https://deno.com">Deno</a> and ships on
+    <a href="https://jsr.io/@zuke">JSR</a>. Install the CLI globally, then let it
+    scaffold a project:
+  </p>
+  <Code code={installSnippet} lang="bash" theme="night-owl" />
+  <div class="note">
+    <p>
+      No Deno yet? The generated <code>./zuke</code> launcher will install a
+      pinned, known-good version on first run — so contributors don't need to set
+      anything up by hand.
+    </p>
+  </div>
+
+  <h2 id="scaffold">Scaffold a build</h2>
+  <p>
+    <code>zuke setup</code> creates a <code>zuke.ts</code> at your project root
+    alongside the <code>zuke</code> / <code>zuke.ps1</code> launchers and a small
+    <code>zuke.json</code>. The <code>zuke.ts</code> file <em>is</em> your build —
+    edit it like any other TypeScript module.
+  </p>
+
+  <h2 id="first-target">Your first target</h2>
+  <p>
+    A target is a class field built with <code>target()</code>. Give it a
+    description, declare what it <code>dependsOn</code> using
+    <code>this.*</code> references, and provide the work in
+    <code>executes</code>:
+  </p>
+  <Code code={buildSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Because <code>compile</code> depends on <code>this.clean</code>, Zuke runs
+    <code>clean</code> first — automatically and exactly once. Rename
+    <code>clean</code> and the reference moves with it; there are no strings to
+    keep in sync.
+  </p>
+
+  <h2 id="run">Running targets</h2>
+  <p>Invoke any target through the launcher:</p>
+  <Code code={runSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Zuke prints per-target status (<code>✔</code> / <code>✘</code> /
+    <code>⊘</code>), timings, and a final summary. A target named
+    <code>default</code> runs when you pass no arguments.
+  </p>
+
+  <h2 id="next">Next steps</h2>
+  <ul>
+    <li><a href="/docs/concepts">Core concepts</a> — targets, dependencies, the <code>$</code> shell, and parameters.</li>
+    <li><a href="/examples">Examples</a> — real-world build files for Node, Deno libraries, and Docker.</li>
+    <li><a href="https://jsr.io/@zuke">JSR packages</a> — the full set of typed tool wrappers.</li>
+  </ul>
+</DocsLayout>

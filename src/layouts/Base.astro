@@ -1,0 +1,92 @@
+---
+import "../styles/global.css";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = "Zuke — code-first build automation for Deno & TypeScript",
+  description =
+    "Zuke is a code-first, strongly-typed build automation system for Deno & TypeScript. Define targets as class fields, wire dependencies with a fluent API, and ship with zero runtime dependencies.",
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://zuke-build.github.io");
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href={canonical.href} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#07090f" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+    <Nav />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      // Reveal-on-scroll for [data-reveal] elements.
+      const els = document.querySelectorAll("[data-reveal]");
+      if (els.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                (e.target as HTMLElement).classList.add("is-visible");
+                io.unobserve(e.target);
+              }
+            }
+          },
+          { threshold: 0.12 },
+        );
+        els.forEach((el, i) => {
+          (el as HTMLElement).style.transitionDelay = `${Math.min(i % 4, 3) * 70}ms`;
+          io.observe(el);
+        });
+      }
+    </script>
+  </body>
+</html>
+
+<style>
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    background: var(--panel);
+    border: 1px solid var(--cyan);
+    padding: 8px 14px;
+    border-radius: 8px;
+    z-index: 100;
+  }
+  .skip-link:focus {
+    left: 16px;
+  }
+</style>

@@ -1,0 +1,133 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "targets", label: "Targets" },
+  { id: "dependencies", label: "Dependencies" },
+  { id: "shell", label: "The $ shell" },
+  { id: "tools", label: "Tool wrappers" },
+  { id: "parameters", label: "Parameters" },
+];
+
+const targetSnippet = `compile = target()
+  .description("Type-check & bundle")     // shown in --list
+  .dependsOn(this.clean, this.restore)    // typed references
+  .executes(async () => {
+    // ordinary async TypeScript
+  });`;
+
+const depSnippet = `class MyBuild extends Build {
+  clean   = target().executes(async () => { await $\`rm -rf dist\`; });
+  restore = target().executes(async () => { await DenoTasks.cache(); });
+
+  compile = target()
+    .dependsOn(this.clean, this.restore)   // runs both first, once each
+    .executes(async () => { /* ... */ });
+
+  test = target()
+    .dependsOn(this.compile)
+    .executes(async () => { await DenoTasks.test(); });
+}`;
+
+const shellSnippet = `import { $ } from "jsr:@zuke/core/shell";
+
+await $\`deno test -A\`;                       // throws on non-zero exit
+const sha = await $\`git rev-parse HEAD\`.text(); // trimmed stdout
+const code = await $\`flaky-cmd\`.noThrow().code(); // exit code, never throws
+
+// Interpolations are escaped — no shell injection:
+const branch = "feature/$(rm -rf /)";
+await $\`git checkout \${branch}\`;             // treated as a single literal arg`;
+
+const toolsSnippet = `import { NpmTasks } from "jsr:@zuke/npm";
+import { DockerTasks } from "jsr:@zuke/docker";
+
+await NpmTasks.ci();                              // npm ci
+await NpmTasks.run((s) => s.script("build"));     // npm run build
+await DockerTasks.build((s) => s.tag("app:latest").file("Dockerfile"));`;
+
+const paramSnippet = `class MyBuild extends Build {
+  // expose typed parameters via flags or environment
+  configuration = parameter("Build configuration").default("Debug");
+
+  compile = target()
+    .executes(async () => {
+      await DenoTasks.check((s) => s.paths("mod.ts"));
+      console.log(\`Built in \${this.configuration.value} mode\`);
+    });
+}`;
+---
+
+<DocsLayout
+  title="Core concepts"
+  description="Targets, typed dependencies, the $ shell, tool wrappers, and parameters."
+  toc={toc}
+>
+  <p class="lead">
+    Five ideas cover almost everything in Zuke: targets, dependencies, the
+    <code>$</code> shell, tool wrappers, and parameters. Each one is just
+    TypeScript, so your editor, type-checker, and debugger all work as usual.
+  </p>
+
+  <h2 id="targets">Targets</h2>
+  <p>
+    A <strong>target</strong> is a unit of work — compile, test, publish. You
+    define one as a class field with <code>target()</code> and a fluent chain:
+  </p>
+  <Code code={targetSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>.description()</code> documents the target, <code>.dependsOn()</code>
+    wires prerequisites, and <code>.executes()</code> holds the action — an
+    ordinary <code>async</code> function.
+  </p>
+
+  <h2 id="dependencies">Dependencies</h2>
+  <p>
+    Targets reference each other with <code>this.target</code> — real values,
+    not strings. Zuke builds the dependency graph, then runs targets in
+    topological order, executing each one <strong>exactly once</strong> even when
+    several targets share a prerequisite.
+  </p>
+  <Code code={depSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Because dependencies are typed references, renaming a target updates every
+      dependant automatically and a typo is a compile error — not a build that
+      silently does the wrong thing.
+    </p>
+  </div>
+
+  <h2 id="shell">The $ shell</h2>
+  <p>
+    The <code>$</code> tagged template from <code>@zuke/core/shell</code> runs
+    processes with sensible defaults. Interpolated values are escaped, so
+    untrusted input can't break out of a command:
+  </p>
+  <Code code={shellSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Chain <code>.text()</code> for trimmed stdout, <code>.code()</code> for the
+    exit status, or <code>.noThrow()</code> to handle failures yourself.
+  </p>
+
+  <h2 id="tools">Tool wrappers</h2>
+  <p>
+    Rather than hand-write CLI strings, reach for the typed
+    <code>@zuke/*</code> wrappers. Each exposes a fluent, discoverable API over a
+    real tool — Deno, npm, Bun, Docker, Kubernetes, Playwright, Terraform and
+    more — all published to JSR:
+  </p>
+  <Code code={toolsSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="parameters">Parameters</h2>
+  <p>
+    Builds often need inputs — a configuration, a version, a target environment.
+    Parameters give you typed values with defaults, sourced from flags or
+    environment variables:
+  </p>
+  <Code code={paramSnippet} lang="ts" theme="night-owl" />
+  <p>
+    From here, browse the <a href="/examples">examples</a> to see these concepts
+    combined into complete, real-world build files.
+  </p>
+</DocsLayout>
