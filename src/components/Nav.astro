@@ -12,7 +12,7 @@ const links = [
 <header class="nav" id="site-nav">
   <div class="container nav__inner">
     <a href="/" class="nav__brand" aria-label="Zuke home">
-      <Logo height={26} />
+      <Logo height={52} />
     </a>
 
     <nav class="nav__links" aria-label="Primary">
@@ -61,7 +61,7 @@ const links = [
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 64px;
+    height: 76px;
   }
   .nav__brand { display: inline-flex; }
   .nav__links {
@@ -83,7 +83,7 @@ const links = [
   .nav__gh:hover { color: var(--text); }
 
   @media (max-width: 560px) {
-    .nav__inner { height: 58px; }
+    .nav__inner { height: 64px; }
     .nav__links { gap: 18px; }
     .nav__link[href="https://jsr.io/@zuke"] { display: none; }
   }
