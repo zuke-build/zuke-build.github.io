@@ -1,0 +1,100 @@
+---
+interface Props {
+  // each line: a shell command; `#` prefix renders as a dim comment
+  lines: string[];
+  label?: string;
+}
+const { lines, label } = Astro.props;
+const copyText = lines.filter((l) => !l.trimStart().startsWith("#")).join("\n");
+const esc = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const codeHtml = lines
+  .map((l) => {
+    const isComment = l.trimStart().startsWith("#");
+    const cls = isComment ? "copy__row copy__comment" : "copy__row copy__cmd";
+    const prompt = isComment ? "" : '<span class="copy__prompt">$</span>';
+    return `<span class="${cls}">${prompt}${esc(l)}\n</span>`;
+  })
+  .join("");
+---
+
+<div class="copy" data-copy={copyText}>
+  {label && <span class="copy__label">{label}</span>}
+  <pre class="copy__pre"><code set:html={codeHtml} /></pre>
+  <button class="copy__btn" type="button" aria-label="Copy to clipboard">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+    <span class="copy__btntext">Copy</span>
+  </button>
+</div>
+
+<style>
+  .copy {
+    position: relative;
+    background: #0a0d18;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .copy__label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+  .copy__pre {
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    line-height: 1.85;
+  }
+  .copy__row { display: block; }
+  .copy__prompt { color: var(--violet); user-select: none; margin-right: 6px; }
+  .copy__cmd { color: var(--text); }
+  .copy__comment { color: var(--text-faint); }
+  .copy__btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .copy__btn:hover { border-color: var(--cyan); color: var(--text); }
+  .copy__btn.copied { border-color: #27c93f; color: #27c93f; }
+</style>
+
+<script>
+  document.querySelectorAll(".copy").forEach((node) => {
+    const box = node as HTMLElement;
+    const btn = box.querySelector(".copy__btn");
+    const txt = box.querySelector(".copy__btntext");
+    btn?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(box.dataset.copy ?? "");
+        btn.classList.add("copied");
+        if (txt) txt.textContent = "Copied";
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          if (txt) txt.textContent = "Copy";
+        }, 1600);
+      } catch {
+        /* clipboard unavailable */
+      }
+    });
+  });
+</script>

@@ -1,0 +1,6 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "comment": "zuke.ts uses Deno-resolved jsr: imports — it is type-checked by `deno check`, not the Node/Astro checker.",
+  "exclude": ["dist", "zuke.ts"]
+}

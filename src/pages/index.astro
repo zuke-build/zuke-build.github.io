@@ -1,0 +1,473 @@
+---
+import { Code } from "astro:components";
+import Base from "../layouts/Base.astro";
+import DagDiagram from "../components/DagDiagram.astro";
+import CopyBlock from "../components/CopyBlock.astro";
+import { toolGroups, corePackages } from "../data/tools.ts";
+
+const heroSnippet = `import { Build, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class MyBuild extends Build {
+  clean = target()
+    .executes(async () => { await $\`rm -rf dist\`; });
+
+  compile = target()
+    .description("Type-check & bundle")
+    .dependsOn(this.clean, this.restore)
+    .executes(async () => {
+      await DenoTasks.check((s) => s.paths("mod.ts"));
+    });
+}
+
+if (import.meta.main) await run(MyBuild);`;
+
+const shellSnippet = `// The $ tagged template runs processes safely — no shell injection.
+const sha = await $\`git rev-parse HEAD\`.text();   // trimmed stdout
+await $\`deno test -A\`;                              // throws on non-zero
+const code = await $\`flaky-cmd\`.noThrow().code();   // never throws`;
+
+const features = [
+  {
+    icon: "type",
+    title: "Typed, refactor-safe dependencies",
+    body: "Targets reference each other with this.target — not magic strings. Rename one and every reference updates. The compiler has your back.",
+  },
+  {
+    icon: "code",
+    title: "Just TypeScript",
+    body: "Build logic is ordinary async functions with full editor support, types, and debugging. No YAML, no bespoke DSL to learn.",
+  },
+  {
+    icon: "graph",
+    title: "Automatic topological order",
+    body: "Declare what each target depends on; Zuke resolves the graph and runs everything in the right order, skipping what's already done.",
+  },
+  {
+    icon: "shell",
+    title: "Ergonomic, safe shell",
+    body: "The $ tagged template executes processes with sensible defaults and prevents injection — capture output, ignore failures, or fail fast.",
+  },
+  {
+    icon: "zero",
+    title: "Zero runtime dependencies",
+    body: "Zuke ships on Deno with nothing else to install. The bootstrap launcher even installs Deno for you on first run.",
+  },
+  {
+    icon: "jsr",
+    title: "A typed tool ecosystem",
+    body: "Strongly-typed wrappers for Deno, npm, Bun, Docker, Kubernetes, Playwright, Terraform and more — all published to JSR.",
+  },
+];
+
+const icons: Record<string, string> = {
+  type: `<path d="M4 7V5h16v2M9 5v14m-3 0h6"/>`,
+  code: `<path d="m8 8-4 4 4 4M16 8l4 4-4 4"/>`,
+  graph: `<circle cx="5" cy="6" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="13" cy="12" r="2.5"/><circle cx="20" cy="12" r="2.5"/><path d="M7 7.5 10.7 11M7 16.5 10.7 13M15.5 12H17.5"/>`,
+  shell: `<path d="m5 8 4 4-4 4M12 16h7"/><rect x="2" y="3" width="20" height="18" rx="3"/>`,
+  zero: `<path d="M20 7 12 3 4 7v10l8 4 8-4z"/><path d="M12 12 4 7M12 12v9M12 12l8-5"/>`,
+  jsr: `<path d="M4 6h16v12H4z"/><path d="M8 10v4M12 9v6M12 15h2a2 2 0 0 0 0-4M16 10h2"/>`,
+};
+---
+
+<Base>
+  <!-- ░░ HERO ░░ -->
+  <section class="hero">
+    <div class="container hero__grid">
+      <div class="hero__copy">
+        <span class="eyebrow">Build automation · Deno &amp; TypeScript</span>
+        <h1 class="hero__title">
+          Builds you can <span class="gradient-text">refactor</span>,
+          not just run.
+        </h1>
+        <p class="lead">
+          Zuke is a code-first, strongly-typed build system. Define targets as
+          TypeScript class fields, wire dependencies with a fluent API, and let
+          Zuke resolve and run them in topological order — with zero runtime
+          dependencies.
+        </p>
+        <div class="hero__cta">
+          <a class="btn btn-primary" href="/docs">Get started →</a>
+          <a class="btn btn-ghost" href="https://github.com/zuke-build/zuke">
+            View on GitHub
+          </a>
+        </div>
+        <div class="hero__install">
+          <CopyBlock
+            label="Install the CLI"
+            lines={[
+              "deno install -A -g -n zuke jsr:@zuke/cli",
+              "zuke setup",
+              "./zuke",
+            ]}
+          />
+        </div>
+      </div>
+
+      <div class="hero__code" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={heroSnippet} lang="ts" theme="night-owl" />
+        </div>
+      </div>
+    </div>
+
+    <div class="container hero__strip">
+      <span><b>v1</b> on the horizon</span>
+      <span class="dotsep">•</span>
+      <span>Deno-native</span>
+      <span class="dotsep">•</span>
+      <span>Zero runtime deps</span>
+      <span class="dotsep">•</span>
+      <span>Published on JSR</span>
+      <span class="dotsep">•</span>
+      <span>Inspired by NUKE for .NET</span>
+    </div>
+  </section>
+
+  <!-- ░░ FEATURES ░░ -->
+  <section class="section" id="features">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">Why Zuke</span>
+        <h2>Everything a build needs — typed end to end.</h2>
+      </header>
+      <div class="feat-grid">
+        {features.map((f) => (
+          <article class="feat panel" data-reveal>
+            <span class="feat__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                stroke-linejoin="round" set:html={icons[f.icon]} />
+            </span>
+            <h3>{f.title}</h3>
+            <p>{f.body}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ DAG / RESOLUTION ░░ -->
+  <section class="section sec-dag" id="resolution">
+    <div class="container dag-grid">
+      <div data-reveal>
+        <span class="eyebrow">Topological resolution</span>
+        <h2>Declare dependencies.<br />Zuke figures out the order.</h2>
+        <p class="lead">
+          Each target lists what it <code>dependsOn</code>. Zuke builds the
+          dependency graph, runs independent targets as far as it can, and
+          executes everything exactly once in the correct order.
+        </p>
+        <ul class="ticks">
+          <li>References are real values — <code>this.build</code>, never a string.</li>
+          <li>Per-target status, timing, and a final build summary.</li>
+          <li>Rename a target and every dependant updates automatically.</li>
+        </ul>
+        <p class="dag-note">↓ This is the actual graph that builds this website.</p>
+      </div>
+      <div data-reveal>
+        <DagDiagram />
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ SHELL ░░ -->
+  <section class="section" id="shell">
+    <div class="container shell-grid">
+      <div class="codecard panel" data-reveal>
+        <div class="codecard__bar">
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__name">shell.ts</span>
+        </div>
+        <Code code={shellSnippet} lang="ts" theme="night-owl" />
+      </div>
+      <div data-reveal>
+        <span class="eyebrow">The $ shell</span>
+        <h2>Run processes without the footguns.</h2>
+        <p class="lead">
+          The <code>$</code> tagged template from <code>@zuke/core/shell</code>
+          escapes interpolations automatically, so untrusted values can't break
+          out of a command. Chain <code>.text()</code>, <code>.code()</code>, or
+          <code>.noThrow()</code> for exactly the behaviour you want.
+        </p>
+        <a class="btn btn-ghost" href="/docs">Read the shell guide →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ TOOLS ░░ -->
+  <section class="section sec-tools" id="tools">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">The @zuke ecosystem</span>
+        <h2>Typed wrappers for the tools you already use.</h2>
+        <p class="lead sec-head__lead">
+          Every wrapper is a fluent, strongly-typed API over a real CLI —
+          published to JSR, tree-shakeable, and refactor-safe.
+        </p>
+      </header>
+
+      <div class="tools-grid">
+        {toolGroups.map((g) => (
+          <article class="toolcard panel" data-reveal>
+            <h3 class="toolcard__cat">{g.category}</h3>
+            <p class="toolcard__blurb">{g.blurb}</p>
+            <ul class="toolcard__list">
+              {g.tools.map((t) => (
+                <li>
+                  <span class="toolcard__name">{t.name}</span>
+                  <code class="toolcard__pkg">{t.pkg}</code>
+                  <span class="toolcard__desc">{t.desc}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+
+      <div class="core-row panel" data-reveal>
+        <span class="core-row__h">The engine</span>
+        <div class="core-row__items">
+          {corePackages.map((p) => (
+            <div class="core-pkg">
+              <code>{p.name}</code>
+              <span>{p.desc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ CTA ░░ -->
+  <section class="section">
+    <div class="container">
+      <div class="cta panel" data-reveal>
+        <h2>Ship your first typed build in minutes.</h2>
+        <p>Install the CLI, scaffold a <code>zuke.ts</code>, and run your first target.</p>
+        <CopyBlock
+          lines={[
+            "deno install -A -g -n zuke jsr:@zuke/cli",
+            "zuke setup",
+            "./zuke --list",
+          ]}
+        />
+        <div class="cta__btns">
+          <a class="btn btn-primary" href="/docs">Read the docs →</a>
+          <a class="btn btn-ghost" href="/examples">Browse examples</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* hero */
+  .hero { padding-top: clamp(48px, 8vw, 96px); }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 52px;
+    align-items: center;
+  }
+  .hero__title {
+    font-size: clamp(2.3rem, 5vw, 3.6rem);
+    font-weight: 800;
+    margin-bottom: 20px;
+  }
+  .hero__cta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 28px 0 26px;
+  }
+  .hero__install { max-width: 460px; }
+
+  .hero__strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 64px;
+    padding-top: 26px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-faint);
+  }
+  .hero__strip b { color: var(--cyan); font-weight: 700; }
+  .dotsep { color: var(--border); }
+
+  /* code card */
+  .codecard { overflow: hidden; box-shadow: var(--shadow-glow); }
+  .codecard__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .codecard__dot { width: 11px; height: 11px; border-radius: 99px; background: #2a3559; }
+  .codecard__dot:nth-child(1) { background: #ff5f56; }
+  .codecard__dot:nth-child(2) { background: #ffbd2e; }
+  .codecard__dot:nth-child(3) { background: #27c93f; }
+  .codecard__name {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+  }
+  .codecard :global(pre.astro-code) {
+    border: 0 !important;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* section heads */
+  .sec-head { text-align: center; max-width: 640px; margin: 0 auto 48px; }
+  .sec-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+  .sec-head__lead { margin-inline: auto; }
+
+  /* features */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .feat { padding: 26px 24px; transition: transform 0.2s ease, border-color 0.2s ease; }
+  .feat:hover { transform: translateY(-3px); border-color: #2c3760; }
+  .feat__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--gradient-soft);
+    color: var(--cyan);
+    margin-bottom: 16px;
+  }
+  .feat h3 { font-size: 1.08rem; margin-bottom: 8px; }
+  .feat p { font-size: 0.93rem; margin: 0; }
+
+  /* dag */
+  .sec-dag { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5), transparent); }
+  .dag-grid {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .dag-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+  .ticks { list-style: none; padding: 0; margin: 20px 0 0; display: grid; gap: 12px; }
+  .ticks li {
+    position: relative;
+    padding-left: 30px;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+  .ticks li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 2px;
+    width: 18px; height: 18px;
+    border-radius: 6px;
+    background: var(--gradient-soft);
+    border: 1px solid var(--cyan);
+  }
+  .ticks li::after {
+    content: "✓";
+    position: absolute;
+    left: 4px; top: 1px;
+    color: var(--cyan);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .dag-note {
+    margin-top: 22px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-faint);
+  }
+
+  /* shell */
+  .shell-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .shell-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+
+  /* tools */
+  .sec-tools { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5)); }
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .toolcard { padding: 22px 20px; }
+  .toolcard__cat { font-size: 0.98rem; margin-bottom: 6px; }
+  .toolcard__blurb { font-size: 0.85rem; color: var(--text-faint); margin-bottom: 16px; }
+  .toolcard__list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .toolcard__list li { display: grid; gap: 2px; }
+  .toolcard__name { font-weight: 600; font-size: 0.92rem; }
+  .toolcard__pkg { font-size: 0.78rem; color: var(--cyan); }
+  .toolcard__desc { font-size: 0.82rem; color: var(--text-faint); }
+
+  .core-row {
+    margin-top: 18px;
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    align-items: center;
+  }
+  .core-row__h {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .core-row__items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .core-pkg { display: grid; gap: 3px; }
+  .core-pkg code { color: var(--violet); font-size: 0.9rem; }
+  .core-pkg span { font-size: 0.82rem; color: var(--text-faint); }
+
+  /* cta */
+  .cta {
+    text-align: center;
+    padding: clamp(40px, 6vw, 64px);
+    background:
+      radial-gradient(70% 130% at 50% 0%, rgba(79,140,255,0.12), transparent 60%),
+      linear-gradient(180deg, var(--panel), var(--bg-soft));
+  }
+  .cta h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
+  .cta > p { margin-bottom: 26px; }
+  .cta :global(.copy) { max-width: 460px; margin: 0 auto; text-align: left; }
+  .cta__btns { display: flex; gap: 14px; justify-content: center; margin-top: 26px; flex-wrap: wrap; }
+
+  /* responsive */
+  @media (max-width: 940px) {
+    .hero__grid, .dag-grid, .shell-grid { grid-template-columns: 1fr; gap: 36px; }
+    .hero__code { order: 2; }
+    .feat-grid { grid-template-columns: repeat(2, 1fr); }
+    .tools-grid { grid-template-columns: repeat(2, 1fr); }
+    .core-row { grid-template-columns: 1fr; gap: 14px; }
+    .core-row__items { grid-template-columns: 1fr; }
+    .shell-grid .codecard { order: 2; }
+  }
+  @media (max-width: 560px) {
+    .feat-grid, .tools-grid { grid-template-columns: 1fr; }
+  }
+</style>

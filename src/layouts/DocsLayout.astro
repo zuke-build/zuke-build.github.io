@@ -1,0 +1,168 @@
+---
+import Base from "./Base.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+  // table-of-contents anchors for the current page
+  toc?: { id: string; label: string }[];
+}
+const { title, description, toc = [] } = Astro.props;
+const { pathname } = Astro.url;
+const here = pathname.replace(/\/$/, "") || "/docs";
+
+const nav = [
+  {
+    group: "Guide",
+    items: [
+      { href: "/docs", label: "Getting started" },
+      { href: "/docs/concepts", label: "Core concepts" },
+    ],
+  },
+  {
+    group: "Reference",
+    items: [
+      { href: "/examples", label: "Examples" },
+      { href: "https://jsr.io/@zuke", label: "JSR packages ↗" },
+      { href: "https://github.com/zuke-build/zuke", label: "GitHub ↗" },
+    ],
+  },
+];
+---
+
+<Base title={`${title} · Zuke docs`} description={description}>
+  <div class="container docs">
+    <aside class="docs__side">
+      <nav aria-label="Documentation">
+        {nav.map((g) => (
+          <div class="docs__group">
+            <span class="docs__grouph">{g.group}</span>
+            <ul>
+              {g.items.map((it) => (
+                <li>
+                  <a
+                    href={it.href}
+                    class:list={["docs__link", { active: here === it.href.replace(/\/$/, "") }]}
+                  >
+                    {it.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </aside>
+
+    <article class="docs__main">
+      <h1 class="docs__title">{title}</h1>
+      <slot />
+    </article>
+
+    {toc.length > 0 && (
+      <aside class="docs__toc" aria-label="On this page">
+        <span class="docs__grouph">On this page</span>
+        <ul>
+          {toc.map((t) => (
+            <li><a href={`#${t.id}`}>{t.label}</a></li>
+          ))}
+        </ul>
+      </aside>
+    )}
+  </div>
+</Base>
+
+<style>
+  .docs {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 190px;
+    gap: 40px;
+    padding-top: 48px;
+    padding-bottom: 80px;
+    align-items: start;
+  }
+  .docs__side, .docs__toc {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+  }
+  .docs__group { margin-bottom: 24px; }
+  .docs__grouph {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+  }
+  .docs__side ul, .docs__toc ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .docs__link, .docs__toc a {
+    display: block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    border-left: 2px solid transparent;
+  }
+  .docs__link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .docs__link.active {
+    color: var(--cyan);
+    background: var(--gradient-soft);
+    border-left-color: var(--cyan);
+  }
+  .docs__toc a { padding: 4px 10px; font-size: 0.84rem; }
+  .docs__toc a:hover { color: var(--cyan); }
+
+  .docs__main { min-width: 0; }
+  .docs__title {
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* shared prose styles for doc bodies */
+  .docs__main :global(h2) {
+    font-size: 1.45rem;
+    margin: 44px 0 14px;
+    scroll-margin-top: 88px;
+  }
+  .docs__main :global(h3) { font-size: 1.12rem; margin: 28px 0 10px; }
+  .docs__main :global(p) { color: var(--text-dim); }
+  .docs__main :global(ul), .docs__main :global(ol) { color: var(--text-dim); padding-left: 22px; }
+  .docs__main :global(li) { margin-bottom: 8px; }
+  .docs__main :global(a) { text-decoration: underline; text-underline-offset: 3px; }
+  .docs__main :global(:not(pre) > code) {
+    background: rgba(155, 107, 255, 0.12);
+    color: #c9b6ff;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.86em;
+  }
+  .docs__main :global(pre.astro-code) { margin: 16px 0 22px; }
+  .docs__main :global(.note) {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--cyan);
+    background: rgba(52, 225, 212, 0.05);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 0.92rem;
+  }
+  .docs__main :global(.note) :global(p:last-child) { margin-bottom: 0; }
+
+  @media (max-width: 1040px) {
+    .docs { grid-template-columns: 200px minmax(0, 1fr); }
+    .docs__toc { display: none; }
+  }
+  @media (max-width: 760px) {
+    .docs { grid-template-columns: 1fr; gap: 24px; }
+    .docs__side {
+      position: static;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .docs__group { margin-bottom: 14px; }
+  }
+</style>

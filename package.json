@@ -1,0 +1,21 @@
+{
+  "name": "zuke-build-website",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Marketing and documentation site for Zuke — a code-first, strongly-typed build automation system for Deno & TypeScript.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "astro": "^6.4.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "typescript": "^5.7.0"
+  }
+}
