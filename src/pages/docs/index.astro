@@ -41,9 +41,12 @@ if (import.meta.main) {
   await run(MyBuild);
 }`;
 
-const runSnippet = `./zuke compile      # run a target (and its dependencies)
-./zuke --list       # list every available target
-./zuke              # run the default target`;
+const runSnippet = `./zuke compile         # run a target (and its dependencies)
+./zuke compile --parallel  # run independent targets concurrently
+./zuke --list          # list every available target
+./zuke graph           # print the dependency graph
+./zuke generate-ci     # write declared CI/CD pipeline files
+./zuke                 # run the default target`;
 ---
 
 <DocsLayout
@@ -107,8 +110,8 @@ const runSnippet = `./zuke compile      # run a target (and its dependencies)
 
   <h2 id="next">Next steps</h2>
   <ul>
-    <li><a href="/docs/concepts">Core concepts</a> — targets, dependencies, the <code>$</code> shell, and parameters.</li>
-    <li><a href="/examples">Examples</a> — real-world build files for Node, Deno libraries, and Docker.</li>
+    <li><a href="/docs/concepts">Core concepts</a> — targets, dependencies, the <code>$</code> shell, parameters, code-first CI/CD, and extending Zuke.</li>
+    <li><a href="/examples">Examples</a> — real-world build files for Node, Deno libraries, Docker, and generated CI pipelines.</li>
     <li><a href="https://jsr.io/@zuke">JSR packages</a> — the full set of typed tool wrappers.</li>
   </ul>
 </DocsLayout>

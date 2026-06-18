@@ -8,6 +8,8 @@ const toc = [
   { id: "shell", label: "The $ shell" },
   { id: "tools", label: "Tool wrappers" },
   { id: "parameters", label: "Parameters" },
+  { id: "cicd", label: "Code-first CI/CD" },
+  { id: "extending", label: "Extending Zuke" },
 ];
 
 const targetSnippet = `compile = target()
@@ -57,6 +59,43 @@ const paramSnippet = `class MyBuild extends Build {
       console.log(\`Built in \${this.configuration.value} mode\`);
     });
 }`;
+
+const cicdSnippet = `import { Build, cicd, target } from "jsr:@zuke/core";
+
+class MyBuild extends Build {
+  // declare a pipeline as a build field
+  ci = cicd({
+    provider: "github",                       // or "gitlab" | "azure"
+    pipeline: {
+      jobs: [{
+        matrix: { os: ["ubuntu-latest", "macos-latest"] },
+        steps: [{ name: "Test", run: "./zuke test" }],
+      }],
+    },
+  });
+
+  test = target().executes(async () => { await DenoTasks.test(); });
+}`;
+
+const generateSnippet = `zuke generate-ci          # write all declared pipeline files
+zuke generate-ci --check  # CI gate: fail if committed files are stale`;
+
+const extendSnippet = `import { type Configure, runSettings, ToolSettings } from "jsr:@zuke/core/tooling";
+
+class MyToolSettings extends ToolSettings {
+  #args: string[] = [];
+  fast(): this { this.#args.push("--fast"); return this; }
+
+  protected override defaultTool() { return "mytool"; }
+  protected override buildArgs() { return ["build", ...this.#args]; }
+}
+
+export const MyToolTasks = {
+  build: (configure?: Configure<MyToolSettings>) =>
+    runSettings(new MyToolSettings(), configure),
+};
+
+// → await MyToolTasks.build((s) => s.fast().cwd("app"));`;
 ---
 
 <DocsLayout
@@ -114,8 +153,8 @@ const paramSnippet = `class MyBuild extends Build {
   <p>
     Rather than hand-write CLI strings, reach for the typed
     <code>@zuke/*</code> wrappers. Each exposes a fluent, discoverable API over a
-    real tool — Deno, npm, Bun, Docker, Kubernetes, Playwright, Terraform and
-    more — all published to JSR:
+    real tool — Deno, npm, Bun, Docker, Kubernetes, Helm, Vite, Playwright,
+    Terraform and <a href="/#tools">30+ more</a> — all published to JSR:
   </p>
   <Code code={toolsSnippet} lang="ts" theme="night-owl" />
 
@@ -126,8 +165,43 @@ const paramSnippet = `class MyBuild extends Build {
     environment variables:
   </p>
   <Code code={paramSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="cicd">Code-first CI/CD</h2>
   <p>
-    From here, browse the <a href="/examples">examples</a> to see these concepts
-    combined into complete, real-world build files.
+    Pipelines are part of the build, not a separate YAML file you maintain by
+    hand. Declare a <code>cicd()</code> field and Zuke generates the workflow for
+    your provider — <strong>GitHub Actions</strong>, <strong>GitLab CI</strong>,
+    or <strong>Azure Pipelines</strong>:
+  </p>
+  <Code code={cicdSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Running any target regenerates the declared files, and on CI Zuke verifies
+    the committed files are still current. You can also write or check them
+    explicitly:
+  </p>
+  <Code code={generateSnippet} lang="bash" theme="night-owl" />
+  <div class="note">
+    <p>
+      A portable subset keeps providers in sync: <code>run</code> steps map
+      everywhere, while provider-specific <code>uses</code> steps render only
+      where they apply. The output is paste-ready, correctly-quoted YAML.
+    </p>
+  </div>
+
+  <h2 id="extending">Extending Zuke</h2>
+  <p>
+    Need a tool Zuke doesn't wrap yet? Add your own without forking. Extend
+    <code>ToolSettings</code> from <code>@zuke/core/tooling</code>, implement
+    <code>defaultTool()</code> and <code>buildArgs()</code>, and you get the same
+    fluent, typed API as the built-in wrappers:
+  </p>
+  <Code code={extendSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Keep <code>buildArgs()</code> pure so argv construction stays
+    unit-testable; the base class hands you shared chainers like
+    <code>env</code>, <code>cwd</code>, <code>noThrow</code>, and
+    <code>quiet</code>. From here, browse the
+    <a href="/examples">examples</a> to see these concepts combined into
+    complete, real-world build files.
   </p>
 </DocsLayout>

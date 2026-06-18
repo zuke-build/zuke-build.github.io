@@ -99,12 +99,46 @@ class ReleaseBuild extends Build {
 
 if (import.meta.main) await run(ReleaseBuild);`,
   },
+  {
+    id: "code-first-ci",
+    tag: "CI/CD",
+    title: "Generate your CI pipeline",
+    desc: "Declare the pipeline in the build with cicd(). Zuke writes the provider YAML and verifies it stays in sync — no hand-edited workflow files.",
+    code: `import { Build, cicd, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class CiBuild extends Build {
+  // → generates .github/workflows on \`zuke generate-ci\`
+  pipeline = cicd({
+    provider: "github",                    // or "gitlab" | "azure"
+    pipeline: {
+      jobs: [{
+        matrix: { os: ["ubuntu-latest", "macos-latest"] },
+        steps: [
+          { uses: "denoland/setup-deno@v2" },
+          { name: "Gate", run: "./zuke ci" },
+        ],
+      }],
+    },
+  });
+
+  ci = target()
+    .description("Format, lint, type-check, and test")
+    .executes(async () => {
+      await DenoTasks.fmt((s) => s.check());
+      await DenoTasks.lint();
+      await DenoTasks.test((s) => s.coverage("cov"));
+    });
+}
+
+if (import.meta.main) await run(CiBuild);`,
+  },
 ];
 ---
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, and a Docker build-and-publish flow."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">
