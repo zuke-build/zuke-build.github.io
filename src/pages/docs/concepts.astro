@@ -5,6 +5,10 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 const toc = [
   { id: "targets", label: "Targets" },
   { id: "dependencies", label: "Dependencies" },
+  { id: "groups", label: "Groups & parallelism" },
+  { id: "caching", label: "Incremental caching" },
+  { id: "conditional", label: "Conditional execution" },
+  { id: "options", label: "More target options" },
   { id: "shell", label: "The $ shell" },
   { id: "tools", label: "Tool wrappers" },
   { id: "parameters", label: "Parameters" },
@@ -32,6 +36,35 @@ const depSnippet = `class MyBuild extends Build {
     .dependsOn(this.compile)
     .executes(async () => { await DenoTasks.test(); });
 }`;
+
+const groupSnippet = `class MyBuild extends Build {
+  checks = group();   // a parallel batch — declare it above its members
+
+  clean     = target().executes(/* ... */);
+  lint      = target().dependsOn(this.clean).partOf(this.checks).executes(/* ... */);
+  format    = target().dependsOn(this.clean).partOf(this.checks).executes(/* ... */);
+  typecheck = target().dependsOn(this.clean).partOf(this.checks).executes(/* ... */);
+
+  deploy = target()
+    .dependsOn(this.checks)   // waits for lint, format, and typecheck
+    .executes(/* ... */);
+}`;
+
+const cacheSnippet = `compile = target()
+  .inputs("src", "deno.json")   // re-run only when these change…
+  .outputs("dist")              // …or when dist is missing
+  .executes(async () => {
+    await DenoTasks.run((s) => s.script("build.ts"));
+  });`;
+
+const conditionalSnippet = `deploy = target()
+  .onlyWhen(() => this.environment.value === "production")
+  .executes(/* ... */);
+
+flaky = target()
+  .timeout(30_000)   // each attempt may take up to 30s…
+  .retry(2, 1_000)   // …retried twice, 1s apart, on failure
+  .executes(async () => { await $\`curl -fsSL https://example.com/health\`; });`;
 
 const shellSnippet = `import { $ } from "jsr:@zuke/core/shell";
 
@@ -128,11 +161,36 @@ export const MyToolTasks = {
 };
 
 // → await MyToolTasks.build((s) => s.fast().cwd("app"));`;
+
+const pluginSnippet = `import { type Plugin, run } from "jsr:@zuke/core";
+
+const timing: Plugin = {
+  name: "timing",
+  onTargetEnd: (target, status) => console.log(\`\${target}: \${status}\`),
+  onFinish: (result) => console.log(\`done: \${result.ok ? "ok" : "failed"}\`),
+};
+
+if (import.meta.main) await run(MyBuild, { plugins: [timing] });`;
+
+const componentSnippet = `// A component is a function that returns a bundle of related targets.
+function releasable(opts: { registry: string }) {
+  const pack = target().executes(/* ... */);
+  const publish = target()
+    .dependsOn(pack)
+    .executes(async () => { await $\`npm publish --registry \${opts.registry}\`; });
+  return { pack, publish };
+}
+
+class MyBuild extends Build {
+  release = releasable({ registry: "https://registry.npmjs.org" });
+  // runnable as \`zuke release.publish\`; reference it across the build:
+  deploy = target().dependsOn(this.release.publish).executes(/* ... */);
+}`;
 ---
 
 <DocsLayout
   title="Core concepts"
-  description="Targets, typed dependencies, the $ shell, tool wrappers, and parameters."
+  description="Targets, dependencies, groups, incremental caching, conditional execution, the $ shell, tool wrappers, parameters, CI/CD, announcements, and extending Zuke."
   toc={toc}
 >
   <p class="lead">
@@ -168,6 +226,71 @@ export const MyToolTasks = {
       silently does the wrong thing.
     </p>
   </div>
+
+  <h2 id="groups">Groups &amp; parallelism</h2>
+  <p>
+    A <code>group()</code> is a parallel <strong>batch</strong>. A target joins
+    one with <code>.partOf(group)</code>; members of the same group run
+    concurrently with one another — even when the build is otherwise sequential —
+    each still waiting for its own dependencies. Pass the group to another
+    target's <code>.dependsOn(...)</code> to depend on every member at once.
+  </p>
+  <Code code={groupSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Here <code>clean</code> runs first, then <code>lint</code>/<code>format</code>/
+    <code>typecheck</code> run together, then <code>deploy</code>. Grouping is a
+    property of the members, so they batch whenever they run — no
+    <code>--parallel</code> flag needed. (Ungrouped targets stay serialized
+    unless you opt the whole build into <code>--parallel</code>.)
+  </p>
+
+  <h2 id="caching">Incremental caching</h2>
+  <p>
+    A target that declares <strong>inputs</strong> becomes incremental: Zuke
+    fingerprints those files (SHA-256 of their contents, directories hashed
+    recursively) and <strong>skips</strong> the target — reporting it
+    <code>cached</code> — when the fingerprint is unchanged since the last
+    successful run and every declared <strong>output</strong> still exists.
+    Otherwise it runs and refreshes the fingerprint.
+  </p>
+  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Fingerprints live in <code>&lt;repo root&gt;/.zuke/cache.json</code>
+      (git-ignored). A target with no inputs always runs; pass
+      <code>--no-cache</code> to rebuild everything. Add a non-file value (a
+      parameter, tool version, git commit) to the fingerprint with
+      <code>.cacheKey(fn)</code>.
+    </p>
+  </div>
+
+  <h2 id="conditional">Conditional execution</h2>
+  <p>
+    <code>.onlyWhen(condition)</code> runs the target only when the condition
+    holds; otherwise it's skipped (and its dependents still run). The predicate
+    may be async and can read resolved parameters or the environment. It's
+    repeatable — all conditions must hold. Pair it with <code>.timeout(ms)</code>
+    and <code>.retry(times, delayMs?)</code> to bound and re-attempt flaky work:
+  </p>
+  <Code code={conditionalSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="options">More target options</h2>
+  <p>The fluent builder carries the rest of a target's behaviour:</p>
+  <ul>
+    <li><code>.triggers(...targets)</code> — the inverse of <code>dependsOn</code>: pull the listed targets into the plan and run them <em>after</em> this one (e.g. a <code>notify</code> triggered by <code>deploy</code>).</li>
+    <li><code>.dependentFor(...targets)</code> — declare this target as a prerequisite of others without editing them.</li>
+    <li><code>.requires(...params)</code> — fail the target unless each listed parameter resolved to a value.</li>
+    <li><code>.proceedAfterFailure()</code> — if this target fails, keep running the rest of the build (the build still reports failure).</li>
+    <li><code>.always()</code> — run even after the build has already failed, for cleanup/teardown.</li>
+    <li><code>.unlisted()</code> — hide a helper target from <code>--list</code>; it can still be run by name or depended on.</li>
+    <li><code>.produces(...paths)</code> / <code>.consumes(...targets)</code> — declare artifact paths a target produces, and depend on the producers.</li>
+  </ul>
+  <p>
+    Use <code>zuke &lt;target&gt; --dry-run</code> to print every target that
+    <em>would</em> run — honouring <code>--skip</code> and
+    <code>onlyWhen</code> conditions — without executing any body or touching the
+    cache.
+  </p>
 
   <h2 id="shell">The $ shell</h2>
   <p>
@@ -253,18 +376,48 @@ export const MyToolTasks = {
 
   <h2 id="extending">Extending Zuke</h2>
   <p>
-    Need a tool Zuke doesn't wrap yet? Add your own without forking. Extend
-    <code>ToolSettings</code> from <code>@zuke/core/tooling</code>, implement
-    <code>defaultTool()</code> and <code>buildArgs()</code>, and you get the same
-    fluent, typed API as the built-in wrappers:
+    Zuke is extended along three seams — custom tool wrappers, reusable
+    components, and lifecycle plugins — none of which require a fork.
+  </p>
+
+  <h3>Custom tool wrappers</h3>
+  <p>
+    Need a tool Zuke doesn't wrap yet? Extend <code>ToolSettings</code> from
+    <code>@zuke/core/tooling</code>, implement <code>defaultTool()</code> and
+    <code>buildArgs()</code>, and you get the same fluent, typed API as the
+    built-in wrappers:
   </p>
   <Code code={extendSnippet} lang="ts" theme="night-owl" />
   <p>
     Keep <code>buildArgs()</code> pure so argv construction stays
     unit-testable; the base class hands you shared chainers like
     <code>env</code>, <code>cwd</code>, <code>noThrow</code>, and
-    <code>quiet</code>. From here, browse the
-    <a href="/examples">examples</a> to see these concepts combined into
-    complete, real-world build files.
+    <code>quiet</code>.
+  </p>
+
+  <h3>Reusable components</h3>
+  <p>
+    A <strong>component</strong> is just a function that returns a bundle of
+    related targets. Assign it to a build field; discovery recurses into the
+    bundle and names each target with a dotted path
+    (<code>release.publish</code>), runnable as <code>zuke release.publish</code>
+    and shown in the graph. Components compose, nest, and take options:
+  </p>
+  <Code code={componentSnippet} lang="ts" theme="night-owl" />
+
+  <h3>Lifecycle plugins</h3>
+  <p>
+    A <strong>plugin</strong> is a plain object implementing any of the lifecycle
+    hooks — <code>onStart</code>, <code>onTargetStart</code>,
+    <code>onTargetEnd</code>, <code>onFinish</code>. Pass plugins to
+    <code>run()</code> (or <code>execute()</code>) and each hook runs alongside
+    the build's own methods. Plugins <strong>observe</strong> — they report,
+    time, or notify — they don't change the plan or a target's result:
+  </p>
+  <Code code={pluginSnippet} lang="ts" theme="night-owl" />
+  <p>
+    From here, browse the <a href="/docs/library">Core library</a> for the
+    built-in helpers, or the <a href="/examples">examples</a> to see these
+    concepts combined into complete, real-world build files.
   </p>
 </DocsLayout>
