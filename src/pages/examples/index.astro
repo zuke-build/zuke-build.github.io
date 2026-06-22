@@ -100,6 +100,39 @@ class ReleaseBuild extends Build {
 if (import.meta.main) await run(ReleaseBuild);`,
   },
   {
+    id: "ai-review",
+    tag: "AI / agents",
+    title: "AI code review in CI",
+    desc: "Run Claude Code headless as a build target — drive a prompt, pick a model, constrain the tools, and capture the output. The API key rides through a masked secret parameter.",
+    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { ClaudeTasks } from "jsr:@zuke/claude";
+
+class ReviewBuild extends Build {
+  apiKey = parameter("Anthropic API key").secret();
+
+  test = target()
+    .description("Run the test suite")
+    .executes(async () => { await DenoTasks.test(); });
+
+  review = target()
+    .description("Have Claude review the diff after tests pass")
+    .dependsOn(this.test)
+    .executes(async () => {
+      const out = await ClaudeTasks.run((s) =>
+        s.prompt("Review the staged diff for bugs in one paragraph")
+          .model("sonnet")
+          .allowedTools("Read", "Grep")
+          .outputFormat("json")
+          .env({ ANTHROPIC_API_KEY: this.apiKey.value })
+      );
+      console.log(out.stdout);
+    });
+}
+
+if (import.meta.main) await run(ReviewBuild);`,
+  },
+  {
     id: "code-first-ci",
     tag: "CI/CD",
     title: "Generate your CI pipeline",
@@ -138,7 +171,7 @@ if (import.meta.main) await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, an AI code review target, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">

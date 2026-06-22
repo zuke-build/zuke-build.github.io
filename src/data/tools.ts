@@ -40,6 +40,15 @@ export const toolGroups: ToolGroup[] = [
     ],
   },
   {
+    category: "AI coding agents",
+    blurb: "Fold the major AI coding CLIs into a build — headless, typed, and injection-free.",
+    tools: [
+      { name: "Claude Code", pkg: "@zuke/claude", desc: "headless run, model & tool limits, MCP" },
+      { name: "OpenAI Codex", pkg: "@zuke/codex", desc: "codex exec headless, MCP config" },
+      { name: "Gemini CLI", pkg: "@zuke/gemini", desc: "headless prompt, MCP & extensions" },
+    ],
+  },
+  {
     category: "Lint, format & quality",
     blurb: "Keep the tree clean with linters, formatters, and dead-code checks.",
     tools: [
@@ -89,6 +98,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Git", pkg: "@zuke/git", desc: "commit, tag, push, gitInfo()" },
       { name: "GitHub CLI", pkg: "@zuke/gh", desc: "releases, PRs, workflows" },
       { name: "JSR", pkg: "@zuke/jsr", desc: "publish, add, remove" },
+      { name: "release-please", pkg: "@zuke/release-please", desc: "release PRs & GitHub releases" },
     ],
   },
   {
