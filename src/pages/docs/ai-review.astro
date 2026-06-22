@@ -1,0 +1,170 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "plug-in", label: "How it plugs in" },
+  { id: "reviewers", label: "The reviewers" },
+  { id: "providers", label: "Providers & credentials" },
+  { id: "gate", label: "Choosing the gate" },
+  { id: "scope", label: "Scoping the diff & cost" },
+  { id: "schema", label: "Schema enforcement" },
+  { id: "summary", label: "GitHub Actions summary" },
+];
+
+const plugSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { securityReviewer } from "jsr:@zuke/ai";
+
+class Pipeline extends Build {
+  key = parameter("Anthropic API key").secret().required();
+
+  // Provider + key is all that's required; everything else is defaulted.
+  security = securityReviewer((r) =>
+    r.provider("claude").apiKey(this.key).failWhen((g) => g.scoreAbove(7))
+  );
+
+  deploy = target()
+    .validateBefore(this.security)   // gate before deploying
+    .executes(async () => {/* … */});
+}
+
+if (import.meta.main) await run(Pipeline);`;
+
+const gateSnippet = `securityReviewer((r) =>
+  r.provider("openai")
+    .apiKey(this.key)
+    .failWhen((g) => g.severityAtLeast("high")) // …or g.scoreAbove(7)
+    .onError("warn")          // review itself errors → log & pass (default: "fail")
+    .skipIfKeyMissing()       // no key → skip + announce, don't fail
+);`;
+
+const scopeSnippet = `securityReviewer((r) =>
+  r.provider("claude")
+    .apiKey(this.key)
+    .diff((d) => d.base("origin/main"))  // or .staged() / .text("…")
+    .include("src/**")                    // glob filters (lockfiles excluded by default)
+    .exclude("**/*.test.ts")
+    .maxDiffTokens(20_000)                // cap the diff so cost stays bounded
+    .model("claude-haiku-4-5")            // a cheaper tier
+);`;
+
+const genericSnippet = `import { genericReviewer } from "jsr:@zuke/ai";
+
+const a11y = genericReviewer((r) =>
+  r.provider("gemini")
+    .apiKey(this.key)
+    .criteria("Flag accessibility regressions: missing alt text, ARIA, contrast.")
+);`;
+---
+
+<DocsLayout
+  title="AI code review"
+  description="Gate a Zuke build on an AI code review with @zuke/ai — a Validation that reads the diff, gets a structured risk assessment, and breaks the build when the score crosses your threshold."
+  toc={toc}
+>
+  <p class="lead">
+    <a href="https://jsr.io/@zuke/ai"><code>@zuke/ai</code></a> turns an LLM into
+    a build gate: it reads the diff, asks a model for a
+    <strong>structured assessment</strong>, prints the findings, writes them to
+    the GitHub Actions job summary, and <strong>breaks the build</strong> when
+    the assessed risk crosses a threshold you choose. The output is constrained
+    to a typed shape, so the gate is a real verdict your build can branch on —
+    not a blob of prose.
+  </p>
+
+  <h2 id="plug-in">How it plugs in</h2>
+  <p>
+    A reviewer is a <a href="/docs/concepts#options">Validation</a> — an object
+    with a <code>validate(ctx)</code> method. You build one fluently, then attach
+    it to a target with <code>.validateBefore(...)</code> (gate before the body)
+    or <code>.validateAfter(...)</code> (check after a successful body). The
+    target decides <em>when</em> it runs; the reviewer decides <em>what</em> it
+    checks.
+  </p>
+  <Code code={plugSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="reviewers">The reviewers</h2>
+  <p>
+    Five factories share the same fluent <code>Reviewer</code> and return a
+    <code>Validation</code>:
+  </p>
+  <ul>
+    <li><code>securityReviewer</code> — security vulnerabilities.</li>
+    <li><code>secretsReviewer</code> — leaked secrets / credentials.</li>
+    <li><code>correctnessReviewer</code> — bugs and likely regressions.</li>
+    <li><code>licenseReviewer</code> — license / dependency-compliance risk.</li>
+    <li><code>genericReviewer</code> — whatever you describe; requires <code>.criteria("…")</code>.</li>
+  </ul>
+  <Code code={genericSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="providers">Providers &amp; credentials</h2>
+  <p>
+    <code>.provider("claude" | "openai" | "gemini")</code> and
+    <code>.apiKey(...)</code> are the only required calls. The key is read from a
+    <code>parameter().secret()</code> — so Zuke masks it in CI output — or a
+    literal string. Defaults: Claude <code>claude-opus-4-8</code>, plus a sane
+    default model for OpenAI and Gemini; override with <code>.model(...)</code>
+    and trade cost for depth with <code>.effort(...)</code>.
+  </p>
+
+  <h2 id="gate">Choosing the gate</h2>
+  <p>
+    <code>.failWhen((g) =&gt; …)</code> picks what breaks the build (default
+    <code>scoreAbove(7)</code>): <code>g.scoreAbove(n)</code> fails when the
+    0–10 risk score exceeds <code>n</code>, and
+    <code>g.severityAtLeast("high")</code> fails on a severity floor.
+  </p>
+  <Code code={gateSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <code>.onError("fail" | "warn")</code> decides what happens when the review
+      <em>itself</em> fails (API error, refusal, unparsable response):
+      <code>"fail"</code> (default) breaks the build fail-closed;
+      <code>"warn"</code> logs and passes. <code>.skipIfKeyMissing()</code>
+      handles the <em>absent key</em> case separately — the review is skipped and
+      the skip is announced — so a reviewer that relies on a CI-only secret
+      doesn't break local runs or forks, while the gap stays visible rather than
+      silently passing.
+    </p>
+  </div>
+
+  <h2 id="scope">Scoping the diff &amp; cost</h2>
+  <ul>
+    <li><code>.diff((d) =&gt; d.base("origin/main"))</code> reviews against a ref; <code>.staged()</code> reviews staged changes; <code>.text("…")</code> injects a diff directly. The default is the working-tree diff.</li>
+    <li><code>.include(...)</code> / <code>.exclude(...)</code> filter files by glob (lockfiles are excluded by default).</li>
+    <li><code>.maxDiffTokens(n)</code> caps the diff so a huge change doesn't blow the budget.</li>
+    <li>Cache the gate at the target level (<code>.cacheKey(headSha)</code>) so it doesn't re-run — or re-pay — when the diff is unchanged.</li>
+  </ul>
+  <Code code={scopeSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="schema">Schema enforcement</h2>
+  <p>
+    Asking the model for JSON in the prompt isn't enough — it can drift. So the
+    assessment <strong>schema is also sent on the request</strong> and enforced
+    by each provider's structured-output mode rather than merely requested:
+  </p>
+  <ul>
+    <li><strong>Claude</strong> → <code>output_config.format</code> (JSON schema).</li>
+    <li><strong>OpenAI</strong> → <code>response_format: &#123; type: "json_schema", strict: true &#125;</code>.</li>
+    <li><strong>Gemini</strong> → <code>generationConfig.responseSchema</code>.</li>
+  </ul>
+  <p>
+    The assessment is <code>&#123; score: 0–10, severity, summary, findings:
+    [&#123; title, severity, file?, line?, detail? &#125;] &#125;</code>, so the
+    gate branches on a typed result.
+  </p>
+
+  <h2 id="summary">GitHub Actions summary</h2>
+  <p>
+    Under Actions, a review appends a Markdown section — score, severity, and a
+    findings table — to <code>$GITHUB_STEP_SUMMARY</code>, so the assessment
+    appears on the run page whether the gate passes or fails (it writes just
+    before breaking the build on a failure). <code>.quiet()</code> suppresses
+    both the console output and the summary.
+  </p>
+  <p>
+    See the <a href="/examples#ai-review">AI review example</a> for a complete
+    build file, or <a href="/docs/concepts#options">Validations</a> for the core
+    seam reviewers plug into.
+  </p>
+</DocsLayout>

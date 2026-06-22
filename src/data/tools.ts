@@ -40,12 +40,13 @@ export const toolGroups: ToolGroup[] = [
     ],
   },
   {
-    category: "AI coding agents",
-    blurb: "Fold the major AI coding CLIs into a build — headless, typed, and injection-free.",
+    category: "AI coding & review",
+    blurb: "Fold the major AI coding CLIs into a build, or gate it on a model-assessed review.",
     tools: [
       { name: "Claude Code", pkg: "@zuke/claude", desc: "headless run, model & tool limits, MCP" },
       { name: "OpenAI Codex", pkg: "@zuke/codex", desc: "codex exec headless, MCP config" },
       { name: "Gemini CLI", pkg: "@zuke/gemini", desc: "headless prompt, MCP & extensions" },
+      { name: "AI review", pkg: "@zuke/ai", desc: "code-review gate with a structured risk score" },
     ],
   },
   {

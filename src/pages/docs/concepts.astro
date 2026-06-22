@@ -284,6 +284,7 @@ class MyBuild extends Build {
     <li><code>.always()</code> — run even after the build has already failed, for cleanup/teardown.</li>
     <li><code>.unlisted()</code> — hide a helper target from <code>--list</code>; it can still be run by name or depended on.</li>
     <li><code>.produces(...paths)</code> / <code>.consumes(...targets)</code> — declare artifact paths a target produces, and depend on the producers.</li>
+    <li><code>.validateBefore(...)</code> / <code>.validateAfter(...)</code> — attach a <strong>validation</strong> (any object with a <code>validate(ctx)</code> method) that runs before or after the body; a throw fails the target. This is the seam <a href="/docs/ai-review">AI code review</a> plugs into.</li>
   </ul>
   <p>
     Use <code>zuke &lt;target&gt; --dry-run</code> to print every target that
