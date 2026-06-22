@@ -186,26 +186,62 @@ if (import.meta.main) await run(CiBuild);`,
     </div>
   </section>
 
-  <section class="container ex-list">
-    {examples.map((ex) => (
-      <article class="ex" id={ex.id} data-reveal>
-        <div class="ex__meta">
-          <span class="ex__tag">{ex.tag}</span>
-          <h2>{ex.title}</h2>
-          <p>{ex.desc}</p>
-        </div>
-        <div class="codecard panel">
-          <div class="codecard__bar">
-            <span class="codecard__dot"></span>
-            <span class="codecard__dot"></span>
-            <span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+  <section class="container ex-layout">
+    <aside class="ex-nav" aria-label="Examples on this page">
+      <span class="ex-nav__h">Examples</span>
+      <ul>
+        {examples.map((ex) => (
+          <li>
+            <a href={`#${ex.id}`} class="ex-nav__link" data-target={ex.id}>
+              {ex.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </aside>
+
+    <div class="ex-list">
+      {examples.map((ex) => (
+        <article class="ex" id={ex.id} data-reveal>
+          <div class="ex__meta">
+            <span class="ex__tag">{ex.tag}</span>
+            <h2>{ex.title}</h2>
+            <p>{ex.desc}</p>
           </div>
-          <Code code={ex.code} lang="ts" theme="night-owl" />
-        </div>
-      </article>
-    ))}
+          <div class="codecard panel">
+            <div class="codecard__bar">
+              <span class="codecard__dot"></span>
+              <span class="codecard__dot"></span>
+              <span class="codecard__dot"></span>
+              <span class="codecard__name">zuke.ts</span>
+            </div>
+            <Code code={ex.code} lang="ts" theme="night-owl" />
+          </div>
+        </article>
+      ))}
+    </div>
   </section>
+
+  <script>
+    // Highlight the nav link for the example currently in view.
+    const links = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(".ex-nav__link"),
+    );
+    const byId = new Map(links.map((l) => [l.dataset.target, l]));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const link = byId.get(entry.target.id);
+          if (!link) continue;
+          links.forEach((l) => l.classList.remove("active"));
+          link.classList.add("active");
+        }
+      },
+      { rootMargin: "-40% 0px -55% 0px" },
+    );
+    document.querySelectorAll(".ex").forEach((el) => observer.observe(el));
+  </script>
 
   <section class="section">
     <div class="container">
@@ -227,7 +263,45 @@ if (import.meta.main) await run(CiBuild);`,
   .ex-hero { padding-top: clamp(48px, 7vw, 88px); padding-bottom: 24px; }
   .ex-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.1rem); margin-bottom: 16px; }
 
-  .ex-list { display: grid; gap: 28px; padding-block: 32px 8px; }
+  /* layout: sticky example nav + the list of examples */
+  .ex-layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+    padding-block: 32px 8px;
+  }
+  .ex-nav {
+    position: sticky;
+    top: 88px;
+    align-self: start;
+  }
+  .ex-nav__h {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+  }
+  .ex-nav ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .ex-nav__link {
+    display: block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    border-left: 2px solid transparent;
+  }
+  .ex-nav__link:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .ex-nav__link.active {
+    color: var(--cyan);
+    background: var(--gradient-soft);
+    border-left-color: var(--cyan);
+  }
+
+  .ex-list { display: grid; gap: 28px; }
   .ex {
     display: grid;
     grid-template-columns: 0.8fr 1.2fr;
@@ -288,6 +362,27 @@ if (import.meta.main) await run(CiBuild);`,
 
   @media (max-width: 860px) {
     .ex { grid-template-columns: 1fr; gap: 22px; align-items: stretch; }
+    /* nav becomes a horizontal, scrollable strip above the examples */
+    .ex-layout { grid-template-columns: 1fr; gap: 20px; }
+    .ex-nav {
+      position: static;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+    .ex-nav ul {
+      grid-auto-flow: column;
+      grid-auto-columns: max-content;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .ex-nav__link {
+      white-space: nowrap;
+      border-left: 0;
+      border: 1px solid var(--border);
+    }
+    .ex-nav__link.active { border-color: var(--cyan); }
   }
   @media (max-width: 560px) {
     .ex { padding: 20px; }
