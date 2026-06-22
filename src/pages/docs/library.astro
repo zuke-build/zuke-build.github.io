@@ -1,0 +1,225 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "files", label: "File operations" },
+  { id: "glob", label: "Globbing" },
+  { id: "http", label: "HTTP" },
+  { id: "compression", label: "Compression & archives" },
+  { id: "install", label: "Installing tools" },
+  { id: "assert", label: "Assertions" },
+  { id: "paths", label: "Paths" },
+  { id: "host", label: "CI & host detection" },
+];
+
+const filesSnippet = `import { FileTasks } from "jsr:@zuke/core";
+
+await FileTasks.cleanDirectory("dist");          // empty it (if it exists)
+await FileTasks.createDirectory("dist/assets");  // mkdir -p
+await FileTasks.copy("static", "dist/static");   // recursive
+await FileTasks.move("build.log", "logs/build.log");
+const removed = await FileTasks.remove("tmp", { recursive: true }); // rm -rf → boolean
+
+if (await FileTasks.exists("deno.json")) {
+  const cfg = await FileTasks.readJson<{ name: string }>("deno.json");
+  await FileTasks.writeText("VERSION", cfg.name);
+}`;
+
+const globSnippet = `import { glob } from "jsr:@zuke/core";
+
+const sources = await glob("src/**/*.ts");                 // sorted, relative
+const specs = await glob("**/*.{test,spec}.ts", { cwd: "packages" });
+
+await DenoTasks.fmt((s) => s.check().paths(...sources));`;
+
+const httpSnippet = `import { httpDownload, httpJson, httpText } from "jsr:@zuke/core";
+
+await httpDownload("https://example.com/tool.tar.gz", ".zuke/tool.tar.gz");
+const notes = await httpText("https://example.com/CHANGELOG.txt");
+const release = await httpJson<{ tag_name: string }>(
+  "https://api.github.com/repos/zuke-build/zuke/releases/latest",
+);
+// a non-2xx response throws an HttpError carrying .status`;
+
+const compressionSnippet = `import { createTarGzip, extractTarGzip, gzip } from "jsr:@zuke/core";
+
+await createTarGzip(["dist/app.js", "README.md"], "artifact.tar.gz");
+await extractTarGzip("artifact.tar.gz", "out");
+
+// in-memory primitives, built on the platform CompressionStream
+const packed = await gzip(new TextEncoder().encode("hello"));`;
+
+const installSnippet = `import { installRelease } from "jsr:@zuke/core";
+import { CmdTasks } from "jsr:@zuke/cmd";
+
+const arches = { x86_64: "amd64", aarch64: "arm64" } as const;
+
+const bin = await installRelease({
+  name: "helm",
+  destDir: ".zuke/bin",
+  archive: "tar.gz",                       // unpack a tarball ("raw" by default)
+  binaryPath: \`\${Deno.build.os}-\${arches[Deno.build.arch]}/helm\`,
+  url: ({ os, arch }) =>
+    \`https://get.helm.sh/helm-v3.14.0-\${os}-\${arches[arch]}.tar.gz\`,
+});
+
+// returns the installed binary's AbsolutePath — ready for .toolPath(...)
+await CmdTasks.exec(String(bin), (s) => s.args("version"));`;
+
+const assertSnippet = `import { assert, assertExists, assertFileExists, fail } from "jsr:@zuke/core";
+
+const token = assertExists(Deno.env.get("TOKEN"), "TOKEN is required"); // narrows
+assert(this.environment.value !== "", "environment must be set");
+await assertFileExists("dist/app.js");
+
+if (unreachable) fail("should never happen"); // always throws AssertionError`;
+
+const pathsSnippet = `import { absolutePath, repoRoot } from "jsr:@zuke/core";
+
+const root = absolutePath("/app");
+const main = root("src", "main.ts");  // callable → /app/src/main.ts
+main.name;             // "main.ts"
+main.stem;             // "main"
+main.parent();         // AbsolutePath → /app/src
+main.relativeTo(root); // "src/main.ts"
+
+repoRoot("dist");      // <repo root>/dist — resolved at runtime via zuke.json
+await $\`deno run \${main}\`;  // toString() drops straight into $\`\` and args()`;
+
+const hostSnippet = `import { ciHost, isCI } from "jsr:@zuke/core";
+
+deploy = target()
+  .onlyWhen(() => isCI())          // run only on a CI runner
+  .executes(async () => {
+    // "github-actions" | "gitlab-ci" | "local" | …
+    console.log(\`running on \${ciHost()}\`);
+  });`;
+---
+
+<DocsLayout
+  title="Core library"
+  description="Batteries-included helpers in @zuke/core: filesystem tasks, globbing, HTTP, compression, tool installs, assertions, paths, and CI detection."
+  toc={toc}
+>
+  <p class="lead">
+    Beyond running processes, <code>@zuke/core</code> ships a small standard
+    library so a build rarely needs an extra dependency. Everything here is
+    exported from <code>jsr:@zuke/core</code>, works on the bare Deno runtime,
+    and is designed to be unit-testable.
+  </p>
+
+  <h2 id="files">File operations</h2>
+  <p>
+    <code>FileTasks</code> groups the filesystem operations a
+    <code>clean</code>/<code>package</code> target reaches for, in the same
+    namespaced shape as the tool wrappers — but it runs no subprocess, so methods
+    take direct arguments instead of a settings-lambda. They're written to be
+    idempotent: <code>remove</code> tolerates a missing target (like
+    <code>rm -f</code>) and returns whether anything was deleted, and a recursive
+    <code>createDirectory</code> is a no-op when the directory already exists.
+  </p>
+  <Code code={filesSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="glob">Globbing</h2>
+  <p>
+    <code>glob(pattern, &#123; cwd? &#125;)</code> expands a pattern to the
+    matching paths — relative to <code>cwd</code> and sorted for determinism. It
+    is dependency-free, walks from the pattern's static prefix, and does not
+    follow symlinked directories. Supported syntax: <code>*</code> (any run of
+    non-<code>/</code>), <code>**</code> (any run including <code>/</code>),
+    <code>?</code> (a single non-<code>/</code>), and brace alternation
+    <code>&#123;a,b&#125;</code>.
+  </p>
+  <Code code={globSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="http">HTTP</h2>
+  <p>
+    Fetch over HTTP from a build script, built on the platform
+    <code>fetch</code>. <code>httpDownload(url, dest)</code> streams a URL to a
+    file, while <code>httpText(url)</code> and <code>httpJson(url)</code> return
+    the body. All accept <code>&#123; headers, fetch &#125;</code> — the
+    <code>fetch</code> seam makes them unit-testable — and throw an
+    <code>HttpError</code> (carrying <code>.status</code>) on a non-2xx response.
+  </p>
+  <Code code={httpSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="compression">Compression &amp; archives</h2>
+  <p>
+    Pack build artifacts without a dependency. <code>gzip()</code> /
+    <code>gunzip()</code> wrap the platform <code>CompressionStream</code>;
+    <code>tar()</code> / <code>untar()</code> read and write the POSIX
+    <code>ustar</code> format in memory; and the file helpers
+    <code>createTarGzip(files, dest, &#123; cwd &#125;)</code> /
+    <code>extractTarGzip(src, destDir)</code> produce and unpack
+    <code>.tar.gz</code> archives. Archives use a fixed mtime, so output is
+    reproducible.
+  </p>
+  <Code code={compressionSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="install">Installing tools</h2>
+  <p>
+    Prepare an environment by fetching a CLI one of Zuke's wrappers drives, then
+    point the wrapper at it. <code>installRelease(&#123; name, url, destDir
+    &#125;)</code> resolves a per-platform URL (via an
+    <code>(&#123; os, arch &#125;) =&gt; string</code> callback and
+    <code>hostPlatform()</code>), downloads it, and returns the installed
+    binary's <code>AbsolutePath</code> — ready for <code>.toolPath(...)</code>.
+    Set <code>archive: "tar.gz"</code> to unpack a tarball and take
+    <code>binaryPath</code> from inside; the default <code>"raw"</code> installs
+    the download as the binary itself.
+  </p>
+  <Code code={installSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      The <code>download</code> seam keeps it unit-testable, and on Windows the
+      filename gains an <code>.exe</code> suffix. Zip archives aren't supported
+      yet, so this targets the Unix runners where most release tarballs live.
+    </p>
+  </div>
+
+  <h2 id="assert">Assertions</h2>
+  <p>
+    Fail a target fast with a clear message when an expectation doesn't hold.
+    <code>assert(condition, message?)</code> throws when the condition is falsy;
+    <code>assertExists(value, message?)</code> throws on
+    <code>null</code>/<code>undefined</code> and returns the value narrowed to
+    its non-nullable type; <code>fail(message)</code> always throws. The async
+    <code>assertFileExists(path)</code> / <code>assertDirectoryExists(path)</code>
+    check the filesystem. All throw an <code>AssertionError</code>.
+  </p>
+  <Code code={assertSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="paths">Paths</h2>
+  <p>
+    TypeScript has no operator overloading, so a literal <code>/</code> path join
+    isn't possible — <code>absolutePath</code> gets as close as the language
+    allows. The returned <code>AbsolutePath</code> is <strong>callable</strong>
+    (and has an equivalent <code>.join(...)</code>), immutable, and normalised,
+    with accessors like <code>.name</code>, <code>.stem</code>,
+    <code>.extension</code>, <code>.parent()</code>, and
+    <code>.relativeTo(...)</code>.
+  </p>
+  <Code code={pathsSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <code>repoRoot</code> is <code>absolutePath</code> anchored at your
+      repository root — the directory containing the <code>zuke.json</code> that
+      <code>zuke setup</code> scaffolds. It's resolved at runtime by walking up
+      from the working directory, so nothing machine-specific is ever committed.
+    </p>
+  </div>
+
+  <h2 id="host">CI &amp; host detection</h2>
+  <p>
+    <code>isCI()</code> and <code>ciHost()</code> (e.g.
+    <code>"github-actions"</code>, <code>"gitlab-ci"</code>,
+    <code>"local"</code>) let a build branch on where it runs — pair them with
+    <code>.onlyWhen(...)</code> to gate work like deploys to CI:
+  </p>
+  <Code code={hostSnippet} lang="ts" theme="night-owl" />
+  <p>
+    From here, see <a href="/docs/concepts">Core concepts</a> for the build model
+    or <a href="/examples">Examples</a> for complete build files.
+  </p>
+</DocsLayout>
