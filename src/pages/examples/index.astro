@@ -137,33 +137,35 @@ if (import.meta.main) await run(DeployBuild);`,
   },
   {
     id: "ai-review",
-    tag: "AI / agents",
-    title: "AI code review in CI",
-    desc: "Run Claude Code headless as a build target — drive a prompt, pick a model, constrain the tools, and capture the output. The API key rides through a masked secret parameter.",
+    tag: "AI / review",
+    title: "AI code-review gate",
+    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff, asks the model for a structured risk score, and breaks the build when it crosses your threshold — attached as a target validation.",
     code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
-import { ClaudeTasks } from "jsr:@zuke/claude";
+import { securityReviewer } from "jsr:@zuke/ai";
 
 class ReviewBuild extends Build {
-  apiKey = parameter("Anthropic API key").secret();
+  key = parameter("Anthropic API key").secret().required();
+
+  // A reviewer is a Validation — provider + key is all that's required.
+  security = securityReviewer((r) =>
+    r.provider("claude")
+      .apiKey(this.key)
+      .diff((d) => d.base("origin/main"))   // review the PR diff
+      .maxDiffTokens(20_000)                 // keep cost bounded
+      .failWhen((g) => g.scoreAbove(7))      // break the build above 7/10
+      .skipIfKeyMissing()                    // no key (forks) → skip + announce
+  );
 
   test = target()
     .description("Run the test suite")
     .executes(async () => { await DenoTasks.test(); });
 
-  review = target()
-    .description("Have Claude review the diff after tests pass")
+  deploy = target()
+    .description("Deploy only after tests pass and the review clears")
     .dependsOn(this.test)
-    .executes(async () => {
-      const out = await ClaudeTasks.run((s) =>
-        s.prompt("Review the staged diff for bugs in one paragraph")
-          .model("sonnet")
-          .allowedTools("Read", "Grep")
-          .outputFormat("json")
-          .env({ ANTHROPIC_API_KEY: this.apiKey.value })
-      );
-      console.log(out.stdout);
-    });
+    .validateBefore(this.security)           // gate before the body runs
+    .executes(async () => {/* … */});
 }
 
 if (import.meta.main) await run(ReviewBuild);`,

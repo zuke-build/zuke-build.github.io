@@ -69,6 +69,11 @@ const features = [
     body: "Typed wrappers for Claude Code, OpenAI Codex, and Gemini CLI run headless in CI — drive a prompt, pick a model, constrain the tools, and capture the output, injection-free.",
   },
   {
+    icon: "review",
+    title: "AI code-review gate",
+    body: "Turn an LLM into a build gate with @zuke/ai — it reads the diff, gets a structured risk assessment, and breaks the build when the score crosses your threshold. Claude, OpenAI, or Gemini.",
+  },
+  {
     icon: "announce",
     title: "Announce to chat",
     body: "Post build status to Slack, Microsoft Teams, and Discord from a target with AnnounceTasks — typed messages with levels, fields, and links, over incoming webhooks or each platform's bot API.",
@@ -97,6 +102,7 @@ const icons: Record<string, string> = {
   plugin: `<path d="M9 3v4M15 3v4M7 7h10v4a5 5 0 0 1-10 0zM12 16v5"/>`,
   ai: `<rect x="4" y="7" width="16" height="12" rx="2.5"/><path d="M12 7V4M9 12h.01M15 12h.01M9 15.5h6"/><path d="M2 12h2M20 12h2"/>`,
   announce: `<path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>`,
+  review: `<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 14 2 2 4-4"/>`,
 };
 ---
 
