@@ -9,6 +9,7 @@ const toc = [
   { id: "tools", label: "Tool wrappers" },
   { id: "parameters", label: "Parameters" },
   { id: "cicd", label: "Code-first CI/CD" },
+  { id: "announcements", label: "Announcements" },
   { id: "extending", label: "Extending Zuke" },
 ];
 
@@ -79,6 +80,37 @@ class MyBuild extends Build {
 
 const generateSnippet = `zuke generate-ci          # write all declared pipeline files
 zuke generate-ci --check  # CI gate: fail if committed files are stale`;
+
+const announceSnippet = `import { AnnounceTasks, Build, parameter, target } from "jsr:@zuke/core";
+
+class MyBuild extends Build {
+  // the webhook embeds a secret — never hard-code it
+  slack = parameter("Slack incoming-webhook URL").secret().required();
+
+  deploy = target()
+    .requires(this.slack)
+    .executes(async () => {
+      // ... deploy ...
+      await AnnounceTasks.slack((s) =>
+        s.webhook(this.slack.value)
+          .title("Deploy")
+          .text("Shipped api@1.4.0 to production.")
+          .success()                                   // accent colour + ✅
+          .field("Service", "api")                     // repeatable detail
+          .link("Release notes", "https://example.com/r/1.4.0")
+      );
+    });
+}`;
+
+const announceBotSnippet = `// Slack Web API (chat.postMessage) instead of a webhook
+await AnnounceTasks.slack((s) =>
+  s.bot().token(this.slackToken.value).channel("#builds")
+    .text("Published @acme/api@1.4.0").success()
+);
+
+// Discord REST API · Teams via Microsoft Graph
+await AnnounceTasks.discord((s) => s.bot().token(t).channel(id).text("…"));
+await AnnounceTasks.teams((s) => s.bot().token(t).team(id).channel(c).text("…"));`;
 
 const extendSnippet = `import { type Configure, runSettings, ToolSettings } from "jsr:@zuke/core/tooling";
 
@@ -188,6 +220,36 @@ export const MyToolTasks = {
       where they apply. The output is paste-ready, correctly-quoted YAML.
     </p>
   </div>
+
+  <h2 id="announcements">Announcements</h2>
+  <p>
+    Builds often need to tell a team what happened — <em>build passed</em>,
+    <em>package published</em>, <em>service deployed</em>.
+    <code>AnnounceTasks</code> posts that status to
+    <strong>Slack</strong>, <strong>Microsoft Teams</strong>, and
+    <strong>Discord</strong> straight from a target. It follows the same
+    settings-lambda shape as the tool wrappers, but runs no subprocess — it
+    <code>POST</code>s the platform-native payload over <code>fetch</code>:
+  </p>
+  <Code code={announceSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Set the destination with <code>.webhook(url)</code> and the message with
+    <code>.text()</code>, <code>.title()</code>, a level
+    (<code>.success()</code> / <code>.failure()</code> /
+    <code>.warning()</code> / <code>.info()</code>) that drives the accent
+    colour and icon, repeatable <code>.field(name, value)</code> details, and a
+    <code>.link(text, url)</code> action.
+  </p>
+  <div class="note">
+    <p>
+      A webhook URL embeds the secret that authorises posting, so source it from
+      a <code>parameter().secret()</code> — Zuke masks the resolved value in CI
+      output. Each platform also speaks an <strong>API/bot mode</strong> via
+      <code>.bot()</code>: Slack <code>chat.postMessage</code>, the Discord REST
+      API, and Microsoft Teams through Graph.
+    </p>
+  </div>
+  <Code code={announceBotSnippet} lang="ts" theme="night-owl" />
 
   <h2 id="extending">Extending Zuke</h2>
   <p>
