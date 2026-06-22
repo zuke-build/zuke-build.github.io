@@ -104,6 +104,28 @@ const icons: Record<string, string> = {
   announce: `<path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>`,
   review: `<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 14 2 2 4-4"/>`,
 };
+
+// The model providers @zuke/ai supports, shown as chips in the AI review section.
+const providers = [
+  {
+    name: "Claude",
+    color: "#d97757",
+    // sunburst asterisk
+    svg: `<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>`,
+  },
+  {
+    name: "OpenAI",
+    color: "#10a37f",
+    // hexagon with a node
+    svg: `<path d="M12 3.2 18.9 7.1v9.8L12 20.8 5.1 16.9V7.1z"/><circle cx="12" cy="12" r="2.6"/>`,
+  },
+  {
+    name: "Gemini",
+    color: "#4f8cff",
+    // four-point sparkle
+    svg: `<path d="M12 2c.5 5.5 4 9 9.5 9.5-5.5.5-9 4-9.5 9.5-.5-5.5-4-9-9.5-9.5C8 11 11.5 7.5 12 2Z"/>`,
+  },
+];
 ---
 
 <Base>
@@ -235,6 +257,62 @@ const icons: Record<string, string> = {
           <code>.noThrow()</code> for exactly the behaviour you want.
         </p>
         <a class="btn btn-ghost" href="/docs">Read the shell guide →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ AI REVIEW ░░ -->
+  <section class="section sec-review" id="ai-review">
+    <div class="container review-grid">
+      <div data-reveal>
+        <span class="eyebrow">AI code review <span class="tag-new">New</span></span>
+        <h2>Let a model <span class="gradient-text">gate the build</span>.</h2>
+        <p class="lead">
+          <code>@zuke/ai</code> attaches an AI reviewer to a target as a
+          validation. It reads the diff, asks the model for a
+          <strong>structured risk assessment</strong>, and breaks the build when
+          the score crosses your threshold — a real verdict your pipeline can
+          branch on, not a blob of prose.
+        </p>
+        <ul class="ticks">
+          <li>Security, secrets, correctness, licensing — or your own <code>.criteria()</code>.</li>
+          <li>Claude, OpenAI, or Gemini, with the JSON shape enforced server-side.</li>
+          <li>Gate with <code>.validateBefore()</code>; findings land in the CI job summary.</li>
+        </ul>
+        <div class="providers">
+          <span class="providers__label">Works with</span>
+          {providers.map((p) => (
+            <span class="provider" style={`--c:${p.color}`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" set:html={p.svg} />
+              {p.name}
+            </span>
+          ))}
+        </div>
+        <a class="btn btn-ghost" href="/docs/ai-review">Read the AI review guide →</a>
+      </div>
+      <div data-reveal>
+        <div class="review panel">
+          <div class="review__head">
+            <span class="review__name">🛡 securityReviewer</span>
+            <span class="review__verdict">✘ Build blocked</span>
+          </div>
+          <div class="review__score">
+            <span class="review__num">8<small>/10</small></span>
+            <div class="review__meta">
+              <span class="sevtag sevtag--high">HIGH</span>
+              <span class="review__cap">risk score · threshold 7</span>
+            </div>
+          </div>
+          <div class="review__meter"><span style="width:80%"></span></div>
+          <ul class="review__findings">
+            <li><span class="sevtag sevtag--high">HIGH</span> Hard-coded API token in <code>src/config.ts:42</code></li>
+            <li><span class="sevtag sevtag--med">MED</span> Unvalidated redirect in <code>routes/login.ts</code></li>
+            <li><span class="sevtag sevtag--low">LOW</span> Stack trace leaked in error response</li>
+          </ul>
+          <p class="review__foot">via @zuke/ai · claude-opus-4-8</p>
+        </div>
       </div>
     </div>
   </section>
@@ -445,6 +523,127 @@ const icons: Record<string, string> = {
   }
   .shell-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
 
+  /* ai review */
+  .sec-review {
+    background:
+      radial-gradient(55% 100% at 82% 50%, rgba(155, 107, 255, 0.12), transparent 62%),
+      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.6), transparent);
+    border-block: 1px solid var(--border);
+  }
+  .review-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .review-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+
+  .tag-new {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--bg);
+    background: var(--gradient);
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 8px;
+    vertical-align: middle;
+    text-transform: uppercase;
+  }
+
+  .providers { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 26px; }
+  .providers__label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .provider {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px 5px 9px;
+    background: var(--panel);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .provider:hover { transform: translateY(-2px); border-color: var(--c); }
+  .provider svg { color: var(--c); }
+
+  .review { padding: 22px 22px 18px; box-shadow: var(--shadow-glow); }
+  .review__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .review__name { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text); }
+  .review__verdict {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #ff8088;
+    background: rgba(240, 97, 109, 0.12);
+    border: 1px solid rgba(240, 97, 109, 0.4);
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .review__score { display: flex; align-items: center; gap: 16px; margin: 18px 0 12px; }
+  .review__num { font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--text); }
+  .review__num small { font-size: 1rem; font-weight: 600; color: var(--text-faint); }
+  .review__meta { display: grid; gap: 6px; }
+  .review__cap { font-size: 0.78rem; color: var(--text-faint); font-family: var(--font-mono); }
+  .review__meter {
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .review__meter span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #e0a93b, #f0616d);
+  }
+  .review__findings { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .review__findings li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.86rem;
+    color: var(--text-dim);
+  }
+  .review__findings code { font-size: 0.82em; color: var(--cyan); }
+  .review__foot {
+    margin: 16px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-faint);
+  }
+  .sevtag {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 2px 7px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .sevtag--high { color: #ff8088; background: rgba(240, 97, 109, 0.14); }
+  .sevtag--med { color: #e8bd6b; background: rgba(224, 169, 59, 0.14); }
+  .sevtag--low { color: #6ea8ff; background: rgba(79, 140, 255, 0.14); }
+
   /* tools */
   .sec-tools { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5)); }
   .tools-grid {
@@ -498,11 +697,12 @@ const icons: Record<string, string> = {
      instead of forcing the column (and page) wider than the viewport */
   .hero__grid > *,
   .shell-grid > *,
+  .review-grid > *,
   .dag-grid > * { min-width: 0; }
 
   /* responsive */
   @media (max-width: 940px) {
-    .hero__grid, .dag-grid, .shell-grid { grid-template-columns: 1fr; gap: 36px; }
+    .hero__grid, .dag-grid, .shell-grid, .review-grid { grid-template-columns: 1fr; gap: 36px; }
     .hero__code { order: 2; }
     .feat-grid { grid-template-columns: repeat(2, 1fr); }
     .tools-grid { grid-template-columns: repeat(2, 1fr); }
