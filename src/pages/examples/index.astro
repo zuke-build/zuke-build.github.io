@@ -100,6 +100,42 @@ class ReleaseBuild extends Build {
 if (import.meta.main) await run(ReleaseBuild);`,
   },
   {
+    id: "announce",
+    tag: "Notifications",
+    title: "Announce status to Slack, Teams & Discord",
+    desc: "Post build status to a chat channel with AnnounceTasks — a typed message with a level, detail fields, and an action link. The webhook URL rides through a masked secret parameter.",
+    code: `import { AnnounceTasks, Build, parameter, run, target } from "jsr:@zuke/core";
+import { DockerTasks } from "jsr:@zuke/docker";
+
+class DeployBuild extends Build {
+  // the webhook embeds a secret — source it, never hard-code it
+  slack = parameter("Slack incoming-webhook URL").secret().required();
+
+  deploy = target()
+    .description("Deploy, then announce the result to Slack")
+    .requires(this.slack)
+    .executes(async () => {
+      await DockerTasks.push((s) => s.image("registry.example.com/api:1.4.0"));
+
+      await AnnounceTasks.slack((s) =>
+        s.webhook(this.slack.value)
+          .title("Deploy")
+          .text("Shipped api@1.4.0 to production.")
+          .success()                                   // accent colour + ✅
+          .field("Service", "api")
+          .field("Environment", "production")
+          .link("Release notes", "https://example.com/r/1.4.0")
+      );
+    });
+
+  // Same shape for the other platforms — webhook or .bot() API mode:
+  //   await AnnounceTasks.teams((s) => s.webhook(url).text("…").success());
+  //   await AnnounceTasks.discord((s) => s.webhook(url).text("…").failure());
+}
+
+if (import.meta.main) await run(DeployBuild);`,
+  },
+  {
     id: "ai-review",
     tag: "AI / agents",
     title: "AI code review in CI",
@@ -171,7 +207,7 @@ if (import.meta.main) await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, an AI code review target, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">
