@@ -234,8 +234,12 @@ const hosts = [
           <li>References are real values — <code>this.build</code>, never a string.</li>
           <li>Per-target status, timing, and a final build summary.</li>
           <li>Rename a target and every dependant updates automatically.</li>
+          <li><code>zuke graph --output=html</code> renders an interactive graph you can pan, zoom, and click to trace dependencies.</li>
         </ul>
-        <p class="dag-note">↓ This is the actual graph that builds this website.</p>
+        <p class="dag-note">
+          ↓ The graph that builds this website. See
+          <a href="/examples#graph">Zuke's own build graph</a> rendered to HTML.
+        </p>
       </div>
       <div data-reveal>
         <DagDiagram />
@@ -609,6 +613,8 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     font-size: 0.82rem;
     color: var(--text-faint);
   }
+  .dag-note a { color: var(--cyan); text-decoration: none; }
+  .dag-note a:hover { text-decoration: underline; }
 
   /* shell */
   .shell-grid {
