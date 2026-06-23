@@ -139,23 +139,23 @@ await run(DeployBuild);`,
     id: "ai-review",
     tag: "AI / review",
     title: "AI code-review gate",
-    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff, asks the model for a structured risk score, breaks the build when it crosses your threshold, and upserts the verdict as a PR comment — attached as a target validation.",
+    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff, asks the model for a structured risk score, breaks the build when it crosses your threshold, and upserts the verdict as a PR comment. aiReviewWorkflow() generates the matching CI workflow from the reviewer.",
     code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
-import { securityReviewer } from "jsr:@zuke/ai";
+import { aiReviewWorkflow, securityReviewer } from "jsr:@zuke/ai";
 
 class ReviewBuild extends Build {
-  key = parameter("Anthropic API key").secret().required();
+  key = parameter("OpenAI API key").secret().env("OPENAI_API_KEY");
 
   // A reviewer is a Validation — provider + key is all that's required.
   security = securityReviewer((r) =>
-    r.provider("claude")
+    r.provider("openai")
       .apiKey(this.key)
       .diff((d) => d.base("origin/main"))   // review the PR diff
       .maxDiffTokens(20_000)                 // keep cost bounded
       .failWhen((g) => g.scoreAbove(7))      // break the build above 7/10
       .skipIfKeyMissing()                    // no key (forks) → skip + announce
-      .comment()                             // upsert the verdict as a PR comment
+      .comment()                             // upsert the verdict as a PR/MR comment
   );
 
   test = target()
@@ -167,6 +167,10 @@ class ReviewBuild extends Build {
     .dependsOn(this.test)
     .validateBefore(this.security)           // gate before the body runs
     .executes(async () => {/* … */});
+
+  // Generates .github/workflows/ai-review.yml from the reviewer above —
+  // pass host: "gitlab" | "azure" | "bitbucket" for the other platforms.
+  reviewWorkflow = aiReviewWorkflow({ reviewers: [this.security] });
 }
 
 await run(ReviewBuild);`,

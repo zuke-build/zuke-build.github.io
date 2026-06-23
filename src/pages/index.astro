@@ -126,6 +126,14 @@ const providers = [
     svg: `<path d="M12 2c.5 5.5 4 9 9.5 9.5-5.5.5-9 4-9.5 9.5-.5-5.5-4-9-9.5-9.5C8 11 11.5 7.5 12 2Z"/>`,
   },
 ];
+
+// CI hosts @zuke/ai posts PR comments to and generates workflows for.
+const hosts = [
+  { name: "GitHub", color: "#e6ebf5" },
+  { name: "GitLab", color: "#fc6d26" },
+  { name: "Azure", color: "#2ea0ee" },
+  { name: "Bitbucket", color: "#2684ff" },
+];
 ---
 
 <Base>
@@ -326,10 +334,10 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           branch on, not a blob of prose.
         </p>
         <ul class="ticks">
-          <li>Security, secrets, correctness, licensing — or your own <code>.criteria()</code>.</li>
+          <li>Security, secrets, correctness, licensing, or code quality — built-in rubrics, tunable with <code>.criteria()</code>.</li>
           <li>Claude, OpenAI, or Gemini, with the JSON shape enforced server-side.</li>
-          <li>Gate with <code>.validateBefore()</code>; findings land in the CI job summary.</li>
-          <li><code>.comment()</code> upserts the verdict as a pull-request comment.</li>
+          <li><strong><code>.comment()</code> posts the verdict to the PR/MR</strong> — GitHub, GitLab, Azure &amp; Bitbucket.</li>
+          <li><strong><code>aiReviewWorkflow()</code> generates the CI workflow</strong> from your reviewers, for every host.</li>
         </ul>
         <div class="providers">
           <span class="providers__label">Works with</span>
@@ -339,6 +347,14 @@ build    <span class="t-ok">Succeeded</span>      2.2s
                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
                 stroke-linejoin="round" set:html={p.svg} />
               {p.name}
+            </span>
+          ))}
+        </div>
+        <div class="providers">
+          <span class="providers__label">Comments &amp; workflows for</span>
+          {hosts.map((h) => (
+            <span class="provider" style={`--c:${h.color}`}>
+              <span class="host-dot"></span>{h.name}
             </span>
           ))}
         </div>
@@ -655,6 +671,13 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   }
   .provider:hover { transform: translateY(-2px); border-color: var(--c); }
   .provider svg { color: var(--c); }
+  .host-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--c);
+    flex-shrink: 0;
+  }
 
   .review { padding: 22px 22px 18px; box-shadow: var(--shadow-glow); }
   .review__head {
