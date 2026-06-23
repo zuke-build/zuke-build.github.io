@@ -82,6 +82,7 @@ const nav = [
     padding-top: 48px;
     padding-bottom: 80px;
     align-items: start;
+    max-width: min(1460px, 94vw);
   }
   .docs__side, .docs__toc {
     position: sticky;
@@ -117,6 +118,11 @@ const nav = [
   .docs__toc a:hover { color: var(--cyan); }
 
   .docs__main { min-width: 0; }
+  /* keep prose readable while code blocks use the full (wider) column */
+  .docs__main :global(p),
+  .docs__main :global(ul),
+  .docs__main :global(ol),
+  .docs__main :global(.note) { max-width: 82ch; }
   .docs__title {
     font-size: clamp(2rem, 4vw, 2.6rem);
     margin-bottom: 24px;
