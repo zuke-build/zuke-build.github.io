@@ -7,8 +7,13 @@ const toc = [
   { id: "scaffold", label: "Scaffold a build" },
   { id: "first-target", label: "Your first target" },
   { id: "run", label: "Running targets" },
+  { id: "graph", label: "Visualizing the graph" },
   { id: "next", label: "Next steps" },
 ];
+
+const graphSnippet = `./zuke graph                 # print the dependency graph as text
+./zuke graph --output=html   # render an interactive HTML page and open it
+./zuke graph --output=html --no-open   # write .zuke/graph.html without opening`;
 
 const installSnippet = `# Install the CLI globally with Deno
 deno install -A -g -n zuke jsr:@zuke/cli
@@ -135,6 +140,32 @@ Total                  17.8s
       Under GitHub Actions the same run renders as collapsible
       <code>::group::</code> blocks with <code>::error::</code> annotations and
       secret masking, plus a matching Markdown summary table on the job page.
+    </p>
+  </div>
+
+  <h2 id="graph">Visualizing the graph</h2>
+  <p>
+    <code>zuke graph</code> prints the dependency graph as a terminal listing.
+    Add <code>--output=html</code> to render it instead as a self-contained,
+    interactive <a href="https://js.cytoscape.org/">Cytoscape</a> page written to
+    <code>&lt;repo root&gt;/.zuke/graph.html</code> — which Zuke then opens in your
+    browser:
+  </p>
+  <Code code={graphSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Nodes are colour-coded by dependency depth (roots through leaves) on a dark
+    canvas. Pan and zoom freely, <strong>click a target</strong> to highlight
+    everything it connects to — its transitive dependencies and dependents — and
+    switch the layout direction or export a PNG from the header. Targets in a
+    <a href="/docs/concepts#groups"><code>group()</code></a> are drawn inside a
+    labelled box. Pass <code>--no-open</code> to write the file without launching
+    a browser (handy in CI). See
+    <a href="/examples#graph">Zuke's own build graph</a> for a rendered example.
+  </p>
+  <div class="note">
+    <p>
+      Cytoscape loads from a pinned CDN, so the first view needs internet access;
+      the page itself is otherwise self-contained.
     </p>
   </div>
 
