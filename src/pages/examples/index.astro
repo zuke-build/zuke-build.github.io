@@ -299,8 +299,12 @@ if (import.meta.main) await run(CiBuild);`,
 </Base>
 
 <style>
+  /* widen the whole examples page so code blocks rarely scroll */
+  .container { max-width: min(1600px, 95vw); }
+
   .ex-hero { padding-top: clamp(48px, 7vw, 88px); padding-bottom: 24px; }
   .ex-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.1rem); margin-bottom: 16px; }
+  .ex-hero .lead { max-width: 70ch; }
 
   /* layout: sticky example nav + the list of examples */
   .ex-layout {
@@ -343,8 +347,8 @@ if (import.meta.main) await run(CiBuild);`,
   .ex-list { display: grid; gap: 28px; }
   .ex {
     display: grid;
-    grid-template-columns: 0.8fr 1.2fr;
-    gap: 32px;
+    grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+    gap: 36px;
     align-items: center;
     padding: 26px;
     border: 1px solid var(--border);
