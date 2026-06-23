@@ -32,7 +32,7 @@ class SiteBuild extends Build {
     .executes(async () => { await NpmTasks.run((s) => s.script("build")); });
 }
 
-if (import.meta.main) await run(SiteBuild);`,
+await run(SiteBuild);`,
   },
   {
     id: "deno-lib",
@@ -67,7 +67,7 @@ class CiBuild extends Build {
     .executes(() => {});
 }
 
-if (import.meta.main) await run(CiBuild);`,
+await run(CiBuild);`,
   },
   {
     id: "docker-publish",
@@ -97,7 +97,7 @@ class ReleaseBuild extends Build {
     });
 }
 
-if (import.meta.main) await run(ReleaseBuild);`,
+await run(ReleaseBuild);`,
   },
   {
     id: "announce",
@@ -133,7 +133,7 @@ class DeployBuild extends Build {
   //   await AnnounceTasks.discord((s) => s.webhook(url).text("…").failure());
 }
 
-if (import.meta.main) await run(DeployBuild);`,
+await run(DeployBuild);`,
   },
   {
     id: "ai-review",
@@ -169,7 +169,7 @@ class ReviewBuild extends Build {
     .executes(async () => {/* … */});
 }
 
-if (import.meta.main) await run(ReviewBuild);`,
+await run(ReviewBuild);`,
   },
   {
     id: "code-first-ci",
@@ -203,7 +203,7 @@ class CiBuild extends Build {
     });
 }
 
-if (import.meta.main) await run(CiBuild);`,
+await run(CiBuild);`,
   },
 ];
 ---

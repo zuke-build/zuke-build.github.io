@@ -62,6 +62,4 @@ class SiteBuild extends Build {
     .executes(() => {});
 }
 
-if (import.meta.main) {
-  await run(SiteBuild);
-}
+await run(SiteBuild);

@@ -20,7 +20,7 @@ class MyBuild extends Build {
     });
 }
 
-if (import.meta.main) await run(MyBuild);`;
+await run(MyBuild);`;
 
 const shellSnippet = `// The $ tagged template runs processes safely — no shell injection.
 const sha = await $\`git rev-parse HEAD\`.text();   // trimmed stdout

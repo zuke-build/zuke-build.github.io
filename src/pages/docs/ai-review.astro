@@ -41,7 +41,7 @@ class Pipeline extends Build {
     .executes(async () => {/* … */});
 }
 
-if (import.meta.main) await run(Pipeline);`;
+await run(Pipeline);`;
 
 const gateSnippet = `securityReviewer((r) =>
   r.provider("openai")
