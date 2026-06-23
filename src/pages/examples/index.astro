@@ -139,7 +139,7 @@ if (import.meta.main) await run(DeployBuild);`,
     id: "ai-review",
     tag: "AI / review",
     title: "AI code-review gate",
-    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff, asks the model for a structured risk score, and breaks the build when it crosses your threshold — attached as a target validation.",
+    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff, asks the model for a structured risk score, breaks the build when it crosses your threshold, and upserts the verdict as a PR comment — attached as a target validation.",
     code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
 import { securityReviewer } from "jsr:@zuke/ai";
@@ -155,6 +155,7 @@ class ReviewBuild extends Build {
       .maxDiffTokens(20_000)                 // keep cost bounded
       .failWhen((g) => g.scoreAbove(7))      // break the build above 7/10
       .skipIfKeyMissing()                    // no key (forks) → skip + announce
+      .comment()                             // upsert the verdict as a PR comment
   );
 
   test = target()

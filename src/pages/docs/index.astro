@@ -47,6 +47,21 @@ const runSnippet = `./zuke compile         # run a target (and its dependencies)
 ./zuke graph           # print the dependency graph
 ./zuke generate-ci     # write declared CI/CD pipeline files
 ./zuke                 # run the default target`;
+
+const outputSnippet = `$ ./zuke build
+
+Build Summary
+────────────────────────────
+Target   Status     Duration
+────────────────────────────
+clean    Succeeded      0.1s
+install  Succeeded     12.4s
+check    Succeeded      3.1s
+build    Succeeded      2.2s
+────────────────────────────
+Total                  17.8s
+
+✔ Build succeeded — 4/4 targets in 17.8s · 2026-06-23 07:19`;
 ---
 
 <DocsLayout
@@ -103,10 +118,21 @@ const runSnippet = `./zuke compile         # run a target (and its dependencies)
   <p>Invoke any target through the launcher:</p>
   <Code code={runSnippet} lang="bash" theme="night-owl" />
   <p>
-    Zuke prints per-target status (<code>✔</code> / <code>✘</code> /
-    <code>⊘</code>), timings, and a final summary. A target named
-    <code>default</code> runs when you pass no arguments.
+    Each target is framed with a ruled banner and closes with a pass/fail line
+    and its duration. The run ends with an aligned <strong>Build Summary</strong>
+    — status (<code>Succeeded</code> / <code>Failed</code> / <code>Skipped</code>
+    / <code>Cached</code>) and timing per target, a total, and a one-line verdict
+    with a timestamp. A target named <code>default</code> runs when you pass no
+    arguments.
   </p>
+  <Code code={outputSnippet} lang="text" theme="night-owl" />
+  <div class="note">
+    <p>
+      Under GitHub Actions the same run renders as collapsible
+      <code>::group::</code> blocks with <code>::error::</code> annotations and
+      secret masking, plus a matching Markdown summary table on the job page.
+    </p>
+  </div>
 
   <h2 id="next">Next steps</h2>
   <ul>

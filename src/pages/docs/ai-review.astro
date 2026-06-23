@@ -10,7 +10,20 @@ const toc = [
   { id: "scope", label: "Scoping the diff & cost" },
   { id: "schema", label: "Schema enforcement" },
   { id: "summary", label: "GitHub Actions summary" },
+  { id: "comment", label: "Pull-request comment" },
+  { id: "tokens", label: "Token usage" },
 ];
+
+const commentSnippet = `securityReviewer((r) =>
+  r.provider("openai")
+    .apiKey(this.key)
+    .comment()                      // upsert the assessment onto the PR
+    .githubToken(this.ghToken)      // optional — defaults to GITHUB_TOKEN
+);`;
+
+const permsSnippet = `permissions:
+  contents: read
+  pull-requests: write`;
 
 const plugSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { securityReviewer } from "jsr:@zuke/ai";
@@ -161,6 +174,40 @@ const a11y = genericReviewer((r) =>
     appears on the run page whether the gate passes or fails (it writes just
     before breaking the build on a failure). <code>.quiet()</code> suppresses
     both the console output and the summary.
+  </p>
+
+  <h2 id="comment">Pull-request comment</h2>
+  <p>
+    <code>.comment()</code> additionally posts the assessment onto the pull
+    request, under a <strong>"🤖 Zuke AI review"</strong> header linking back to
+    the project. Rather than adding a new comment every run, it
+    <strong>upserts a single comment per reviewer</strong>: the body carries a
+    hidden marker (<code>&lt;!-- zuke-ai-review:&lt;name&gt; --&gt;</code>), so a
+    re-run finds its previous comment and edits it in place. Different reviewers
+    (say, a security and a secrets review) keep separate comments because the
+    marker includes the reviewer name.
+  </p>
+  <Code code={commentSnippet} lang="ts" theme="night-owl" />
+  <p>
+    It uses a token with <code>pull-requests: write</code> — the workflow's
+    <code>GITHUB_TOKEN</code> by default, or one you pass with
+    <code>.githubToken(param | string)</code>. Outside a GitHub PR context (a
+    local run, for instance) it logs a notice and does nothing, and a failed post
+    never breaks the build — it's a best-effort side effect, like the summary.
+    The workflow must grant the scope:
+  </p>
+  <Code code={permsSnippet} lang="yaml" theme="night-owl" />
+
+  <h2 id="tokens">Token usage</h2>
+  <p>
+    If the provider's response reports token counts, the review prints them as a
+    footer — <code>tokens: 1234 in · 567 out · 1801 total</code> on the console,
+    and a <code>**Tokens:** …</code> line in the summary and PR comment. The
+    counts are read from each provider's own shape (Claude
+    <code>usage.input_tokens</code>/<code>output_tokens</code>, OpenAI
+    <code>usage.*_tokens</code>, Gemini <code>usageMetadata.*TokenCount</code>);
+    the total is taken verbatim when present, or derived from input + output
+    otherwise. It's purely informational — it never affects the gate.
   </p>
   <p>
     See the <a href="/examples#ai-review">AI review example</a> for a complete
