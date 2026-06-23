@@ -7,23 +7,59 @@ const toc = [
   { id: "reviewers", label: "The reviewers" },
   { id: "providers", label: "Providers & credentials" },
   { id: "gate", label: "Choosing the gate" },
+  { id: "retries", label: "Transient failures" },
   { id: "scope", label: "Scoping the diff & cost" },
   { id: "schema", label: "Schema enforcement" },
   { id: "summary", label: "GitHub Actions summary" },
   { id: "comment", label: "Pull-request comment" },
   { id: "tokens", label: "Token usage" },
+  { id: "workflow", label: "Generating the workflow" },
 ];
+
+const retrySnippet = `// Retries are on by default — three attempts, exponential backoff,
+// Retry-After honoured, 60s per-attempt timeout. Override only if needed:
+securityReviewer((r) =>
+  r.provider("gemini").apiKey(this.key)
+    .retry({ attempts: 5 })   // more aggressive — Gemini 503s are common
+);
+
+genericReviewer((r) =>
+  r.provider("openai").apiKey(this.key)
+    .retry({ attempts: 1 })   // disable retries
+);`;
 
 const commentSnippet = `securityReviewer((r) =>
   r.provider("openai")
     .apiKey(this.key)
-    .comment()                      // upsert the assessment onto the PR
-    .githubToken(this.ghToken)      // optional — defaults to GITHUB_TOKEN
+    .comment()                    // upsert the assessment onto the PR / MR
+    .commentToken(this.ciToken)   // optional — defaults to the host's token env
 );`;
 
 const permsSnippet = `permissions:
   contents: read
   pull-requests: write`;
+
+const workflowSnippet = `import { aiReviewWorkflow, securityReviewer } from "jsr:@zuke/ai";
+
+class Pipeline extends Build {
+  openaiKey = parameter("OpenAI key").secret().env("OPENAI_API_KEY");
+
+  security = securityReviewer((r) =>
+    r.provider("openai").apiKey(this.openaiKey).comment()
+  );
+  review = target().validateBefore(this.security).executes(() => {});
+
+  // Writes .github/workflows/ai-review.yml from the reviewers above — wires
+  // their API-key env vars in, grants pull-requests: write and passes the
+  // token when any reviewer comments, and fork-gates the job.
+  reviewWorkflow = aiReviewWorkflow({ reviewers: [this.security] });
+}`;
+
+const workflowHostsSnippet = `// One per host you target — they share the same reviewers.
+ghReview = aiReviewWorkflow({ reviewers: [this.security] });
+glReview = aiReviewWorkflow({ host: "gitlab", reviewers: [this.security] });
+azReview = aiReviewWorkflow({ host: "azure", reviewers: [this.security] });
+bbReview = aiReviewWorkflow({ host: "bitbucket", reviewers: [this.security] });`;
 
 const plugSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { securityReviewer } from "jsr:@zuke/ai";
@@ -41,7 +77,7 @@ class Pipeline extends Build {
     .executes(async () => {/* … */});
 }
 
-if (import.meta.main) await run(Pipeline);`;
+await run(Pipeline);`;
 
 const gateSnippet = `securityReviewer((r) =>
   r.provider("openai")
@@ -99,15 +135,21 @@ const a11y = genericReviewer((r) =>
   <h2 id="reviewers">The reviewers</h2>
   <p>
     Five factories share the same fluent <code>Reviewer</code> and return a
-    <code>Validation</code>:
+    <code>Validation</code>. Each ships a <strong>built-in rubric</strong> in its
+    system prompt, so it works out of the box:
   </p>
   <ul>
     <li><code>securityReviewer</code> — security vulnerabilities.</li>
     <li><code>secretsReviewer</code> — leaked secrets / credentials.</li>
     <li><code>correctnessReviewer</code> — bugs and likely regressions.</li>
     <li><code>licenseReviewer</code> — license / dependency-compliance risk.</li>
-    <li><code>genericReviewer</code> — whatever you describe; requires <code>.criteria("…")</code>.</li>
+    <li><code>genericReviewer</code> — code quality and maintainability.</li>
   </ul>
+  <p>
+    <code>.criteria("…")</code> is optional fine-tuning that layers
+    project-specific notes (say, <em>"strict TypeScript, no <code>any</code>"</em>)
+    on top of the built-in rubric — it's no longer required by any reviewer:
+  </p>
   <Code code={genericSnippet} lang="ts" theme="night-owl" />
 
   <h2 id="providers">Providers &amp; credentials</h2>
@@ -140,6 +182,26 @@ const a11y = genericReviewer((r) =>
       silently passing.
     </p>
   </div>
+
+  <h2 id="retries">Surviving transient failures</h2>
+  <p>
+    Provider APIs routinely return short-lived <code>503</code> (model
+    overloaded — common on Gemini) and <code>429</code> (rate-limited). By
+    default a review wraps the provider call in
+    <strong>retry-with-exponential-backoff</strong> on the statuses that mean
+    "try again shortly" (<code>408/429/500/502/503/504</code>) plus network
+    errors — three attempts, honouring a server <code>Retry-After</code>, each
+    attempt bounded by a 60&nbsp;s timeout so a stuck connection can't hang the
+    build.
+  </p>
+  <Code code={retrySnippet} lang="ts" theme="night-owl" />
+  <p>
+    Each review prints a start line echoing its settings and a notice on every
+    retry, so a slow run reads as progress rather than a hang. If the attempts
+    are exhausted, the failure flows through <code>.onError(...)</code> — so a
+    stubborn outage isn't a silent skip either. <code>.quiet()</code> suppresses
+    the output.
+  </p>
 
   <h2 id="scope">Scoping the diff &amp; cost</h2>
   <ul>
@@ -176,11 +238,11 @@ const a11y = genericReviewer((r) =>
     both the console output and the summary.
   </p>
 
-  <h2 id="comment">Pull-request comment</h2>
+  <h2 id="comment">Pull-request comment <span class="multi-host">multi-host</span></h2>
   <p>
-    <code>.comment()</code> additionally posts the assessment onto the pull
-    request, under a <strong>"🤖 Zuke AI review"</strong> header linking back to
-    the project. Rather than adding a new comment every run, it
+    <code>.comment()</code> additionally posts the assessment onto the pull /
+    merge request, under a <strong>"🤖 Zuke AI review"</strong> header linking
+    back to the project. Rather than adding a new comment every run, it
     <strong>upserts a single comment per reviewer</strong>: the body carries a
     hidden marker (<code>&lt;!-- zuke-ai-review:&lt;name&gt; --&gt;</code>), so a
     re-run finds its previous comment and edits it in place. Different reviewers
@@ -189,12 +251,27 @@ const a11y = genericReviewer((r) =>
   </p>
   <Code code={commentSnippet} lang="ts" theme="night-owl" />
   <p>
-    It uses a token with <code>pull-requests: write</code> — the workflow's
-    <code>GITHUB_TOKEN</code> by default, or one you pass with
-    <code>.githubToken(param | string)</code>. Outside a GitHub PR context (a
-    local run, for instance) it logs a notice and does nothing, and a failed post
-    never breaks the build — it's a best-effort side effect, like the summary.
-    The workflow must grant the scope:
+    Which API gets called is decided at runtime from the detected CI host, so the
+    same <code>.comment()</code> works across the four major platforms:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Host</th><th>Comments on</th><th>Default token env</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>GitHub Actions</td><td>issue / PR comments</td><td><code>GITHUB_TOKEN</code></td></tr>
+      <tr><td>GitLab CI</td><td>merge-request notes</td><td><code>GITLAB_TOKEN</code> (token with <code>api</code> scope)</td></tr>
+      <tr><td>Azure Pipelines</td><td>PR comment threads</td><td><code>SYSTEM_ACCESSTOKEN</code></td></tr>
+      <tr><td>Bitbucket Pipelines</td><td>PR comments</td><td><code>BITBUCKET_TOKEN</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    Override the token with <code>.commentToken(param | string)</code> (the
+    GitHub-only <code>.githubToken(...)</code> alias still works). Outside a PR
+    context (a local run, or a branch push) the comment is skipped with a notice
+    — a failed post never breaks the build, it's a best-effort side effect like
+    the summary. On GitHub the <a href="#workflow">workflow generator</a> grants
+    the scope automatically; if you hand-write it, add:
   </p>
   <Code code={permsSnippet} lang="yaml" theme="night-owl" />
 
@@ -209,9 +286,74 @@ const a11y = genericReviewer((r) =>
     the total is taken verbatim when present, or derived from input + output
     otherwise. It's purely informational — it never affects the gate.
   </p>
+
+  <h2 id="workflow">Generating the workflow <span class="multi-host">multi-host</span></h2>
+  <p>
+    Maintaining the AI-review CI file by hand is a chore — it has to stay in sync
+    with every reviewer's secret env var, with <code>pull-requests: write</code>
+    when any reviewer comments, with the harden-runner and pinned checkout, and
+    with the fork-gating <code>if</code>. <code>aiReviewWorkflow(&#123;...&#125;)</code>
+    generates it for you: declare it on the build and Zuke writes a
+    <a href="/docs/concepts#cicd">CI file</a> that the standard
+    <code>cicd</code> sync keeps current.
+  </p>
+  <Code code={workflowSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Override what you need — <code>target</code>, <code>baseBranch</code>,
+    <code>name</code>, <code>path</code>, <code>timeoutMinutes</code>. A reviewer
+    built with a literal-string <code>.apiKey("…")</code> is skipped from the
+    workflow env (the generator can't infer a secret name). <code>host</code>
+    defaults to <code>"github"</code>; pass <code>"gitlab"</code>,
+    <code>"azure"</code>, or <code>"bitbucket"</code> to generate the equivalent —
+    matching the cross-platform PR commenting above.
+  </p>
+  <Code code={workflowHostsSnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Host</th><th>Default path</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>GitHub</td><td><code>.github/workflows/ai-review.yml</code></td></tr>
+      <tr><td>GitLab</td><td><code>.gitlab/ai-review.gitlab-ci.yml</code> (include from your <code>.gitlab-ci.yml</code>)</td></tr>
+      <tr><td>Azure</td><td><code>pipelines/ai-review.azure-pipelines.yml</code> (use as a template)</td></tr>
+      <tr><td>Bitbucket</td><td><code>bitbucket-pipelines.yml</code> (repo-root pipelines file)</td></tr>
+    </tbody>
+  </table>
   <p>
     See the <a href="/examples#ai-review">AI review example</a> for a complete
     build file, or <a href="/docs/concepts#options">Validations</a> for the core
     seam reviewers plug into.
   </p>
 </DocsLayout>
+
+<style>
+  .multi-host {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    background: var(--gradient-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

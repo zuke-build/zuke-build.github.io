@@ -37,9 +37,7 @@ class MyBuild extends Build {
     });
 }
 
-if (import.meta.main) {
-  await run(MyBuild);
-}`;
+await run(MyBuild);`;
 
 const runSnippet = `./zuke compile         # run a target (and its dependencies)
 ./zuke compile --parallel  # run independent targets concurrently
@@ -112,6 +110,12 @@ Total                  17.8s
     <code>clean</code> first — automatically and exactly once. Rename
     <code>clean</code> and the reference moves with it; there are no strings to
     keep in sync.
+  </p>
+  <p>
+    The closing <code>await run(MyBuild)</code> makes the file runnable.
+    <code>run()</code> is entry-aware — it executes only when the file is run
+    directly, and is a no-op when imported (say, from a test) — so no
+    <code>import.meta.main</code> guard is needed.
   </p>
 
   <h2 id="run">Running targets</h2>
