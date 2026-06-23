@@ -235,6 +235,57 @@ const providers = [
     </div>
   </section>
 
+  <!-- ░░ OUTPUT ░░ -->
+  <section class="section sec-out" id="output">
+    <div class="container out-grid">
+      <div data-reveal>
+        <span class="eyebrow">Readable output</span>
+        <h2>A build log you can actually scan.</h2>
+        <p class="lead">
+          Every target is framed with a ruled banner and closes with a plain
+          pass/fail line and its duration. The run ends with an aligned
+          <strong>Build Summary</strong> — status and timing per target, a total,
+          and a one-line verdict stamped with the time.
+        </p>
+        <ul class="ticks">
+          <li>Blocks are easy to scan; a failure prints its error inline.</li>
+          <li>The summary table totals the wall-clock time across targets.</li>
+          <li>GitHub Actions gets matching groups, annotations, and a job-summary table.</li>
+        </ul>
+      </div>
+      <div data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">zuke build</span>
+          </div>
+<pre class="term"><span class="t-cmd">$ ./zuke build</span>
+
+<span class="t-banner">══════════════════════════════</span>
+<span class="t-name">build</span>
+<span class="t-banner">══════════════════════════════</span>
+<span class="t-dim">  ▸ astro build — 4 pages in 2.2s</span>
+<span class="t-ok">✔</span> build <span class="t-dim">succeeded in 2.2s</span>
+
+<span class="t-title">Build Summary</span>
+<span class="t-rule">────────────────────────────</span>
+<span class="t-head">Target   Status     Duration</span>
+<span class="t-rule">────────────────────────────</span>
+clean    <span class="t-ok">Succeeded</span>      0.1s
+install  <span class="t-ok">Succeeded</span>     12.4s
+check    <span class="t-ok">Succeeded</span>      3.1s
+build    <span class="t-ok">Succeeded</span>      2.2s
+<span class="t-rule">────────────────────────────</span>
+<span class="t-total">Total                  17.8s</span>
+
+<span class="t-pass">✔ Build succeeded — 4/4 targets in 17.8s · 2026-06-23 07:19</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ░░ SHELL ░░ -->
   <section class="section" id="shell">
     <div class="container shell-grid">
@@ -278,6 +329,7 @@ const providers = [
           <li>Security, secrets, correctness, licensing — or your own <code>.criteria()</code>.</li>
           <li>Claude, OpenAI, or Gemini, with the JSON shape enforced server-side.</li>
           <li>Gate with <code>.validateBefore()</code>; findings land in the CI job summary.</li>
+          <li><code>.comment()</code> upserts the verdict as a pull-request comment.</li>
         </ul>
         <div class="providers">
           <span class="providers__label">Works with</span>
@@ -311,7 +363,7 @@ const providers = [
             <li><span class="sevtag sevtag--med">MED</span> Unvalidated redirect in <code>routes/login.ts</code></li>
             <li><span class="sevtag sevtag--low">LOW</span> Stack trace leaked in error response</li>
           </ul>
-          <p class="review__foot">via @zuke/ai · claude-opus-4-8</p>
+          <p class="review__foot">via @zuke/ai · claude-opus-4-8 · tokens: 1234 in · 567 out · 1801 total</p>
         </div>
       </div>
     </div>
@@ -473,6 +525,34 @@ const providers = [
   }
   .feat h3 { font-size: 1.08rem; margin-bottom: 8px; }
   .feat p { font-size: 0.93rem; margin: 0; }
+
+  /* output */
+  .out-grid {
+    display: grid;
+    grid-template-columns: 0.95fr 1.05fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .out-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+  .term {
+    margin: 0;
+    padding: 18px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+    overflow-x: auto;
+    white-space: pre;
+    tab-size: 2;
+  }
+  .term .t-cmd { color: var(--text-faint); }
+  .term .t-banner, .term .t-rule { color: #2c3760; }
+  .term .t-name { color: var(--cyan); font-weight: 700; }
+  .term .t-dim { color: var(--text-faint); }
+  .term .t-ok { color: #41d18a; }
+  .term .t-title, .term .t-total { color: var(--text); font-weight: 700; }
+  .term .t-head { color: var(--text-dim); font-weight: 700; }
+  .term .t-pass { color: #41d18a; font-weight: 700; }
 
   /* dag */
   .sec-dag { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5), transparent); }
@@ -698,11 +778,12 @@ const providers = [
   .hero__grid > *,
   .shell-grid > *,
   .review-grid > *,
+  .out-grid > *,
   .dag-grid > * { min-width: 0; }
 
   /* responsive */
   @media (max-width: 940px) {
-    .hero__grid, .dag-grid, .shell-grid, .review-grid { grid-template-columns: 1fr; gap: 36px; }
+    .hero__grid, .dag-grid, .shell-grid, .review-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
     .hero__code { order: 2; }
     .feat-grid { grid-template-columns: repeat(2, 1fr); }
     .tools-grid { grid-template-columns: repeat(2, 1fr); }
