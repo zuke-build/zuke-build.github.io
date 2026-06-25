@@ -168,6 +168,9 @@ code {
 }
 .btn-primary {
   background: var(--gradient);
+  /* clip the gradient to the padding box so the 1px transparent border
+     doesn't render a white antialiasing hairline at the rounded corners */
+  background-clip: padding-box;
   color: #06121a;
   box-shadow: 0 10px 30px -10px rgba(79, 140, 255, 0.7);
 }
