@@ -186,6 +186,59 @@ class ReviewBuild extends Build {
 await run(ReviewBuild);`,
   },
   {
+    id: "self-healing",
+    tag: "AI / self-healing",
+    title: "Self-healing build",
+    desc: "Attach an aiFixer to a target with .recoverWith(). When it fails, @zuke/ai diagnoses the failure from the command, its stderr, and the diff — then posts a committable suggestion, or applies the fix, commits, and re-runs the real command to verify it goes green. agentFixer can instead hand the failure to a coding agent that edits files itself.",
+    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { agentFixer, aiFixer } from "jsr:@zuke/ai";
+import { ClaudeTasks } from "jsr:@zuke/claude";
+
+class CiBuild extends Build {
+  key = parameter("OpenAI API key").secret().env("OPENAI_API_KEY");
+
+  test = target()
+    .description("Run tests; on failure, let @zuke/ai heal the build")
+    .executes(async () => { await DenoTasks.test((s) => s.allowAll()); })
+    .recoverWith(
+      aiFixer((f) =>
+        f.provider("openai").apiKey(this.key)
+          .diff((d) => d.fetchBase())   // fetch the PR base for context
+          .autoApply()                  // write the fix to the working tree
+          .allowPaths("src/**")         // …inside an allowlist
+          .maxEdits(5)                  // …and a file cap
+          .allowCI()                    // opt in to acting on CI
+          .commitFixes()                // stage, commit & push to the PR branch
+      ),
+    )
+    .recoverAttempts(2);                // up to two fix-then-rerun cycles
+
+  // Diagnose-only (the default): provider + key, no files touched — it posts a
+  // committable, Copilot-style suggestion to the PR.
+  lint = target()
+    .description("Lint; on failure, suggest a fix on the PR")
+    .executes(async () => { await DenoTasks.lint(); })
+    .recoverWith(aiFixer((f) => f.provider("openai").apiKey(this.key)));
+
+  // For open-ended fixes, hand the failure to a coding agent you inject —
+  // Claude Code, Codex, or Gemini CLI — which edits files itself, then verifies.
+  build = target()
+    .description("Build; on failure, delegate to a coding agent")
+    .dependsOn(this.test)
+    .executes(async () => { await DenoTasks.run((s) => s.script("build")); })
+    .recoverWith(
+      agentFixer((ctx) =>
+        ClaudeTasks.run((s) =>
+          s.prompt(ctx.prompt).permissionMode("acceptEdits")
+        )
+      ),
+    );
+}
+
+await run(CiBuild);`,
+  },
+  {
     id: "code-first-ci",
     tag: "CI/CD",
     title: "Generate your CI pipeline",
@@ -233,7 +286,7 @@ await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">

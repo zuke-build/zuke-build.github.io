@@ -15,6 +15,7 @@ export const toolGroups: ToolGroup[] = [
     blurb: "Install, run, and publish across every major JS toolchain.",
     tools: [
       { name: "Deno", pkg: "@zuke/deno", desc: "run, test, check, fmt, lint, coverage" },
+      { name: "Node", pkg: "@zuke/node", desc: "run scripts, npx, version pinning" },
       { name: "npm", pkg: "@zuke/npm", desc: "install, ci, run scripts, publish" },
       { name: "Bun", pkg: "@zuke/bun", desc: "install, add, run, x, bun test" },
       { name: "pnpm", pkg: "@zuke/pnpm", desc: "frozen installs, dlx, --filter" },
@@ -27,26 +28,40 @@ export const toolGroups: ToolGroup[] = [
     tools: [
       { name: "Vite", pkg: "@zuke/vite", desc: "dev, build, preview" },
       { name: "tsup", pkg: "@zuke/tsup", desc: "zero-config bundling" },
+      { name: "tsdown", pkg: "@zuke/tsdown", desc: "fast TS bundling on Rolldown" },
       { name: "Turbo", pkg: "@zuke/turbo", desc: "run, prune" },
       { name: "Nx", pkg: "@zuke/nx", desc: "run, runMany, affected" },
     ],
   },
   {
-    category: "TypeScript runners",
-    blurb: "Execute and type-check TypeScript without a build step.",
+    category: "TypeScript runners & compilers",
+    blurb: "Execute, type-check, and compile TypeScript with or without a build step.",
     tools: [
       { name: "tsx", pkg: "@zuke/tsx", desc: "run TS on Node, watch" },
+      { name: "tsc", pkg: "@zuke/tsc", desc: "the stock TypeScript compiler, --build" },
+      { name: "tsc-alias", pkg: "@zuke/tsc-alias", desc: "rewrite path aliases after tsc" },
       { name: "tsgo", pkg: "@zuke/tsgo", desc: "the native Go TypeScript compiler" },
     ],
   },
   {
-    category: "AI coding & review",
-    blurb: "Fold the major AI coding CLIs into a build, or gate it on a model-assessed review.",
+    category: "Frameworks & code generation",
+    blurb: "Scaffold app frameworks and generate typed clients from a schema.",
+    tools: [
+      { name: "Nest", pkg: "@zuke/nest", desc: "NestJS: build, start, generate" },
+      { name: "openapi-ts", pkg: "@zuke/openapi-ts", desc: "OpenAPI → typed TS client" },
+      { name: "Orval", pkg: "@zuke/orval", desc: "generate API clients & mocks" },
+      { name: "docs", pkg: "@zuke/docs", desc: "generate API documentation" },
+    ],
+  },
+  {
+    category: "AI coding, review & self-healing",
+    blurb: "Fold the major AI coding CLIs into a build, gate it on a model-assessed review, or let a fixer heal failures.",
     tools: [
       { name: "Claude Code", pkg: "@zuke/claude", desc: "headless run, model & tool limits, MCP" },
       { name: "OpenAI Codex", pkg: "@zuke/codex", desc: "codex exec headless, MCP config" },
       { name: "Gemini CLI", pkg: "@zuke/gemini", desc: "headless prompt, MCP & extensions" },
       { name: "AI review", pkg: "@zuke/ai", desc: "code-review gate with a structured risk score" },
+      { name: "Self-healing", pkg: "@zuke/ai", desc: "diagnose, suggest & auto-fix failed builds, then re-run to verify" },
     ],
   },
   {
@@ -98,6 +113,7 @@ export const toolGroups: ToolGroup[] = [
     tools: [
       { name: "Git", pkg: "@zuke/git", desc: "commit, tag, push, gitInfo()" },
       { name: "GitHub CLI", pkg: "@zuke/gh", desc: "releases, PRs, workflows" },
+      { name: "Husky", pkg: "@zuke/husky", desc: "install & manage git hooks" },
       { name: "JSR", pkg: "@zuke/jsr", desc: "publish, add, remove" },
       { name: "release-please", pkg: "@zuke/release-please", desc: "release PRs & GitHub releases" },
     ],
