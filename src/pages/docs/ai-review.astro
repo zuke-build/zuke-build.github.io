@@ -120,6 +120,14 @@ const a11y = genericReviewer((r) =>
     to a typed shape, so the gate is a real verdict your build can branch on —
     not a blob of prose.
   </p>
+  <div class="note">
+    <p>
+      Reviewing the diff is one half of <code>@zuke/ai</code>. The other is
+      <a href="/docs/self-healing">self-healing builds</a> — when a target
+      <em>fails</em>, an <code>aiFixer</code> diagnoses it and posts a committable
+      suggestion, or applies the fix and re-runs the real command to verify.
+    </p>
+  </div>
 
   <h2 id="plug-in">How it plugs in</h2>
   <p>

@@ -27,6 +27,23 @@ const sha = await $\`git rev-parse HEAD\`.text();   // trimmed stdout
 await $\`deno test -A\`;                              // throws on non-zero
 const code = await $\`flaky-cmd\`.noThrow().code();   // never throws`;
 
+const healSnippet = `import { aiFixer } from "jsr:@zuke/ai";
+
+test = target()
+  .executes(() => DenoTasks.test((s) => s.allowAll()))
+  // On failure: diagnose from the error + diff, post a committable
+  // suggestion — or apply, commit, and re-run to verify it goes green.
+  .recoverWith(
+    aiFixer((f) =>
+      f.provider("openai").apiKey(this.key)
+        .autoApply()                 // write the fix to the working tree
+        .allowPaths("src/**")        // blast-radius allowlist
+        .maxEdits(5)                 // …and a file cap
+        .commitFixes()               // stage, commit & push to the PR branch
+    ),
+  )
+  .recoverAttempts(2);               // up to two fix-then-rerun cycles`;
+
 const features = [
   {
     icon: "type",
@@ -74,6 +91,11 @@ const features = [
     body: "Turn an LLM into a build gate with @zuke/ai — it reads the diff, gets a structured risk assessment, and breaks the build when the score crosses your threshold. Claude, OpenAI, or Gemini.",
   },
   {
+    icon: "heal",
+    title: "Self-healing builds",
+    body: "Attach a fixer with .recoverWith(). When a target fails, @zuke/ai diagnoses it from the command, stderr, and diff, posts a committable suggestion — or auto-applies, commits, and re-runs the real command to verify the build goes green.",
+  },
+  {
     icon: "announce",
     title: "Announce to chat",
     body: "Post build status to Slack, Microsoft Teams, and Discord from a target with AnnounceTasks — typed messages with levels, fields, and links, over incoming webhooks or each platform's bot API.",
@@ -103,6 +125,7 @@ const icons: Record<string, string> = {
   ai: `<rect x="4" y="7" width="16" height="12" rx="2.5"/><path d="M12 7V4M9 12h.01M15 12h.01M9 15.5h6"/><path d="M2 12h2M20 12h2"/>`,
   announce: `<path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>`,
   review: `<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 14 2 2 4-4"/>`,
+  heal: `<path d="M20.5 8.5a4.6 4.6 0 0 0-6.5-6.5L12 4 10 2a4.6 4.6 0 0 0-6.5 6.5"/><path d="M3.5 8.5 12 17l4-4"/><path d="M3 14h4l1.5-3 2.5 6 1.5-3H21"/>`,
 };
 
 // The model providers @zuke/ai supports, shown as chips in the AI review section.
@@ -386,6 +409,125 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <p class="review__foot">via @zuke/ai · claude-opus-4-8 · tokens: 1234 in · 567 out · 1801 total</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ░░ SELF-HEALING ░░ -->
+  <section class="section sec-heal" id="self-healing">
+    <div class="container heal-grid">
+      <div data-reveal>
+        <span class="eyebrow">Self-healing builds <span class="tag-new">New</span></span>
+        <h2>When a build breaks, <span class="gradient-text">Zuke fixes it</span>.</h2>
+        <p class="lead">
+          Attach a fixer to any target with <code>.recoverWith(aiFixer(…))</code>.
+          When the target fails, <code>@zuke/ai</code> diagnoses it from the
+          <strong>exact command, its <code>stderr</code>, and the diff</strong>,
+          then proposes a fix — or applies one. The real build command is the
+          verifier: a fix only counts when the command <strong>actually goes
+          green</strong>.
+        </p>
+        <ul class="ticks">
+          <li><strong>Diagnose-only by default</strong> — posts a committable, Copilot-style suggestion to the PR, anchored to the exact <code>file:line</code>.</li>
+          <li><strong><code>.autoApply()</code> heals it</strong> — writes the fix, commits, and re-runs the real command; a bad edit fails the build instead of landing.</li>
+          <li><strong>Safe by default</strong> — no files written until you opt in; edits gated behind a path allowlist, a file cap, and local-only defaults.</li>
+          <li><strong><code>agentFixer</code></strong> hands open-ended failures to a coding agent you inject — Claude Code, Codex, or Gemini CLI — that edits files itself.</li>
+        </ul>
+        <div class="providers">
+          <span class="providers__label">Heals with</span>
+          {providers.map((p) => (
+            <span class="provider" style={`--c:${p.color}`}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" set:html={p.svg} />
+              {p.name}
+            </span>
+          ))}
+        </div>
+        <a class="btn btn-ghost" href="/docs/self-healing">Read the self-healing guide →</a>
+      </div>
+
+      <div class="heal-visual" data-reveal>
+        <!-- the heal loop, as a vertical stepper -->
+        <div class="heal panel">
+          <div class="heal__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="heal__barname">recoverWith · aiFixer</span>
+          </div>
+          <ol class="heal__steps">
+            <li class="heal__step heal__step--fail">
+              <span class="heal__icon">✕</span>
+              <div class="heal__body">
+                <span class="heal__title">test failed</span>
+                <span class="heal__sub"><code>TypeError: name is undefined</code> — src/format.ts:18</span>
+              </div>
+            </li>
+            <li class="heal__step heal__step--scan">
+              <span class="heal__icon">⌕</span>
+              <div class="heal__body">
+                <span class="heal__title">aiFixer diagnosing</span>
+                <span class="heal__sub">command + stderr + diff → model</span>
+              </div>
+            </li>
+            <li class="heal__step heal__step--fix">
+              <span class="heal__icon">＋</span>
+              <div class="heal__body">
+                <span class="heal__title">fix: guard the null user in <code>formatName()</code></span>
+                <span class="heal__sub">applied · committed <code>a3f9c21</code></span>
+              </div>
+            </li>
+            <li class="heal__step heal__step--rerun">
+              <span class="heal__icon">↻</span>
+              <div class="heal__body">
+                <span class="heal__title">re-running <code>deno test</code> to verify</span>
+                <span class="heal__sub">the real command is the gate</span>
+              </div>
+            </li>
+            <li class="heal__step heal__step--ok">
+              <span class="heal__icon">✓</span>
+              <div class="heal__body">
+                <span class="heal__title">healed — 12/12 passing in 1.9s</span>
+                <span class="heal__sub">a fix only counts when the build goes green</span>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <!-- the committable PR suggestion it posts in diagnose-only mode -->
+        <div class="suggest panel">
+          <div class="suggest__head">
+            <span class="suggest__bot">🤖 Zuke AI fix</span>
+            <span class="suggest__loc"><code>src/format.ts</code> · line 18</span>
+          </div>
+          <div class="suggest__diff">
+            <pre><span class="d-del">- return user.name.toUpperCase();</span>
+<span class="d-add">+ return (user?.name ?? "anon").toUpperCase();</span></pre>
+          </div>
+          <div class="suggest__foot">
+            <span class="suggest__tag">Suggested change</span>
+            <span class="suggest__commit">Commit suggestion</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container heal-code" data-reveal>
+      <div class="codecard panel">
+        <div class="codecard__bar">
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__name">zuke.ts</span>
+        </div>
+        <Code code={healSnippet} lang="ts" theme="night-owl" />
+      </div>
+      <p class="heal-code__note">
+        One primitive powers it: a <code>Remediation</code> runs only after a
+        target body fails. Attach a fixer per target, or
+        <strong>override <code>recoverWith()</code> on the build</strong> to heal
+        every target at once.
+      </p>
     </div>
   </section>
 
@@ -753,6 +895,143 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .sevtag--med { color: #e8bd6b; background: rgba(224, 169, 59, 0.14); }
   .sevtag--low { color: #6ea8ff; background: rgba(79, 140, 255, 0.14); }
 
+  /* self-healing */
+  .sec-heal {
+    background:
+      radial-gradient(50% 100% at 18% 30%, rgba(65, 209, 138, 0.10), transparent 60%),
+      radial-gradient(55% 100% at 88% 70%, rgba(155, 107, 255, 0.10), transparent 62%),
+      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.6), transparent);
+    border-block: 1px solid var(--border);
+  }
+  .heal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .heal-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+  .heal-visual { display: grid; gap: 16px; }
+
+  /* the heal loop stepper */
+  .heal { padding: 18px 20px 8px; box-shadow: var(--shadow-glow); }
+  .heal__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-bottom: 14px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .heal__barname {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+  }
+  .heal__steps { list-style: none; margin: 0; padding: 0; }
+  .heal__step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 12px;
+    padding: 9px 0;
+    align-items: start;
+  }
+  /* the connecting rail between step icons */
+  .heal__step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 14px;
+    top: 31px;
+    bottom: -4px;
+    width: 2px;
+    background: linear-gradient(var(--border), var(--border));
+  }
+  .heal__icon {
+    z-index: 1;
+    width: 29px;
+    height: 29px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text-faint);
+  }
+  .heal__body { display: grid; gap: 3px; padding-top: 2px; }
+  .heal__title { font-size: 0.9rem; color: var(--text); font-weight: 600; }
+  .heal__sub { font-size: 0.8rem; color: var(--text-faint); }
+  .heal__step code { font-family: var(--font-mono); font-size: 0.82em; color: var(--cyan); }
+
+  .heal__step--fail .heal__icon { color: #ff8088; border-color: rgba(240, 97, 109, 0.5); background: rgba(240, 97, 109, 0.12); }
+  .heal__step--scan .heal__icon { color: var(--text-dim); }
+  .heal__step--fix .heal__icon { color: var(--violet); border-color: rgba(155, 107, 255, 0.5); background: rgba(155, 107, 255, 0.12); }
+  .heal__step--rerun .heal__icon { color: var(--cyan); border-color: rgba(52, 225, 212, 0.5); background: rgba(52, 225, 212, 0.12); }
+  .heal__step--ok .heal__icon {
+    color: #0a0e17;
+    border-color: transparent;
+    background: linear-gradient(135deg, #41d18a, #34e1d4);
+    box-shadow: 0 0 0 4px rgba(65, 209, 138, 0.12);
+  }
+  .heal__step--ok .heal__title { color: #6fe3ad; }
+
+  /* the committable PR suggestion card */
+  .suggest { overflow: hidden; }
+  .suggest__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .suggest__bot { font-size: 0.84rem; font-weight: 600; color: var(--text); }
+  .suggest__loc { font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-faint); }
+  .suggest__loc code { color: var(--cyan); }
+  .suggest__diff { padding: 4px 0; }
+  .suggest__diff pre {
+    margin: 0;
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .suggest__diff .d-del { display: block; color: #ff9aa2; background: rgba(240, 97, 109, 0.08); }
+  .suggest__diff .d-add { display: block; color: #7ee2b0; background: rgba(65, 209, 138, 0.10); }
+  .suggest__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .suggest__tag { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); }
+  .suggest__commit {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #0a0e17;
+    background: linear-gradient(135deg, #41d18a, #34e1d4);
+    padding: 5px 12px;
+    border-radius: 7px;
+  }
+
+  /* the build snippet under the showcase */
+  .heal-code { margin-top: 40px; display: grid; gap: 14px; }
+  .heal-code__note {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    max-width: 70ch;
+    margin: 0;
+  }
+  .heal-code code { font-family: var(--font-mono); color: var(--cyan); font-size: 0.9em; }
+
   /* tools */
   .sec-tools { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5)); }
   .tools-grid {
@@ -807,12 +1086,13 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .hero__grid > *,
   .shell-grid > *,
   .review-grid > *,
+  .heal-grid > *,
   .out-grid > *,
   .dag-grid > * { min-width: 0; }
 
   /* responsive */
   @media (max-width: 940px) {
-    .hero__grid, .dag-grid, .shell-grid, .review-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
+    .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
     .hero__code { order: 2; }
     .feat-grid { grid-template-columns: repeat(2, 1fr); }
     .tools-grid { grid-template-columns: repeat(2, 1fr); }

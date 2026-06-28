@@ -1,0 +1,270 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "recoverwith", label: "The recoverWith primitive" },
+  { id: "scope", label: "Per-target or global" },
+  { id: "aifixer", label: "aiFixer — safe by default" },
+  { id: "suggestions", label: "Committable suggestions" },
+  { id: "apply", label: "Applying & committing" },
+  { id: "agent", label: "Delegating to an agent" },
+  { id: "diff", label: "Diff context in CI" },
+  { id: "knobs", label: "Other knobs" },
+  { id: "dogfood", label: "Dogfooding" },
+];
+
+const primitiveSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { aiFixer } from "jsr:@zuke/ai";
+
+class CI extends Build {
+  key = parameter("OpenAI API key").secret().required();
+
+  test = target()
+    .executes(() => DenoTasks.test((s) => s.allowAll()))
+    // On failure: diagnose from the error output + diff, then propose or heal.
+    .recoverWith(aiFixer((f) => f.provider("openai").apiKey(this.key)))
+    .recoverAttempts(2); // up to two fix-then-rerun cycles (default 1)
+}
+
+await run(CI);`;
+
+const globalSnippet = `class CI extends Build {
+  key = parameter("OpenAI API key").secret();
+
+  // Applies to every target below — no per-target wiring needed.
+  override recoverWith() {
+    return [aiFixer((f) => f.provider("openai").apiKey(this.key))];
+  }
+
+  lint = target().executes(() => DenoTasks.lint());
+  test = target().executes(() => DenoTasks.test((s) => s.allowAll()));
+}`;
+
+const diagnoseSnippet = `test = target()
+  .executes(() => DenoTasks.test((s) => s.allowAll()))
+  // Provider + key only → diagnose-only: reports, writes no files.
+  .recoverWith(aiFixer((f) => f.provider("openai").apiKey(this.key)));`;
+
+const applySnippet = `aiFixer((f) =>
+  f.provider("openai").apiKey(this.key)
+    .autoApply()                          // write the fix to the working tree
+    .allowPaths("packages/**", "src/**")  // allowlist; lockfiles/.git/CI excluded
+    .maxEdits(5)                          // blast-radius cap
+    .allowCI()                            // default is local-only; opt in for CI
+    .commitFixes()                        // stage, commit & push to the PR branch
+);`;
+
+const agentSnippet = `import { agentFixer } from "jsr:@zuke/ai";
+import { ClaudeTasks } from "jsr:@zuke/claude";
+
+test = target()
+  .executes(() => DenoTasks.test((s) => s.allowAll()))
+  .recoverWith(
+    agentFixer((ctx) =>
+      // ctx.prompt is assembled from the failure; ctx also carries the raw
+      // target / command / output if you'd rather build your own.
+      ClaudeTasks.run((s) => s.prompt(ctx.prompt).permissionMode("acceptEdits"))
+    ),
+  );`;
+
+const diffSnippet = `aiFixer((f) =>
+  f.provider("openai").apiKey(this.key)
+    // Fetch the base branch itself — auto-detected from GITHUB_BASE_REF —
+    // so the workflow needs no manual \`git fetch\` step.
+    .diff((d) => d.fetchBase())
+);`;
+---
+
+<DocsLayout
+  title="Self-healing builds"
+  description="When a target fails, Zuke hands the failure to an AI fixer that diagnoses it, proposes or applies a fix, and re-runs the real command to verify — built on the typed recoverWith primitive in @zuke/ai."
+  toc={toc}
+>
+  <p class="lead">
+    When a target fails, Zuke can hand the failure to an <strong>AI fixer</strong>
+    that diagnoses it, proposes (or applies) a fix, and lets the build re-run the
+    real command to verify. <a href="https://jsr.io/@zuke/ai"><code>@zuke/ai</code></a>'s
+    <code>aiFixer</code> is built on a small core primitive —
+    <code>recoverWith</code> — so the loop is part of the typed build graph, not a
+    bolt-on script.
+  </p>
+  <p>
+    Unlike a standalone tool, the fixer has the one thing that makes a good fix
+    possible: the <strong>exact command that failed, its captured
+    <code>stderr</code>, and the diff around it</strong>. The real build command
+    is the verifier — a fix only "heals" when the command actually goes green.
+  </p>
+
+  <h2 id="recoverwith">The <code>recoverWith</code> primitive</h2>
+  <p>
+    A <strong>Remediation</strong> is the failure-time sibling of a
+    <a href="/docs/concepts#options">Validation</a>: an object with a
+    <code>remediate(ctx)</code> method that runs <strong>only after the target
+    body fails</strong>. It receives the failure and returns whether the body
+    should be re-run.
+  </p>
+  <Code code={primitiveSnippet} lang="ts" theme="night-owl" />
+  <ul>
+    <li><code>.recoverWith(...r)</code> attaches one or more remediations; the first to ask for a retry re-runs the body.</li>
+    <li><code>.recoverAttempts(n)</code> bounds how many fix-then-rerun cycles are tried (default 1).</li>
+    <li>A remediation that throws is treated as "could not heal" — it <strong>never masks the original build failure</strong>.</li>
+  </ul>
+  <div class="note">
+    <p>
+      Any object with a <code>remediate</code> method qualifies, so
+      <code>recoverWith</code> isn't AI-specific — a deterministic
+      "run <code>deno fmt</code>, then retry" remediation is just as valid.
+    </p>
+  </div>
+
+  <h2 id="scope">Per-target or global</h2>
+  <p>
+    Attach a fixer to one target with <code>.recoverWith(...)</code>, or override
+    <code>recoverWith()</code> on the <strong>build</strong> to apply it to
+    <strong>every</strong> target at once. Both styles compose — a target's own
+    remediations run before the build-level ones:
+  </p>
+  <Code code={globalSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="aifixer"><code>aiFixer</code> — safe by default</h2>
+  <p>
+    With only a provider and key, <code>aiFixer</code> is
+    <strong>diagnose-only</strong>: it sends the failed command, its output, the
+    diff, and your project conventions (<code>CLAUDE.md</code> /
+    <code>AGENTS.md</code>) to the model, parses a <strong>structured fix</strong>,
+    and reports — <strong>without touching any files</strong>. The diagnosis lands
+    in the GitHub Actions job summary and on the pull request.
+  </p>
+  <Code code={diagnoseSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>.provider("claude" | "openai" | "gemini")</code> and
+    <code>.apiKey(...)</code> are the only required calls — the same providers and
+    structured-output enforcement as <a href="/docs/ai-review">AI review</a>. The
+    key is read from a <code>parameter().secret()</code>, so Zuke masks it in CI.
+  </p>
+
+  <h2 id="suggestions">Copilot-style inline suggestions</h2>
+  <p>
+    When the fix is <strong>only proposed</strong> (diagnose-only — the default),
+    the fixer posts each problem on GitHub as an <strong>inline review comment
+    with a committable <code>suggestion</code> block</strong>, anchored to the
+    exact <code>file:line</code>, deduplicated across re-runs, and skipped
+    gracefully if a line isn't in the diff. The structured fix carries per-problem
+    locations — file, line, the verbatim offending code, and the replacement — so
+    the comment shows <strong>real code, not prose</strong>.
+  </p>
+  <p>
+    When the fix is <strong>applied</strong> (<code>.autoApply()</code>), a
+    committable suggestion would be contradictory — the change is already made — so
+    the fixer posts a <strong>single overview comment showing what it fixed</strong>
+    (with the code diff) instead. Off GitHub, or when the model reports no specific
+    locations, it falls back to the overview comment too. Use
+    <code>.noSuggest()</code> to force the overview comment even in diagnose mode.
+  </p>
+
+  <h2 id="apply">Applying &amp; committing fixes</h2>
+  <p>Escalate from diagnosis to action, behind explicit guards:</p>
+  <Code code={applySnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Setting</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.autoApply()</code></td><td>Write the proposed fix to the working tree and re-run the target. Off by default.</td></tr>
+      <tr><td><code>.allowPaths(...globs)</code></td><td>Restrict applied edits to matching paths (lockfiles, <code>.git</code>, CI workflows, and key material are always excluded).</td></tr>
+      <tr><td><code>.maxEdits(n)</code></td><td>Cap how many files one fix may touch.</td></tr>
+      <tr><td><code>.allowCI()</code></td><td>Permit auto-apply / commit on CI (local-only by default).</td></tr>
+      <tr><td><code>.commitFixes()</code></td><td>Stage, commit, and push the fix so a healed PR carries it. Implies <code>.autoApply()</code>.</td></tr>
+      <tr><td><code>.noPush()</code> / <code>.commitMessage(...)</code></td><td>Tune the commit.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      A fix is <strong>never auto-committed</strong> unless you opt in, and the
+      post-apply re-run is always the gate: a bad edit fails the build instead of
+      landing silently.
+    </p>
+  </div>
+
+  <h2 id="agent">Delegating to a coding agent — <code>agentFixer</code></h2>
+  <p>
+    <code>aiFixer</code> makes one structured API call and applies the edits
+    itself. For open-ended failures, <code>agentFixer</code> instead hands the
+    failure to a <strong>coding agent you inject</strong> — Claude Code, Codex, or
+    the Gemini CLI — which reads and edits files autonomously; the executor then
+    re-runs the target to verify. There's one generic fixer, not one per agent:
+    you pick the agent at the call site.
+  </p>
+  <Code code={agentSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Any runner that takes the context and returns works —
+    <code>CodexTasks.exec</code>, <code>GeminiTasks.run</code>, or a custom
+    function. Because the agent edits files directly, <code>agentFixer</code> is
+    <strong>gated to local runs by default</strong> (<code>.allowCI()</code> to opt
+    in). It reuses the same <code>.comment()</code> / <code>.commentToken()</code> /
+    <code>.criteria()</code> / <code>.conventions()</code> knobs as
+    <code>aiFixer</code>, and mirrors the same propose-vs-apply rule:
+  </p>
+  <ul>
+    <li><strong><code>.suggest()</code> (propose)</strong> — render the agent's <code>git diff</code> as committable inline suggestions on the PR and leave the build failed for a human to apply. Suggestions only ever appear in this not-auto-fixing mode.</li>
+    <li><strong><code>.commitFixes()</code> (apply)</strong> — stage <em>all</em> of the agent's changes, commit, and push (no commit if it changed nothing), then re-run the target to verify, and post an overview comment of what it did. Takes precedence over <code>.suggest()</code>.</li>
+  </ul>
+
+  <h2 id="diff">Diff context without a CI step</h2>
+  <p>
+    For good diagnoses the fixer wants the PR diff.
+    <code>.diff((d) =&gt; d.fetchBase())</code> makes the fixer
+    <strong>fetch the base branch itself</strong> — auto-detected from the CI
+    environment (GitHub's <code>GITHUB_BASE_REF</code>) — so your workflow needs no
+    manual <code>git fetch</code> step. Pass a branch
+    (<code>.fetchBase("main")</code>) to be explicit; if the fetch can't run, the
+    fixer falls back to the working-tree diff.
+  </p>
+  <Code code={diffSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="knobs">Other knobs</h2>
+  <ul>
+    <li><code>.model(...)</code>, <code>.effort(...)</code> — pick the model and thinking depth.</li>
+    <li><code>.criteria(...)</code> / <code>.conventions(...)</code> — add or override the project notes sent to the model.</li>
+    <li><code>.comment()</code> / <code>.noComment()</code> — toggle PR posting (the job summary is always written).</li>
+    <li><code>.maxDiffTokens(n)</code>, <code>.retry(&#123; ... &#125;)</code>, <code>.quiet()</code> — budget, transient-failure retry, and output control.</li>
+    <li><code>.skipIfKeyMissing()</code> — on a fork PR with no secret, skip and announce rather than fail.</li>
+  </ul>
+
+  <h2 id="dogfood">Dogfooding</h2>
+  <p>
+    Zuke's own <code>lint</code> target uses
+    <code>recoverWith(aiFixer(...))</code>. On a lint failure in CI it posts a
+    committable suggestion to the pull request and a clean job-summary diagnosis,
+    reusing the same OpenAI key as the <a href="/docs/ai-review">AI review</a>. On
+    fork PRs the key is absent, so the fixer simply skips and the build fails
+    normally.
+  </p>
+  <p>
+    See the <a href="/examples#self-healing">self-healing example</a> for a
+    complete build file, <a href="/docs/ai-review">AI code review</a> for the
+    gate-the-build side of <code>@zuke/ai</code>, or
+    <a href="/docs/concepts#options">Validations</a> for the core seam that
+    remediations mirror.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>
