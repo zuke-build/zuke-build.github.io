@@ -8,8 +8,19 @@ const toc = [
   { id: "first-target", label: "Your first target" },
   { id: "run", label: "Running targets" },
   { id: "graph", label: "Visualizing the graph" },
+  { id: "completions", label: "Shell completions" },
   { id: "next", label: "Next steps" },
 ];
+
+const completionsSnippet = `# Install completions for your shell — writes the script and wires it in
+./zuke completions install bash   # → ~/.config/zuke/completions/zuke.bash  (+ ~/.bashrc)
+./zuke completions install zsh    # → ~/.config/zuke/completions/zuke.zsh   (+ ~/.zshrc)
+./zuke completions install fish   # → ~/.config/fish/completions/zuke.fish  (auto-loaded)
+
+# Or print the script to stdout and source it yourself
+source <(./zuke completions print bash)
+source <(./zuke completions print zsh)
+./zuke completions print fish | source`;
 
 const graphSnippet = `./zuke graph                 # print the dependency graph as text
 ./zuke graph --output=html   # render an interactive HTML page and open it
@@ -49,6 +60,7 @@ const runSnippet = `./zuke compile         # run a target (and its dependencies)
 ./zuke --list          # list every available target
 ./zuke graph           # print the dependency graph
 ./zuke generate-ci     # write declared CI/CD pipeline files
+./zuke completions install zsh   # install shell tab-completion
 ./zuke                 # run the default target`;
 
 const outputSnippet = `$ ./zuke build
@@ -166,6 +178,30 @@ Total                  17.8s
     <p>
       Cytoscape loads from a pinned CDN, so the first view needs internet access;
       the page itself is otherwise self-contained.
+    </p>
+  </div>
+
+  <h2 id="completions">Shell completions</h2>
+  <p>
+    Zuke ships tab-completion for <strong>bash</strong>, <strong>zsh</strong>, and
+    <strong>fish</strong>. The <code>install</code> sub-command writes the script
+    and wires it into your shell in one step; <code>print</code> emits it to
+    stdout if you'd rather source it yourself:
+  </p>
+  <Code code={completionsSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Completions cover your <strong>target names</strong>, the reserved commands
+    (<code>graph</code>, <code>generate-ci</code>, <code>completions</code>), the
+    built-in flags, and any declared <a href="/docs/concepts#parameters">parameters</a>
+    as <code>--flag</code> candidates. The sub-action is required —
+    <code>zuke completions bash</code> on its own prints
+    <code>Usage: zuke completions &lt;install|print&gt; &lt;bash|zsh|fish&gt;</code> and exits 1.
+  </p>
+  <div class="note">
+    <p>
+      <code>install</code> honours <code>$XDG_CONFIG_HOME</code> and is idempotent —
+      re-running won't duplicate the line in your rc file. The script is a static
+      snapshot of the build, so re-run it after adding or renaming targets.
     </p>
   </div>
 
