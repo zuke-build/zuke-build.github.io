@@ -80,6 +80,46 @@ class CiBuild extends Build {
 await run(CiBuild);`,
   },
   {
+    id: "coverage-upload",
+    tag: "Coverage / Codecov",
+    title: "Upload coverage to Codecov",
+    desc: "Run tests with coverage, turn the profile into an lcov report, and ship it to Codecov with @zuke/codecov. CodecovTasks wraps codecovcli upload-process — the token is read from CODECOV_TOKEN, so it never lands in argv.",
+    code: `import { Build, run, target } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { CodecovTasks } from "jsr:@zuke/codecov";
+
+class CoverageBuild extends Build {
+  test = target()
+    .description("Run tests and collect a coverage profile")
+    .executes(async () => {
+      await DenoTasks.test((s) => s.coverage("cov"));
+    });
+
+  report = target()
+    .description("Turn the profile into an lcov report")
+    .dependsOn(this.test)
+    .executes(async () => {
+      await $\`deno coverage cov --lcov --output=cov.lcov\`;
+    });
+
+  upload = target()
+    .description("Upload the report to Codecov")
+    .dependsOn(this.report)
+    .executes(async () => {
+      // CODECOV_TOKEN is read from the environment, never passed in argv.
+      await CodecovTasks.upload((s) =>
+        s.files("cov.lcov")        // upload this named report…
+          .disableSearch()         // …and don't scan for others
+          .flags("unit")           // tag it so the dashboard can split suites
+          .failOnError()           // a failed upload breaks the build
+      );
+    });
+}
+
+await run(CoverageBuild);`,
+  },
+  {
     id: "docker-publish",
     tag: "Docker / release",
     title: "Build & publish a container",
@@ -286,7 +326,7 @@ await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Codecov coverage upload, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">

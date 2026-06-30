@@ -78,13 +78,14 @@ export const toolGroups: ToolGroup[] = [
     ],
   },
   {
-    category: "Test & browsers",
-    blurb: "Run unit and end-to-end suites with coverage wired in.",
+    category: "Test, coverage & browsers",
+    blurb: "Run unit and end-to-end suites, then upload coverage to your dashboard.",
     tools: [
       { name: "Jest", pkg: "@zuke/jest", desc: "projects, coverage thresholds" },
       { name: "Vitest", pkg: "@zuke/vitest", desc: "watch, coverage, UI" },
       { name: "Playwright", pkg: "@zuke/playwright", desc: "test, codegen, reports" },
       { name: "Cypress", pkg: "@zuke/cypress", desc: "run, open, verify" },
+      { name: "Codecov", pkg: "@zuke/codecov", desc: "upload coverage via codecovcli, flags, token from env" },
     ],
   },
   {
