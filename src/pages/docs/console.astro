@@ -1,0 +1,283 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "import", label: "Import" },
+  { id: "logging", label: "Logging & levels" },
+  { id: "markup", label: "Markup" },
+  { id: "lines", label: "Lines & rules" },
+  { id: "box", label: "Boxes" },
+  { id: "table", label: "Tables" },
+  { id: "banners", label: "Headers & summary" },
+  { id: "groups", label: "Groups" },
+  { id: "configure", label: "Configuration" },
+  { id: "renderer", label: "Renderer integration" },
+];
+
+const importSnippet = `import { ConsoleTasks as Log } from "jsr:@zuke/console";`;
+
+const loggingSnippet = `Log.trace("resolved 42 source files");      // most verbose
+Log.debug("cache hit for 'check'");
+Log.info("pushing [bold]core@1.2.0[/]");     // → stdout
+Log.log("a plain line, no icon or styling"); // → stdout
+Log.success("[green]✔[/] published 4 packages");
+Log.warn("coverage [yellow]94.2%[/] — below gate");   // → stderr
+Log.error("type-check failed", { error: err });       // → stderr, prints the cause`;
+
+const markupSnippet = `Log.info("[bold]core[/] is [green]ready[/]");            // one tag each
+Log.info("[red bold]2 errors[/] in [underline]mod.ts[/]"); // combine styles
+Log.info("[yellow]outer [cyan]inner[/] still yellow[/]");  // [/] closes the nearest tag
+Log.info("[muted]12 files[/] scanned");                    // semantic theme token
+
+// Literal brackets: double them. [[ renders as [ and ]] as ].
+Log.info("array access looks like arr[[0]]");
+
+// Escaping untrusted text so it can't smuggle in tags:
+Log.info("branch: " + Log.escape(userInput));`;
+
+const linesSnippet = `Log.line();                              // a full-width ── divider
+Log.line({ char: "═", width: 40 });      // custom glyph and width
+Log.line({ char: "·", style: ["dim"] }); // styled divider
+
+Log.rule("Deploy");                       // a title centered in the rule
+Log.rule("Tests", { style: ["cyan"] });   // rules take the same options as line()
+Log.rule();                               // untitled — identical to line()`;
+
+const boxSnippet = `// A single string, or an array of pre-split lines:
+Log.box("Deployed core@1.2.0 to production.");
+
+Log.box(
+  ["core   1.2.0   ✔", "cli    1.2.0   ✔", "cmd    1.2.0   ✔"],
+  {
+    title: "Release",       // shown in the top border
+    padding: 1,             // blank cells inside the border
+    width: 40,              // fixed width (defaults to fit the content)
+    border: ["green"],      // style the border glyphs…
+    titleStyle: ["bold"],   // …and the title
+  },
+);`;
+
+const tableSnippet = `Log.table(
+  [
+    { header: "Package", align: "left" },   // align: "left" | "right"
+    { header: "Version" },                   // defaults to left
+    { header: "Size", align: "right" },
+  ],
+  [
+    ["@zuke/core", "1.2.0", "18 kB"],
+    ["@zuke/cli", "1.2.0", "12 kB"],
+    ["@zuke/cmd", "1.2.0", "6 kB"],
+  ],
+  {
+    divider: true,            // rule between header and body
+    separator: "  ",          // gap between columns
+    headerStyle: ["bold"],
+    dividerStyle: ["dim"],
+  },
+);`;
+
+const bannersSnippet = `// The ruled banner Zuke prints before each target runs:
+Log.header("build");
+
+// The aligned end-of-run summary table. 'reports' is the per-target
+// result set the runner collects; totalMs is wall-clock time; ok is the
+// overall verdict. The default renderer calls this for you — reach for it
+// directly only when you drive the run loop yourself.
+Log.summary(reports, totalMs, ok);`;
+
+const groupsSnippet = `Log.group("Install");
+Log.info("added 214 packages in 12.4s");
+Log.endGroup();
+// Under GitHub Actions these become collapsible ::group:: / ::endgroup:: blocks.`;
+
+const configureSnippet = `Log.configure({
+  level: "debug",   // "trace" | "debug" | "info" | "warn" | "error" | "silent"
+  color: true,      // force ANSI colour on/off (auto-detected from the TTY otherwise)
+  width: 100,       // width used for rules, boxes, and wrapping
+  github: true,     // emit ::group:: / ::warning:: / ::error:: annotations
+  // sink:  a custom { out, err } target; theme: a custom palette
+});
+
+Log.level();        // read the active threshold
+Log.reset();        // restore every option to its default`;
+
+const rendererSnippet = `import { Build, run } from "jsr:@zuke/core";
+import {
+  consoleRenderer,
+  createConsoleRenderer,
+  defaultTheme,
+} from "jsr:@zuke/console";
+
+// Route the whole build's banners and summary through @zuke/console:
+await run(MyBuild, { renderer: consoleRenderer });
+
+// …or ship your own palette by building a renderer from a Theme:
+const renderer = createConsoleRenderer(defaultTheme);
+await run(MyBuild, { renderer });`;
+---
+
+<DocsLayout
+  title="Console output"
+  description="Rich, levelled terminal output with @zuke/console: tag-based markup, rules, boxes, tables, groups, and the renderer behind Zuke's own build log."
+  toc={toc}
+>
+  <p class="lead">
+    <code>@zuke/console</code> is the output engine behind every Zuke build — the
+    ruled banners, the colored status lines, and the aligned
+    <strong>Build Summary</strong> all come from it. It's also a package you can
+    import directly: a levelled logger with tag-based markup and a
+    set of layout primitives (<code>line</code>, <code>rule</code>,
+    <code>box</code>, <code>table</code>) that render cleanly to a terminal and
+    degrade gracefully in CI.
+  </p>
+
+  <h2 id="import">Import</h2>
+  <p>
+    The package exports a single namespaced object, <code>ConsoleTasks</code>.
+    It's conventional to alias it to <code>Log</code>:
+  </p>
+  <Code code={importSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="logging">Logging &amp; levels</h2>
+  <p>
+    Seven methods form a severity ladder. <code>trace</code>, <code>debug</code>,
+    <code>info</code>, <code>log</code>, and <code>success</code> write to
+    <strong>stdout</strong>; <code>warn</code> and <code>error</code> write to
+    <strong>stderr</strong>. Every message accepts <a href="#markup">markup</a>.
+  </p>
+  <Code code={loggingSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Only messages at or above the active <a href="#configure">level</a> are
+    printed — set it to <code>"debug"</code> in CI, <code>"info"</code> locally,
+    or <code>"silent"</code> to mute everything. <code>error()</code> takes an
+    optional <code>{"{ error }"}</code> so it can print the underlying cause, and
+    under GitHub Actions <code>warn</code>/<code>error</code> also emit
+    <code>::warning::</code> / <code>::error::</code> annotations.
+  </p>
+
+  <h2 id="markup">Markup</h2>
+  <p>
+    Wrap text in <code>[style]…[/]</code> tags. A tag carries one or more
+    space-separated style names, and <code>[/]</code> closes the most recent tag,
+    restoring the surrounding style — so tags nest cleanly.
+  </p>
+  <Code code={markupSnippet} lang="ts" theme="night-owl" />
+  <p>The recognised style names are:</p>
+  <ul>
+    <li>
+      <strong>Attributes</strong> — <code>bold</code>, <code>dim</code>,
+      <code>italic</code>, <code>underline</code>, and <code>reset</code>.
+    </li>
+    <li>
+      <strong>Colors</strong> — <code>black</code>, <code>red</code>,
+      <code>green</code>, <code>yellow</code>, <code>blue</code>,
+      <code>magenta</code>, <code>cyan</code>, <code>white</code>, and
+      <code>gray</code>.
+    </li>
+    <li>
+      <strong>Semantic tokens</strong> — <code>success</code>, <code>warn</code>,
+      <code>error</code>, <code>info</code>, <code>debug</code>,
+      <code>trace</code>, and <code>muted</code>. These resolve through the
+      active <a href="#configure">theme</a>, so they stay consistent (and
+      re-theme-able) across your output.
+    </li>
+  </ul>
+  <div class="note">
+    <p>
+      A literal bracket is written by doubling it — <code>[[</code> renders as
+      <code>[</code> and <code>]]</code> as <code>]</code>. To print
+      caller-supplied text safely, pass it through <code>Log.escape(text)</code>,
+      which doubles every bracket so nothing is mistaken for a tag.
+    </p>
+  </div>
+
+  <h2 id="lines">Lines &amp; rules</h2>
+  <p>
+    <code>line</code> draws a horizontal divider; <code>rule</code> is a
+    <code>line</code> with a centered title. Both accept the same options —
+    <code>char</code> (the glyph to repeat), <code>width</code>, and
+    <code>style</code> (an array of style names).
+  </p>
+  <Code code={linesSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="box">Boxes</h2>
+  <p>
+    <code>box</code> frames content in a single-line border. Pass a string or an
+    array of lines, plus optional <code>title</code>, <code>padding</code>,
+    <code>width</code>, a <code>border</code> style, and a <code>titleStyle</code>.
+  </p>
+  <Code code={boxSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <code>border</code> and <code>titleStyle</code> take an array of style
+      names (e.g. <code>["green"]</code> or <code>["dim"]</code>) — they color
+      the border glyphs and title, not the box shape, which is always drawn with
+      Unicode box-drawing characters.
+    </p>
+  </div>
+
+  <h2 id="table">Tables</h2>
+  <p>
+    <code>table</code> renders aligned columns. Columns are described by a
+    <code>header</code> and an optional <code>align</code>
+    (<code>"left"</code> — the default — or <code>"right"</code>); rows are arrays
+    of strings. Options control the look:
+  </p>
+  <Code code={tableSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>divider</code> draws a rule under the header, <code>separator</code>
+    sets the gap between columns, and <code>headerStyle</code> /
+    <code>dividerStyle</code> style those rows. Cell text may contain markup, and
+    column widths are computed automatically from the content.
+  </p>
+
+  <h2 id="banners">Headers &amp; summary</h2>
+  <p>
+    Two helpers produce the framing Zuke prints around a run.
+    <code>header(name)</code> is the ruled banner before a target;
+    <code>summary(reports, totalMs, ok)</code> is the final status-and-timing
+    table. The <a href="#renderer">default renderer</a> calls both for you — you'd
+    only invoke them directly if you're driving the run loop yourself.
+  </p>
+  <Code code={bannersSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="groups">Groups</h2>
+  <p>
+    Wrap a burst of output in a named group. In a plain terminal the name is
+    printed as a header; under GitHub Actions the pair becomes a collapsible
+    <code>::group::</code> / <code>::endgroup::</code> block.
+  </p>
+  <Code code={groupsSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="configure">Configuration</h2>
+  <p>
+    <code>configure</code> sets the log level, output sink, theme, color mode,
+    width, and GitHub-annotation mode. <code>level()</code> reads the active
+    threshold and <code>reset()</code> restores the defaults.
+  </p>
+  <Code code={configureSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="renderer">Renderer integration</h2>
+  <p>
+    <code>@zuke/console</code> is wired into a build through a
+    <strong>renderer</strong>. Pass <code>consoleRenderer</code> to
+    <code>run()</code> to route every banner and summary through it, or build a
+    custom-themed one with <code>createConsoleRenderer(theme)</code>.
+  </p>
+  <Code code={rendererSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Start from <code>defaultTheme</code> and override the tokens you want to
+    recolor — the semantic markup tokens (<code>success</code>,
+    <code>warn</code>, <code>muted</code>, …) then follow your palette everywhere
+    they appear, in both your own <code>Log</code> calls and Zuke's built-in
+    output.
+  </p>
+
+  <h2 id="related">Related</h2>
+  <ul>
+    <li><a href="/docs">Getting started</a> — install Zuke and run your first target; the run log you see is <code>@zuke/console</code> at work.</li>
+    <li><a href="/docs/library">Core library</a> — the other batteries in <code>@zuke/core</code>: file tasks, globbing, HTTP, and more.</li>
+    <li><a href="/examples">Examples</a> — complete build files that produce this output.</li>
+  </ul>
+</DocsLayout>

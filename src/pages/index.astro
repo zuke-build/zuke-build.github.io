@@ -27,6 +27,23 @@ const sha = await $\`git rev-parse HEAD\`.text();   // trimmed stdout
 await $\`deno test -A\`;                              // throws on non-zero
 const code = await $\`flaky-cmd\`.noThrow().code();   // never throws`;
 
+const consoleSnippet = `import { ConsoleTasks as Log } from "jsr:@zuke/console";
+
+Log.rule("Release");
+Log.info("pushing [bold]core@1.2.0[/]");        // markup: [tag]…[/]
+Log.success("[green]✔[/] published 4 packages");
+Log.warn("coverage [yellow]94.2%[/] — below gate");
+
+Log.box(["core  1.2.0  ✔", "cli   1.2.0  ✔"], {
+  title: "Artifacts",
+  border: ["green"],
+});
+
+Log.table(
+  [{ header: "Package" }, { header: "Size", align: "right" }],
+  [["@zuke/core", "18 kB"], ["@zuke/cli", "12 kB"]],
+);`;
+
 const healSnippet = `import { aiFixer } from "jsr:@zuke/ai";
 
 test = target()
@@ -280,11 +297,18 @@ const hosts = [
           Every target is framed with a ruled banner and closes with a plain
           pass/fail line and its duration. The run ends with an aligned
           <strong>Build Summary</strong> — status and timing per target, a total,
-          and a one-line verdict stamped with the time.
+          and a one-line verdict stamped with the time. It's all powered by
+          <a href="/docs/console"><code>@zuke/console</code></a>, and the same
+          primitives are yours to call in any target.
         </p>
         <ul class="ticks">
           <li>Blocks are easy to scan; a failure prints its error inline.</li>
           <li>The summary table totals the wall-clock time across targets.</li>
+          <li>
+            <a href="/docs/console"><code>@zuke/console</code></a> gives you
+            tag-based <code>[bold]</code>/<code>[green]</code> markup plus
+            rules, boxes, and tables — a levelled logger for your own output.
+          </li>
           <li>GitHub Actions gets matching groups, annotations, and a job-summary table.</li>
         </ul>
       </div>
@@ -316,6 +340,50 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 <span class="t-total">Total                  17.8s</span>
 
 <span class="t-pass">✔ Build succeeded — 4/4 targets in 17.8s · 2026-06-23 07:19</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="container out-compose" data-reveal>
+      <div class="out-compose__intro">
+        <h3>Compose the same output in your own targets</h3>
+        <p>
+          Import <code>@zuke/console</code> and reach for rules, colored markup,
+          boxes, and tables directly — the exact primitives the runner uses for
+          its banners and summary. <a href="/docs/console">Read the Console output guide →</a>
+        </p>
+      </div>
+      <div class="out-compose__demo">
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={consoleSnippet} lang="ts" theme="night-owl" />
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">output</span>
+          </div>
+<pre class="term"><span class="t-rule">──────────────</span> <span class="t-title">Release</span> <span class="t-rule">──────────────</span>
+<span class="t-info">ℹ</span> pushing <span class="t-name">core@1.2.0</span>
+<span class="t-ok">✔</span> published 4 packages
+<span class="t-warn">⚠</span> coverage <span class="t-warn">94.2%</span> — below gate
+
+<span class="t-box">┌</span> <span class="t-title">Artifacts</span> <span class="t-box">──────────────────┐</span>
+<span class="t-box">│</span>  core  1.2.0  <span class="t-ok">✔</span>              <span class="t-box">│</span>
+<span class="t-box">│</span>  cli   1.2.0  <span class="t-ok">✔</span>              <span class="t-box">│</span>
+<span class="t-box">└──────────────────────────────┘</span>
+
+<span class="t-head">Package      Size</span>
+<span class="t-rule">─────────────────</span>
+@zuke/core   18 kB
+@zuke/cli    12 kB</pre>
         </div>
       </div>
     </div>
@@ -715,6 +783,30 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .term .t-title, .term .t-total { color: var(--text); font-weight: 700; }
   .term .t-head { color: var(--text-dim); font-weight: 700; }
   .term .t-pass { color: #41d18a; font-weight: 700; }
+  .term .t-warn { color: #e0b341; }
+  .term .t-info { color: var(--cyan); }
+  .term .t-box { color: #41d18a; }
+
+  /* "compose your own" @zuke/console demo under the output section */
+  .out-compose {
+    margin-top: 44px;
+    padding-top: 36px;
+    border-top: 1px solid var(--border);
+  }
+  .out-compose__intro { max-width: 72ch; margin-bottom: 22px; }
+  .out-compose__intro h3 { font-size: 1.25rem; margin-bottom: 8px; }
+  .out-compose__intro p { color: var(--text-dim); margin: 0; }
+  .out-compose__demo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .out-compose__demo > * { min-width: 0; }
+  .out-compose__demo :global(pre.astro-code) { border: 0 !important; border-radius: 0; margin: 0; font-size: 0.78rem; }
+  @media (max-width: 860px) {
+    .out-compose__demo { grid-template-columns: 1fr; }
+  }
 
   /* dag */
   .sec-dag { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5), transparent); }
