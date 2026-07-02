@@ -19,9 +19,9 @@ const importSnippet = `import { ConsoleTasks as Log } from "jsr:@zuke/console";`
 
 const loggingSnippet = `Log.trace("resolved 42 source files");      // most verbose
 Log.debug("cache hit for 'check'");
-Log.info("pushing [bold]core@1.2.0[/]");     // → stdout
-Log.log("a plain line, no icon or styling"); // → stdout
-Log.success("[green]✔[/] published 4 packages");
+Log.info("pushing [bold]core@1.2.0[/]");      // → stdout
+Log.log("a plain line — no icon, no styling");// → stdout
+Log.success("published [bold]4[/] packages"); // ✔ is added for you
 Log.warn("coverage [yellow]94.2%[/] — below gate");   // → stderr
 Log.error("type-check failed", { error: err });       // → stderr, prints the cause`;
 
@@ -147,6 +147,15 @@ await run(MyBuild, { renderer });`;
     <strong>stderr</strong>. Every message accepts <a href="#markup">markup</a>.
   </p>
   <Code code={loggingSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output</span></div>
+<pre class="term"><span class="dim">·</span> resolved 42 source files
+<span class="gray">›</span> cache hit for 'check'
+<span class="info">ℹ</span> pushing <span class="b">core@1.2.0</span>
+a plain line — no icon, no styling
+<span class="ok">✔</span> published <span class="b">4</span> packages
+<span class="warn">⚠</span> coverage <span class="warn">94.2%</span> — below gate
+<span class="err">✖</span> type-check failed
+<span class="dim">    ↳ TypeError: expected string, got number</span></pre></div>
   <p>
     Only messages at or above the active <a href="#configure">level</a> are
     printed — set it to <code>"debug"</code> in CI, <code>"info"</code> locally,
@@ -163,6 +172,13 @@ await run(MyBuild, { renderer });`;
     restoring the surrounding style — so tags nest cleanly.
   </p>
   <Code code={markupSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output</span></div>
+<pre class="term"><span class="info">ℹ</span> <span class="b">core</span> is <span class="green">ready</span>
+<span class="info">ℹ</span> <span class="red b">2 errors</span> in <span class="u">mod.ts</span>
+<span class="info">ℹ</span> <span class="yellow">outer </span><span class="cyan">inner</span><span class="yellow"> still yellow</span>
+<span class="info">ℹ</span> <span class="dim">12 files</span> scanned
+<span class="info">ℹ</span> array access looks like arr[0]
+<span class="info">ℹ</span> branch: release/[beta]</pre></div>
   <p>The recognised style names are:</p>
   <ul>
     <li>
@@ -200,6 +216,13 @@ await run(MyBuild, { renderer });`;
     <code>style</code> (an array of style names).
   </p>
   <Code code={linesSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output</span></div>
+<pre class="term"><span class="rule">──────────────────────────────────────────────</span>
+<span class="rule">════════════════════════════════════════</span>
+<span class="dim">··············································</span>
+<span class="rule">───────────────────</span> Deploy <span class="rule">───────────────────</span>
+<span class="cyan">───────────────────</span> Tests <span class="cyan">────────────────────</span>
+<span class="rule">──────────────────────────────────────────────</span></pre></div>
 
   <h2 id="box">Boxes</h2>
   <p>
@@ -208,6 +231,18 @@ await run(MyBuild, { renderer });`;
     <code>width</code>, a <code>border</code> style, and a <code>titleStyle</code>.
   </p>
   <Code code={boxSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output</span></div>
+<pre class="term">┌────────────────────────────────────┐
+│ Deployed core@1.2.0 to production. │
+└────────────────────────────────────┘
+
+<span class="green">┌</span> <span class="b">Release</span> <span class="green">─────────────────────────────┐</span>
+<span class="green">│</span>                                      <span class="green">│</span>
+<span class="green">│</span>  core   1.2.0   ✔                    <span class="green">│</span>
+<span class="green">│</span>  cli    1.2.0   ✔                    <span class="green">│</span>
+<span class="green">│</span>  cmd    1.2.0   ✔                    <span class="green">│</span>
+<span class="green">│</span>                                      <span class="green">│</span>
+<span class="green">└──────────────────────────────────────┘</span></pre></div>
   <div class="note">
     <p>
       <code>border</code> and <code>titleStyle</code> take an array of style
@@ -225,6 +260,12 @@ await run(MyBuild, { renderer });`;
     of strings. Options control the look:
   </p>
   <Code code={tableSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output</span></div>
+<pre class="term"><span class="b">Package     Version   Size</span>
+<span class="dim">──────────────────────────</span>
+@zuke/core  1.2.0    18 kB
+@zuke/cli   1.2.0    12 kB
+@zuke/cmd   1.2.0     6 kB</pre></div>
   <p>
     <code>divider</code> draws a rule under the header, <code>separator</code>
     sets the gap between columns, and <code>headerStyle</code> /
@@ -241,6 +282,19 @@ await run(MyBuild, { renderer });`;
     only invoke them directly if you're driving the run loop yourself.
   </p>
   <Code code={bannersSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output</span></div>
+<pre class="term"><span class="banner">══════════════════════════════</span>
+<span class="name">build</span>
+<span class="banner">══════════════════════════════</span>
+
+<span class="title">Build Summary</span>
+<span class="rule">────────────────────────────</span>
+<span class="head">Target   Status     Duration</span>
+<span class="rule">────────────────────────────</span>
+install  <span class="ok">Succeeded</span>     12.4s
+build    <span class="ok">Succeeded</span>      2.2s
+<span class="rule">────────────────────────────</span>
+<span class="title">Total                  14.6s</span></pre></div>
 
   <h2 id="groups">Groups</h2>
   <p>
@@ -249,6 +303,9 @@ await run(MyBuild, { renderer });`;
     <code>::group::</code> / <code>::endgroup::</code> block.
   </p>
   <Code code={groupsSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output — plain terminal</span></div>
+<pre class="term"><span class="rule">──────────────────</span> Install <span class="rule">──────────────────</span>
+<span class="info">ℹ</span> added 214 packages in 12.4s</pre></div>
 
   <h2 id="configure">Configuration</h2>
   <p>
@@ -257,6 +314,13 @@ await run(MyBuild, { renderer });`;
     threshold and <code>reset()</code> restores the defaults.
   </p>
   <Code code={configureSnippet} lang="ts" theme="night-owl" />
+  <p class="io-hint">
+    <code>configure</code> prints nothing itself — it changes what later calls
+    emit. With <code>level: "debug"</code> the <code>trace</code> line above stays
+    hidden while <code>debug</code> and up now print; with
+    <code>github: true</code>, <code>group</code> and <code>warn</code>/<code>error</code>
+    switch to workflow-command syntax.
+  </p>
 
   <h2 id="renderer">Renderer integration</h2>
   <p>
@@ -266,6 +330,25 @@ await run(MyBuild, { renderer });`;
     custom-themed one with <code>createConsoleRenderer(theme)</code>.
   </p>
   <Code code={rendererSnippet} lang="ts" theme="night-owl" />
+  <div class="io"><div class="io__bar"><span>output — a full run through consoleRenderer</span></div>
+<pre class="term"><span class="cmd">$ ./zuke build</span>
+
+<span class="banner">══════════════════════════════</span>
+<span class="name">build</span>
+<span class="banner">══════════════════════════════</span>
+<span class="dim">  ▸ astro build — 4 pages in 2.2s</span>
+<span class="ok">✔</span> build <span class="dim">succeeded in 2.2s</span>
+
+<span class="title">Build Summary</span>
+<span class="rule">────────────────────────────</span>
+<span class="head">Target   Status     Duration</span>
+<span class="rule">────────────────────────────</span>
+clean    <span class="ok">Succeeded</span>      0.1s
+build    <span class="ok">Succeeded</span>      2.2s
+<span class="rule">────────────────────────────</span>
+<span class="title">Total                   2.3s</span>
+
+<span class="ok b">✔ Build succeeded — 2/2 targets in 2.3s</span></pre></div>
   <p>
     Start from <code>defaultTheme</code> and override the tokens you want to
     recolor — the semantic markup tokens (<code>success</code>,
@@ -281,3 +364,52 @@ await run(MyBuild, { renderer });`;
     <li><a href="/examples">Examples</a> — complete build files that produce this output.</li>
   </ul>
 </DocsLayout>
+
+<style>
+  /* rendered-output cards under each example */
+  .io {
+    margin: -6px 0 24px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .io__bar {
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .io__bar span {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .io .term {
+    margin: 0;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+    overflow-x: auto;
+    white-space: pre;
+  }
+  /* terminal token colors — mirror the semantic theme */
+  .io .b { font-weight: 700; color: var(--text); }
+  .io .u { text-decoration: underline; text-underline-offset: 2px; }
+  .io .dim, .io .muted { color: var(--text-faint); }
+  .io .gray { color: #7b83a3; }
+  .io .cyan, .io .info { color: var(--cyan); }
+  .io .green, .io .ok { color: #41d18a; }
+  .io .yellow, .io .warn { color: #e0b341; }
+  .io .red, .io .err { color: #ff6b6b; }
+  .io .rule, .io .banner { color: #2c3760; }
+  .io .cmd { color: var(--text-faint); }
+  .io .name { color: var(--cyan); font-weight: 700; }
+  .io .title { color: var(--text); font-weight: 700; }
+  .io .head { color: var(--text-dim); font-weight: 700; }
+
+  .io-hint { font-size: 0.92rem; }
+</style>
