@@ -1,0 +1,293 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "two-caches", label: "Two caches" },
+  { id: "incremental", label: "Incremental build cache" },
+  { id: "fingerprint", label: "What \"unchanged\" means" },
+  { id: "outputs", label: "Outputs guard the cache" },
+  { id: "cachekey", label: "Non-file inputs — .cacheKey()" },
+  { id: "store", label: "The store" },
+  { id: "interaction", label: "Interaction with the build" },
+  { id: "ai-cache", label: "AI response cache" },
+  { id: "ai-keying", label: "How a call is keyed" },
+  { id: "ai-config", label: "Configuring aiCache" },
+  { id: "ai-stores", label: "Custom stores" },
+];
+
+const incrementalSnippet = `compile = target()
+  .inputs("src", "deno.json")   // re-run only when these change…
+  .outputs("dist")              // …or when dist is missing
+  .executes(async () => {
+    await DenoTasks.run((s) => s.script("build.ts"));
+  });`;
+
+const cacheKeySnippet = `compile = target()
+  .inputs("src")
+  .cacheKey(() => this.configuration.value)   // rebuild when the config flips
+  .cacheKey(() => Deno.version.deno)          // …or the toolchain moves
+  .executes(/* … */);`;
+
+const aiReviewCacheSnippet = `import { aiCache, securityReviewer } from "jsr:@zuke/ai";
+
+review = target()
+  .validateBefore(
+    securityReviewer((r) =>
+      r.provider("openai").apiKey(this.key)
+        .cache(aiCache((c) => c.dir(".zuke/ai-cache").ttl(86_400)))
+    ),
+  )
+  .executes(/* … */);`;
+
+const aiFixerCacheSnippet = `test = target()
+  .executes(() => DenoTasks.test((s) => s.allowAll()))
+  .recoverWith(
+    aiFixer((f) =>
+      f.provider("openai").apiKey(this.key)
+        .cache(aiCache((c) => c.ttl(3_600)))
+    ),
+  );`;
+
+const customStoreSnippet = `import { type CacheEntry, type CacheStore } from "jsr:@zuke/ai";
+
+const memory = new Map<string, CacheEntry>();
+const inMemory: CacheStore = {
+  get: (k) => Promise.resolve(memory.get(k)),
+  set: (k, e) => {
+    memory.set(k, e);
+    return Promise.resolve();
+  },
+};
+
+securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemory))));`;
+---
+
+<DocsLayout
+  title="Caching"
+  description="Zuke has two independent caches: an incremental build cache that skips a target whose inputs are unchanged (.inputs()/.outputs()/.cacheKey()), and an AI response cache that reuses an identical review or fix call instead of re-paying the model."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke has <strong>two independent caches</strong>, and they solve different
+    problems. Reach for whichever matches what you're trying to avoid re-doing.
+    Both are file-backed, git-ignored, dependency-free, and
+    <strong>best-effort</strong>: a missing or corrupt store is treated as empty
+    (everything just rebuilds), so a broken cache never breaks a build.
+  </p>
+
+  <h2 id="two-caches">Two caches</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Cache</th><th>What it skips</th><th>Where it lives</th><th>Opt in with</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="#incremental"><strong>Incremental build cache</strong></a></td>
+        <td>Re-running a target whose inputs are unchanged</td>
+        <td><code>&lt;repo root&gt;/.zuke/cache.json</code></td>
+        <td><code>.inputs()</code> (and/or <code>.cacheKey()</code>) on a target</td>
+      </tr>
+      <tr>
+        <td><a href="#ai-cache"><strong>AI response cache</strong></a></td>
+        <td>Re-paying a model for an identical review/fix call</td>
+        <td><code>&lt;repo root&gt;/.zuke/ai-cache/</code></td>
+        <td><code>.cache(aiCache(...))</code> on a reviewer or fixer</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="incremental">Incremental build cache</h2>
+  <p>
+    A target that declares <strong>inputs</strong> becomes <em>incremental</em>.
+    Before running it, Zuke fingerprints the declared inputs; if the fingerprint
+    matches the last successful run <strong>and</strong> every declared output
+    still exists, the target is <strong>skipped</strong> and reported
+    <code>cached</code>. Otherwise it runs and its fingerprint is refreshed.
+  </p>
+  <Code code={incrementalSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="fingerprint">What "unchanged" means</h2>
+  <p>
+    The fingerprint is a <strong>SHA-256</strong> computed with the built-in Web
+    Crypto API — no dependency:
+  </p>
+  <ul>
+    <li>A <strong>file</strong> hashes to the SHA-256 of its contents.</li>
+    <li>
+      A <strong>directory</strong> hashes to the SHA-256 of its sorted
+      <code>name:hash</code> entries, <strong>recursively</strong> — so a change
+      anywhere in the tree changes the result, but reordering the filesystem does
+      not (entries are sorted first).
+    </li>
+    <li>
+      A <strong>missing</strong> path hashes to a sentinel, so a file's
+      <strong>appearance or removal</strong> invalidates the cache just as an edit
+      does. Renaming, adding, or deleting an input file all force a rebuild.
+    </li>
+  </ul>
+  <p>
+    Inputs are combined in <strong>declaration order</strong>, so the same files
+    always produce the same fingerprint — deterministic across machines and runs.
+  </p>
+
+  <h2 id="outputs">Outputs guard the cache</h2>
+  <p>
+    <code>.outputs(...)</code> lists the files or directories the target
+    produces. A cache hit <strong>also</strong> requires every declared output to
+    still exist — so deleting <code>dist/</code> (or any declared output) forces a
+    rebuild even when the inputs are untouched. Outputs are optional; a target
+    with inputs but no outputs is cached purely on its input fingerprint.
+  </p>
+
+  <h2 id="cachekey">Non-file inputs — <code>.cacheKey()</code></h2>
+  <p>
+    Not every input is a file. <code>.cacheKey(fn)</code> folds an extra value — a
+    parameter, a tool version, a git commit — into the fingerprint, so the target
+    also rebuilds when that value changes. The function may be async and is
+    repeatable.
+  </p>
+  <Code code={cacheKeySnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      A <code>.cacheKey()</code> <strong>on its own makes a target cacheable</strong>
+      — you don't need <code>.inputs()</code> for it to take effect. A target that
+      declares neither inputs nor cache keys is never cached and always runs.
+    </p>
+  </div>
+
+  <h2 id="store">The store</h2>
+  <p>
+    Fingerprints persist in <code>&lt;repo root&gt;/.zuke/cache.json</code>
+    (git-ignored). A few details worth knowing:
+  </p>
+  <ul>
+    <li>
+      The file is created <strong>only when the build has at least one cacheable
+      target</strong>. A build with no <code>.inputs()</code>/<code>.cacheKey()</code>
+      anywhere never opens or writes it.
+    </li>
+    <li>
+      A <strong>corrupt or hand-edited</strong> <code>cache.json</code> is
+      tolerated: if it can't be parsed, Zuke treats it as empty and everything
+      rebuilds — it never errors on a bad store.
+    </li>
+    <li>
+      The store is only rewritten when a fingerprint actually changed, so an
+      all-cached run touches no files.
+    </li>
+  </ul>
+
+  <h2 id="interaction">Interaction with the build</h2>
+  <ul>
+    <li>
+      A <strong>cached (or condition-skipped) target counts as satisfied</strong>,
+      so its dependents still run. Caching a target doesn't strand what depends on
+      it.
+    </li>
+    <li>
+      The fingerprint is recorded <strong>only after a successful run</strong> — a
+      failed target is never marked up-to-date.
+    </li>
+    <li>
+      <strong><code>--no-cache</code></strong> (or
+      <code>execute(..., &#123; cache: false &#125;)</code>) ignores the cache
+      entirely and re-runs every target.
+    </li>
+    <li>
+      <strong><code>--dry-run</code></strong> never reads or writes the cache: it
+      prints the plan without running any body, so it can't invalidate or refresh
+      a fingerprint.
+    </li>
+  </ul>
+  <p>
+    See <a href="/docs/concepts#caching">Core concepts</a> for the same feature in
+    the context of the execution model, and the
+    <a href="/examples#caching">incremental cache example</a> for a complete
+    build file.
+  </p>
+
+  <h2 id="ai-cache">AI response cache</h2>
+  <p>
+    An <a href="/docs/ai-review">AI review</a> or
+    <a href="/docs/self-healing">fix</a> call is expensive: it spends tokens and
+    round-trips to a provider. Yet the <strong>same</strong> call often runs again
+    and again — a flaky CI retry, a re-pushed branch, a local loop over an
+    unchanged diff. <code>aiCache(...)</code> persists each provider response so an
+    <strong>identical</strong> call reuses the stored answer instead of paying for
+    the model again.
+  </p>
+  <Code code={aiReviewCacheSnippet} lang="ts" theme="night-owl" />
+  <p>The same cache attaches to a <a href="/docs/self-healing">fixer</a> with <code>.cache(...)</code>:</p>
+  <Code code={aiFixerCacheSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="ai-keying">How a call is keyed</h2>
+  <p>
+    An entry is keyed by a <strong>stable hash of the call's salient parts</strong>
+    — the provider, the model, and the exact prompt (which, for a review,
+    incorporates the diff). Change any of them and it's a different key, so a new
+    diff or a swapped model is a natural miss. A cache <strong>hit costs
+    nothing</strong> and does <strong>not</strong> draw down an
+    <a href="/docs/ai-review">AI budget</a>.
+  </p>
+
+  <h2 id="ai-config">Configuring <code>aiCache</code></h2>
+  <p>
+    <code>aiCache((c) =&gt; …)</code> builds the cache inline. Every knob is
+    optional:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.dir(path)</code></td><td>Directory for the default file store (default <code>.zuke/ai-cache</code>).</td></tr>
+      <tr><td><code>.ttl(seconds)</code></td><td>Entries older than this are ignored. <strong>Default <code>604800</code> (7 days)</strong>; <code>0</code> means never expire.</td></tr>
+      <tr><td><code>.disable()</code></td><td>Turn the cache off programmatically — every read misses, every write is a no-op.</td></tr>
+      <tr><td><code>.store(custom)</code></td><td>Inject a custom <a href="#ai-stores"><code>CacheStore</code></a> instead of the file store.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      The cache is <strong>opt-in per reviewer/fixer</strong> — it does nothing
+      until you attach it with <code>.cache(...)</code>. It is deliberately
+      <strong>best-effort</strong>: a missing file, a corrupt or truncated entry,
+      or a failed write is swallowed and treated as a miss, so a broken cache never
+      breaks the build it caches for.
+    </p>
+  </div>
+
+  <h2 id="ai-stores">Custom stores</h2>
+  <p>
+    The default backing store writes one JSON file per key under
+    <code>.dir()</code>. Any object implementing <code>CacheStore</code> —
+    <code>get(key)</code> / <code>set(key, entry)</code> — can replace it via
+    <code>.store(...)</code>, which is how tests inject an in-memory store for a
+    single run:
+  </p>
+  <Code code={customStoreSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Caching pairs naturally with the other AI
+    <a href="/docs/ai-review">cost controls</a> (<code>budget</code>,
+    <code>maxDiffTokens</code>, a cheaper <code>model</code>) — see the AI review
+    docs for the full picture.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>
