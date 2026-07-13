@@ -80,6 +80,39 @@ class CiBuild extends Build {
 await run(CiBuild);`,
   },
   {
+    id: "caching",
+    tag: "Incremental caching",
+    title: "Skip unchanged work with the build cache",
+    desc: "Declare a target's .inputs() and .outputs() to make it incremental — Zuke fingerprints the inputs (SHA-256, directories hashed recursively), skips the target when nothing changed and every output still exists, and reports it `cached`. .cacheKey() folds in non-file values like a parameter or the toolchain version. Fingerprints live in .zuke/cache.json; pass --no-cache to rebuild everything. @zuke/ai adds a separate aiCache for review/fix responses.",
+    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class CachedBuild extends Build {
+  mode = parameter("Build mode").default("release");
+
+  // Incremental: fingerprint the inputs, skip when nothing changed and every
+  // declared output still exists — the run reports this target as \`cached\`.
+  bundle = target()
+    .description("Bundle the app — only when sources or config change")
+    .inputs("src", "deno.json")          // re-run when these change…
+    .outputs("dist/app.js")              // …or when the output goes missing
+    .cacheKey(() => this.mode.value)     // …or when the build mode flips
+    .cacheKey(() => Deno.version.deno)   // …or the toolchain moves
+    .executes(async () => {
+      await DenoTasks.run((s) => s.script("build.ts"));
+    });
+
+  // No .inputs()/.cacheKey() → never cached, always runs. A cached
+  // dependency still counts as satisfied, so this runs on top of a hit.
+  test = target()
+    .description("Always run the test suite")
+    .dependsOn(this.bundle)
+    .executes(async () => { await DenoTasks.test((s) => s.allowAll()); });
+}
+
+await run(CachedBuild);`,
+  },
+  {
     id: "coverage-upload",
     tag: "Coverage / Codecov",
     title: "Upload coverage to Codecov",
@@ -326,7 +359,7 @@ await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, a Codecov coverage upload, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, an incremental build cache, a Codecov coverage upload, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">

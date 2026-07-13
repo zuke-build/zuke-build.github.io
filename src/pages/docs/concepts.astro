@@ -257,12 +257,20 @@ class MyBuild extends Build {
   <div class="note">
     <p>
       Fingerprints live in <code>&lt;repo root&gt;/.zuke/cache.json</code>
-      (git-ignored). A target with no inputs always runs; pass
-      <code>--no-cache</code> to rebuild everything. Add a non-file value (a
-      parameter, tool version, git commit) to the fingerprint with
-      <code>.cacheKey(fn)</code>.
+      (git-ignored). A target with no inputs <em>and</em> no cache keys always
+      runs; pass <code>--no-cache</code> to rebuild everything. Add a non-file
+      value (a parameter, tool version, git commit) to the fingerprint with
+      <code>.cacheKey(fn)</code> — which on its own makes a target cacheable.
     </p>
   </div>
+  <p>
+    See the dedicated <a href="/docs/caching">Caching</a> page for the full
+    picture — the fingerprint algorithm, how adding or removing a file
+    invalidates a target, corrupt-store tolerance, and the separate
+    <strong>AI response cache</strong> (<code>aiCache</code>) that reuses an
+    identical <a href="/docs/ai-review">review</a> or
+    <a href="/docs/self-healing">fix</a> call instead of re-paying the model.
+  </p>
 
   <h2 id="conditional">Conditional execution</h2>
   <p>

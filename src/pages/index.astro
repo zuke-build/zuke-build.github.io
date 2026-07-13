@@ -90,7 +90,7 @@ const features = [
   {
     icon: "bolt",
     title: "Incremental & parallel",
-    body: "Zuke caches target results and skips unchanged work, and runs independent targets concurrently with --parallel.",
+    body: "Declare a target's .inputs()/.outputs() and Zuke fingerprints them, skipping unchanged work as cached — plus .cacheKey() for non-file inputs and a separate cache for AI review/fix calls. Independent targets run concurrently with --parallel.",
   },
   {
     icon: "jsr",
@@ -274,6 +274,7 @@ const hosts = [
           <li>References are real values — <code>this.build</code>, never a string.</li>
           <li>Per-target status, timing, and a final build summary.</li>
           <li>Rename a target and every dependant updates automatically.</li>
+          <li><a href="/docs/caching">Incremental caching</a> skips a target whose <code>.inputs()</code> are unchanged — reported <code>cached</code>, with dependents still running.</li>
           <li><code>zuke graph --output=html</code> renders an interactive graph you can pan, zoom, and click to trace dependencies.</li>
         </ul>
         <p class="dag-note">
