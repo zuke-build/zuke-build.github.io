@@ -113,6 +113,45 @@ class CachedBuild extends Build {
 await run(CachedBuild);`,
   },
   {
+    id: "remote-cache",
+    tag: "Distributed builds",
+    title: "Remote cache & CI fan-out",
+    desc: "Scale the cache past one machine. A remoteCache() override shares a target's built outputs across machines — a local miss restores them from the store instead of rebuilding, and a successful run uploads them for the next machine (reported cached, just like a local hit). Two backends ship: a mounted directory (FileSystemCacheStore) or any HTTP object store like S3/GCS/R2 (HttpCacheStore) — or set ZUKE_REMOTE_CACHE_* in CI with no code change. cicd({ fanOut: true }) then emits one CI job per target, wired by dependsOn so independent targets run in parallel and share work through the store. Narrow a run to what changed with `zuke ci --affected=origin/main`.",
+    code: `import { Build, HttpCacheStore, cicd, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class CI extends Build {
+  cacheToken = parameter("Cache auth token").secret().env("CACHE_TOKEN");
+
+  // Share built outputs across machines. On a local miss Zuke restores from the
+  // store; after a successful run it uploads for the next machine or CI job.
+  override remoteCache() {
+    return new HttpCacheStore({
+      url: "https://cache.example.com",   // an S3/GCS/R2 bucket or a cache server
+      token: this.cacheToken.value,       // trusted config — from a secret param
+    });
+  }
+
+  lint = target()
+    .description("Lint")
+    .inputs("src").outputs("dist/lint")   // both declared → shareable outputs
+    .executes(async () => { await DenoTasks.lint(); });
+
+  build = target()
+    .description("Type-check & bundle")
+    .dependsOn(this.lint)
+    .inputs("src", "deno.json").outputs("dist")
+    .executes(async () => { await DenoTasks.run((s) => s.script("build.ts")); });
+
+  // One CI job per target, wired by dependsOn — independent jobs run in
+  // parallel and reuse each other's outputs through the remote cache above.
+  //   Run only what a change reaches:  ./zuke build --affected=origin/main
+  pipeline = cicd({ provider: "github", fanOut: true });
+}
+
+await run(CI);`,
+  },
+  {
     id: "coverage-upload",
     tag: "Coverage / Codecov",
     title: "Upload coverage to Codecov",
@@ -359,7 +398,7 @@ await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, an incremental build cache, a Codecov coverage upload, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, an incremental build cache, a remote cache with CI fan-out, a Codecov coverage upload, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">

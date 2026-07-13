@@ -61,6 +61,32 @@ test = target()
   )
   .recoverAttempts(2);               // up to two fix-then-rerun cycles`;
 
+const cacheSnippet = `import { Build, HttpCacheStore, cicd, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class CI extends Build {
+  // Share built outputs across machines: restore on a local miss, upload
+  // after a green run — so the next machine or CI job reuses the work.
+  override remoteCache() {
+    return new HttpCacheStore({ url: this.cacheUrl.value, token: this.token.value });
+  }
+
+  build = target()
+    .inputs("src", "deno.json")   // the fingerprint → the cache key
+    .outputs("dist")              // archived to / restored from the store
+    .executes(() => DenoTasks.run((s) => s.script("build.ts")));
+
+  // One CI job per target, wired by dependsOn — independent jobs run in parallel.
+  ci = cicd({ provider: "github", fanOut: true });
+}`;
+
+// Remote-cache backends, shown as chips in the caching section.
+const cacheBackends = [
+  { name: "Filesystem", color: "#34e1d4" },
+  { name: "HTTP", color: "#4f8cff" },
+  { name: "S3 / GCS / R2", color: "#9b6bff" },
+];
+
 const features = [
   {
     icon: "type",
@@ -89,8 +115,8 @@ const features = [
   },
   {
     icon: "bolt",
-    title: "Incremental & parallel",
-    body: "Declare a target's .inputs()/.outputs() and Zuke fingerprints them, skipping unchanged work as cached — plus .cacheKey() for non-file inputs and a separate cache for AI review/fix calls. Independent targets run concurrently with --parallel.",
+    title: "Incremental, remote & parallel",
+    body: "Fingerprint a target's .inputs()/.outputs() to skip unchanged work as cached, share those outputs across machines with a remote cache, scope a run to what changed with --affected, and run independent targets concurrently with --parallel.",
   },
   {
     icon: "jsr",
@@ -412,6 +438,81 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <code>.noThrow()</code> for exactly the behaviour you want.
         </p>
         <a class="btn btn-ghost" href="/docs">Read the shell guide →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ CACHING ░░ -->
+  <section class="section sec-cache" id="caching">
+    <div class="container cache-grid">
+      <div data-reveal>
+        <span class="eyebrow">Caching &amp; distributed builds <span class="tag-new">New</span></span>
+        <h2>Build it once. <span class="gradient-text">Reuse it everywhere.</span></h2>
+        <p class="lead">
+          Zuke fingerprints a target's <code>.inputs()</code> and skips it when
+          nothing changed. A <strong>remote cache</strong> takes that across
+          machines — a fresh checkout or a CI job <strong>restores</strong> a
+          target's built outputs from a shared store instead of rebuilding them —
+          and <code>--affected</code> narrows a run to just what a change can reach.
+        </p>
+        <ul class="ticks">
+          <li><strong>Incremental, locally</strong> — <code>.inputs()</code>/<code>.outputs()</code> are fingerprinted; an unchanged target is skipped and shown <code>cached</code>.</li>
+          <li><strong>Remote cache</strong> — on a local miss, restore a target's outputs from a shared store instead of rebuilding; upload after a green run so the next machine reuses them.</li>
+          <li><strong>Two backends</strong> — a mounted directory or any HTTP object store (S3/GCS/R2), via a typed <code>remoteCache()</code> override or <code>ZUKE_REMOTE_CACHE_*</code> in CI.</li>
+          <li><strong><code>--affected</code></strong> runs only the targets a git diff can reach, and <strong><code>fanOut</code></strong> emits one parallel CI job per target — the monorepo combo.</li>
+        </ul>
+        <div class="providers">
+          <span class="providers__label">Cache backends</span>
+          {cacheBackends.map((b) => (
+            <span class="provider" style={`--c:${b.color}`}>
+              <span class="host-dot"></span>{b.name}
+            </span>
+          ))}
+        </div>
+        <a class="btn btn-ghost" href="/docs/caching">Read the caching guide →</a>
+      </div>
+
+      <div class="cache-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+        </div>
+
+        <!-- the distributed-cache flow: machine A uploads, a CI job restores -->
+        <div class="rcache panel">
+          <div class="rcache__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="rcache__barname">remote cache</span>
+          </div>
+          <div class="rcache__body">
+            <div class="rcache__node">
+              <span class="rcache__badge rcache__badge--up">↑</span>
+              <div class="rcache__text">
+                <span class="rcache__title">build · machine A</span>
+                <span class="rcache__sub">bundled <code>dist/</code> — uploaded after a green run</span>
+              </div>
+            </div>
+            <div class="rcache__store">
+              <span class="rcache__storeicon">▤</span>
+              <span class="rcache__storename">Remote store · <code>cache.example.com</code></span>
+              <span class="rcache__key">build @ a3f9c21</span>
+            </div>
+            <div class="rcache__node">
+              <span class="rcache__badge rcache__badge--down">↓</span>
+              <div class="rcache__text">
+                <span class="rcache__title">build · CI job (fresh checkout)</span>
+                <span class="rcache__sub">restored <code>dist/</code> — <span class="rcache__cached">cached</span> in 0.0s, no rebuild</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -988,6 +1089,77 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .sevtag--med { color: #e8bd6b; background: rgba(224, 169, 59, 0.14); }
   .sevtag--low { color: #6ea8ff; background: rgba(79, 140, 255, 0.14); }
 
+  /* caching & distributed builds */
+  .sec-cache {
+    background:
+      radial-gradient(55% 100% at 15% 40%, rgba(52, 225, 212, 0.10), transparent 60%),
+      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.5), transparent);
+  }
+  .cache-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .cache-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+  .cache-visual { display: grid; gap: 16px; }
+
+  /* the distributed-cache flow panel */
+  .rcache { overflow: hidden; box-shadow: var(--shadow-glow); }
+  .rcache__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .rcache__barname {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+  }
+  .rcache__body { padding: 16px 18px; display: grid; gap: 10px; }
+  .rcache__node { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: center; }
+  .rcache__badge {
+    width: 29px;
+    height: 29px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 1px solid var(--border);
+  }
+  .rcache__badge--up { color: var(--violet); border-color: rgba(155, 107, 255, 0.5); background: rgba(155, 107, 255, 0.12); }
+  .rcache__badge--down { color: #0a0e17; border-color: transparent; background: linear-gradient(135deg, #41d18a, #34e1d4); }
+  .rcache__text { display: grid; gap: 2px; }
+  .rcache__title { font-size: 0.9rem; color: var(--text); font-weight: 600; }
+  .rcache__sub { font-size: 0.8rem; color: var(--text-faint); }
+  .rcache__node code, .rcache__store code { font-family: var(--font-mono); font-size: 0.82em; color: var(--cyan); }
+  .rcache__cached { color: #6fe3ad; font-weight: 600; }
+  .rcache__store {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 8px;
+    padding: 9px 12px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .rcache__storeicon { color: var(--cyan); font-size: 0.95rem; }
+  .rcache__storename { font-size: 0.82rem; color: var(--text-dim); }
+  .rcache__key {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
   /* self-healing */
   .sec-heal {
     background:
@@ -1180,12 +1352,13 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .shell-grid > *,
   .review-grid > *,
   .heal-grid > *,
+  .cache-grid > *,
   .out-grid > *,
   .dag-grid > * { min-width: 0; }
 
   /* responsive */
   @media (max-width: 940px) {
-    .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
+    .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .cache-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
     .hero__code { order: 2; }
     .feat-grid { grid-template-columns: repeat(2, 1fr); }
     .tools-grid { grid-template-columns: repeat(2, 1fr); }

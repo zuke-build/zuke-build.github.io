@@ -10,6 +10,10 @@ const toc = [
   { id: "cachekey", label: "Non-file inputs — .cacheKey()" },
   { id: "store", label: "The store" },
   { id: "interaction", label: "Interaction with the build" },
+  { id: "remote", label: "Remote cache" },
+  { id: "remote-backends", label: "Backends & configuration" },
+  { id: "remote-security", label: "Security" },
+  { id: "affected", label: "Affected targets — --affected" },
   { id: "ai-cache", label: "AI response cache" },
   { id: "ai-keying", label: "How a call is keyed" },
   { id: "ai-config", label: "Configuring aiCache" },
@@ -49,6 +53,35 @@ const aiFixerCacheSnippet = `test = target()
     ),
   );`;
 
+const remoteOverrideSnippet = `import { Build, HttpCacheStore, parameter, target } from "jsr:@zuke/core";
+
+class CI extends Build {
+  cacheToken = parameter("Cache auth token").secret().env("CACHE_TOKEN");
+
+  // Share built outputs across machines: a local miss restores them from the
+  // store instead of rebuilding; a successful run uploads them for the next.
+  override remoteCache() {
+    return new HttpCacheStore({
+      url: "https://cache.example.com",
+      token: this.cacheToken.value,
+    });
+  }
+
+  build = target().inputs("src").outputs("dist").executes(/* … */);
+}`;
+
+const remoteEnvSnippet = `# HTTP backend — any object store or cache server behind a URL
+ZUKE_REMOTE_CACHE_URL=https://cache.example.com ZUKE_REMOTE_CACHE_TOKEN=… ./zuke ci
+
+# Filesystem backend — a shared / mounted directory
+ZUKE_REMOTE_CACHE_DIR=/mnt/zuke-cache ./zuke ci
+
+./zuke ci --no-remote-cache   # use the local cache only for this run`;
+
+const affectedSnippet = `zuke ci --affected                 # vs HEAD (uncommitted changes)
+zuke ci --affected=origin/main     # vs a base branch — the usual CI form
+zuke ci --affected=main...         # merge-base comparison`;
+
 const customStoreSnippet = `import { type CacheEntry, type CacheStore } from "jsr:@zuke/ai";
 
 const memory = new Map<string, CacheEntry>();
@@ -65,7 +98,7 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
 
 <DocsLayout
   title="Caching"
-  description="Zuke has two independent caches: an incremental build cache that skips a target whose inputs are unchanged (.inputs()/.outputs()/.cacheKey()), and an AI response cache that reuses an identical review or fix call instead of re-paying the model."
+  description="Zuke's caching: an incremental build cache that skips unchanged targets (.inputs()/.outputs()/.cacheKey()), a remote cache that shares built outputs across machines (filesystem or HTTP backends), --affected for git-aware monorepo runs, and an AI response cache that reuses an identical review or fix call."
   toc={toc}
 >
   <p class="lead">
@@ -96,6 +129,15 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
       </tr>
     </tbody>
   </table>
+  <p>
+    The build cache has a distributed sibling: a <a href="#remote"><strong>remote
+    cache</strong></a> that shares a target's built <strong>outputs</strong> across
+    machines, so a fresh checkout or a CI job can reuse work another machine
+    already did. And <a href="#affected"><strong><code>--affected</code></strong></a>
+    — the monorepo-scale complement to the cache — narrows a run to just the
+    targets a set of file changes can reach. Both build on the same input
+    fingerprint and are covered below.
+  </p>
 
   <h2 id="incremental">Incremental build cache</h2>
   <p>
@@ -206,6 +248,105 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     <a href="/examples#caching">incremental cache example</a> for a complete
     build file.
   </p>
+
+  <h2 id="remote">Remote cache</h2>
+  <p>
+    The incremental cache is <strong>local</strong>. A <strong>remote cache</strong>
+    shares a target's built <code>.outputs()</code> across machines: on a local
+    miss, Zuke <strong>restores</strong> the outputs from the store instead of
+    rebuilding them; after a successful run it <strong>uploads</strong> them for the
+    next machine. It applies to targets that declare <strong>both</strong>
+    <code>inputs</code> and <code>outputs</code>, and is keyed by the same input
+    fingerprint the local cache uses — a restored target reports as
+    <code>cached</code> in the summary, just like a local hit. A store outage is
+    never fatal: Zuke logs a warning and falls back to a local rebuild.
+  </p>
+  <Code code={remoteOverrideSnippet} lang="ts" theme="night-owl" />
+
+  <h3 id="remote-backends">Backends &amp; configuration</h3>
+  <p>
+    Two dependency-free backends ship behind one <code>RemoteCacheStore</code>
+    interface — archives are the built-in <code>tar</code>/<code>gzip</code>:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Backend</th><th>What it is</th><th>Where an entry lives</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>FileSystemCacheStore</code></td>
+        <td>A shared or mounted directory — an NFS mount, a CI volume.</td>
+        <td><code>&lt;dir&gt;/&lt;key&gt;.tar.gz</code></td>
+      </tr>
+      <tr>
+        <td><code>HttpCacheStore</code></td>
+        <td>Any object store or cache server behind a URL — an S3/GCS/R2 bucket, or a self-hosted endpoint — with an optional bearer token.</td>
+        <td><code>GET</code>/<code>PUT &lt;url&gt;/&lt;key&gt;</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Declare a store in code with a typed <code>remoteCache()</code> override (as
+    above), or configure it from the environment with no build-file change —
+    handy for CI:
+  </p>
+  <Code code={remoteEnvSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Precedence is: an explicit <code>execute(&#123; remoteCache &#125;)</code>
+    option, then the build's <code>remoteCache()</code> override, then the
+    <code>ZUKE_REMOTE_CACHE_*</code> environment variables.
+    <code>--no-remote-cache</code> uses the local cache only for a run;
+    <code>--no-cache</code> disables both.
+  </p>
+  <div class="note">
+    <p>
+      Archive entry names use the POSIX <code>ustar</code> format (a 100-byte path
+      limit), so extremely deep output paths are rejected with a clear error.
+    </p>
+  </div>
+
+  <h3 id="remote-security">Security</h3>
+  <p>
+    The store URL and token are <strong>trusted configuration</strong> — outputs
+    are uploaded there and archives are extracted from it — so point them only at a
+    cache you control, and prefer a <code>parameter().secret()</code> or an
+    environment variable over a hard-coded value. On CI, restrict egress to the
+    cache host so a misconfigured or overridden URL can't exfiltrate artifacts.
+    Restore is hardened against a poisoned store: an archive entry with an absolute
+    path or one containing a <code>..</code> segment is rejected before any file is
+    written, so nothing lands outside the workspace.
+  </p>
+
+  <h2 id="affected">Affected targets — <code>--affected</code></h2>
+  <p>
+    <code>--affected</code> restricts a run to the targets that a set of file
+    changes can reach — the <strong>monorepo-scale complement</strong> to the
+    incremental cache. Zuke asks git for the files changed since a base revision
+    and keeps only the <strong>affected</strong> targets; the rest are skipped
+    (their prior outputs are assumed current, so a skipped dependency still unblocks
+    its dependents).
+  </p>
+  <Code code={affectedSnippet} lang="bash" theme="night-owl" />
+  <p>
+    A target is affected when a changed file falls inside one of its declared
+    <code>.inputs()</code>, <strong>or</strong> when any of its dependencies is
+    affected (affectedness flows downstream along <code>dependsOn</code> and
+    <code>triggers</code>). A target that declares <strong>no</strong> inputs can't
+    be proven unaffected, so it is <strong>always run</strong> — declare
+    <code>inputs</code> on the targets you want <code>--affected</code> to be able
+    to skip.
+  </p>
+  <div class="note">
+    <p>
+      The base defaults to <code>HEAD</code> (uncommitted changes); pass
+      <code>--affected=&lt;ref&gt;</code> for any git revision (<code>origin/main</code>,
+      a tag, or <code>main...</code> for a merge-base comparison). Programmatic
+      callers pass <code>&#123; affected: &#123; base &#125; &#125;</code> to
+      <code>execute</code>, optionally with a <code>changedFiles</code> seam in place
+      of git. Combine it with the <a href="#remote">remote cache</a> and
+      <a href="/docs/concepts#cicd">CI fan-out</a> for fast monorepo pipelines.
+    </p>
+  </div>
 
   <h2 id="ai-cache">AI response cache</h2>
   <p>
