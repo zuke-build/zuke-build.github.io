@@ -61,6 +61,7 @@ const runSnippet = `./zuke compile         # run a target (and its dependencies)
 ./zuke graph           # print the dependency graph
 ./zuke generate-ci     # write declared CI/CD pipeline files
 ./zuke completions install zsh   # install shell tab-completion
+./zuke mcp             # run an MCP server over the build for AI agents
 ./zuke                 # run the default target`;
 
 const outputSnippet = `$ ./zuke build
@@ -215,6 +216,7 @@ Total                  17.8s
     <li><a href="/docs/console">Console output</a> — rich terminal output with <code>@zuke/console</code>: markup, rules, boxes, tables, and a levelled logger.</li>
     <li><a href="/docs/ai-review">AI code review</a> — gate a build on a model-assessed security review with <code>@zuke/ai</code>.</li>
     <li><a href="/docs/self-healing">Self-healing builds</a> — let an AI fixer diagnose, suggest, and auto-fix a failed target, then re-run the real command to verify.</li>
+    <li><a href="/docs/mcp">MCP server</a> — expose the build to AI agents as typed tools over the Model Context Protocol with <code>zuke mcp</code>.</li>
     <li><a href="/examples">Examples</a> — real-world build files for Node, Deno libraries, Docker, and generated CI pipelines.</li>
     <li><a href="https://jsr.io/@zuke">JSR packages</a> — the full set of typed tool wrappers.</li>
   </ul>

@@ -1,0 +1,147 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "running", label: "Running it" },
+  { id: "register", label: "Registering with a client" },
+  { id: "tools", label: "Tools" },
+  { id: "safety", label: "Safety" },
+  { id: "protocol", label: "Protocol notes" },
+];
+
+const runSnippet = `zuke mcp              # read-only: inspect the build, never execute
+zuke mcp --allow-run  # also expose run:<target> tools that execute targets`;
+
+const registerSnippet = `# Claude Code — any client that speaks stdio MCP works the same way
+claude mcp add zuke -- deno run -A zuke.ts mcp
+
+# add --allow-run when you want the agent to execute targets
+claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
+
+const callSnippet = `// tools/call
+{ "name": "run:test", "arguments": { "environment": "dev", "coverage": true } }`;
+---
+
+<DocsLayout
+  title="MCP server"
+  description="zuke mcp runs a dependency-free Model Context Protocol server over your build on stdio, so an AI agent can operate the pipeline through typed tool calls — list targets, inspect the graph, run one with the right parameters — instead of guessing shell commands. Read-only by default; --allow-run opts into execution."
+  toc={toc}
+>
+  <p class="lead">
+    <code>zuke mcp</code> runs a
+    <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server
+    over your build. MCP is the open standard that lets an AI client — Claude
+    Desktop, Claude Code, an IDE, any agent — discover a server's <strong>tools</strong>
+    (typed, schema-described functions) and call them. Pointing a client at
+    <code>zuke mcp</code> lets an agent <strong>operate the pipeline through typed
+    calls</strong> — list the targets, inspect the graph, run one with the right
+    parameters — instead of guessing shell invocations.
+  </p>
+  <p>
+    It's a natural extension of what Zuke already does: it publishes
+    <code>llms.txt</code>, a <code>--list --json</code> self-description, and shell
+    completions from a single registry. MCP is the <em>live</em> counterpart — the
+    same build surface, callable. The server is <strong>dependency-free</strong>
+    (Zuke ships no MCP SDK): it speaks newline-delimited JSON-RPC 2.0 on stdio, the
+    standard MCP local transport.
+  </p>
+
+  <h2 id="running">Running it</h2>
+  <Code code={runSnippet} lang="bash" theme="night-owl" />
+  <p>
+    The process reads JSON-RPC from stdin and writes responses to stdout; its one
+    startup line goes to stderr so it never corrupts the protocol stream. It runs
+    until stdin closes. (Read <code>zuke</code> as <code>deno run -A zuke.ts</code>
+    until the launcher binary ships.)
+  </p>
+
+  <h2 id="register">Registering with a client</h2>
+  <p>
+    Most clients take a command to launch the server. Give it
+    <code>deno run -A zuke.ts mcp</code> (add <code>--allow-run</code> when you want
+    the agent to execute targets):
+  </p>
+  <Code code={registerSnippet} lang="bash" theme="night-owl" />
+
+  <h2 id="tools">Tools</h2>
+  <p>Read tools are always available:</p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Tool</th><th>Returns</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>list_targets</code></td><td>Every target with its description and dependencies.</td></tr>
+      <tr><td><code>describe_build</code></td><td>The full build surface — commands, flags, targets, parameters (the <code>--list --json</code> payload).</td></tr>
+      <tr><td><code>graph</code></td><td>Each target and the targets it depends on.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    With <code>--allow-run</code>, the server also exposes one
+    <strong><code>run:&lt;target&gt;</code></strong> tool per target. Its input
+    schema is built from the build's declared
+    <a href="/docs/concepts#parameters">parameters</a> — a <code>required</code>
+    parameter is required, <code>.options(...)</code> becomes an <code>enum</code>,
+    a <code>.number()</code> is typed as a number — plus a <code>dryRun</code> flag
+    that plans without executing. These tools carry MCP's
+    <code>destructiveHint</code> annotation so a client can prompt before running.
+    A run resolves parameters exactly like the CLI (MCP argument → the environment
+    → the declared default) and returns the target's captured output with a
+    pass/fail marker.
+  </p>
+  <Code code={callSnippet} lang="json" theme="night-owl" />
+
+  <h2 id="safety">Safety</h2>
+  <p>
+    <strong>Trust model.</strong> The server has no network endpoint. It speaks
+    only over the stdin/stdout of a process the client launches, so its trust
+    boundary is the local machine: anyone who can start <code>zuke mcp</code>
+    already has a shell there and could run
+    <code>deno run -A zuke.ts &lt;target&gt;</code> directly. The server therefore
+    grants no capability beyond what launching it already implies — there's nothing
+    to authenticate, because there's no remote party. Treat it like any other local
+    developer tool: don't wire an untrusted client to it.
+  </p>
+  <p>
+    Running a target executes real build code, so execution is
+    <strong>off by default</strong>: a freshly-connected agent can only
+    <em>inspect</em> the build. Add <code>--allow-run</code> deliberately — for an
+    environment where you want the agent to drive the pipeline. Without it, the
+    <code>run:</code> tools are not advertised at all, and a direct
+    <code>run:</code> call is refused with a message pointing at the flag. When
+    enabled, run tools carry MCP's <code>destructiveHint</code>, so a well-behaved
+    client can prompt before each execution.
+  </p>
+  <div class="note">
+    <p>
+      Secret values stay protected: a run's output is captured through the same
+      reporter pipeline as the console, so <code>parameter().secret()</code> values
+      are <a href="/docs/secrets">redacted</a> from what the agent sees.
+    </p>
+  </div>
+
+  <h2 id="protocol">Protocol notes</h2>
+  <ul>
+    <li><strong>Transport:</strong> newline-delimited JSON-RPC 2.0 on stdio.</li>
+    <li><strong>Lifecycle:</strong> the server answers <code>initialize</code> (negotiating the <code>protocolVersion</code>), <code>notifications/initialized</code> (no reply), <code>ping</code>, <code>tools/list</code>, and <code>tools/call</code>. Unknown requests get a JSON-RPC <code>-32601 Method not found</code>; notifications never get a reply.</li>
+    <li><strong>Errors:</strong> a bad <em>tool</em> call (unknown tool, unknown target, a failed run) is reported through the tool result (<code>isError: true</code>) so the model sees it, rather than as a transport-level error — matching the MCP convention.</li>
+  </ul>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

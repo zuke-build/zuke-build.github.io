@@ -87,6 +87,23 @@ const cacheBackends = [
   { name: "S3 / GCS / R2", color: "#9b6bff" },
 ];
 
+const mcpSnippet = `# read-only: an agent can inspect the build, never execute
+zuke mcp
+
+# also expose run:<target> tools that execute targets
+zuke mcp --allow-run
+
+# register with a client (Claude Code shown; any stdio MCP client works)
+claude mcp add zuke -- deno run -A zuke.ts mcp`;
+
+// MCP clients that can drive a Zuke build, shown as chips.
+const mcpClients = [
+  { name: "Claude Desktop", color: "#d97757" },
+  { name: "Claude Code", color: "#d97757" },
+  { name: "IDEs", color: "#4f8cff" },
+  { name: "Any agent", color: "#9b6bff" },
+];
+
 const features = [
   {
     icon: "type",
@@ -713,6 +730,88 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     </div>
   </section>
 
+  <!-- ░░ MCP ░░ -->
+  <section class="section sec-mcp" id="mcp">
+    <div class="container mcp-grid">
+      <div data-reveal>
+        <span class="eyebrow">MCP server <span class="tag-new">New</span></span>
+        <h2>Hand your build to an <span class="gradient-text">agent</span>.</h2>
+        <p class="lead">
+          <code>zuke mcp</code> runs a
+          <a href="https://modelcontextprotocol.io">Model Context Protocol</a>
+          server over your build, so an AI client discovers <strong>typed
+          tools</strong> — list the targets, inspect the graph, run one with the
+          right parameters — and operates the pipeline through real calls instead
+          of guessing shell commands. Read-only by default;
+          <code>--allow-run</code> opts into execution.
+        </p>
+        <ul class="ticks">
+          <li><strong>Read tools, always on</strong> — <code>list_targets</code>, <code>describe_build</code>, and <code>graph</code> expose the whole build surface: the live counterpart of <code>llms.txt</code>.</li>
+          <li><strong><code>run:&lt;target&gt;</code> with <code>--allow-run</code></strong> — one run tool per target, its input schema derived from your declared parameters (required, <code>enum</code>, number) plus a <code>dryRun</code> flag.</li>
+          <li><strong>Safe by default</strong> — execution is off until you opt in; run tools carry MCP's <code>destructiveHint</code> so clients prompt, and <code>.secret()</code> values stay redacted in what the agent sees.</li>
+          <li><strong>Dependency-free</strong> — newline-delimited JSON-RPC 2.0 over stdio, implemented by hand; no MCP SDK, no network endpoint.</li>
+        </ul>
+        <div class="providers">
+          <span class="providers__label">Works with</span>
+          {mcpClients.map((c) => (
+            <span class="provider" style={`--c:${c.color}`}>
+              <span class="host-dot"></span>{c.name}
+            </span>
+          ))}
+        </div>
+        <a class="btn btn-ghost" href="/docs/mcp">Read the MCP guide →</a>
+      </div>
+
+      <div class="mcp-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__name">shell</span>
+          </div>
+          <Code code={mcpSnippet} lang="bash" theme="night-owl" />
+        </div>
+
+        <!-- the tools an MCP client sees over the build -->
+        <div class="mcp panel">
+          <div class="mcp__bar">
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="codecard__dot"></span>
+            <span class="mcp__barname">zuke · mcp — tools</span>
+          </div>
+          <ul class="mcp__tools">
+            <li class="mcp__tool">
+              <span class="mcp__name">list_targets</span>
+              <span class="mcp__desc">targets, descriptions &amp; deps</span>
+              <span class="mcp__tag mcp__tag--read">read</span>
+            </li>
+            <li class="mcp__tool">
+              <span class="mcp__name">describe_build</span>
+              <span class="mcp__desc">the full build surface</span>
+              <span class="mcp__tag mcp__tag--read">read</span>
+            </li>
+            <li class="mcp__tool">
+              <span class="mcp__name">graph</span>
+              <span class="mcp__desc">target → deps</span>
+              <span class="mcp__tag mcp__tag--read">read</span>
+            </li>
+            <li class="mcp__tool mcp__tool--run">
+              <span class="mcp__name">run:test</span>
+              <span class="mcp__desc">executes the target · <code>--allow-run</code></span>
+              <span class="mcp__tag mcp__tag--run">⚡ run</span>
+            </li>
+          </ul>
+          <div class="mcp__call">
+            <span class="mcp__calllabel">tools/call</span>
+            <code>&#123; "name": "run:test", "arguments": &#123; "environment": "dev" &#125; &#125;</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ░░ TOOLS ░░ -->
   <section class="section sec-tools" id="tools">
     <div class="container">
@@ -1309,6 +1408,83 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   }
   .heal-code code { font-family: var(--font-mono); color: var(--cyan); font-size: 0.9em; }
 
+  /* mcp server */
+  .sec-mcp {
+    background:
+      radial-gradient(55% 100% at 85% 45%, rgba(155, 107, 255, 0.10), transparent 60%),
+      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.5), transparent);
+    border-block: 1px solid var(--border);
+  }
+  .mcp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .mcp-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
+  .mcp-visual { display: grid; gap: 16px; }
+
+  /* the MCP tools panel */
+  .mcp { overflow: hidden; box-shadow: var(--shadow-glow); }
+  .mcp__bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 15px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .mcp__barname {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+  }
+  .mcp__tools { list-style: none; margin: 0; padding: 8px 10px; display: grid; gap: 2px; }
+  .mcp__tool {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 9px;
+  }
+  .mcp__tool--run { background: rgba(155, 107, 255, 0.06); }
+  .mcp__name { font-family: var(--font-mono); font-size: 0.86rem; color: var(--cyan); }
+  .mcp__tool--run .mcp__name { color: var(--violet); }
+  .mcp__desc { font-size: 0.82rem; color: var(--text-faint); min-width: 0; }
+  .mcp__desc code { font-family: var(--font-mono); font-size: 0.86em; color: var(--text-dim); }
+  .mcp__tag {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .mcp__tag--read { color: #6ea8ff; background: rgba(79, 140, 255, 0.14); }
+  .mcp__tag--run { color: #c9b6ff; background: rgba(155, 107, 255, 0.16); }
+  .mcp__call {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.015);
+    overflow-x: auto;
+  }
+  .mcp__calllabel {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .mcp__call code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: pre; }
+
   /* tools */
   .sec-tools { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5)); }
   .tools-grid {
@@ -1365,12 +1541,13 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .review-grid > *,
   .heal-grid > *,
   .cache-grid > *,
+  .mcp-grid > *,
   .out-grid > *,
   .dag-grid > * { min-width: 0; }
 
   /* responsive */
   @media (max-width: 940px) {
-    .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .cache-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
+    .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .cache-grid, .mcp-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
     .hero__code { order: 2; }
     .feat-grid { grid-template-columns: repeat(2, 1fr); }
     .tools-grid { grid-template-columns: repeat(2, 1fr); }
