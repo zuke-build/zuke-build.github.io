@@ -345,6 +345,14 @@ class MyBuild extends Build {
     environment variables:
   </p>
   <Code code={paramSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Mark a sensitive value with <code>.secret()</code> and Zuke
+    <strong>redacts it from every log, summary, and error</strong>; add
+    <code>.from(execSecret(...))</code> or <code>.from(fileSecret(...))</code> to
+    <strong>source it from a secret manager</strong> (1Password, Vault, gcloud, a
+    mounted file) at run time, behind any flag or env var. See
+    <a href="/docs/secrets">Secrets</a> for the full picture.
+  </p>
 
   <h2 id="cicd">Code-first CI/CD</h2>
   <p>

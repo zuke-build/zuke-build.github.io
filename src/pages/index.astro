@@ -124,6 +124,16 @@ const features = [
     body: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Bun, Docker, Kubernetes, Helm, Vite, Playwright, Terraform and more — all on JSR.`,
   },
   {
+    icon: "download",
+    title: "Hermetic, pinned toolchains",
+    body: "Fetch the CLIs a build drives with toolchain() or ToolTasks.install() — pinned by SHA-256, verified, and cached. A fresh clone or a bare CI runner is reproducible, with no 'install these first' step.",
+  },
+  {
+    icon: "lock",
+    title: "Secrets, sourced & redacted",
+    body: "Pull a secret from your manager — 1Password, Vault, gcloud, a mounted file — with .from(execSecret(…)), and Zuke redacts its value from every log, summary, and error, on any platform.",
+  },
+  {
     icon: "ai",
     title: "AI in your pipeline",
     body: "Typed wrappers for Claude Code, OpenAI Codex, and Gemini CLI run headless in CI — drive a prompt, pick a model, constrain the tools, and capture the output, injection-free.",
@@ -169,6 +179,8 @@ const icons: Record<string, string> = {
   announce: `<path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>`,
   review: `<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 14 2 2 4-4"/>`,
   heal: `<path d="M20.5 8.5a4.6 4.6 0 0 0-6.5-6.5L12 4 10 2a4.6 4.6 0 0 0-6.5 6.5"/><path d="M3.5 8.5 12 17l4-4"/><path d="M3 14h4l1.5-3 2.5 6 1.5-3H21"/>`,
+  download: `<path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>`,
+  lock: `<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/>`,
 };
 
 // The model providers @zuke/ai supports, shown as chips in the AI review section.

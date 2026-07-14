@@ -208,8 +208,10 @@ Total                  17.8s
   <h2 id="next">Next steps</h2>
   <ul>
     <li><a href="/docs/concepts">Core concepts</a> — targets, dependencies, groups, caching, conditional execution, the <code>$</code> shell, parameters, code-first CI/CD, and extending Zuke.</li>
-    <li><a href="/docs/caching">Caching</a> — the incremental build cache (<code>.inputs()</code>/<code>.outputs()</code>/<code>.cacheKey()</code>) and the AI response cache (<code>aiCache</code>).</li>
+    <li><a href="/docs/caching">Caching</a> — the incremental build cache (<code>.inputs()</code>/<code>.outputs()</code>/<code>.cacheKey()</code>), the remote cache, and the AI response cache (<code>aiCache</code>).</li>
+    <li><a href="/docs/secrets">Secrets</a> — source a secret from a manager with <code>.from(execSecret/fileSecret)</code> and have Zuke redact it from every log, summary, and error.</li>
     <li><a href="/docs/library">Core library</a> — the built-in helpers: file tasks, globbing, HTTP, compression, tool installs, assertions, and paths.</li>
+    <li><a href="/docs/installing-tools">Installing tools</a> — fetch the CLIs a build drives, pinned by SHA-256, verified, and cached (<code>ToolTasks.install()</code>, <code>toolchain()</code>).</li>
     <li><a href="/docs/console">Console output</a> — rich terminal output with <code>@zuke/console</code>: markup, rules, boxes, tables, and a levelled logger.</li>
     <li><a href="/docs/ai-review">AI code review</a> — gate a build on a model-assessed security review with <code>@zuke/ai</code>.</li>
     <li><a href="/docs/self-healing">Self-healing builds</a> — let an AI fixer diagnose, suggest, and auto-fix a failed target, then re-run the real command to verify.</li>
