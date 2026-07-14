@@ -1,0 +1,308 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "why", label: "Why install from the build" },
+  { id: "one-tool", label: "ToolTasks.install() — one tool" },
+  { id: "pinning", label: "Pinning, verification & caching" },
+  { id: "toolchain", label: "toolchain() — many tools" },
+  { id: "using", label: "Working with an installed tool" },
+  { id: "platform", label: "Cross-platform URL resolution" },
+  { id: "ci", label: "On CI" },
+  { id: "security", label: "Security" },
+];
+
+const installOneSnippet = `import { ToolTasks } from "jsr:@zuke/core";
+import { CmdTasks } from "jsr:@zuke/cmd";
+
+const bin = await ToolTasks.install((s) =>
+  s
+    .name("codecov")
+    .destDir(".zuke/bin")
+    // \`p.os\` is "linux" | "macos" | "windows" — exactly Codecov's dir names.
+    .url((p) => \`https://cli.codecov.io/latest/\${p.os}/codecov\`)
+    .checksum("d34db33f…")   // pin + verify + cache (see below)
+);
+await CmdTasks.exec(String(bin), (s) => s.args("--version"));`;
+
+const checksumResolverSnippet = `const sums: Record<string, string> = {
+  "linux-x86_64": "…",
+  "linux-aarch64": "…",
+  "macos-aarch64": "…",
+};
+
+await ToolTasks.install((s) =>
+  s.name("helm").url(helmUrl).checksum(({ os, arch }) => sums[\`\${os}-\${arch}\`])
+);`;
+
+const toolchainSnippet = `import { Build, target, toolchain } from "jsr:@zuke/core";
+import { HelmTasks } from "jsr:@zuke/helm";
+import { KubectlTasks } from "jsr:@zuke/kubectl";
+
+const arches = { x86_64: "amd64", aarch64: "arm64" } as const;
+
+class Deploy extends Build {
+  tools = toolchain((t) =>
+    t
+      .tool((s) =>
+        s.name("helm").archive("tar.gz")
+          .binaryPath(\`linux-\${arches[Deno.build.arch]}/helm\`)
+          .checksum(helmSum)
+          .url(({ arch }) => \`https://get.helm.sh/helm-v3.15.2-linux-\${arches[arch]}.tar.gz\`)
+      )
+      .tool((s) =>
+        s.name("kubectl").checksum(kubectlSum)
+          .url(({ arch }) => \`https://dl.k8s.io/release/v1.30.2/bin/linux/\${arches[arch]}/kubectl\`)
+      )
+  );
+
+  deploy = target().executes(async () => {
+    const bin = await this.tools.install();   // fetches both, concurrently
+    await HelmTasks.version((s) => s.toolPath(bin.get("helm")));
+    await KubectlTasks.version((s) => s.toolPath(bin.get("kubectl")));
+  });
+}`;
+
+const usingSnippet = `import { HelmTasks } from "jsr:@zuke/helm";
+import { CmdTasks } from "jsr:@zuke/cmd";
+import { defineTool } from "jsr:@zuke/core/tooling";
+
+const bin = await ToolTasks.install((s) => s.name("helm").url(helmUrl));
+
+// 1. A typed wrapper — pass the path to .toolPath(...)
+await HelmTasks.template((s) => s.toolPath(bin).args("./chart"));
+
+// 2. The generic CmdTasks fallback
+await CmdTasks.exec(String(bin), (s) => s.args("version"));
+
+// 3. A one-off typed tool bound to the installed path
+const helm = defineTool(String(bin));
+await helm((s) => s.arg("version"));`;
+
+const platformSnippet = `type OperatingSystem = "linux" | "macos" | "windows";
+type Architecture = "x86_64" | "aarch64";
+
+interface Platform {
+  os: OperatingSystem;
+  arch: Architecture;
+  osLabel(aliases?: Partial<Record<OperatingSystem, string>>): string;
+  archLabel(aliases?: Partial<Record<Architecture, string>>): string;
+}
+
+// Helm spells macOS "darwin" and uses amd64/arm64 — alias only the differences.
+s.url((p) =>
+  \`https://get.helm.sh/helm-v3.15.2-\${p.osLabel({ macos: "darwin" })}-\${
+    p.archLabel({ x86_64: "amd64", aarch64: "arm64" })
+  }.tar.gz\`
+);`;
+
+const ciSnippet = `steps:
+  - uses: actions/checkout@v4
+  - run: ./zuke deploy   # installs helm + kubectl on first use, then runs`;
+---
+
+<DocsLayout
+  title="Installing tools"
+  description="Fetch the CLIs a Zuke build drives — pinned by SHA-256, verified, and cached — with ToolTasks.install() for one tool or toolchain() for many. Hermetic, reproducible builds with no 'install these first' step."
+  toc={toc}
+>
+  <p class="lead">
+    A Zuke build can <strong>fetch the command-line tools it drives</strong>
+    rather than assume they're already installed. That makes a build
+    <strong>hermetic</strong> — a fresh clone or a bare CI runner has everything
+    it needs — and <strong>reproducible</strong>: versions are pinned, downloads
+    are verified, and every machine runs the same binary.
+  </p>
+  <p>
+    Tools are provisioned in Zuke's fluent settings-lambda style — the same
+    <code>(s) =&gt; s.method(...)</code> shape the
+    <a href="/docs/concepts#tools">tool wrappers</a> use — through two entry
+    points in <code>@zuke/core</code>:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>API</th><th>Installs</th><th>Reach for it when</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><a href="#one-tool"><code>ToolTasks.install((s) =&gt; …)</code></a></td><td>one tool</td><td>you need a single binary</td></tr>
+      <tr><td><a href="#toolchain"><code>toolchain()</code></a></td><td>many tools</td><td>a build depends on several tools</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Both return the installed binary's <a href="/docs/library#paths"><code>AbsolutePath</code></a>;
+    hand it to a wrapper (<code>.toolPath(...)</code>), to <code>CmdTasks</code>,
+    or to <code>defineTool</code> — see
+    <a href="#using">Working with an installed tool</a>. This page is about
+    <strong>acquiring</strong> binaries; for the typed <code>*Tasks</code>
+    wrappers that <strong>run</strong> them, see the
+    <a href="/docs/concepts#tools">tool wrappers</a>.
+  </p>
+
+  <h2 id="why">Why install tools from the build</h2>
+  <ul>
+    <li><strong>No "install these first" prose.</strong> The build file <em>is</em> the setup — nothing to document in a README, nothing to forget on a new laptop.</li>
+    <li><strong>Pinned and verified.</strong> A <code>checksum</code> ties the build to an exact artifact and fails loudly if the download is corrupt or tampered with.</li>
+    <li><strong>CI equals local.</strong> The same fetch runs everywhere; no separate "set up tool X" CI step that drifts from what developers use.</li>
+    <li><strong>Cached.</strong> A pinned tool is downloaded once and reused, so provisioning adds no ongoing cost.</li>
+  </ul>
+
+  <h2 id="one-tool"><code>ToolTasks.install()</code> — one tool</h2>
+  <p>
+    <code>ToolTasks.install((s) =&gt; …)</code> fetches a single tool, configured
+    through a <code>ToolInstallSettings</code> lambda, and resolves to the
+    installed binary's path.
+  </p>
+  <Code code={installOneSnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.name(name)</code></td><td>The tool name, and the installed filename (<code>.exe</code> appended on Windows). <strong>Required.</strong></td></tr>
+      <tr><td><code>.url((platform) =&gt; string)</code></td><td>Resolve the download URL for the target <a href="#platform">platform</a>. <strong>Required.</strong></td></tr>
+      <tr><td><code>.destDir(dir)</code></td><td>Directory to install into (created if missing). Defaults to <code>.zuke/tools</code>.</td></tr>
+      <tr><td><code>.archive("tar.gz")</code></td><td>Unpack a gzipped tarball; the default <code>"raw"</code> treats the download as the binary.</td></tr>
+      <tr><td><code>.binaryPath(path)</code></td><td>For a <code>tar.gz</code>, the binary's path <em>inside</em> the archive (e.g. Helm's <code>linux-amd64/helm</code>). Defaults to the name.</td></tr>
+      <tr><td><code>.checksum(sha256)</code></td><td>Expected SHA-256, or a <code>(platform) =&gt; string</code> resolver — <a href="#pinning">verifies and caches</a>.</td></tr>
+      <tr><td><code>.platform(&#123; os, arch &#125;)</code></td><td>Resolve for a specific platform instead of the host.</td></tr>
+      <tr><td><code>.download(fn)</code></td><td>Override the downloader (defaults to an HTTPS download); mainly a test seam.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    With <strong><code>"raw"</code></strong> (default) the URL points straight at
+    the executable; it's saved as <code>&lt;destDir&gt;/&lt;name&gt;</code> and
+    <code>chmod +x</code>'d. With <strong><code>.archive("tar.gz")</code></strong>
+    Zuke unpacks the tarball to a scratch directory, copies
+    <code>.binaryPath(...)</code> out, then discards the scratch.
+  </p>
+  <div class="note">
+    <p>
+      Zip archives aren't supported yet, so this targets the Unix runners where
+      most release tarballs are published. On Windows the installed filename gains
+      an <code>.exe</code> suffix and the executable bit is skipped.
+    </p>
+  </div>
+
+  <h2 id="pinning">Pinning, verification &amp; caching</h2>
+  <p>
+    Set a <strong><code>.checksum(...)</code></strong> — the lowercase-hex
+    <strong>SHA-256</strong> that release pages publish — and it does three jobs
+    at once:
+  </p>
+  <ol>
+    <li><strong>Pins</strong> the build to an exact artifact.</li>
+    <li><strong>Verifies</strong> the download: the fetched bytes are hashed and compared <em>before</em> anything is installed. A mismatch throws and leaves nothing behind; a value that isn't a 64-character hex SHA-256 is rejected up front.</li>
+    <li><strong>Caches</strong> the install: a sidecar marker (<code>&lt;destDir&gt;/&lt;name&gt;.install.json</code>) records the checksum and the installed binary's own hash. A later run skips the download only when the pin matches <em>and</em> the on-disk binary still hashes to what was installed — so a swapped or corrupted binary is re-downloaded and re-verified, never silently reused.</li>
+  </ol>
+  <p>
+    What the checksum covers depends on the format: for <code>"tar.gz"</code> it's
+    the SHA-256 of the <strong>archive</strong> (what projects list in their
+    <code>checksums.txt</code>); for <code>"raw"</code> it's the SHA-256 of the
+    <strong>binary</strong> itself. Without a checksum, the tool is downloaded
+    every run and left unverified — fine for a quick spike, but pin one for
+    anything real.
+  </p>
+  <div class="note">
+    <p>
+      Checksums are per-artifact, so they're <strong>per-platform</strong>.
+      <code>.url(...)</code> resolves a different download for each OS/arch, and
+      each has its own hash — pass <code>.checksum(...)</code> a resolver, just
+      like <code>.url(...)</code>, when a build runs on more than one platform:
+    </p>
+  </div>
+  <Code code={checksumResolverSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="toolchain"><code>toolchain()</code> — many tools</h2>
+  <p>
+    When a build needs several tools, <code>toolchain()</code> declares them in
+    one place so the build file fully describes its environment. Add tools with
+    <code>.tool((s) =&gt; …)</code>, then <code>install()</code> fetches them all
+    <strong>concurrently</strong> — pinned, verified, and cached — and returns a
+    <code>Map&lt;name, AbsolutePath&gt;</code>.
+  </p>
+  <Code code={toolchainSnippet} lang="ts" theme="night-owl" />
+  <ul>
+    <li><strong>Install directory.</strong> Tools default to <code>.zuke/tools</code> (<code>DEFAULT_TOOLS_DIR</code>). Override for all with <code>install(&#123; destDir &#125;)</code>, or per tool with <code>.destDir(...)</code>.</li>
+    <li><strong>Custom downloader.</strong> <code>install(&#123; download &#125;)</code> swaps the downloader for every tool — a test seam.</li>
+    <li><strong>Introspection.</strong> <code>chain.tools</code> returns the configured settings in order.</li>
+    <li><strong>Cheap to re-run.</strong> A matching checksum is a cache hit, so calling <code>install()</code> again (locally or on CI) is a no-op once the tools are present.</li>
+  </ul>
+
+  <h2 id="using">Working with an installed tool</h2>
+  <p>
+    Both <code>ToolTasks.install</code> and <code>toolchain().install()</code> hand
+    you an <code>AbsolutePath</code>. Point a tool at it three ways —
+    <code>AbsolutePath</code> stringifies to the path, so <code>String(bin)</code>
+    (or <code>bin.path</code>) works anywhere a string is expected:
+  </p>
+  <Code code={usingSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="platform">Cross-platform URL resolution</h2>
+  <p>
+    The <code>.url(...)</code> (and <code>.checksum(...)</code>) callback receives
+    a <code>Platform</code>. Its <code>os</code> is a Zuke
+    <code>OperatingSystem</code> — <code>"linux" | "macos" | "windows"</code>,
+    normalised from Deno's raw values (<code>darwin</code> → <code>macos</code>) —
+    so the common case needs no mapping. <code>osLabel</code>/<code>archLabel</code>
+    map to a tool's naming, <strong>falling back to the value itself</strong> for
+    anything not aliased, so you only list the differences:
+  </p>
+  <Code code={platformSnippet} lang="ts" theme="night-owl" />
+  <p>
+    By default the callback reflects the host; set <code>.platform(&#123; os, arch &#125;)</code>
+    to resolve a foreign one (e.g. to pre-stage a Linux binary from a Mac).
+    Outside a callback, <code>hostPlatform()</code> returns the same
+    <code>Platform</code> for the running machine, and <code>operatingSystem()</code>
+    returns just the OS union — the counterparts of <code>isCI()</code> for "what
+    am I running on".
+  </p>
+
+  <h2 id="ci">On CI</h2>
+  <p>
+    The <a href="/docs">./zuke launcher</a> bootstraps Deno, and the build fetches
+    its tools on demand inside the target that needs them — so a CI job needs no
+    "set up tool X" step:
+  </p>
+  <Code code={ciSnippet} lang="yaml" theme="night-owl" />
+  <ul>
+    <li><strong>Egress.</strong> If the runner restricts network egress, allow the tools' download hosts (e.g. <code>get.helm.sh</code>, <code>dl.k8s.io</code>) alongside Deno's.</li>
+    <li><strong>Re-downloads.</strong> An ephemeral runner starts with an empty <code>.zuke/</code>, so tools are fetched each run — safe and verified thanks to the checksum. To skip the download, persist the install directory between runs (e.g. <code>actions/cache</code> keyed on the tool versions/checksums), or share it through the <a href="/docs/caching#remote">remote cache</a>.</li>
+  </ul>
+
+  <h2 id="security">Security</h2>
+  <ul>
+    <li><strong>Pin a <code>.checksum(...)</code>.</strong> It makes the download tamper-evident; an unpinned install trusts whatever the URL serves.</li>
+    <li><strong>Get the hash from the source.</strong> Use the SHA-256 the project publishes (a release <code>checksums.txt</code>, <code>*.sha256</code>, or the GitHub release assets), matched to the exact artifact your platform downloads.</li>
+    <li><strong>Restrict egress</strong> on CI to the hosts a build legitimately fetches from, so a compromised URL can't pull an arbitrary binary.</li>
+  </ul>
+  <div class="note">
+    <p>
+      <code>ToolTasks.install</code> and <code>toolchain()</code> are built on the
+      lower-level <code>installRelease(options)</code> primitive, which takes the
+      same fields as a plain options object and returns the installed
+      <code>AbsolutePath</code> — see the
+      <a href="/docs/library#install">Core library</a> for it. Reach for the
+      fluent surface above in a build; use <code>installRelease</code> directly if
+      you already have an options object in hand.
+    </p>
+  </div>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

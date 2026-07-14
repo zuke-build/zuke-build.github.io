@@ -161,8 +161,8 @@ deploy = target()
   <p>
     Prepare an environment by fetching a CLI one of Zuke's wrappers drives, then
     point the wrapper at it. <code>installRelease(&#123; name, url, destDir
-    &#125;)</code> resolves a per-platform URL (via an
-    <code>(&#123; os, arch &#125;) =&gt; string</code> callback and
+    &#125;)</code> is the low-level primitive: it resolves a per-platform URL (via
+    an <code>(&#123; os, arch &#125;) =&gt; string</code> callback and
     <code>hostPlatform()</code>), downloads it, and returns the installed
     binary's <code>AbsolutePath</code> — ready for <code>.toolPath(...)</code>.
     Set <code>archive: "tar.gz"</code> to unpack a tarball and take
@@ -172,7 +172,11 @@ deploy = target()
   <Code code={installSnippet} lang="ts" theme="night-owl" />
   <div class="note">
     <p>
-      The <code>download</code> seam keeps it unit-testable, and on Windows the
+      For the fluent, build-facing surface — <code>ToolTasks.install()</code> for
+      one tool, <code>toolchain()</code> for many, with SHA-256 pinning,
+      verification, and caching — see the dedicated
+      <a href="/docs/installing-tools">Installing tools</a> guide. The
+      <code>download</code> seam keeps it unit-testable, and on Windows the
       filename gains an <code>.exe</code> suffix. Zip archives aren't supported
       yet, so this targets the Unix runners where most release tarballs live.
     </p>

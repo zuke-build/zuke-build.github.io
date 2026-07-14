@@ -222,6 +222,76 @@ class ReleaseBuild extends Build {
 await run(ReleaseBuild);`,
   },
   {
+    id: "toolchain",
+    tag: "Hermetic toolchain",
+    title: "Provision a pinned toolchain",
+    desc: "Declare the CLIs a build drives with toolchain() and Zuke fetches them on first use — concurrently, pinned by SHA-256, verified before anything runs, and cached under .zuke/tools. A fresh clone or a bare CI runner needs no 'install helm/kubectl first' step, and every machine runs the exact same binary. ToolTasks.install() does the same for a single tool.",
+    code: `import { Build, run, target, toolchain } from "jsr:@zuke/core";
+import { HelmTasks } from "jsr:@zuke/helm";
+import { KubectlTasks } from "jsr:@zuke/kubectl";
+
+class Deploy extends Build {
+  // The CLIs this build drives. install() fetches them concurrently — pinned by
+  // SHA-256, verified before use, and cached under .zuke/tools (git-ignored).
+  tools = toolchain((t) =>
+    t
+      .tool((s) =>
+        s.name("helm").archive("tar.gz").binaryPath("linux-amd64/helm")
+          .checksum("f43e1c3…")   // the archive's published sha256
+          .url(() => "https://get.helm.sh/helm-v3.15.2-linux-amd64.tar.gz")
+      )
+      .tool((s) =>
+        s.name("kubectl")
+          .checksum("2a9e0b1…")   // the binary's published sha256
+          .url(() => "https://dl.k8s.io/release/v1.30.2/bin/linux/amd64/kubectl")
+      )
+  );
+
+  deploy = target()
+    .description("Install the toolchain on first use, then deploy")
+    .executes(async () => {
+      const bin = await this.tools.install();   // Map<name, AbsolutePath>
+      await KubectlTasks.apply((s) => s.toolPath(bin.get("kubectl")).file("k8s/"));
+      await HelmTasks.upgrade((s) =>
+        s.toolPath(bin.get("helm")).release("api").chart("./charts/api").install().wait()
+      );
+    });
+}
+
+await run(Deploy);`,
+  },
+  {
+    id: "secrets",
+    tag: "Secrets",
+    title: "Source secrets from a manager — redacted everywhere",
+    desc: "Mark a parameter .secret() and Zuke redacts its resolved value from every log, summary, and error (and emits ::add-mask:: on GitHub Actions). Add .from(execSecret(...)) or .from(fileSecret(...)) to pull the value from a secret manager — 1Password, Vault, gcloud, or a mounted file — but only when a flag or env var didn't already supply it. The same build stays portable: an env var in CI, your vault locally, no code change.",
+    code: `import { Build, execSecret, fileSecret, parameter, run, target } from "jsr:@zuke/core";
+
+class Release extends Build {
+  // From 1Password locally; from the REGISTRY_TOKEN env var in CI (env wins).
+  registryToken = parameter("Container registry token")
+    .secret()
+    .from(execSecret((s) => s.command("op").arg("read", "op://ci/registry/token")));
+
+  // A cluster token mounted into the job as a file.
+  clusterToken = parameter("Cluster token")
+    .secret()
+    .from(fileSecret((s) => s.path("/run/secrets/cluster_token")));
+
+  publish = target()
+    .description("Publish with a sourced token — never printed")
+    .executes(async () => {
+      // Prefer headers/env over argv so the secret never lands in a process list.
+      await fetch("https://registry.example.com/publish", {
+        method: "POST",
+        headers: { authorization: \`Bearer \${this.registryToken.value}\` },
+      });
+    });
+}
+
+await run(Release);`,
+  },
+  {
     id: "announce",
     tag: "Notifications",
     title: "Announce status to Slack, Teams & Discord",
@@ -398,7 +468,7 @@ await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, an incremental build cache, a remote cache with CI fan-out, a Codecov coverage upload, a Docker build-and-publish flow, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, an incremental build cache, a remote cache with CI fan-out, a Codecov coverage upload, a Docker build-and-publish flow, a pinned hermetic toolchain, secrets sourced from a manager, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">
