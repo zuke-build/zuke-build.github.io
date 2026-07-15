@@ -10,6 +10,8 @@ interface Props {
 const { title, description, toc = [] } = Astro.props;
 const { pathname } = Astro.url;
 const here = pathname.replace(/\/$/, "") || "/docs";
+// Links off the site (absolute http[s]) open in a new tab.
+const isExternal = (href: string) => /^https?:\/\//.test(href);
 
 const nav = [
   {
@@ -51,6 +53,8 @@ const nav = [
                   <a
                     href={it.href}
                     class:list={["docs__link", { active: here === it.href.replace(/\/$/, "") }]}
+                    target={isExternal(it.href) ? "_blank" : undefined}
+                    rel={isExternal(it.href) ? "noopener noreferrer" : undefined}
                   >
                     {it.label}
                   </a>
