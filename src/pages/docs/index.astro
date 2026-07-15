@@ -209,6 +209,7 @@ Total                  17.8s
   <h2 id="next">Next steps</h2>
   <ul>
     <li><a href="/docs/concepts">Core concepts</a> — targets, dependencies, groups, caching, conditional execution, the <code>$</code> shell, parameters, code-first CI/CD, and extending Zuke.</li>
+    <li><a href="/docs/services">Service targets</a> — declare a long-lived process (dev server, database, mock API) with <code>service()</code>; Zuke starts it, waits until it's ready, and tears it down.</li>
     <li><a href="/docs/caching">Caching</a> — the incremental build cache (<code>.inputs()</code>/<code>.outputs()</code>/<code>.cacheKey()</code>), the remote cache, and the AI response cache (<code>aiCache</code>).</li>
     <li><a href="/docs/secrets">Secrets</a> — source a secret from a manager with <code>.from(execSecret/fileSecret)</code> and have Zuke redact it from every log, summary, and error.</li>
     <li><a href="/docs/library">Core library</a> — the built-in helpers: file tasks, globbing, HTTP, compression, tool installs, assertions, and paths.</li>

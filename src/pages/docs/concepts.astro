@@ -315,6 +315,13 @@ class MyBuild extends Build {
     <code>onlyWhen</code> conditions — without executing any body or touching the
     cache.
   </p>
+  <p>
+    For a dependency that's a <strong>long-lived process</strong> rather than a
+    step that finishes — a dev server, a database, a mock API —
+    <a href="/docs/services"><code>service()</code></a> declares a target Zuke
+    starts, waits until it's ready, keeps alive while its dependents run, and tears
+    down when the build ends.
+  </p>
 
   <h2 id="shell">The $ shell</h2>
   <p>
