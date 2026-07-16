@@ -121,6 +121,11 @@ const features = [
     body: "Declare what each target depends on; Zuke resolves the graph and runs everything in the right order, exactly once.",
   },
   {
+    icon: "service",
+    title: "Long-lived service targets",
+    body: "Declare a dev server, database, or mock API with service(). Zuke starts it, waits until it's ready (tcpReachable or your own probe), keeps it alive while dependents run, and stops it in a finally — so a failed test never leaks a process.",
+  },
+  {
     icon: "ci",
     title: "Code-first CI/CD",
     body: "Declare pipelines with cicd() and generate GitHub Actions, GitLab CI, or Azure Pipelines YAML — verified up to date on every run.",
@@ -198,6 +203,7 @@ const icons: Record<string, string> = {
   heal: `<path d="M20.5 8.5a4.6 4.6 0 0 0-6.5-6.5L12 4 10 2a4.6 4.6 0 0 0-6.5 6.5"/><path d="M3.5 8.5 12 17l4-4"/><path d="M3 14h4l1.5-3 2.5 6 1.5-3H21"/>`,
   download: `<path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>`,
   lock: `<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/>`,
+  service: `<rect x="3" y="4" width="18" height="7" rx="1.6"/><rect x="3" y="13" width="18" height="7" rx="1.6"/><path d="M7 7.5h.01M7 16.5h.01"/>`,
 };
 
 // The model providers @zuke/ai supports, shown as chips in the AI review section.

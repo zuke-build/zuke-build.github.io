@@ -1,0 +1,179 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "declaring", label: "Declaring a service" },
+  { id: "start", label: "Starting — .start() & spawn()" },
+  { id: "readiness", label: "Readiness — .readyWhen()" },
+  { id: "lifecycle", label: "Lifecycle and teardown" },
+  { id: "notes", label: "Notes and limits" },
+];
+
+const serviceSnippet = `import { Build, run, service, target, tcpReachable } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class E2E extends Build {
+  api = service()
+    .description("API under test")
+    .start(() => $\`deno run -A server.ts\`.spawn())      // spawn; don't await
+    .readyWhen(() => tcpReachable("localhost:8080"));    // polled until ready
+
+  test = target()
+    .dependsOn(this.api)   // api is started + ready before this runs
+    .executes(() => DenoTasks.test((s) => s.allowAll()));
+}
+
+await run(E2E);`;
+
+const spawnSnippet = `.start(() => $\`docker compose up\`.spawn())`;
+
+const handleSnippet = `.start(() => {
+  const server = Deno.serve({ port: 8080 }, handler);
+  return { stop: () => server.shutdown() };
+})`;
+
+const stopSnippet = `.start(() => openPool())
+.stop((pool) => pool.drain())`;
+
+const tcpSnippet = `.readyWhen(() => tcpReachable("localhost:5432"))`;
+
+const healthSnippet = `.readyWhen(async () => {
+  try {
+    const res = await fetch("http://localhost:8080/health");
+    return res.ok;
+  } catch {
+    return false; // not up yet
+  }
+})`;
+---
+
+<DocsLayout
+  title="Service targets"
+  description="service() models a long-lived process a build depends on — a dev server, a database, a mock API. Zuke starts it, waits until it's ready, keeps it alive while dependents run, and stops it in a finally so a failed test never leaks a process."
+  toc={toc}
+>
+  <p class="lead">
+    Some things a build depends on aren't a step that finishes — they're a process
+    that has to be <strong>running while other targets execute</strong>: a dev
+    server for end-to-end tests, a database container, a mock API.
+    <code>service()</code> models exactly that. It's declared and depended on like
+    a <a href="/docs/concepts#targets">target</a>, but the executor
+    <strong>starts</strong> it, waits until it's <strong>ready</strong>, keeps it
+    alive while its dependents run, and <strong>stops</strong> it when the build
+    finishes — in reverse order, in a <code>finally</code>, so a failed test never
+    leaks a process.
+  </p>
+  <p>
+    It replaces the fragile shell dance every team writes by hand: start the
+    server in the background, <code>sleep 5</code> and hope it's up, run the tests,
+    and remember to kill it (which never happens when the tests fail).
+  </p>
+  <Code code={serviceSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Running <code>zuke test</code> starts <code>api</code>, waits for port 8080 to
+    accept connections, runs the tests against it, then stops <code>api</code> —
+    whether the tests pass or fail.
+  </p>
+
+  <h2 id="declaring">Declaring a service</h2>
+  <p>
+    <code>service()</code> returns a <code>ServiceBuilder</code>. It shares the
+    ordering methods with <code>target()</code> (<code>dependsOn</code>,
+    <code>before</code>, <code>after</code>, <code>description</code>) but, instead
+    of <code>.executes(...)</code>, it takes a lifecycle:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.start(() =&gt; handle)</code></td><td>Start the process; return a handle to stop later. <strong>Required.</strong></td></tr>
+      <tr><td><code>.readyWhen(() =&gt; boolean)</code></td><td>Readiness probe, polled until it returns <code>true</code>. Optional.</td></tr>
+      <tr><td><code>.readyTimeout(ms)</code></td><td>How long to wait for readiness before failing (default 30s).</td></tr>
+      <tr><td><code>.stop((handle) =&gt; …)</code></td><td>Custom teardown. Optional — see below.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="start">Starting: <code>.start()</code> and <code>spawn()</code></h2>
+  <p>
+    <code>.start()</code> returns a <strong>handle</strong> the executor stops on
+    teardown. The shell's <code>Command</code> gains a <code>.spawn()</code> for
+    exactly this — it starts a process <em>without</em> waiting for it to exit and
+    returns a <code>SpawnedProcess</code>, whose <code>.stop()</code> sends
+    <code>SIGTERM</code> (then escalates to <code>SIGKILL</code> after a grace
+    period, and reaps it). A <code>SpawnedProcess</code> is a valid handle, so the
+    common case needs no explicit stop:
+  </p>
+  <Code code={spawnSnippet} lang="ts" theme="night-owl" />
+  <p>
+    A handle is anything with a <code>stop()</code> method, so you can start a
+    service any way you like — an in-process HTTP server, a library's
+    <code>listen()</code> — and return something that shuts it down:
+  </p>
+  <Code code={handleSnippet} lang="ts" theme="night-owl" />
+  <p>
+    When the thing you start isn't self-stopping, provide <code>.stop()</code>
+    explicitly; it receives whatever <code>.start()</code> returned:
+  </p>
+  <Code code={stopSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="readiness">Readiness: <code>.readyWhen()</code> and <code>tcpReachable</code></h2>
+  <p>
+    A just-started process usually isn't ready to serve immediately.
+    <code>.readyWhen()</code> takes a predicate that the executor polls (every
+    200ms) until it returns <code>true</code> or <code>.readyTimeout()</code>
+    elapses — in which case the service (and the build) fails with a clear error,
+    and the just-started process is stopped so it isn't leaked.
+  </p>
+  <p>
+    <code>tcpReachable("host:port")</code> is the built-in for the most common
+    check — "is the port accepting connections yet?":
+  </p>
+  <Code code={tcpSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Any predicate works — probe an HTTP health endpoint, look for a file, query a
+    readiness API:
+  </p>
+  <Code code={healthSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Without a <code>.readyWhen()</code>, a service is considered ready the moment
+      it starts. Each probe call is itself bounded by the remaining timeout budget,
+      so a probe that hangs can't stall the build past its deadline.
+    </p>
+  </div>
+
+  <h2 id="lifecycle">Lifecycle and teardown</h2>
+  <ul>
+    <li>A service starts when the run reaches it — which, because the plan only includes reachable nodes, means <strong>when a dependent needs it</strong>. It then stays up for the rest of the build.</li>
+    <li>Every started service is <strong>stopped in reverse start order</strong> when the build finishes, in a <code>finally</code>. A dependent that throws, a later service that fails to start, an aborted build — none of them leak a process.</li>
+    <li>Stopping is best-effort: if one service's teardown throws, it's reported and the rest are still stopped.</li>
+  </ul>
+
+  <h2 id="notes">Notes and limits</h2>
+  <ul>
+    <li><strong>Whole-build scope.</strong> A service stays up until the build ends, not just until its last dependent finishes. That's the simple, predictable model; fine-grained (stop-when-no-longer-needed) teardown may come later.</li>
+    <li><strong>Output.</strong> <code>spawn()</code> inherits the process's stdout/stderr so you see the server's logs. Under <a href="/docs/mcp"><code>zuke mcp</code></a>, stdout is the protocol stream, so avoid running a service-starting target through the MCP server.</li>
+    <li><strong>Running a service alone.</strong> <code>zuke api</code> starts the service and — with nothing depending on it to keep the build going — immediately tears it back down. Services are meant to be depended on, not run on their own.</li>
+  </ul>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

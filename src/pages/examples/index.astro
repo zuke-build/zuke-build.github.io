@@ -80,6 +80,46 @@ class CiBuild extends Build {
 await run(CiBuild);`,
   },
   {
+    id: "services",
+    tag: "Service targets",
+    title: "Spin up services for end-to-end tests",
+    desc: "Declare a long-lived process a build depends on with service() — a dev server, a database, a mock API. Zuke starts it, polls .readyWhen() (tcpReachable, or your own health probe) until it's ready, keeps it alive while dependents run, then stops it in a finally so a failed test never leaks a process. It replaces the start-in-background, sleep-and-hope, remember-to-kill shell dance. $`…`.spawn() starts a process without awaiting it and returns a handle whose .stop() sends SIGTERM.",
+    code: `import { Build, run, service, target, tcpReachable } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class E2E extends Build {
+  // A database container — ready once the port accepts connections.
+  db = service()
+    .description("Postgres for the test suite")
+    .start(() => $\`docker compose up db\`.spawn())   // spawn; don't await
+    .readyWhen(() => tcpReachable("localhost:5432"))
+    .readyTimeout(60_000);                           // give it up to 60s
+
+  // The API under test — waits on its own health endpoint.
+  api = service()
+    .description("API under test")
+    .dependsOn(this.db)
+    .start(() => $\`deno run -A server.ts\`.spawn())
+    .readyWhen(async () => {
+      try {
+        return (await fetch("http://localhost:8080/health")).ok;
+      } catch {
+        return false; // not up yet
+      }
+    });
+
+  // Both services are started + ready before the tests run, and are torn down
+  // in reverse order when the build finishes — pass or fail.
+  test = target()
+    .description("Run e2e tests against the running services")
+    .dependsOn(this.api)
+    .executes(() => DenoTasks.test((s) => s.allowAll()));
+}
+
+await run(E2E);`,
+  },
+  {
     id: "caching",
     tag: "Incremental caching",
     title: "Skip unchanged work with the build cache",
@@ -468,7 +508,7 @@ await run(CiBuild);`,
 
 <Base
   title="Examples · Zuke"
-  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, an incremental build cache, a remote cache with CI fan-out, a Codecov coverage upload, a Docker build-and-publish flow, a pinned hermetic toolchain, secrets sourced from a manager, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
+  description="Real-world Zuke build files: an Astro site, a Deno library CI gate, service targets for end-to-end tests, an incremental build cache, a remote cache with CI fan-out, a Codecov coverage upload, a Docker build-and-publish flow, a pinned hermetic toolchain, secrets sourced from a manager, chat announcements to Slack/Teams/Discord, an AI code review target, a self-healing build, and a generated CI/CD pipeline."
 >
   <section class="ex-hero">
     <div class="container">
