@@ -15,3 +15,8 @@ cov_profile/
 .env
 .env.*
 .DS_Store
+
+# agents
+.omc/
+.claude/
+.impeccable/

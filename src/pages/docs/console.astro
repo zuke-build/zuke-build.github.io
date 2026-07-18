@@ -367,12 +367,20 @@ build    <span class="ok">Succeeded</span>      2.2s
 
 <style>
   /* rendered-output cards under each example */
+  /* constant-dark terminal window in both modes; redefine theme vars so the
+     bright token colors below never wash out on light "paper" mode. */
   .io {
     margin: -6px 0 24px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
+    border: 1px solid var(--term-border);
+    border-radius: var(--radius);
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.015);
+    background: var(--term-bg);
+    color: var(--term-ink);
+    --text: var(--term-ink);
+    --text-dim: var(--term-dim);
+    --text-faint: var(--term-faint);
+    --cyan: var(--term-accent);
+    --border: var(--term-border);
   }
   .io__bar {
     padding: 7px 14px;

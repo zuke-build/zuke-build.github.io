@@ -33,18 +33,20 @@ const codeHtml = lines
 <style>
   .copy {
     position: relative;
-    background: #0a0d18;
-    border: 1px solid var(--border);
+    background: var(--term-bg);
+    color: var(--term-ink);
+    border: 1px solid var(--term-border);
     border-radius: var(--radius);
     padding: 18px 20px;
+    box-shadow: var(--shadow-term);
   }
   .copy__label {
     display: block;
     font-family: var(--font-mono);
     font-size: 0.72rem;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--text-faint);
+    color: var(--term-faint);
     margin-bottom: 10px;
   }
   .copy__pre {
@@ -54,10 +56,12 @@ const codeHtml = lines
     font-size: 0.9rem;
     line-height: 1.85;
   }
-  .copy__row { display: block; }
-  .copy__prompt { color: var(--violet); user-select: none; margin-right: 6px; }
-  .copy__cmd { color: var(--text); }
-  .copy__comment { color: var(--text-faint); }
+  /* rows are injected via set:html, so Astro's scoping can't reach them:
+     these must be :global to apply. */
+  :global(.copy__row) { display: block; }
+  :global(.copy__prompt) { color: var(--term-accent); user-select: none; margin-right: 6px; }
+  :global(.copy__cmd) { color: var(--term-ink); }
+  :global(.copy__comment) { color: var(--term-faint); }
   .copy__btn {
     position: absolute;
     top: 12px;
@@ -65,17 +69,18 @@ const codeHtml = lines
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    border-radius: 8px;
+    background: oklch(1 0 0 / 0.04);
+    border: 1px solid var(--term-border);
+    color: var(--term-dim);
+    border-radius: var(--radius-sm);
     padding: 6px 10px;
+    font-family: var(--font-mono);
     font-size: 0.78rem;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
-  .copy__btn:hover { border-color: var(--cyan); color: var(--text); }
-  .copy__btn.copied { border-color: #27c93f; color: #27c93f; }
+  .copy__btn:hover { border-color: var(--term-accent); color: var(--term-ink); }
+  .copy__btn.copied { border-color: var(--term-ok); color: var(--term-ok); }
 </style>
 
 <script>
