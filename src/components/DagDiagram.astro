@@ -3,12 +3,14 @@
 // clean ─┐
 //        ├─▶ build ─▶ preview
 // install ─▶ check ─┘
+// Rendered as a constant-dark app window (a "terminal on paper"), one amber
+// accent for the live/flowing state — no rainbow, no neon glow.
 const nodes = [
-  { id: "clean", x: 60, y: 38, c: "#34e1d4" },
-  { id: "install", x: 60, y: 150, c: "#34e1d4" },
-  { id: "check", x: 248, y: 150, c: "#4f8cff" },
-  { id: "build", x: 452, y: 92, c: "#9b6bff" },
-  { id: "preview", x: 636, y: 92, c: "#ff5fd2" },
+  { id: "clean", x: 60, y: 38 },
+  { id: "install", x: 60, y: 150 },
+  { id: "check", x: 248, y: 150 },
+  { id: "build", x: 452, y: 92 },
+  { id: "preview", x: 636, y: 92 },
 ];
 const edges = [
   ["install", "check"],
@@ -29,19 +31,12 @@ const path = ([a, b]: string[]) => {
 };
 ---
 
-<div class="dag panel" role="img" aria-label="Dependency graph: clean and install feed into check and build, which feeds preview, resolved in topological order.">
+<div class="dag" role="img" aria-label="Dependency graph: clean and install feed into check and build, which feeds preview, resolved in topological order.">
   <div class="dag__head">
     <span class="dag__dot"></span><span class="dag__dot"></span><span class="dag__dot"></span>
-    <span class="dag__title">zuke ·  resolving target graph</span>
+    <span class="dag__title">zuke · resolving target graph</span>
   </div>
   <svg viewBox="-20 -8 744 200" class="dag__svg" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0" stop-color="#34e1d4"></stop>
-        <stop offset="1" stop-color="#9b6bff"></stop>
-      </linearGradient>
-    </defs>
-
     {edges.map((e, i) => (
       <>
         <path d={path(e)} class="dag__edge" />
@@ -50,10 +45,10 @@ const path = ([a, b]: string[]) => {
     ))}
 
     {nodes.map((n, i) => (
-      <g class="dag__node" style={`--c:${n.c};animation-delay:${i * 0.45}s`}
+      <g class="dag__node" style={`animation-delay:${i * 0.45}s`}
          transform={`translate(${n.x - W / 2} ${n.y - H / 2})`}>
-        <rect width={W} height={H} rx="11" class="dag__box" />
-        <circle cx="18" cy={H / 2} r="4.5" fill={n.c} class="dag__pulse" />
+        <rect width={W} height={H} rx="8" class="dag__box" />
+        <circle cx="18" cy={H / 2} r="4.5" class="dag__pulse" />
         <text x="34" y={H / 2 + 5} class="dag__label">{n.id}</text>
       </g>
     ))}
@@ -62,23 +57,26 @@ const path = ([a, b]: string[]) => {
 
 <style>
   .dag {
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    border-radius: var(--radius);
     padding: 0;
     overflow: hidden;
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-term);
   }
   .dag__head {
     display: flex;
     align-items: center;
     gap: 7px;
     padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.015);
+    border-bottom: 1px solid var(--term-border);
+    background: oklch(1 0 0 / 0.02);
   }
   .dag__dot {
     width: 11px;
     height: 11px;
     border-radius: 99px;
-    background: #2a3559;
+    background: var(--term-border);
   }
   .dag__dot:nth-child(1) { background: #ff5f56; }
   .dag__dot:nth-child(2) { background: #ffbd2e; }
@@ -87,7 +85,7 @@ const path = ([a, b]: string[]) => {
     margin-left: 8px;
     font-family: var(--font-mono);
     font-size: 0.78rem;
-    color: var(--text-faint);
+    color: var(--term-faint);
   }
   .dag__svg {
     display: block;
@@ -98,12 +96,12 @@ const path = ([a, b]: string[]) => {
 
   .dag__edge {
     fill: none;
-    stroke: #243056;
+    stroke: var(--term-border);
     stroke-width: 2;
   }
   .dag__flow {
     fill: none;
-    stroke: url(#edge);
+    stroke: var(--term-accent);
     stroke-width: 2.4;
     stroke-linecap: round;
     stroke-dasharray: 10 220;
@@ -114,36 +112,32 @@ const path = ([a, b]: string[]) => {
   }
 
   .dag__box {
-    fill: #0e1322;
-    stroke: var(--c);
+    fill: var(--term-raised);
+    stroke: var(--term-border);
     stroke-width: 1.5;
-    filter: drop-shadow(0 0 0 transparent);
-    animation: pop 0.5s ease both, glow 3.2s ease-in-out infinite;
+    animation: pop 0.5s ease both;
   }
   .dag__label {
-    fill: var(--text);
+    fill: var(--term-ink);
     font-family: var(--font-mono);
     font-size: 14px;
     font-weight: 500;
   }
   .dag__pulse {
+    fill: var(--term-accent);
     animation: pulse 2s ease-in-out infinite;
   }
   @keyframes pop {
     from { opacity: 0; transform: translateY(6px); }
   }
-  @keyframes glow {
-    0%, 100% { filter: drop-shadow(0 0 2px color-mix(in srgb, var(--c) 35%, transparent)); }
-    50% { filter: drop-shadow(0 0 9px color-mix(in srgb, var(--c) 65%, transparent)); }
-  }
   @keyframes pulse {
-    0%, 100% { opacity: 0.6; }
+    0%, 100% { opacity: 0.55; }
     50% { opacity: 1; }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .dag__flow, .dag__box, .dag__pulse { animation: none; }
-    .dag__flow { stroke-dasharray: none; opacity: 0.8; }
+    .dag__flow { stroke-dasharray: none; opacity: 0.85; }
   }
 
   /* On narrow screens, scroll the graph horizontally so node labels stay

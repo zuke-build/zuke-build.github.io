@@ -1,43 +1,123 @@
 /* ============================================================
-   Zuke — design system
-   Dark, neon developer-tool aesthetic. Cyan → violet accents,
-   crisp monospace for code, subtle motion.
+   Zuke — design system · "Terminal-on-Paper"
+   Every surface is a typed build artifact.
+     · light mode  = a build log printed on crisp stock
+     · dark mode   = the same log live in the terminal
+   One structural language: rule lines, boxed frames, status
+   glyphs, aligned columns, a prompt/cursor motif. Phosphor-amber
+   accent, solid (never gradients). Dark is the signature.
    ============================================================ */
 
+/* ---- Tokens: dark (terminal) is the default -------------- */
 :root {
-  /* palette */
-  --bg: #07090f;
-  --bg-soft: #0b0e17;
-  --panel: #111524;
-  --panel-2: #151a2c;
-  --border: #1f2740;
-  --border-soft: #19203400;
+  color-scheme: dark;
 
-  --text: #e6ebf5;
-  --text-dim: #9aa6c2;
-  --text-faint: #6b7796;
+  /* page — warm near-black, not blue-neon */
+  --bg: oklch(0.16 0.008 80);
+  --bg-raised: oklch(0.205 0.009 80);
+  --panel: oklch(0.205 0.009 80);
+  --border: oklch(0.31 0.012 80);
+  --border-strong: oklch(0.44 0.016 80);
+  --grid-line: oklch(0.30 0.010 80 / 0.35);
 
-  --cyan: #34e1d4;
-  --blue: #4f8cff;
-  --violet: #9b6bff;
-  --pink: #ff5fd2;
+  /* ink — warm off-white (phosphor on paper, not clinical) */
+  --ink: oklch(0.94 0.010 85);
+  --ink-dim: oklch(0.76 0.014 85);
+  --ink-faint: oklch(0.62 0.014 85);
 
-  --accent: var(--cyan);
-  --gradient: linear-gradient(110deg, var(--cyan), var(--blue) 45%, var(--violet));
-  --gradient-soft: linear-gradient(110deg, rgba(52, 225, 212, 0.16), rgba(155, 107, 255, 0.16));
+  /* accent — phosphor amber, solid */
+  --accent: oklch(0.82 0.155 78);
+  --accent-strong: oklch(0.86 0.16 80);
+  --accent-ink: oklch(0.18 0.03 80); /* text on amber fills */
+  --link: var(--accent);
+
+  /* semantic status */
+  --ok: oklch(0.80 0.16 155);
+  --err: oklch(0.72 0.17 25);
+  --warn: oklch(0.82 0.12 96);
+
+  /* terminal surfaces — CONSTANT across modes (a screenshot
+     of a terminal reads the same on paper as on screen) */
+  --term-bg: oklch(0.175 0.010 82);
+  --term-raised: oklch(0.225 0.012 82);
+  --term-border: oklch(0.38 0.016 82);
+  --term-ink: oklch(0.93 0.010 85);
+  --term-dim: oklch(0.72 0.014 85);
+  --term-faint: oklch(0.62 0.014 85);
+  /* accents INSIDE terminal surfaces stay bright in both page modes —
+     the page-adaptive --accent/--ok would go dark on a dark card. */
+  --term-accent: oklch(0.82 0.155 78);
+  --term-ok: oklch(0.80 0.16 155);
+  --term-err: oklch(0.72 0.17 25);
+  --term-warn: oklch(0.82 0.12 96);
+
+  /* geometry — crisp, printed */
+  --max: 1120px;
+  --radius: 9px;
+  --radius-sm: 5px;
+  --shadow-term: 0 1px 0 oklch(1 0 0 / 0.03) inset,
+    0 24px 50px -32px oklch(0 0 0 / 0.7);
 
   /* type */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --font-sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-  /* layout */
-  --max: 1120px;
-  --radius: 14px;
-  --radius-lg: 20px;
+  /* z-index scale (semantic, never arbitrary) */
+  --z-sticky: 50;
+  --z-dropdown: 60;
+  --z-modal: 80;
+  --z-toast: 90;
 
-  --shadow-glow: 0 0 0 1px rgba(52, 225, 212, 0.18), 0 18px 60px -20px rgba(79, 140, 255, 0.45);
+  /* ---- legacy aliases: keep pre-redesign markup coherent
+     until each page is rebuilt. Removed in the final pass. */
+  --text: var(--ink);
+  --text-dim: var(--ink-dim);
+  --text-faint: var(--ink-faint);
+  --cyan: var(--accent);
+  --blue: var(--accent);
+  --violet: var(--accent);
+  --pink: var(--accent);
+  --bg-soft: var(--bg-raised);
+  --panel-2: var(--bg-raised);
+  --radius-lg: var(--radius);
+  --gradient: var(--accent);
+  --gradient-soft: oklch(0.82 0.155 78 / 0.12);
+  --shadow-glow: var(--shadow-term);
 }
 
+/* ---- Tokens: light (paper) ------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* printing stock — cool-neutral near-white, NOT cream */
+  --bg: oklch(0.985 0.003 250);
+  --bg-raised: oklch(0.965 0.004 250);
+  --panel: oklch(0.975 0.004 250);
+  --border: oklch(0.885 0.006 250);
+  --border-strong: oklch(0.74 0.010 250);
+  --grid-line: oklch(0.55 0.020 250 / 0.10);
+
+  /* cool near-black ink */
+  --ink: oklch(0.26 0.014 260);
+  --ink-dim: oklch(0.44 0.014 260);
+  --ink-faint: oklch(0.52 0.013 260);
+
+  /* deep/burnt amber — carries contrast on white */
+  --accent: oklch(0.56 0.145 58);
+  --accent-strong: oklch(0.50 0.15 55);
+  --accent-ink: oklch(0.99 0.01 80);
+  --link: var(--accent);
+
+  --ok: oklch(0.52 0.15 150);
+  --err: oklch(0.53 0.20 27);
+  --warn: oklch(0.58 0.12 78);
+
+  --shadow-term: 0 1px 0 oklch(1 0 0 / 0.5) inset,
+    0 26px 50px -30px oklch(0.26 0.05 260 / 0.35);
+  --gradient-soft: oklch(0.56 0.145 58 / 0.10);
+}
+
+/* ---- Reset & base ---------------------------------------- */
 * {
   box-sizing: border-box;
 }
@@ -50,7 +130,7 @@ html {
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--text);
+  color: var(--ink);
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
@@ -59,52 +139,45 @@ body {
   overflow-x: hidden;
 }
 
-/* ambient background glow */
+/* faint graph-paper / terminal grid — subtle in both modes */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -2;
-  background:
-    radial-gradient(60% 50% at 75% -5%, rgba(155, 107, 255, 0.18), transparent 60%),
-    radial-gradient(55% 45% at 10% 0%, rgba(52, 225, 212, 0.16), transparent 55%),
-    radial-gradient(50% 60% at 50% 110%, rgba(79, 140, 255, 0.14), transparent 60%);
-  pointer-events: none;
-}
-
-/* faint grid texture */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -2;
   background-image:
-    linear-gradient(rgba(120, 140, 200, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(120, 140, 200, 0.04) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: radial-gradient(circle at 50% 30%, black, transparent 80%);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at 50% 0%, black, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 50% 0%, black, transparent 78%);
   pointer-events: none;
 }
 
 a {
-  color: var(--cyan);
+  color: var(--link);
   text-decoration: none;
   transition: color 0.15s ease;
 }
 a:hover {
-  color: #7af3ea;
+  color: var(--accent-strong);
 }
 
+/* Headings ARE mono here — a build log has no separate display face */
 h1, h2, h3, h4 {
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
   font-weight: 700;
+  color: var(--ink);
   margin: 0 0 0.5em;
+  text-wrap: balance;
 }
 
 p {
   margin: 0 0 1em;
-  color: var(--text-dim);
+  color: var(--ink-dim);
+  text-wrap: pretty;
 }
 
 code {
@@ -112,7 +185,13 @@ code {
   font-size: 0.92em;
 }
 
-/* layout helpers */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ---- Layout helpers -------------------------------------- */
 .container {
   width: 100%;
   max-width: var(--max);
@@ -124,124 +203,226 @@ code {
   padding-block: clamp(64px, 9vw, 120px);
 }
 
-/* tighter gutters and vertical rhythm on phones */
 @media (max-width: 600px) {
   .container { padding-inline: 18px; }
   .section { padding-block: clamp(48px, 13vw, 80px); }
 }
 
-.eyebrow {
-  display: inline-block;
+.lead {
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+  color: var(--ink-dim);
+  max-width: 62ch;
+  font-family: var(--font-sans);
+}
+
+/* ---- Prompt label (the ONE deliberate kicker system) -----
+   Replaces the banned per-section uppercase eyebrow. Lowercase,
+   prompt-style, mono. Use sparingly — it's a motif, not scaffolding. */
+.prompt-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5ch;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--cyan);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-dim);
   margin-bottom: 14px;
 }
+.prompt-label::before {
+  content: "▸";
+  color: var(--accent);
+  font-weight: 700;
+}
 
+/* legacy .eyebrow → render as the prompt label, not a tracked kicker */
+.eyebrow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5ch;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-dim);
+  margin-bottom: 14px;
+}
+.eyebrow::before {
+  content: "▸";
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* legacy .gradient-text → solid accent, no clip trick */
 .gradient-text {
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--accent);
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
 }
 
-.lead {
-  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-  color: var(--text-dim);
-  max-width: 60ch;
+/* ---- Rule lines ------------------------------------------ */
+.rule {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+.rule--label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+.rule--label::before,
+.rule--label::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border);
 }
 
-/* buttons */
+/* ---- Cursor / status glyphs ------------------------------ */
+.cursor::after {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  margin-left: 0.15em;
+  translate: 0 0.14em;
+  background: var(--accent);
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.st-ok { color: var(--ok); }
+.st-err { color: var(--err); }
+.st-warn { color: var(--warn); }
+.st-accent { color: var(--accent); }
+
+/* ---- Buttons --------------------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
+  font-family: var(--font-mono);
   font-weight: 600;
-  font-size: 0.95rem;
-  padding: 12px 22px;
-  border-radius: 999px;
+  font-size: 0.9rem;
+  padding: 11px 20px;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.2s ease,
+    border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 .btn-primary {
-  background: var(--gradient);
-  /* clip the gradient to the padding box so the 1px transparent border
-     doesn't render a white antialiasing hairline at the rounded corners */
-  background-clip: padding-box;
-  color: #06121a;
-  box-shadow: 0 10px 30px -10px rgba(79, 140, 255, 0.7);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
 }
 .btn-primary:hover {
+  background: var(--accent-strong);
+  color: var(--accent-ink);
   transform: translateY(-2px);
-  color: #06121a;
-  box-shadow: 0 16px 40px -12px rgba(155, 107, 255, 0.75);
 }
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.02);
-  border-color: var(--border);
-  color: var(--text);
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--ink);
 }
 .btn-ghost:hover {
-  border-color: var(--cyan);
-  color: var(--text);
+  border-color: var(--accent);
+  color: var(--ink);
   transform: translateY(-2px);
 }
 
-/* cards / panels */
+/* ---- Panels & terminal frames ---------------------------- */
 .panel {
-  background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
 
-/* generic reveal-on-scroll */
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+/* .frame — a terminal window: constant dark chrome, both modes */
+.frame {
+  background: var(--term-bg);
+  border: 1px solid var(--term-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-term);
 }
-[data-reveal].is-visible {
+.frame__bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--term-border);
+  background: oklch(1 0 0 / 0.02);
+}
+.frame__dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 99px;
+  background: var(--term-border);
+}
+.frame__dot:nth-child(1) { background: #ff5f56; }
+.frame__dot:nth-child(2) { background: #ffbd2e; }
+.frame__dot:nth-child(3) { background: #27c93f; }
+.frame__name {
+  margin-left: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--term-faint);
+}
+
+/* ---- Reveal-on-scroll -----------------------------------
+   Only hide when JS is on (html.js). No-JS / headless renders
+   ship the content visible — the reveal is enhancement only. */
+html.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+html.js [data-reveal].is-visible {
   opacity: 1;
   transform: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal] {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  html.js [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
   html { scroll-behavior: auto; }
+  .cursor::after { animation: none; }
 }
 
-/* shiki code blocks */
+/* ---- Shiki code blocks — always a terminal artifact ------ */
 pre.astro-code {
-  background: #0a0d18 !important;
-  border: 1px solid var(--border);
+  background: var(--term-bg) !important;
+  border: 1px solid var(--term-border);
   border-radius: var(--radius);
   padding: 20px 22px;
   overflow-x: auto;
   font-size: 0.9rem;
   line-height: 1.7;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 pre.astro-code code {
   font-family: var(--font-mono);
 }
 
 ::selection {
-  background: rgba(52, 225, 212, 0.3);
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* scrollbar */
 ::-webkit-scrollbar { width: 11px; height: 11px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb {
-  background: #1d2540;
+  background: var(--border-strong);
   border-radius: 99px;
   border: 3px solid var(--bg);
 }
-::-webkit-scrollbar-thumb:hover { background: #2a3559; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }

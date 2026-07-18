@@ -1,13 +1,15 @@
 ---
 import { Image } from "astro:assets";
 import logoWhite from "../assets/logo-white.png";
+import logoColor from "../assets/logo.png";
 
 interface Props {
   /** rendered height in px; width scales to the logo's aspect ratio */
   height?: number;
 }
-const { height = 28 } = Astro.props;
-const width = Math.round((logoWhite.width / logoWhite.height) * height);
+const { height = 44 } = Astro.props;
+const wWidth = Math.round((logoWhite.width / logoWhite.height) * height);
+const cWidth = Math.round((logoColor.width / logoColor.height) * height);
 ---
 
 <span class="logo">
@@ -15,10 +17,19 @@ const width = Math.round((logoWhite.width / logoWhite.height) * height);
     src={logoWhite}
     alt="Zuke"
     height={height}
-    width={width}
+    width={wWidth}
     densities={[1.5, 2]}
     loading="eager"
-    class="logo__img"
+    class="logo__img logo__img--onDark"
+  />
+  <Image
+    src={logoColor}
+    alt="Zuke"
+    height={height}
+    width={cWidth}
+    densities={[1.5, 2]}
+    loading="eager"
+    class="logo__img logo__img--onLight"
   />
 </span>
 
@@ -27,9 +38,13 @@ const width = Math.round((logoWhite.width / logoWhite.height) * height);
     display: inline-flex;
     align-items: center;
   }
-  .logo__img {
-    display: block;
-    height: var(--logo-h, auto);
-    width: auto;
-  }
+  /* All display logic is :global — the <img> that <Image> renders can't be
+     reached by Astro's scoped selectors, and a scoped `.logo__img` rule would
+     out-specify the global hide. Keep every rule at the same low specificity.
+     dark (default): the white lockup. light: the full-color mascot lockup. */
+  :global(.logo__img) { height: auto; width: auto; }
+  :global(.logo__img--onDark) { display: block; }
+  :global(.logo__img--onLight) { display: none; }
+  :global(:root[data-theme="light"] .logo__img--onDark) { display: none; }
+  :global(:root[data-theme="light"] .logo__img--onLight) { display: block; }
 </style>

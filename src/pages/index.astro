@@ -65,18 +65,22 @@ const cacheSnippet = `import { Build, HttpCacheStore, cicd, target } from "jsr:@
 import { DenoTasks } from "jsr:@zuke/deno";
 
 class CI extends Build {
-  // Share built outputs across machines: restore on a local miss, upload
-  // after a green run — so the next machine or CI job reuses the work.
+  // Restore built outputs on a local miss; upload
+  // after a green run so the next job reuses them.
   override remoteCache() {
-    return new HttpCacheStore({ url: this.cacheUrl.value, token: this.token.value });
+    return new HttpCacheStore({
+      url: this.cacheUrl.value,
+      token: this.token.value,
+    });
   }
 
   build = target()
-    .inputs("src", "deno.json")   // the fingerprint → the cache key
-    .outputs("dist")              // archived to / restored from the store
+    .inputs("src", "deno.json")   // fingerprint → cache key
+    .outputs("dist")              // archived to the store
     .executes(() => DenoTasks.run((s) => s.script("build.ts")));
 
-  // One CI job per target, wired by dependsOn — independent jobs run in parallel.
+  // One CI job per target, wired by dependsOn —
+  // independent jobs run in parallel.
   ci = cicd({ provider: "github", fanOut: true });
 }`;
 
@@ -87,13 +91,13 @@ const cacheBackends = [
   { name: "S3 / GCS / R2", color: "#9b6bff" },
 ];
 
-const mcpSnippet = `# read-only: an agent can inspect the build, never execute
+const mcpSnippet = `# read-only: an agent inspects the build, never runs it
 zuke mcp
 
 # also expose run:<target> tools that execute targets
 zuke mcp --allow-run
 
-# register with a client (Claude Code shown; any stdio MCP client works)
+# register with an MCP client (Claude Code shown)
 claude mcp add zuke -- deno run -A zuke.ts mcp`;
 
 // MCP clients that can drive a Zuke build, shown as chips.
@@ -104,107 +108,47 @@ const mcpClients = [
   { name: "Any agent", color: "#9b6bff" },
 ];
 
-const features = [
+// Capabilities grouped into a printed "manifest" — deliberately varied group
+// sizes for rhythm, not a uniform card grid. Dedicated sections below go deep
+// on CI/CD, caching, console, shell, AI review, self-healing, and MCP.
+const featureGroups = [
   {
-    icon: "type",
-    title: "Typed, refactor-safe dependencies",
-    body: "Targets reference each other with this.target — not magic strings. Rename one and every reference updates. The compiler has your back.",
+    label: "the model",
+    items: [
+      { t: "Typed, refactor-safe dependencies", d: "Targets reference each other with this.target — not strings. Rename one and every reference updates." },
+      { t: "Just TypeScript", d: "Ordinary async functions with full types, editor support, and debugging. No YAML, no bespoke DSL." },
+      { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
+      { t: "Zero runtime dependencies", d: "Ships on Deno with nothing else to install. The launcher installs Deno for you on first run." },
+      { t: "Extensible by design", d: "Extend ToolSettings to build your own typed wrapper for any tool — no fork required." },
+    ],
   },
   {
-    icon: "code",
-    title: "Just TypeScript",
-    body: "Build logic is ordinary async functions with full editor support, types, and debugging. No YAML, no bespoke DSL to learn.",
+    label: "run & orchestrate",
+    items: [
+      { t: "Long-lived service targets", d: "Declare a dev server or database with service(); Zuke starts it, waits until ready, and stops it in a finally." },
+      { t: "Ergonomic, safe shell", d: "The $ tagged template runs processes with sane defaults and escapes interpolations to prevent injection." },
+      { t: "Incremental, remote & parallel", d: "Fingerprint .inputs()/.outputs() to skip unchanged work, share a remote cache, and run targets concurrently." },
+      { t: "Hermetic, pinned toolchains", d: "Fetch the CLIs a build drives, pinned by SHA-256, verified and cached — a bare CI runner is reproducible." },
+      { t: "Secrets, sourced & redacted", d: "Pull a secret from 1Password, Vault, or gcloud with .from(execSecret(…)); Zuke redacts it from every log." },
+    ],
   },
   {
-    icon: "graph",
-    title: "Automatic topological order",
-    body: "Declare what each target depends on; Zuke resolves the graph and runs everything in the right order, exactly once.",
+    label: "ship & automate",
+    items: [
+      { t: "Code-first CI/CD", d: "Declare pipelines with cicd() and generate GitHub, GitLab, or Azure YAML — verified up to date on every run." },
+      { t: "A typed tool ecosystem", d: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Docker, Kubernetes, Vite and more, all on JSR.` },
+      { t: "Announce to chat", d: "Post build status to Slack, Teams, and Discord from a target — typed messages with levels, fields, and links." },
+    ],
   },
   {
-    icon: "service",
-    title: "Long-lived service targets",
-    body: "Declare a dev server, database, or mock API with service(). Zuke starts it, waits until it's ready (tcpReachable or your own probe), keeps it alive while dependents run, and stops it in a finally — so a failed test never leaks a process.",
-  },
-  {
-    icon: "ci",
-    title: "Code-first CI/CD",
-    body: "Declare pipelines with cicd() and generate GitHub Actions, GitLab CI, or Azure Pipelines YAML — verified up to date on every run.",
-  },
-  {
-    icon: "shell",
-    title: "Ergonomic, safe shell",
-    body: "The $ tagged template executes processes with sensible defaults and prevents injection — capture output, ignore failures, or fail fast.",
-  },
-  {
-    icon: "bolt",
-    title: "Incremental, remote & parallel",
-    body: "Fingerprint a target's .inputs()/.outputs() to skip unchanged work as cached, share those outputs across machines with a remote cache, scope a run to what changed with --affected, and run independent targets concurrently with --parallel.",
-  },
-  {
-    icon: "jsr",
-    title: "A typed tool ecosystem",
-    body: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Bun, Docker, Kubernetes, Helm, Vite, Playwright, Terraform and more — all on JSR.`,
-  },
-  {
-    icon: "download",
-    title: "Hermetic, pinned toolchains",
-    body: "Fetch the CLIs a build drives with toolchain() or ToolTasks.install() — pinned by SHA-256, verified, and cached. A fresh clone or a bare CI runner is reproducible, with no 'install these first' step.",
-  },
-  {
-    icon: "lock",
-    title: "Secrets, sourced & redacted",
-    body: "Pull a secret from your manager — 1Password, Vault, gcloud, a mounted file — with .from(execSecret(…)), and Zuke redacts its value from every log, summary, and error, on any platform.",
-  },
-  {
-    icon: "ai",
-    title: "AI in your pipeline",
-    body: "Typed wrappers for Claude Code, OpenAI Codex, and Gemini CLI run headless in CI — drive a prompt, pick a model, constrain the tools, and capture the output, injection-free.",
-  },
-  {
-    icon: "review",
-    title: "AI code-review gate",
-    body: "Turn an LLM into a build gate with @zuke/ai — it reads the diff, gets a structured risk assessment, and breaks the build when the score crosses your threshold. Claude, OpenAI, or Gemini.",
-  },
-  {
-    icon: "heal",
-    title: "Self-healing builds",
-    body: "Attach a fixer with .recoverWith(). When a target fails, @zuke/ai diagnoses it from the command, stderr, and diff, posts a committable suggestion — or auto-applies, commits, and re-runs the real command to verify the build goes green.",
-  },
-  {
-    icon: "announce",
-    title: "Announce to chat",
-    body: "Post build status to Slack, Microsoft Teams, and Discord from a target with AnnounceTasks — typed messages with levels, fields, and links, over incoming webhooks or each platform's bot API.",
-  },
-  {
-    icon: "plugin",
-    title: "Extensible by design",
-    body: "Need a tool we don't wrap yet? Extend ToolSettings from @zuke/core/tooling to build your own typed wrapper — no fork required.",
-  },
-  {
-    icon: "zero",
-    title: "Zero runtime dependencies",
-    body: "Zuke ships on Deno with nothing else to install. The bootstrap launcher even installs Deno for you on first run.",
+    label: "ai in the loop",
+    items: [
+      { t: "AI in your pipeline", d: "Typed wrappers for Claude Code, Codex, and Gemini CLI run headless in CI, injection-free." },
+      { t: "AI code-review gate", d: "A model reads the diff, returns a structured risk score, and breaks the build when it crosses your threshold." },
+      { t: "Self-healing builds", d: "Attach a fixer with .recoverWith(); @zuke/ai diagnoses a failure and can apply, commit, and re-run to verify." },
+    ],
   },
 ];
-
-const icons: Record<string, string> = {
-  type: `<path d="M4 7V5h16v2M9 5v14m-3 0h6"/>`,
-  code: `<path d="m8 8-4 4 4 4M16 8l4 4-4 4"/>`,
-  graph: `<circle cx="5" cy="6" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="13" cy="12" r="2.5"/><circle cx="20" cy="12" r="2.5"/><path d="M7 7.5 10.7 11M7 16.5 10.7 13M15.5 12H17.5"/>`,
-  ci: `<path d="M4 6a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm12 12a2 2 0 1 1 4 0 2 2 0 0 1-4 0ZM6 8v4a4 4 0 0 0 4 4h4"/><path d="M14 14l2 2-2 2"/>`,
-  shell: `<path d="m5 8 4 4-4 4M12 16h7"/><rect x="2" y="3" width="20" height="18" rx="3"/>`,
-  bolt: `<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>`,
-  zero: `<path d="M20 7 12 3 4 7v10l8 4 8-4z"/><path d="M12 12 4 7M12 12v9M12 12l8-5"/>`,
-  jsr: `<path d="M4 6h16v12H4z"/><path d="M8 10v4M12 9v6M12 15h2a2 2 0 0 0 0-4M16 10h2"/>`,
-  plugin: `<path d="M9 3v4M15 3v4M7 7h10v4a5 5 0 0 1-10 0zM12 16v5"/>`,
-  ai: `<rect x="4" y="7" width="16" height="12" rx="2.5"/><path d="M12 7V4M9 12h.01M15 12h.01M9 15.5h6"/><path d="M2 12h2M20 12h2"/>`,
-  announce: `<path d="M3 11v2a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/>`,
-  review: `<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="m9 14 2 2 4-4"/>`,
-  heal: `<path d="M20.5 8.5a4.6 4.6 0 0 0-6.5-6.5L12 4 10 2a4.6 4.6 0 0 0-6.5 6.5"/><path d="M3.5 8.5 12 17l4-4"/><path d="M3 14h4l1.5-3 2.5 6 1.5-3H21"/>`,
-  download: `<path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>`,
-  lock: `<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 15v2"/>`,
-  service: `<rect x="3" y="4" width="18" height="7" rx="1.6"/><rect x="3" y="13" width="18" height="7" rx="1.6"/><path d="M7 7.5h.01M7 16.5h.01"/>`,
-};
 
 // The model providers @zuke/ai supports, shown as chips in the AI review section.
 const providers = [
@@ -304,17 +248,24 @@ const hosts = [
         <span class="eyebrow">Why Zuke</span>
         <h2>Everything a build needs — typed end to end.</h2>
       </header>
-      <div class="feat-grid">
-        {features.map((f) => (
-          <article class="feat panel" data-reveal>
-            <span class="feat__icon">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
-                stroke-linejoin="round" set:html={icons[f.icon]} />
-            </span>
-            <h3>{f.title}</h3>
-            <p>{f.body}</p>
-          </article>
+      <div class="manifest">
+        {featureGroups.map((g) => (
+          <section class="mgroup" data-reveal>
+            <h3 class="mgroup__head">
+              <span class="mgroup__count">{g.items.length}</span>{g.label}
+            </h3>
+            <ul class="mgroup__list">
+              {g.items.map((it) => (
+                <li class="mitem">
+                  <span class="mitem__mark" aria-hidden="true">✔</span>
+                  <div class="mitem__body">
+                    <span class="mitem__t">{it.t}</span>
+                    <span class="mitem__d">{it.d}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
       </div>
     </div>
@@ -437,7 +388,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 <span class="t-ok">✔</span> published 4 packages
 <span class="t-warn">⚠</span> coverage <span class="t-warn">94.2%</span> — below gate
 
-<span class="t-box">┌</span> <span class="t-title">Artifacts</span> <span class="t-box">──────────────────┐</span>
+<span class="t-box">┌</span> <span class="t-title">Artifacts</span> <span class="t-box">───────────────────┐</span>
 <span class="t-box">│</span>  core  1.2.0  <span class="t-ok">✔</span>              <span class="t-box">│</span>
 <span class="t-box">│</span>  cli   1.2.0  <span class="t-ok">✔</span>              <span class="t-box">│</span>
 <span class="t-box">└──────────────────────────────┘</span>
@@ -923,7 +874,33 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .dotsep { color: var(--border); }
 
   /* code card */
-  .codecard { overflow: hidden; box-shadow: var(--shadow-glow); }
+  /* Terminal / console / tool mockups are constant-dark windows in BOTH
+     modes. Redefining the theme vars locally makes every descendant color
+     (var(--text*), var(--cyan/violet), the .panel base) resolve to the bright,
+     constant terminal palette — so their dark-designed colors never wash out
+     on light "paper" mode. */
+  .codecard,
+  .term,
+  .review,
+  .heal,
+  .suggest,
+  .rcache,
+  .mcp {
+    background: var(--term-bg);
+    border-color: var(--term-border);
+    color: var(--term-ink);
+    --text: var(--term-ink);
+    --text-dim: var(--term-dim);
+    --text-faint: var(--term-faint);
+    --cyan: var(--term-accent);
+    --blue: var(--term-accent);
+    --violet: var(--term-accent);
+    --accent: var(--term-accent);
+    --border: var(--term-border);
+    --panel: var(--term-raised);
+  }
+
+  .codecard { overflow: hidden; box-shadow: var(--shadow-term); }
   .codecard__bar {
     display: flex;
     align-items: center;
@@ -946,6 +923,11 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     border: 0 !important;
     border-radius: 0;
     margin: 0;
+    font-size: 0.82rem;
+    /* wrap long lines rather than scroll — no horizontal scrollbar on the
+       marketing mockups (docs keep normal code behavior). */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   /* section heads */
@@ -953,27 +935,52 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .sec-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
   .sec-head__lead { margin-inline: auto; }
 
-  /* features */
-  .feat-grid {
+  /* features — a grouped capability manifest, not a card grid */
+  .manifest {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 26px 44px;
   }
-  .feat { padding: 26px 24px; transition: transform 0.2s ease, border-color 0.2s ease; }
-  .feat:hover { transform: translateY(-3px); border-color: #2c3760; }
-  .feat__icon {
-    display: inline-flex;
+  .mgroup__head {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: var(--gradient-soft);
-    color: var(--cyan);
-    margin-bottom: 16px;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ink);
+    padding-bottom: 12px;
+    margin: 0 0 4px;
+    border-bottom: 1px solid var(--border);
   }
-  .feat h3 { font-size: 1.08rem; margin-bottom: 8px; }
-  .feat p { font-size: 0.93rem; margin: 0; }
+  .mgroup__count {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    border: 1px solid color-mix(in oklch, var(--accent) 40%, var(--border));
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .mgroup__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+  .mitem {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    gap: 10px;
+    padding: 12px 8px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s ease;
+  }
+  .mitem:hover { background: color-mix(in oklch, var(--ink) 5%, transparent); }
+  .mitem__mark {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .mitem__body { display: grid; gap: 3px; min-width: 0; }
+  .mitem__t { font-weight: 600; font-size: 0.95rem; color: var(--ink); }
+  .mitem__d { font-size: 0.86rem; line-height: 1.5; color: var(--ink-dim); }
 
   /* output */
   .out-grid {
@@ -1028,7 +1035,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   }
 
   /* dag */
-  .sec-dag { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5), transparent); }
+  .sec-dag { border-block: 1px solid var(--border); }
   .dag-grid {
     display: grid;
     grid-template-columns: 0.95fr 1.05fr;
@@ -1080,9 +1087,6 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 
   /* ai review */
   .sec-review {
-    background:
-      radial-gradient(55% 100% at 82% 50%, rgba(155, 107, 255, 0.12), transparent 62%),
-      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.6), transparent);
     border-block: 1px solid var(--border);
   }
   .review-grid {
@@ -1208,9 +1212,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 
   /* caching & distributed builds */
   .sec-cache {
-    background:
-      radial-gradient(55% 100% at 15% 40%, rgba(52, 225, 212, 0.10), transparent 60%),
-      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.5), transparent);
+    border-block: 1px solid var(--border);
   }
   .cache-grid {
     display: grid;
@@ -1279,10 +1281,6 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 
   /* self-healing */
   .sec-heal {
-    background:
-      radial-gradient(50% 100% at 18% 30%, rgba(65, 209, 138, 0.10), transparent 60%),
-      radial-gradient(55% 100% at 88% 70%, rgba(155, 107, 255, 0.10), transparent 62%),
-      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.6), transparent);
     border-block: 1px solid var(--border);
   }
   .heal-grid {
@@ -1416,9 +1414,6 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 
   /* mcp server */
   .sec-mcp {
-    background:
-      radial-gradient(55% 100% at 85% 45%, rgba(155, 107, 255, 0.10), transparent 60%),
-      linear-gradient(180deg, transparent, rgba(11, 14, 23, 0.5), transparent);
     border-block: 1px solid var(--border);
   }
   .mcp-grid {
@@ -1474,12 +1469,12 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .mcp__tag--run { color: #c9b6ff; background: rgba(155, 107, 255, 0.16); }
   .mcp__call {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 10px;
     padding: 12px 16px;
     border-top: 1px solid var(--border);
-    background: rgba(255, 255, 255, 0.015);
-    overflow-x: auto;
+    background: color-mix(in oklch, var(--ink) 4%, transparent);
   }
   .mcp__calllabel {
     font-family: var(--font-mono);
@@ -1489,10 +1484,10 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     color: var(--text-faint);
     flex-shrink: 0;
   }
-  .mcp__call code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: pre; }
+  .mcp__call code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: pre-wrap; word-break: break-word; }
 
   /* tools */
-  .sec-tools { background: linear-gradient(180deg, transparent, rgba(11,14,23,0.5)); }
+  .sec-tools { border-top: 1px solid var(--border); }
   .tools-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -1531,9 +1526,8 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .cta {
     text-align: center;
     padding: clamp(40px, 6vw, 64px);
-    background:
-      radial-gradient(70% 130% at 50% 0%, rgba(79,140,255,0.12), transparent 60%),
-      linear-gradient(180deg, var(--panel), var(--bg-soft));
+    background: color-mix(in oklch, var(--accent) 7%, var(--panel));
+    border-color: color-mix(in oklch, var(--accent) 30%, var(--border));
   }
   .cta h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
   .cta > p { margin-bottom: 26px; }
@@ -1555,14 +1549,13 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   @media (max-width: 940px) {
     .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .cache-grid, .mcp-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
     .hero__code { order: 2; }
-    .feat-grid { grid-template-columns: repeat(2, 1fr); }
     .tools-grid { grid-template-columns: repeat(2, 1fr); }
     .core-row { grid-template-columns: 1fr; gap: 14px; }
     .core-row__items { grid-template-columns: 1fr; }
     .shell-grid .codecard { order: 2; }
   }
   @media (max-width: 600px) {
-    .feat-grid, .tools-grid { grid-template-columns: 1fr; }
+    .manifest, .tools-grid { grid-template-columns: 1fr; }
     .hero__strip { gap: 9px 12px; font-size: 0.78rem; margin-top: 44px; }
     .hero__cta { gap: 10px; }
     .hero__cta .btn { flex: 1 1 auto; justify-content: center; }
