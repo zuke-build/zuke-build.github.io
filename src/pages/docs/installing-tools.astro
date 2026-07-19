@@ -7,6 +7,7 @@ const toc = [
   { id: "one-tool", label: "ToolTasks.install() — one tool" },
   { id: "pinning", label: "Pinning, verification & caching" },
   { id: "toolchain", label: "toolchain() — many tools" },
+  { id: "npm-package-tools", label: "npm-package tools" },
   { id: "using", label: "Working with an installed tool" },
   { id: "platform", label: "Cross-platform URL resolution" },
   { id: "ci", label: "On CI" },
@@ -100,6 +101,18 @@ s.url((p) =>
 const ciSnippet = `steps:
   - uses: actions/checkout@v4
   - run: ./zuke deploy   # installs helm + kubectl on first use, then runs`;
+
+const npmToolSnippet = `import { Build, target, toolchain } from "jsr:@zuke/core";
+import { VitestTasks } from "jsr:@zuke/vitest";
+
+class Test extends Build {
+  tools = toolchain((t) => t.npm({ name: "vitest", version: "4.1.9" }));
+
+  test = target().executes(async () => {
+    const bins = await this.tools.install();
+    await VitestTasks.run((s) => s.toolPath(bins.get("vitest")));
+  });
+}`;
 ---
 
 <DocsLayout
@@ -125,8 +138,9 @@ const ciSnippet = `steps:
       <tr><th>API</th><th>Installs</th><th>Reach for it when</th></tr>
     </thead>
     <tbody>
-      <tr><td><a href="#one-tool"><code>ToolTasks.install((s) =&gt; …)</code></a></td><td>one tool</td><td>you need a single binary</td></tr>
+      <tr><td><a href="#one-tool"><code>ToolTasks.install((s) =&gt; …)</code></a></td><td>one binary</td><td>you need a single release binary</td></tr>
       <tr><td><a href="#toolchain"><code>toolchain()</code></a></td><td>many tools</td><td>a build depends on several tools</td></tr>
+      <tr><td><a href="#npm-package-tools"><code>ToolTasks.npm(...)</code> / <code>.npm(...)</code></a></td><td>an npm package</td><td>the tool ships on the npm registry</td></tr>
     </tbody>
   </table>
   <p>
@@ -162,8 +176,8 @@ const ciSnippet = `steps:
       <tr><td><code>.name(name)</code></td><td>The tool name, and the installed filename (<code>.exe</code> appended on Windows). <strong>Required.</strong></td></tr>
       <tr><td><code>.url((platform) =&gt; string)</code></td><td>Resolve the download URL for the target <a href="#platform">platform</a>. <strong>Required.</strong></td></tr>
       <tr><td><code>.destDir(dir)</code></td><td>Directory to install into (created if missing). Defaults to <code>.zuke/tools</code>.</td></tr>
-      <tr><td><code>.archive("tar.gz")</code></td><td>Unpack a gzipped tarball; the default <code>"raw"</code> treats the download as the binary.</td></tr>
-      <tr><td><code>.binaryPath(path)</code></td><td>For a <code>tar.gz</code>, the binary's path <em>inside</em> the archive (e.g. Helm's <code>linux-amd64/helm</code>). Defaults to the name.</td></tr>
+      <tr><td><code>.archive("tar.gz" | "zip")</code></td><td>Unpack a gzipped tarball or a zip; the default <code>"raw"</code> treats the download as the binary.</td></tr>
+      <tr><td><code>.binaryPath(path)</code></td><td>For an archive, the binary's path <em>inside</em> it (e.g. Helm's <code>linux-amd64/helm</code>). Defaults to the name.</td></tr>
       <tr><td><code>.checksum(sha256)</code></td><td>Expected SHA-256, or a <code>(platform) =&gt; string</code> resolver — <a href="#pinning">verifies and caches</a>.</td></tr>
       <tr><td><code>.platform(&#123; os, arch &#125;)</code></td><td>Resolve for a specific platform instead of the host.</td></tr>
       <tr><td><code>.download(fn)</code></td><td>Override the downloader (defaults to an HTTPS download); mainly a test seam.</td></tr>
@@ -173,14 +187,17 @@ const ciSnippet = `steps:
     With <strong><code>"raw"</code></strong> (default) the URL points straight at
     the executable; it's saved as <code>&lt;destDir&gt;/&lt;name&gt;</code> and
     <code>chmod +x</code>'d. With <strong><code>.archive("tar.gz")</code></strong>
-    Zuke unpacks the tarball to a scratch directory, copies
-    <code>.binaryPath(...)</code> out, then discards the scratch.
+    or <strong><code>.archive("zip")</code></strong> Zuke unpacks the archive to
+    a scratch directory, copies <code>.binaryPath(...)</code> out, then discards
+    the scratch. Zip reading covers the <code>stored</code> and
+    <code>deflate</code> methods release assets use (dprint et al. ship
+    zip-only); encrypted or zip64 archives are rejected with a clear error, and
+    no archive entry may escape the destination directory (a "zip slip").
   </p>
   <div class="note">
     <p>
-      Zip archives aren't supported yet, so this targets the Unix runners where
-      most release tarballs are published. On Windows the installed filename gains
-      an <code>.exe</code> suffix and the executable bit is skipped.
+      On Windows the installed filename gains an <code>.exe</code> suffix and
+      the executable bit is skipped.
     </p>
   </div>
 
@@ -196,12 +213,12 @@ const ciSnippet = `steps:
     <li><strong>Caches</strong> the install: a sidecar marker (<code>&lt;destDir&gt;/&lt;name&gt;.install.json</code>) records the checksum and the installed binary's own hash. A later run skips the download only when the pin matches <em>and</em> the on-disk binary still hashes to what was installed — so a swapped or corrupted binary is re-downloaded and re-verified, never silently reused.</li>
   </ol>
   <p>
-    What the checksum covers depends on the format: for <code>"tar.gz"</code> it's
-    the SHA-256 of the <strong>archive</strong> (what projects list in their
-    <code>checksums.txt</code>); for <code>"raw"</code> it's the SHA-256 of the
-    <strong>binary</strong> itself. Without a checksum, the tool is downloaded
-    every run and left unverified — fine for a quick spike, but pin one for
-    anything real.
+    What the checksum covers depends on the format: for <code>"tar.gz"</code>
+    and <code>"zip"</code> it's the SHA-256 of the <strong>archive</strong>
+    (what projects list in their <code>checksums.txt</code>); for
+    <code>"raw"</code> it's the SHA-256 of the <strong>binary</strong> itself.
+    Without a checksum, the tool is downloaded every run and left unverified —
+    fine for a quick spike, but pin one for anything real.
   </p>
   <div class="note">
     <p>
@@ -225,8 +242,32 @@ const ciSnippet = `steps:
   <ul>
     <li><strong>Install directory.</strong> Tools default to <code>.zuke/tools</code> (<code>DEFAULT_TOOLS_DIR</code>). Override for all with <code>install(&#123; destDir &#125;)</code>, or per tool with <code>.destDir(...)</code>.</li>
     <li><strong>Custom downloader.</strong> <code>install(&#123; download &#125;)</code> swaps the downloader for every tool — a test seam.</li>
-    <li><strong>Introspection.</strong> <code>chain.tools</code> returns the configured settings in order.</li>
+    <li><strong>Introspection.</strong> <code>chain.tools</code> returns the configured release settings in order; <code>chain.npmTools</code> the <a href="#npm-package-tools">npm-package tools</a>.</li>
     <li><strong>Cheap to re-run.</strong> A matching checksum is a cache hit, so calling <code>install()</code> again (locally or on CI) is a no-op once the tools are present.</li>
+  </ul>
+
+  <h2 id="npm-package-tools">npm-package tools</h2>
+  <p>
+    Not every tool ships a release binary — many (<code>vitest</code>,
+    <code>dprint</code>, <code>@nestjs/cli</code>, …) are published on the
+    <strong>npm registry</strong>. <code>Toolchain.npm(...)</code> provisions
+    one as a version-pinned, cached tool without an ambient <code>npm ci</code>:
+  </p>
+  <Code code={npmToolSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Each package installs under <code>&lt;destDir&gt;/npm/&lt;name&gt;@&lt;version&gt;</code>
+    via <code>npm install --prefix &lt;dir&gt; --no-save &lt;name&gt;@&lt;version&gt;</code>,
+    and <code>install()</code> returns its bin under the same
+    <code>Map&lt;name, AbsolutePath&gt;</code> as the release tools. For a
+    one-off outside a toolchain, <code>ToolTasks.npm(spec, options?)</code> (or
+    the underlying <code>installNpmTool</code>) does the same for a single
+    package.
+  </p>
+  <ul>
+    <li><strong>npm is the one ambient requirement.</strong> It resolves and downloads the package; everything else is Zuke's. Nothing else needs to be on <code>PATH</code>.</li>
+    <li><strong>Pinned and cached.</strong> A marker file records the <code>&#123; name, version &#125;</code>, so a later <code>install()</code> whose marker matches — and whose bin is still present — skips npm entirely.</li>
+    <li><strong>Different bin name.</strong> When a package's bin differs from its name, set <code>bin</code>: <code>&#123; name: "@nestjs/cli", version: "10.4.0", bin: "nest" &#125;</code> resolves the <code>nest</code> bin.</li>
+    <li><strong>Hermetic pins compose with <code>node_modules</code> resolution.</strong> An explicit <code>.toolPath(bins.get(...))</code> always wins over <a href="/docs/node-projects#bin-resolution"><code>node_modules/.bin</code> resolution</a>, so a <code>toolchain()</code> pin stays authoritative even inside a Node workspace.</li>
   </ul>
 
   <h2 id="using">Working with an installed tool</h2>

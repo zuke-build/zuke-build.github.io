@@ -9,7 +9,9 @@ const toc = [
   { id: "interfaces", label: "StateStore interface & RunRecord" },
   { id: "backends", label: "FileSystem vs HTTP backends" },
   { id: "cli", label: "zuke runs CLI" },
+  { id: "retention", label: "Retention" },
   { id: "http-api", label: "HTTP REST contract" },
+  { id: "api-stability", label: "API stability" },
   { id: "secrets", label: "Secrets never touch state" },
 ];
 
@@ -58,7 +60,7 @@ export interface RunRecord {
   signals: Record<string, SignalRecord>;    // { data, receivedAt }
   events: RunEvent[];                       // append-only MCP audit trail
 }
-export interface RunQuery { status?: RunStatus; target?: string; since?: string; }
+export interface RunQuery { status?: RunStatus; target?: string; since?: string; limit?: number; }
 export interface RunSummary { id; build; rootTarget; status; actor; createdAt; updatedAt; }`;
 
 const httpOverrideSnippet = `import { Build, HttpStateStore, parameter, target } from "jsr:@zuke/core";
@@ -73,8 +75,17 @@ class CD extends Build {
 
 const cliSnippet = `zuke runs list                                                   # all runs, newest first
 zuke runs list --status failed --target deploy --since 2026-07-01
+zuke runs list --limit 20                                        # newest 20 only
 zuke runs show 6f1c…                                             # header, params, per-target, signals, events
 zuke runs show 6f1c… --json                                      # raw record`;
+
+const pruneSnippet = `# Delete terminal runs older than 90 days, but always keep the newest 50.
+zuke runs prune --keep 90d --keep-last 50
+
+# Preview what would go, without deleting.
+zuke runs prune --keep 30d --dry-run`;
+
+const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://localhost:8080 [--token …]`;
 ---
 
 <DocsLayout
@@ -180,15 +191,46 @@ zuke runs show 6f1c… --json                                      # raw record`
     string; fetch?: typeof fetch &#125;</code> — a <code>token</code> is sent
     as <code>Authorization: Bearer</code>.
   </p>
+  <p>
+    A <a href="#api-stability">conformance kit</a> verifies a hosted HTTP
+    backend against the same contract before you trust it in production.
+  </p>
 
   <h2 id="cli">zuke runs CLI</h2>
   <Code code={cliSnippet} lang="bash" theme="night-owl" />
   <p>
     <code>zuke runs list</code> takes <code>--status</code>,
     <code>--target</code>, and <code>--since</code> filters, AND-combined,
-    newest-first. <code>zuke runs show &lt;id&gt;</code> prints the header,
-    params, per-target status, signals, and events — add
-    <code>--json</code> for the raw <code>RunRecord</code>.
+    newest-first, plus <code>--limit &lt;n&gt;</code> (mirroring
+    <code>listRuns(&#123; limit &#125;)</code>) to cap the result to the
+    newest N so a large store stays listable. <code>zuke runs show
+    &lt;id&gt;</code> prints the header, params, per-target status, signals,
+    and events — add <code>--json</code> for the raw <code>RunRecord</code>.
+  </p>
+
+  <h2 id="retention">Retention</h2>
+  <p>Records accumulate, so old ones can be pruned:</p>
+  <Code code={pruneSnippet} lang="bash" theme="night-owl" />
+  <p>
+    A run is removed only when it is <strong>terminal</strong>
+    (<code>succeeded</code>, <code>failed</code>, <code>cancelled</code>)
+    <strong>and</strong> matches neither rule — it is both older than
+    <code>--keep</code> and beyond the newest <code>--keep-last</code>. A
+    <strong>non-terminal</strong> run (<code>suspended</code>,
+    <code>running</code>, <code>cancelling</code>) is <strong>never</strong>
+    pruned: a run suspended for days awaiting a human is the point of the
+    system. At least one of <code>--keep</code> / <code>--keep-last</code> is
+    required, so an accidental bare <code>prune</code> never wipes the store.
+  </p>
+  <p>
+    Who owns retention depends on the backend. The <strong>filesystem</strong>
+    store is dev-grade and single-host, so it owns its pruning through this
+    CLI. For the <strong>HTTP</strong> backend, retention is the
+    <strong>server's</strong> job (a TTL or scheduled sweep) —
+    <code>GET /runs</code> takes a <code>limit</code> so large stores stay
+    listable, and <code>DELETE /runs/:id</code> (which <code>prune</code>
+    drives) is an optional endpoint a hosted store implements only if it wants
+    the CLI to prune it too.
   </p>
 
   <h2 id="http-api">HTTP REST contract</h2>
@@ -211,12 +253,55 @@ zuke runs show 6f1c… --json                                      # raw record`
         <td>Create with <code>If-None-Match: *</code> (else <code>412</code>); update with <code>If-Match: &lt;etag&gt;</code> (else <code>412</code>). Returns the new <code>ETag</code>; a <code>412</code> is a CAS conflict — re-read and retry.</td>
       </tr>
       <tr>
-        <td><code>GET /runs?status=&amp;target=&amp;since=</code></td>
-        <td>Array of <code>RunSummary</code>; query params are AND-combined; server returns newest-first.</td>
+        <td><code>DELETE /runs/:id</code></td>
+        <td>Backs <code>zuke runs prune</code>; <strong>optional</strong> — a server that owns its own retention may leave it unimplemented. <code>2xx</code> means deleted (or already absent); <code>404</code> is treated as success (delete is idempotent).</td>
+      </tr>
+      <tr>
+        <td><code>GET /runs?status=&amp;target=&amp;since=&amp;limit=</code></td>
+        <td>Array of <code>RunSummary</code>; query params are AND-combined; server returns newest-first. <code>limit</code> caps the result to the newest N, applied after ordering, so a large store stays listable.</td>
       </tr>
     </tbody>
   </table>
+  <div class="note">
+    <p>
+      Every client request carries <code>x-zuke-state-protocol: 1</code> (this
+      page describes wire protocol <strong>1</strong>). A service may echo
+      its own version in that response header — when it does and the value
+      differs, the client fails loudly rather than risk a silent mis-parse; a
+      service that omits the header is treated as compatible. A breaking
+      change to the contract bumps the number.
+    </p>
+  </div>
   <p>The same base URL, auth, and ETag scheme also hosts the build registry under <code>/builds</code>.</p>
+
+  <h2 id="api-stability">API stability</h2>
+  <p>
+    The durable-state surface — the <code>StateStore</code> interface,
+    <code>resumeRun</code>, <code>acquireLock</code>/<code>renewLock</code>/<code>releaseLock</code>,
+    and the <code>RunRecord</code>/<code>RunEvent</code> shapes — is
+    <strong>stable with a deprecation cycle</strong>: a breaking change ships
+    with the old form kept working for one minor version, emitting a
+    warning, before removal. The <code>RunRecord</code> JSON is versioned by
+    tolerant parsing (an older record still loads, its missing fields
+    defaulted), and that tolerance is a stated guarantee, not an accident —
+    the schema-evolution tests enforce it.
+  </p>
+  <p>
+    The HTTP wire contract carries the <a href="#http-api">protocol
+    version</a> header (<code>x-zuke-state-protocol</code>); a breaking
+    change to the contract bumps the number, and a client fails loudly
+    against a server that declares a different one rather than mis-parsing
+    silently. A <strong>conformance kit</strong> verifies a backend against
+    the same contract — CAS stale-write rejection, one-writer-wins, listing
+    filter/sort, TTL lock takeover, append-only events, and the
+    <code>/builds</code> register/deregister CAS:
+  </p>
+  <Code code={conformanceSnippet} lang="bash" theme="night-owl" />
+  <p>
+    It exits <code>0</code> when every scenario passes and <code>1</code>
+    (naming the failures) when one does not — build it into your backend's
+    CI so a contract change surfaces the moment it lands.
+  </p>
 
   <h2 id="secrets">Secrets never touch state</h2>
   <div class="note">

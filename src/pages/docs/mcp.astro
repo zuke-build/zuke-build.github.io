@@ -9,6 +9,7 @@ const toc = [
   { id: "tools", label: "Tools" },
   { id: "authorization", label: "Authorization tiers" },
   { id: "audit", label: "Audit log" },
+  { id: "identity", label: "Trusted per-call identity" },
   { id: "errors", label: "Structured errors" },
   { id: "discovery", label: "Dynamic discovery" },
   { id: "safety", label: "Safety" },
@@ -41,6 +42,16 @@ const errorSnippet = `{ "error": "lock_conflict", "holder": "…", "guidance": "
 { "error": "invalid_status" }
 { "error": "missing_argument" }
 { "error": "no_run" }`;
+
+const identitySnippet = `class ControlPlane extends Build {
+  override mcpIdentity() {
+    return (ctx: McpRequestContext) => {
+      const sub = ctx.headers.get("x-forwarded-user"); // proxy-injected
+      if (!sub) throw new Error("no identity from proxy"); // any throw rejects
+      return { actor: sub, via: "oauth-proxy" };
+    };
+  }
+}`;
 ---
 
 <DocsLayout
@@ -102,6 +113,14 @@ const errorSnippet = `{ "error": "lock_conflict", "holder": "…", "guidance": "
     refuses to start without one. Every request then needs an
     <code>Authorization: Bearer &lt;token&gt;</code> header; missing or wrong
     gets a <code>401</code>.
+  </p>
+  <p>
+    For the single-build server, messages are processed <strong>one at a
+    time</strong>, mirroring stdio, so two concurrent runs of the one build
+    can't race. The <a href="/docs/registry#discovery">registry server</a> —
+    which has no shared in-process run state — instead handles requests
+    <strong>concurrently</strong> (see its cap on that page), so one long
+    <code>run:</code> call never head-of-line-blocks another client's read.
   </p>
 
   <h2 id="tools">Tools</h2>
@@ -191,11 +210,41 @@ export interface RunEvent {
     theme="night-owl"
   />
   <p>
-    <strong>Actor precedence:</strong> <code>--actor</code> →
-    <code>ZUKE_ACTOR</code> → the CI actor → the client's
-    <code>initialize</code> name → <code>"anonymous"</code>. The client-supplied name is an untrusted
-    label — it lands in the trail, never in an authorization decision.
+    <strong>Actor precedence:</strong> the <a href="#identity">identity
+    hook</a> → <code>--actor</code> → <code>ZUKE_ACTOR</code> → the CI actor
+    → the client's <code>initialize</code> name → <code>"anonymous"</code>.
+    The client-supplied name is an untrusted label — it lands in the trail,
+    never in an authorization decision.
   </p>
+
+  <h3 id="identity">Trusted per-call identity</h3>
+  <p>
+    On a shared, multi-user endpoint "who did this" must not be
+    self-reported. Front the server with an authenticating reverse proxy
+    (e.g. OAuth 2.1) that injects the real caller in a header it strips from
+    client input, and resolve it with a per-request <strong>identity
+    hook</strong> — <code>override mcpIdentity()</code> on the build:
+  </p>
+  <Code code={identitySnippet} lang="ts" theme="night-owl" />
+  <p>
+    The hook runs <strong>once per request, before any dispatch</strong>. Its
+    <code>actor</code> overrides <code>--actor</code>, the environment, and
+    the client label for that call, and flows to the audit trail, run
+    records, lock-holder identity, and — for a registry-spawned build — the
+    child's <code>ZUKE_ACTOR</code>.
+  </p>
+  <div class="note">
+    <p>
+      <strong>Fail-closed:</strong> a hook that throws <em>or</em> yields no
+      usable actor (an empty string, e.g. from
+      <code>headers.get(…) ?? ""</code> when the header is missing) rejects
+      the request with an auth error — nothing executes, nothing is written,
+      and it never falls back to the static actor, so the hook's precedence
+      stays absolute. Without a hook, stdio/local behavior is unchanged. This
+      is deliberately the <em>minimal</em> seam — TLS, the OAuth flow, and
+      header stripping are the proxy's job, not Zuke's.
+    </p>
+  </div>
 
   <h2 id="errors">Structured errors</h2>
   <p>
