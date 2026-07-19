@@ -45,6 +45,53 @@ class SiteBuild extends Build {
 await run(SiteBuild);`,
   },
   {
+    id: "node-monorepo",
+    tag: "Node / monorepo",
+    title: "Drive an npm workspace — no npx, no global installs",
+    desc: "Zuke drops into a Node monorepo without a rewrite. The JS-ecosystem wrappers resolve node_modules/.bin npx-style — walking up to the hoisted binary, falling back to PATH — so a workspace package needs no .toolPath(). NpmTasks.run().workspaces() runs one script across every workspace (.ifPresent() skips those that don't define it). And toolchain().npm() provisions a version-pinned CLI straight from the npm registry — cached, no ambient npm ci — so the tool that isn't installed locally is still hermetic. Set ZUKE_TOOL_RESOLUTION=node_modules to flip every wrapper repo-wide.",
+    code: `import { Build, run, target, toolchain } from "jsr:@zuke/core";
+import { NpmTasks } from "jsr:@zuke/npm";
+import { OxlintTasks } from "jsr:@zuke/oxlint";
+import { VitestTasks } from "jsr:@zuke/vitest";
+
+class Monorepo extends Build {
+  // A CLI that ships on npm, not as a release binary — provisioned and
+  // pinned under .zuke/tools, cached by a marker file. No ambient 'npm ci'.
+  tools = toolchain((t) => t.npm({ name: "vitest", version: "4.1.9" }));
+
+  install = target()
+    .description("Clean-install the workspace from the lockfile")
+    .executes(() => NpmTasks.ci());
+
+  // JS wrappers resolve node_modules/.bin first — no .toolPath() needed when
+  // the binary is hoisted to the repo root. PATH is the fallback on a miss.
+  lint = target()
+    .description("Lint with the workspace's hoisted oxlint")
+    .dependsOn(this.install)
+    .executes(() => OxlintTasks.lint());
+
+  // One script across every workspace; .ifPresent() skips packages missing it.
+  build = target()
+    .description("Build every workspace package")
+    .dependsOn(this.install)
+    .executes(() =>
+      NpmTasks.run((s) => s.script("build").workspaces().ifPresent())
+    );
+
+  // An explicit .toolPath() from the toolchain always wins over node_modules
+  // resolution — the pin stays hermetic.
+  test = target()
+    .description("Test with the pinned, provisioned vitest")
+    .dependsOn(this.build)
+    .executes(async () => {
+      const bins = await this.tools.install();
+      await VitestTasks.run((s) => s.toolPath(bins.get("vitest")));
+    });
+}
+
+await run(Monorepo);`,
+  },
+  {
     id: "deno-lib",
     tag: "Deno library",
     title: "CI gate for a Deno package",

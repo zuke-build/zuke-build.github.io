@@ -1,0 +1,138 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "bin-resolution", label: "Resolving from node_modules/.bin" },
+  { id: "workspaces", label: "npm workspaces" },
+  { id: "zuke-doc", label: "Reading a wrapper's API — zuke doc" },
+  { id: "npm-tools", label: "Provisioning npm-registry tools" },
+  { id: "setup-collision", label: "setup collision guard" },
+];
+
+const resolutionSnippet = `import { OxlintTasks } from "jsr:@zuke/oxlint";
+
+// per call — resolve node_modules/.bin first (or .fromPath() to force PATH)
+await OxlintTasks.lint((s) => s.fromNodeModules());`;
+
+const envSnippet = `ZUKE_TOOL_RESOLUTION=node_modules   # every wrapper resolves node_modules/.bin first, repo-wide
+ZUKE_TOOL_RESOLUTION=path           # every wrapper resolves PATH first, skipping node_modules`;
+
+const workspaceSnippet = `import { NpmTasks } from "jsr:@zuke/npm";
+
+await NpmTasks.run((s) => s.script("build").workspace("app"));         // one workspace
+await NpmTasks.run((s) => s.script("build").workspaces().ifPresent()); // every workspace, skipping those missing the script`;
+
+const docSnippet = `zuke doc core                      # jsr:@zuke/core
+zuke doc @scope/pkg                # a scoped package
+zuke doc deno --filter DenoTasks   # extra flags pass through to deno doc`;
+
+const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # write the launcher (and its .ps1) under a different name`;
+---
+
+<DocsLayout
+  title="Node projects"
+  description="Running Zuke inside a Node monorepo: npx-style node_modules/.bin resolution for the JS-ecosystem wrappers, npm workspace support in NpmTasks.run, zuke doc for reading a wrapper's API without @types/node noise, provisioning npm-registry tools, and the zuke setup launcher-name collision guard."
+  toc={toc}
+>
+  <p class="lead">
+    A Zuke build living inside a Node monorepo has different defaults than one
+    driving standalone release binaries: the tools it wraps are usually
+    installed locally by npm/yarn/pnpm and hoisted to the repo root, not sitting
+    on <code>PATH</code>. This page covers the pieces that make that setup
+    natural — tool resolution, workspaces, reading a wrapper's API, provisioning
+    npm-registry tools, and the <code>zuke setup</code> launcher.
+  </p>
+
+  <h2 id="bin-resolution">Resolving from <code>node_modules/.bin</code></h2>
+  <p>
+    By default a wrapper spawns the bare tool name and lets the OS find it on
+    <code>PATH</code>. In a Node monorepo the tools are usually installed
+    locally and hoisted to the repo root instead, so Zuke can resolve them
+    npx-style — walking up from the working directory for
+    <code>node_modules/.bin/&lt;tool&gt;</code> (the <code>.cmd</code>/<code>.bat</code>
+    shims, launched through <code>cmd /c</code>, on Windows) and falling back to
+    <code>PATH</code> on a miss. There are three ways to turn it on, most
+    specific first:
+  </p>
+  <ul>
+    <li>
+      <strong>Per call:</strong> <code>.fromNodeModules()</code> (or
+      <code>.fromPath()</code> to force <code>PATH</code>) on any settings
+      object.
+    </li>
+    <li>
+      <strong>Per wrapper:</strong> the JS-ecosystem wrappers default to
+      <code>node_modules</code>-first, so in a workspace package whose
+      binaries are hoisted you write no <code>.toolPath()</code> and no
+      <code>.fromNodeModules()</code> at all.
+    </li>
+    <li>
+      <strong>Repo-wide:</strong> <code>ZUKE_TOOL_RESOLUTION=node_modules</code>
+      (or <code>path</code>) flips every wrapper without touching call sites. A
+      per-call <code>.fromNodeModules()</code>/<code>.fromPath()</code> still
+      wins over the ambient value.
+    </li>
+  </ul>
+  <Code code={resolutionSnippet} lang="ts" theme="night-owl" />
+  <Code code={envSnippet} lang="bash" theme="night-owl" />
+  <p>
+    An explicit <a href="/docs/installing-tools#using"><code>.toolPath(...)</code></a>
+    always wins over resolution — pins from <a href="/docs/installing-tools#toolchain"><code>toolchain()</code></a>
+    stay hermetic. When resolution walks past a <code>node_modules</code>
+    directory that lacks the tool, <code>ToolNotFoundError</code> adds a hint to
+    run <code>npm ci</code> or provision it via <code>toolchain()</code>.
+    <code>resolvedArgv()</code> reports the argv a run will actually spawn (the
+    resolved shim or the bare fallback) for diagnostics.
+  </p>
+
+  <h2 id="workspaces">npm workspaces</h2>
+  <p>
+    <code>NpmTasks.run</code> covers workspaces both ways:
+    <code>.workspace("app")</code> for one, and <code>.workspaces()</code> for
+    every workspace (compose with <code>.ifPresent()</code> to skip those
+    missing the script) — the two are mutually exclusive.
+  </p>
+  <Code code={workspaceSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="zuke-doc">Reading a wrapper's API — <code>zuke doc</code></h2>
+  <p>
+    <code>deno doc jsr:@zuke/deno</code> run inside a Node repo drowns the
+    output in <code>@types/node</code> resolution warnings, because Deno
+    discovers the surrounding project's <code>deno.json</code> /
+    <code>node_modules</code>. <code>zuke doc &lt;package&gt;</code> runs
+    <code>deno doc</code> from an <strong>isolated throwaway directory</strong>,
+    so type resolution starts clean and the API prints readably in place:
+  </p>
+  <Code code={docSnippet} lang="bash" theme="night-owl" />
+  <p>
+    A bare name resolves to <code>jsr:@zuke/&lt;name&gt;</code>; an explicit
+    <code>jsr:</code>/<code>npm:</code>/<code>https:</code> specifier or a file
+    path is used as-is. Extra flags after the package (like
+    <code>--filter</code>) pass straight through to <code>deno doc</code>.
+  </p>
+
+  <h2 id="npm-tools">Provisioning npm-registry tools</h2>
+  <p>
+    Not every tool ships a release binary — many are published on the npm
+    registry instead. <code>toolchain((t) =&gt; t.npm(&#123; name, version &#125;))</code>
+    provisions one as a version-pinned, cached tool without an ambient
+    <code>npm ci</code>, resolving into the same <code>Map&lt;name, AbsolutePath&gt;</code>
+    as release tools — and it composes with <a href="#bin-resolution">node_modules
+    resolution</a> above, since an explicit pin from a toolchain always wins.
+    The full treatment — installation layout, caching, and the
+    <code>bin</code> option for a differing bin name — lives on
+    <a href="/docs/installing-tools#npm-package-tools">Installing tools: npm-package tools</a>.
+  </p>
+
+  <h2 id="setup-collision">setup collision guard</h2>
+  <p>
+    <code>zuke setup</code> writes a <code>./zuke</code> launcher into the
+    project. If a <code>zuke/</code> directory already occupies that name —
+    common in a Node monorepo with its own <code>zuke/</code> package or
+    workspace — setup stops with an actionable error instead of writing next to
+    it. Pass <code>--launcher-name &lt;name&gt;</code> to write the launcher
+    (and its <code>.ps1</code> counterpart) under a different name:
+  </p>
+  <Code code={setupSnippet} lang="bash" theme="night-owl" />
+</DocsLayout>

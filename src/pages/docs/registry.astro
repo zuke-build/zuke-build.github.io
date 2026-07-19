@@ -8,6 +8,9 @@ const toc = [
   { id: "resolution", label: "Resolution & env vars" },
   { id: "register", label: "Registering a build" },
   { id: "discovery", label: "Dynamic MCP discovery" },
+  { id: "parameters", label: "Run tool parameters" },
+  { id: "secrets-boundary", label: "Secrets never cross the boundary" },
+  { id: "concurrency", label: "Concurrency + cap" },
 ];
 
 const registryTypeSnippet = `export type PutBuildResult = { ok: true; version: string } | { ok: false; conflict: true };
@@ -161,11 +164,36 @@ zuke mcp --registry --allow-run`;
     <a href="/docs/mcp#authorization">single-build server</a>. Authorization
     is matched against the qualified <code>&lt;buildId&gt;:&lt;target&gt;</code>{" "}
     name, e.g. <code>--allow-run=Api:*</code> or
-    <code>--protect=Api:deploy</code>. Registry run tools take only
-    <code>dryRun</code>/<code>confirm</code>/<code>operatorToken</code> — no
-    per-parameter inputs, since the spawned build resolves its own parameters
-    from the server's environment — and are always treated as destructive
-    (the descriptor doesn't record read-only-ness).
+    <code>--protect=Api:deploy</code>.
+  </p>
+
+  <h3 id="parameters">Run tool parameters</h3>
+  <p>
+    A run tool exposes the registered build's declared parameters as its
+    input schema — keyed by the parameter's property name (e.g.
+    <code>skipE2e</code>), with the kind, description, enum, and default from
+    the descriptor. Supplied values are validated against their kinds
+    <strong>before</strong> the build spawns (a type mismatch — a bare string
+    where an array is required, a non-numeric number, an out-of-set enum, or
+    an unknown parameter — is a clean tool error, not a failed subprocess),
+    then forwarded to the child as <code>--flag=value</code> arguments
+    alongside the target. A value still set in the server's environment
+    applies when the call omits it. Because a descriptor does not record
+    whether a target is read-only, every registry run tool is treated as
+    destructive.
+  </p>
+
+  <h3 id="secrets-boundary">Secrets never cross the boundary</h3>
+  <p>
+    <code>.secret()</code> parameters are omitted from the descriptor
+    entirely (<code>zuke register</code> writes the secret-free surface), so
+    a secret can neither be requested nor forwarded — it is rejected as an
+    unknown parameter if a client tries. The spawned build resolves a secret
+    from its own environment / <code>.from()</code> source instead. In the
+    <a href="/docs/mcp#audit">audit log</a> only a recognised parameter's
+    value is recorded; any unknown argument keeps its name but its value is
+    elided, so a value mistakenly supplied under a secret's name is never
+    written to the durable trail.
   </p>
   <div class="note">
     <p>
@@ -174,6 +202,20 @@ zuke mcp --registry --allow-run`;
       spawned pipeline can never read the very tokens gating it.
     </p>
   </div>
+
+  <h3 id="concurrency">Concurrency + cap</h3>
+  <p>
+    Unlike the single-build server, the registry server handles requests
+    <strong>concurrently</strong> — a read tool (<code>list_builds</code>,
+    <code>describe_build</code>) is never blocked behind a running
+    <code>run:</code> call, and independent runs proceed in parallel.
+    Concurrent run-tool <strong>spawns</strong> are capped (default 4,
+    <code>--max-concurrent-runs &lt;n&gt;</code>); a call past the cap gets an
+    immediate structured <code>at_capacity</code> busy error
+    (<code>{`{ running, cap, hint }`}</code>) rather than an unbounded queue.
+    Read tools are never counted against the cap. Cross-process state safety
+    rides the store's CAS, so no new coordination is introduced.
+  </p>
 </DocsLayout>
 
 <style>

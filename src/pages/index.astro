@@ -129,6 +129,7 @@ const featureGroups = [
       { t: "Ergonomic, safe shell", d: "The $ tagged template runs processes with sane defaults and escapes interpolations to prevent injection." },
       { t: "Incremental, remote & parallel", d: "Fingerprint .inputs()/.outputs() to skip unchanged work, share a remote cache, and run targets concurrently." },
       { t: "Hermetic, pinned toolchains", d: "Fetch the CLIs a build drives, pinned by SHA-256, verified and cached — a bare CI runner is reproducible." },
+      { t: "Drops into Node monorepos", d: "Resolves node_modules/.bin npx-style, provisions npm-registry tools with toolchain().npm(), and runs npm workspaces — no npx, no global installs." },
       { t: "Secrets, sourced & redacted", d: "Pull a secret from 1Password, Vault, or gcloud with .from(execSecret(…)); Zuke redacts it from every log." },
     ],
   },

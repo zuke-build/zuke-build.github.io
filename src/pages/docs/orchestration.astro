@@ -6,6 +6,7 @@ const toc = [
   { id: "suspend", label: "Suspend & resume" },
   { id: "fanout", label: "Fan-out" },
   { id: "cancel", label: "Cancellation & compensation" },
+  { id: "ordering", label: "Lazy ordering — orderWith()" },
   { id: "params", label: "Parameters for fan-out" },
 ];
 
@@ -82,6 +83,14 @@ const compensationSnippet = `class CD extends Build {
     .onCancel(() => this.rollback);                          // …and how to undo it
 
   rollback = target().executes((ctx) => tearDown(ctx.state.get().slot));   // reads deploy's meta
+}`;
+
+const orderWithSnippet = `override async orderWith(t: Map<string, Target>): Promise<OrderingEdge[]> {
+  const graph = await loadDependencyGraph(); // read it at run time
+  return graph.edges.flatMap(([before, after]) => {
+    const from = t.get(before), to = t.get(after);
+    return from && to ? [[from, to] as OrderingEdge] : [];
+  });
 }`;
 
 const arrayParamSnippet = `tags     = parameter("Image tags").array();                            // string[]
@@ -198,12 +207,49 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     fan-out node, annotated <code>[fan-out]</code>, since the item list isn't
     known until the run starts.
   </p>
+  <p>
+    An <code>.onCancel()</code> on a fan-out sub-target runs too. Cancel
+    re-materialises the fan-out, matches each item's sub-targets by name
+    against the record, and runs the compensation of every item that had
+    <strong>succeeded — or was still in-flight when the cancel landed</strong>
+    (a mid-deploy item has partial work to undo). Items unwind before the
+    parent's own compensation, in reverse order; a throwing item compensation
+    is recorded and the walk continues, exactly as for an ordinary target.
+    Each item's cleanup reads that item's own persisted state
+    (<code>ctx.state</code>), and lands its own <code>compensate</code> entry
+    in the <a href="/docs/mcp#audit">audit trail</a> (naming the runtime
+    sub-target, e.g. <code>deployBatch[repo-a].deploy</code>) alongside the
+    summary.
+  </p>
+  <p>
+    Nested fan-out works too: a <code>.forEach()</code> stage that is itself a
+    <code>.forEach()</code> has its inner items' <code>.onCancel()</code> run,
+    matched by the same nested <code>parent[item].stage[inner].stage</code>
+    names.
+  </p>
   <div class="note">
     <p>
-      <strong>Limitation:</strong> <code>.onCancel()</code> on a fan-out
-      sub-target is not run on cancel — sub-targets don't exist in the
-      static plan a cancel walks. Put compensation on an ordinary target, or
-      on the parent fan-out target itself.
+      <strong>Caveat:</strong> for per-item compensation to find its items,
+      the <code>.forEach()</code> item list must be <strong>deterministic</strong> —
+      cancel re-evaluates it (from the record's parameters) and matches by
+      the same <code>parent[item].stage</code> names. A non-deterministic
+      list leaves a recorded item with no re-materialised twin; its
+      compensation is reported as skipped, never a crash.
+    </p>
+  </div>
+  <div class="note">
+    <p>
+      <strong>In-flight items and out-of-process cancel.</strong> An
+      out-of-process <code>zuke cancel</code> compensates an item that was
+      still <strong>running</strong> from the run record's snapshot. The
+      owning process aborts a live body only when it next writes state (a
+      <code>ctx.state.set(...)</code> checkpoint, or a <code>.lock()</code>
+      heartbeat), so a body doing one long uninterrupted command may keep
+      running while its compensation begins — the two can briefly overlap.
+      Have item bodies <strong>checkpoint via <code>ctx.state.set(...)</code></strong>
+      (or hold a <code>.lock()</code>) so a cancel propagates promptly and
+      closes that window; an in-process cancel (Ctrl-C) has no such window,
+      since bodies are aborted and settled before the walk runs.
     </p>
   </div>
   <p>
@@ -248,6 +294,21 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     </p>
   </div>
 
+  <h3 id="ordering">Lazy ordering — <code>override orderWith(targets)</code></h3>
+  <p>
+    Same shape as declared ordering edges, but <strong>async and resolved per
+    run</strong>: use it when the ordering must be <em>loaded</em> at run
+    time — read a monorepo's <code>dependency-graph.json</code>, hit an API —
+    rather than declared statically. Return the same <code>[before,
+    after]</code> <code>OrderingEdge</code> pairs; they merge with any
+    <code>extraEdges</code>, and share its rules (endpoints outside the run's
+    set are ignored, cycles reported). Both are honoured by a run and by
+    <code>zuke cancel</code>'s reverse-order compensation walk, but — being
+    resolved only when a run plans — neither shows in the static
+    <code>graph</code> / <code>--list</code> views nor in generated CI.
+  </p>
+  <Code code={orderWithSnippet} lang="ts" theme="night-owl" />
+
   <h2 id="params">Parameters for fan-out</h2>
   <p>
     <code>.array()</code> turns a parameter into a comma-separated or
@@ -271,6 +332,16 @@ TAGS=latest,canary ./zuke deploy            # from env`;
       workflow in another repo and suspends until that workflow's conclusion.
       See the <a href="https://jsr.io/@zuke/gh" target="_blank" rel="noopener noreferrer">
       <code>@zuke/gh</code></a> package for the details.
+    </p>
+    <p>
+      For a workflow you can't modify, <code>.correlate("created-window")</code>
+      gives a <strong>best-effort</strong> correlation: it claims the
+      <code>workflow_dispatch</code> run created just after dispatch, and
+      fails loudly if two candidates share that window.
+      <code>.discoveryTimeout(...)</code> (default ~one minute) fast-fails if
+      no run is identified, so a workflow that never surfaces doesn't eat the
+      whole <code>.timeout()</code> — the deadline is measured from the
+      persisted dispatch time, so it holds across a suspend/resume.
     </p>
   </div>
 </DocsLayout>
