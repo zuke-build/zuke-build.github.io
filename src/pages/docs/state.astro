@@ -1,0 +1,249 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "state-handle", label: "ctx.state — writing metadata" },
+  { id: "durable-state", label: "Durable run state" },
+  { id: "precedence", label: "Store selection precedence" },
+  { id: "interfaces", label: "StateStore interface & RunRecord" },
+  { id: "backends", label: "FileSystem vs HTTP backends" },
+  { id: "cli", label: "zuke runs CLI" },
+  { id: "http-api", label: "HTTP REST contract" },
+  { id: "secrets", label: "Secrets never touch state" },
+];
+
+const ctxStateSnippet = `import { Build, target } from "jsr:@zuke/core";
+
+class Deploy extends Build {
+  ship = target().executes(async (ctx) => {
+    console.log(\`run \${ctx.runId} · target \${ctx.target}\`);
+    await $\`terraform apply\`;
+    await ctx.state.set({ slot: "sit-7" });
+  });
+}`;
+
+const stateHandleSnippet = `export interface TargetStateHandle {
+  set(patch: Record<string, JsonValue>): Promise<void>;  // merge a JSON patch, awaits write
+  get(): Record<string, JsonValue>;                       // read current metadata
+}
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };`;
+
+const storeInterfaceSnippet = `export type PutResult = { ok: true; version: string } | { ok: false; conflict: true };
+export interface StateStore {
+  getRun(id: string): Promise<{ record: RunRecord; version: string } | null>;
+  putRun(record: RunRecord, expectedVersion: string | null): Promise<PutResult>;
+  listRuns(query: RunQuery): Promise<RunSummary[]>;   // newest first (createdAt, then id)
+  acquireLock(key: string, holder: LockHolder, ttlMs: number): Promise<LockResult>;
+  renewLock(key: string, token: string, ttlMs: number): Promise<boolean>;
+  releaseLock(key: string, token: string): Promise<void>;
+}
+// build.ts:  stateStore(): StateStore | undefined       // override to inject a store
+// FileSystemStateStore: constructor(dir: string, host?: StateHost)
+export interface HttpStateStoreOptions { url: string; token?: string; fetch?: typeof fetch }
+// HttpStateStore: constructor(options: HttpStateStoreOptions)  — token → Authorization: Bearer`;
+
+const runRecordSnippet = `export type RunStatus = "running" | "suspended" | "cancelling" | "succeeded" | "failed" | "cancelled";
+export type TargetRunStatus = "pending" | "running" | "waiting" | "succeeded" | "failed" | "skipped";
+export interface TargetRunState {
+  status: TargetRunStatus; meta: Record<string, JsonValue>;
+  startedAt?: string; endedAt?: string; error?: string; waitingFor?: WaitState;
+}
+export interface RunRecord {
+  id: string; build: string; rootTarget: string; status: RunStatus; actor: string;
+  createdAt: string; updatedAt: string;
+  graph: RunGraphNode[];                    // { name, dependsOn[] }, declaration order
+  params: Record<string, string>;           // resolved, NON-secret params only
+  targets: Record<string, TargetRunState>;
+  signals: Record<string, SignalRecord>;    // { data, receivedAt }
+  events: RunEvent[];                       // append-only MCP audit trail
+}
+export interface RunQuery { status?: RunStatus; target?: string; since?: string; }
+export interface RunSummary { id; build; rootTarget; status; actor; createdAt; updatedAt; }`;
+
+const httpOverrideSnippet = `import { Build, HttpStateStore, parameter, target } from "jsr:@zuke/core";
+class CD extends Build {
+  stateUrl = parameter("state service URL");
+  stateToken = parameter("state service token").secret();
+  override stateStore() {
+    return new HttpStateStore({ url: this.stateUrl.value, token: this.stateToken.value });
+  }
+  deploy = target().executes(async (ctx) => { await ctx.state.set({ target: "sit-7" }); });
+}`;
+
+const cliSnippet = `zuke runs list                                                   # all runs, newest first
+zuke runs list --status failed --target deploy --since 2026-07-01
+zuke runs show 6f1c…                                             # header, params, per-target, signals, events
+zuke runs show 6f1c… --json                                      # raw record`;
+---
+
+<DocsLayout
+  title="Durable run state"
+  description="Zuke's durable run state: ctx.state / TargetStateHandle for writing per-target metadata, the StateStore interface and RunRecord it persists, store selection precedence (execute() option, Build.stateStore(), ZUKE_STATE_URL/DIR, --state), FileSystem vs HTTP backends, zuke runs list/show, the HTTP REST contract, and the secret-exclusion guarantee."
+  toc={toc}
+>
+  <p class="lead">
+    By default a Zuke run is in-memory — once the process exits, nothing about
+    it remains. <strong>Durable run state</strong> adds a persistent, versioned
+    JSON record — status, planned graph, resolved non-secret params, per-target
+    progress — so a run's outcome survives the process and a target can leave
+    metadata for a later run to read. It's opt-in and zero-overhead when unused.
+  </p>
+
+  <h2 id="state-handle">ctx.state — writing metadata</h2>
+  <p>
+    Inside a target body, <code>ctx.state</code> is a
+    <code>TargetStateHandle</code> scoped to the executing target:
+  </p>
+  <Code code={ctxStateSnippet} lang="ts" theme="night-owl" />
+  <Code code={stateHandleSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>set(patch)</code> merges a JSON patch into the target's metadata and
+    awaits the write; <code>get()</code> reads it back. With no state store
+    configured, <code>ctx.state</code> is an in-memory no-op — consistent
+    within the run, nothing persisted. See
+    <a href="/docs/orchestration">run context</a> for the full
+    <code>TargetContext</code> — run id, cancellation signal, signals,
+    dry-run — that <code>ctx.state</code> lives on.
+  </p>
+
+  <h2 id="durable-state">Durable run state</h2>
+  <p>
+    Turning on a store gives every run a <code>RunRecord</code>: one JSON
+    document tracking the run's status, its planned target graph, resolved
+    non-secret parameters, per-target status and metadata, received signals,
+    and an append-only event log. The record is written at run creation, at
+    each target's start and finish, and at run end — so a killed process
+    leaves its executing target's status as <code>running</code> with a
+    <code>startedAt</code> already recorded, rather than silently vanishing.
+  </p>
+
+  <h2 id="precedence">Store selection precedence</h2>
+  <p>
+    <code>resolveStateStore</code> picks the store in this order — the first
+    one that applies wins:
+  </p>
+  <ol>
+    <li><code>execute(build, root, &#123; stateStore &#125;)</code> — that store (pass <code>false</code> to disable).</li>
+    <li><code>Build.stateStore()</code> override.</li>
+    <li><code>ZUKE_STATE_URL</code> (with optional <code>ZUKE_STATE_TOKEN</code>) → an <code>HttpStateStore</code> (production).</li>
+    <li><code>ZUKE_STATE_DIR</code> → a <code>FileSystemStateStore</code> at that directory.</li>
+    <li><code>--state</code> CLI flag, with nothing above set → a <code>FileSystemStateStore</code> at <code>.zuke/runs</code>.</li>
+  </ol>
+  <p>None applying means no store and no record — a run stays in-memory.</p>
+  <Code code={httpOverrideSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="interfaces">StateStore interface &amp; RunRecord</h2>
+  <p>Every backend implements the same <code>StateStore</code> contract:</p>
+  <Code code={storeInterfaceSnippet} lang="ts" theme="night-owl" />
+  <p>...persisting a <code>RunRecord</code> built from these types:</p>
+  <Code code={runRecordSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Two vocabularies describe the same run: the record's
+      <code>TargetRunStatus</code> versus the console's in-memory
+      <code>passed</code>/<code>cached</code> — both map to
+      <code>succeeded</code> in the record, and <code>waiting</code> exists
+      only there (it has no console equivalent).
+    </p>
+  </div>
+  <p>
+    Writes are <strong>CAS</strong>-protected: <code>putRun</code> only lands
+    when <code>expectedVersion</code> matches the store's current version
+    (<code>null</code> means "must not exist yet"). Two writers racing the
+    same run — one wins, the loser gets
+    <code>&#123; ok: false, conflict: true &#125;</code> and re-reads before
+    retrying. State writes are also <strong>best-effort</strong>: a briefly
+    unavailable store is reported but never crashes the build.
+  </p>
+
+  <h2 id="backends">FileSystem vs HTTP backends</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Backend</th><th>Constructor</th><th>Version authority</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>FileSystemStateStore</code></td>
+        <td><code>constructor(dir: string, host?: StateHost)</code></td>
+        <td>Single-host: write-temp-then-rename plus an <code>O_EXCL</code> lock; version is a content hash.</td>
+      </tr>
+      <tr>
+        <td><code>HttpStateStore</code></td>
+        <td><code>constructor(options: HttpStateStoreOptions)</code></td>
+        <td>Uses <code>ETag</code>s; the server is the version authority, sidestepping client clock skew.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    <code>HttpStateStoreOptions</code> is <code>&#123; url: string; token?:
+    string; fetch?: typeof fetch &#125;</code> — a <code>token</code> is sent
+    as <code>Authorization: Bearer</code>.
+  </p>
+
+  <h2 id="cli">zuke runs CLI</h2>
+  <Code code={cliSnippet} lang="bash" theme="night-owl" />
+  <p>
+    <code>zuke runs list</code> takes <code>--status</code>,
+    <code>--target</code>, and <code>--since</code> filters, AND-combined,
+    newest-first. <code>zuke runs show &lt;id&gt;</code> prints the header,
+    params, per-target status, signals, and events — add
+    <code>--json</code> for the raw <code>RunRecord</code>.
+  </p>
+
+  <h2 id="http-api">HTTP REST contract</h2>
+  <p>
+    The HTTP backend speaks a small REST contract — bearer auth
+    (<code>Authorization: Bearer</code>, <code>401</code> on reject), version
+    carried via <code>ETag</code>/<code>If-Match</code>/<code>If-None-Match</code>:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Verb + path</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>GET /runs/:id</code></td>
+        <td><code>200</code> body is the record, <code>ETag</code> required; <code>404</code> means not found (not an error).</td>
+      </tr>
+      <tr>
+        <td><code>PUT /runs/:id</code></td>
+        <td>Create with <code>If-None-Match: *</code> (else <code>412</code>); update with <code>If-Match: &lt;etag&gt;</code> (else <code>412</code>). Returns the new <code>ETag</code>; a <code>412</code> is a CAS conflict — re-read and retry.</td>
+      </tr>
+      <tr>
+        <td><code>GET /runs?status=&amp;target=&amp;since=</code></td>
+        <td>Array of <code>RunSummary</code>; query params are AND-combined; server returns newest-first.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>The same base URL, auth, and ETag scheme also hosts the build registry under <code>/builds</code>.</p>
+
+  <h2 id="secrets">Secrets never touch state</h2>
+  <div class="note">
+    <p>
+      A <code>parameter().secret()</code> value never lands in
+      <code>RunRecord.params</code> — only resolved non-secret parameters are
+      recorded. Every value passed to <code>ctx.state.set(...)</code> also
+      passes through the run's redactor before it's persisted, the same
+      protection described in <a href="/docs/secrets">secrets</a>.
+    </p>
+  </div>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

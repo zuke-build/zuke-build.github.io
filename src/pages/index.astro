@@ -179,6 +179,67 @@ const hosts = [
   { name: "Azure", color: "#2ea0ee" },
   { name: "Bitbucket", color: "#2684ff" },
 ];
+
+// ── Enterprise / CD orchestration snippets ──
+const resumeSnippet = `awaitTesting = target()
+  .dependsOn(this.deployToSit)
+  .waitsFor((s) =>
+    s.on(externalSignal("testing-approved"))
+      .timeout("72h")
+      .onTimeout(() => this.rollback));
+
+promoteToProd = target()
+  .dependsOn(this.awaitTesting)
+  .executes((ctx) => {
+    // resumes in a fresh process, days later —
+    // the approval payload survived the wait
+    promote(ctx.signals.get("testing-approved")?.data);
+  });`;
+
+const lockSnippet = `promoteToProd = target()
+  // one deploy of a repo at a time — across runs, across machines
+  .lock((s) =>
+    s.lockKey("deploy", this.repo.value).withTtl("4h")
+      .onConflict((h) => \`held by \${h.actor}, run \${h.runId}\`))
+  .executes((ctx) => applyToProd(this.repo.value, ctx))
+  .onCancel(() => this.rollback);   // undone in reverse order on cancel`;
+
+const fanOutSnippet = `deployBatch = target().forEach(
+  () => this.repos.value,          // a validated runtime list
+  (repo) => ({                     // an ordered pipeline per repo
+    checks: target().executes(() => check(repo)),
+    deploy: target().executes((c) => applyToSit(repo, c)),
+  }),
+  { concurrency: 3, continueOnItemFailure: true },
+);`;
+
+const mcpHardSnippet = `# governed, auditable agent access over authenticated HTTP
+zuke mcp --http 0.0.0.0:7777 \\
+  --allow-run --protect promoteToProd --confirm-destructive
+
+# one server over the whole catalog —
+# pipelines registered later appear with no restart
+zuke mcp --registry --allow-run`;
+
+// Supporting enterprise features shown as a compact pair below the band.
+const cdMore = [
+  {
+    icon: "clock",
+    title: "Timezone-aware schedules",
+    body: "Declare a { cron, tz } schedule in cicd() and Zuke compiles it to the provider's UTC cron plus a daylight-saving guard — no external scheduler.",
+    href: "/docs/schedules",
+  },
+  {
+    icon: "signal",
+    title: "OpenTelemetry export",
+    body: "One @zuke/otel plugin ships traces and metrics over OTLP — a span per target, joined across suspend/resume into a single trace by run ID.",
+    href: "/docs/observability",
+  },
+];
+const cdMoreIcons: Record<string, string> = {
+  clock: `<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>`,
+  signal: `<path d="M4 20V10M10 20V4M16 20v-6M22 20V8"/>`,
+};
 ---
 
 <Base>
@@ -766,6 +827,217 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ░░ ENTERPRISE / CD ░░ -->
+  <section class="section sec-cd" id="cd">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">Built for continuous delivery</span>
+        <h2>A cross-run layer for real deployments.</h2>
+        <p class="lead sec-head__lead">
+          Durable state, external-event waits, cross-run locks, batch fan-out,
+          cancellation, and governed agent access — the orchestration Zuke layers
+          on top of the typed DAG. All backed by a pluggable state store, with
+          zero overhead until you reach for it.
+        </p>
+      </header>
+    </div>
+
+    <!-- 1 · Durable & resumable -->
+    <div class="container cd-grid">
+      <div data-reveal>
+        <span class="eyebrow">Durable &amp; resumable</span>
+        <h3>Pipelines that outlive the process.</h3>
+        <p class="lead">
+          A target can <strong>suspend</strong> on an external event — deploy,
+          then wait days for manual approval. The run parks in the state store and
+          the process exits <code>0</code>; a later <code>zuke resume</code>
+          continues it in a fresh process, <strong>exactly once</strong>. State
+          persists across the gap, so <code>promoteToProd</code> reads what
+          <code>deployToSit</code> left behind.
+        </p>
+        <ul class="ticks">
+          <li><code>.waitsFor(externalSignal(…))</code> suspends; <code>zuke resume &lt;id&gt; --signal</code> continues it.</li>
+          <li>A racing resumer gets a clean <code>AlreadyResumedError</code> — safe to drive from a retrying cron.</li>
+          <li><code>zuke runs list</code> / <code>show &lt;id&gt;</code> reconstruct a run's full status from the store alone.</li>
+        </ul>
+        <a class="btn btn-ghost" href="/docs/orchestration">Read the orchestration guide →</a>
+      </div>
+      <div class="cd-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={resumeSnippet} lang="ts" theme="night-owl" />
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">deploy → wait → promote</span>
+          </div>
+<pre class="term"><span class="t-cmd">$ ./zuke promoteToProd --repo api</span>
+<span class="t-ok">✔</span> deployToSit   <span class="t-dim">succeeded</span>
+<span class="t-warn">⏸</span> awaitTesting  <span class="t-warn">waiting</span> <span class="t-dim">— signal: testing-approved</span>
+<span class="t-dim">  run</span> <span class="t-name">6f1c9a</span> <span class="t-dim">suspended · exit 0</span>
+
+<span class="t-cmd">$ zuke resume 6f1c9a --signal testing-approved</span>
+<span class="t-ok">✔</span> promoteToProd <span class="t-dim">succeeded — shipped to prod</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 · Locks + cancellation -->
+    <div class="container cd-grid cd-grid--rev">
+      <div class="cd-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={lockSnippet} lang="ts" theme="night-owl" />
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">conflict &amp; rollback</span>
+          </div>
+<pre class="term"><span class="t-cmd">$ ./zuke promoteToProd --repo api</span>
+<span class="t-err">✘</span> promoteToProd <span class="t-err">lock conflict</span>
+<span class="t-dim">  held by</span> <span class="t-name">alice</span><span class="t-dim">, run 6f1c9a since 09:14</span>
+<span class="t-dim">  wait, or: zuke cancel 6f1c9a</span>
+
+<span class="t-cmd">$ zuke cancel 6f1c9a</span>
+<span class="t-info">↩</span> rollback <span class="t-dim">compensated — sit-7 torn down</span>
+<span class="t-ok">✔</span> run cancelled <span class="t-dim">· lock released</span></pre>
+        </div>
+      </div>
+      <div data-reveal>
+        <span class="eyebrow">Safe by construction</span>
+        <h3>Serialize deploys. Undo cleanly.</h3>
+        <p class="lead">
+          A <code>.lock()</code> claims a resource across runs, processes, and
+          machines — one deploy of a repo at a time. The loser fails fast with the
+          holder's identity and guidance, not a corrupt double-deploy. And
+          <code>.onCancel()</code> registers the inverse of a target, so
+          <code>zuke cancel</code> (or Ctrl-C, or a timed-out wait) unwinds
+          succeeded work in <strong>reverse order</strong> — reading the exact
+          state each step recorded.
+        </p>
+        <ul class="ticks">
+          <li>TTL + auto-renew: a live holder keeps its lock; a <code>kill -9</code> frees it after the TTL.</li>
+          <li>Locks release in a <code>finally</code> — success, failure, and cancellation all let go.</li>
+          <li>Compensations run maximally: one that throws is recorded, the rest still run.</li>
+        </ul>
+        <a class="btn btn-ghost" href="/docs/locks">Read the locks guide →</a>
+      </div>
+    </div>
+
+    <!-- 3 · Fan-out -->
+    <div class="container cd-grid">
+      <div data-reveal>
+        <span class="eyebrow">Fan-out</span>
+        <h3>One list. N deploys. Honest per-item status.</h3>
+        <p class="lead">
+          <code>.forEach()</code> runs the same ordered pipeline over a runtime
+          list — items concurrent, stages sequential per item, with a bounded
+          <code>concurrency</code>. One repo failing doesn't stop the others; the
+          batch fails at the end if any item did. Every item is first-class:
+          <code>deployBatch[api].deploy</code> gets its own summary row and run-record
+          entry, so <code>zuke runs show</code> and MCP report a verdict per repo.
+        </p>
+        <ul class="ticks">
+          <li>Per-item isolation with <code>continueOnItemFailure</code> — no more all-or-nothing batches.</li>
+          <li>The list is an <code>.array()</code> parameter, validated element-by-element before anything runs.</li>
+          <li>The end of JSON-array-in-a-text-field: typed, checked, reportable inputs.</li>
+        </ul>
+        <a class="btn btn-ghost" href="/docs/orchestration#fan-out">Read the fan-out guide →</a>
+      </div>
+      <div class="cd-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <Code code={fanOutSnippet} lang="ts" theme="night-owl" />
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">zuke deployBatch</span>
+          </div>
+<pre class="term"><span class="t-cmd">$ ./zuke deployBatch --repos api,web,worker</span>
+<span class="t-ok">✔</span> deployBatch<span class="t-dim">[</span><span class="t-name">api</span><span class="t-dim">]</span>     <span class="t-dim">succeeded</span>
+<span class="t-err">✘</span> deployBatch<span class="t-dim">[</span><span class="t-name">web</span><span class="t-dim">]</span>     <span class="t-err">failed</span> <span class="t-dim">— checks</span>
+<span class="t-ok">✔</span> deployBatch<span class="t-dim">[</span><span class="t-name">worker</span><span class="t-dim">]</span>  <span class="t-dim">succeeded</span>
+<span class="t-rule">────────────────────────────</span>
+<span class="t-err">✘</span> deployBatch <span class="t-dim">— 1/3 items failed</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 · Governed agent operations -->
+    <div class="container cd-grid cd-grid--rev">
+      <div class="cd-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">shell</span>
+          </div>
+          <Code code={mcpHardSnippet} lang="bash" theme="night-owl" />
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">zuke runs show mcp-audit</span>
+          </div>
+<pre class="term"><span class="t-head">tool                actor    outcome</span>
+<span class="t-rule">───────────────────────────────────</span>
+run:deployBatch     <span class="t-name">alice</span>    <span class="t-ok">ok</span>
+signal_run          <span class="t-name">bob</span>      <span class="t-ok">ok</span>
+run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">denied</span>
+<span class="t-dim">  reason: operator token required</span></pre>
+        </div>
+      </div>
+      <div data-reveal>
+        <span class="eyebrow">Governed agent operations</span>
+        <h3>Hand CD to an agent — with a paper trail.</h3>
+        <p class="lead">
+          The MCP server grows a <strong>streamable-HTTP transport</strong> and
+          three authorization tiers: an allow-list of runnable targets, an
+          operator token for protected ones, and a confirm step for destructive
+          calls. Every mutating call is <strong>attributed in an audit log</strong>.
+          A <strong>build registry</strong> makes it fleet-wide — one server over a
+          catalog of pipelines that picks up newly-registered builds with no restart.
+        </p>
+        <ul class="ticks">
+          <li><code>--allow-run=deploy,checks*</code>, <code>--protect promoteToProd</code>, <code>--confirm-destructive</code>.</li>
+          <li>Loopback by default; a non-loopback bind requires a bearer token.</li>
+          <li><code>zuke register</code> + <code>zuke mcp --registry</code> — new pipelines become callable tools live.</li>
+        </ul>
+        <div class="cd-links">
+          <a class="btn btn-ghost" href="/docs/mcp">MCP server →</a>
+          <a class="btn btn-ghost" href="/docs/registry">Build registry →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- supporting features -->
+    <div class="container cd-more" data-reveal>
+      {cdMore.map((f) => (
+        <a class="cd-morecard panel" href={f.href}>
+          <span class="cd-morecard__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={cdMoreIcons[f.icon]} />
+          </span>
+          <span class="cd-morecard__body">
+            <span class="cd-morecard__title">{f.title} <span class="cd-morecard__arrow">→</span></span>
+            <span class="cd-morecard__text">{f.body}</span>
+          </span>
+        </a>
+      ))}
     </div>
   </section>
 
@@ -1487,6 +1759,56 @@ build    <span class="t-ok">Succeeded</span>      2.2s
   .mcp__call code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim); white-space: pre-wrap; word-break: break-word; }
 
   /* tools */
+  /* enterprise / CD band */
+  .sec-cd { border-block: 1px solid var(--border); }
+  .cd-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    margin-top: 44px;
+  }
+  .cd-grid h3 { font-size: clamp(1.4rem, 2.6vw, 1.85rem); }
+  .cd-visual { display: grid; gap: 16px; min-width: 0; }
+  .cd-visual > * { min-width: 0; }
+  .cd-links { display: flex; gap: 12px; flex-wrap: wrap; }
+  .cd-more {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 48px;
+  }
+  .cd-morecard {
+    display: flex;
+    gap: 14px;
+    padding: 20px 22px;
+    align-items: flex-start;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .cd-morecard:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+  .cd-morecard__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    color: var(--accent);
+    background: color-mix(in oklch, var(--accent) 12%, transparent);
+  }
+  .cd-morecard__body { display: grid; gap: 5px; }
+  .cd-morecard__title { font-family: var(--font-mono); font-weight: 700; color: var(--ink); font-size: 1rem; }
+  .cd-morecard__arrow { color: var(--accent); }
+  .cd-morecard__text { font-size: 0.9rem; color: var(--ink-dim); line-height: 1.5; margin: 0; }
+  .term .t-err { color: #ff6b6b; }
+
+  @media (max-width: 940px) {
+    .cd-grid { grid-template-columns: 1fr; gap: 30px; }
+    .cd-grid--rev .cd-visual { order: 2; }
+    .cd-more { grid-template-columns: 1fr; }
+  }
+
   .sec-tools { border-top: 1px solid var(--border); }
   .tools-grid {
     display: grid;

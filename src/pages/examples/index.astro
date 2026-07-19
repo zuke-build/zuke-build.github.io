@@ -192,6 +192,159 @@ class CI extends Build {
 await run(CI);`,
   },
   {
+    id: "cd-state-machine",
+    tag: "Orchestration / CD",
+    title: "A durable deploy → wait → promote state machine",
+    desc: "A cross-run CD pipeline that survives the process exiting between steps. deployToSit takes a cross-run lock (one deploy of a repo at a time), records what it did in ctx.state, and registers a rollback. awaitTesting suspends the run on an external signal — the process exits 0 and the run parks in the state store. Days later, zuke resume <id> --signal testing-approved continues in a fresh process and promoteToProd reads the approval payload. zuke cancel runs the compensation in reverse order; a state store makes it all durable and inspectable with zuke runs show <id>.",
+    code: `import { Build, externalSignal, parameter, run, target } from "jsr:@zuke/core";
+
+class Deploy extends Build {
+  repo = parameter("service to deploy").required();
+
+  // 1. Deploy under a cross-run lock — only one deploy of this repo at a time.
+  //    The lock auto-renews while the body runs and releases in a finally; a
+  //    killed process frees it after the TTL.
+  deployToSit = target()
+    .lock((s) =>
+      s.lockKey("deploy", this.repo.value).withTtl("2h")
+        .onConflict((h) =>
+          \`\${this.repo.value} is being deployed by \${h.actor} (run \${h.runId}).\`))
+    .executes(async (ctx) => {
+      await applyToSit(this.repo.value);
+      await ctx.state.set({ slot: "sit-7" });   // survives the suspend below
+    })
+    .onCancel(() => this.rollback);              // undo iff this target succeeded
+
+  // 2. Suspend until a human approves. The process exits 0 and the run parks in
+  //    the store. Resume later:
+  //    zuke resume <run-id> --signal testing-approved --data '{"by":"qa"}'
+  awaitTesting = target()
+    .dependsOn(this.deployToSit)
+    .waitsFor((s) =>
+      s.on(externalSignal("testing-approved"))
+        .timeout("72h")
+        .onTimeout(() => this.rollback));
+
+  // 3. Promote — runs in the resuming process, reading the approval payload.
+  promoteToProd = target()
+    .dependsOn(this.awaitTesting)
+    .executes((ctx) => {
+      const approval = ctx.signals.get("testing-approved");
+      promote(this.repo.value, approval?.data);
+    });
+
+  // Compensation: reads the slot deployToSit persisted, tears it down on cancel.
+  rollback = target().executes((ctx) => tearDownSit(ctx.state.get().slot));
+}
+
+await run(Deploy);`,
+  },
+  {
+    id: "fan-out",
+    tag: "Fan-out",
+    title: "Deploy a batch of repos with per-item isolation",
+    desc: "Run the same ordered pipeline over a runtime list with .forEach() — items concurrent (up to concurrency), stages sequential per item. One repo failing doesn't stop the others with continueOnItemFailure(); the batch fails at the end if any item did. Every item is first-class: sub-targets named deployBatch[api].deploy get their own summary row and run-record entry, so zuke runs show and MCP report a verdict per repo. The list is an .array() parameter, validated element-by-element before anything runs.",
+    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
+
+class CD extends Build {
+  // A validated list — each element checked before any target runs.
+  repos = parameter("services to deploy").array().required();
+
+  deployBatch = target().forEach(
+    () => this.repos.value,                    // items thunk (string[])
+    (repo) => ({                               // ordered per-item pipeline
+      checks: target().executes(() => checkDeployable(repo)),
+      fork:   target().executes(() => forkImage(repo)),
+      deploy: target().executes((ctx) => applyToSit(repo, ctx)),
+    }),
+    (s) => s.concurrency(3).continueOnItemFailure(),
+  );
+}
+
+await run(CD);`,
+  },
+  {
+    id: "schedules",
+    tag: "Scheduled CI",
+    title: "A timezone-aware scheduled pipeline",
+    desc: "Declare the schedule in code, in local time. GitHub Actions only understands UTC cron, so Zuke compiles { cron, tz } into the right UTC cron(s) — and for a daylight-saving zone, generates a wall-clock guard step so the job fires at the intended local time year-round, across the DST switch. No hand-maintained UTC math, no external Cloud Scheduler. zuke generate-ci --check keeps the committed workflow in sync.",
+    code: `import { Build, cicd, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class Nightly extends Build {
+  test = target()
+    .description("Full test suite")
+    .executes(async () => { await DenoTasks.test((s) => s.allowAll()); });
+
+  // Weekday mornings and afternoons, Europe/Sofia local time. Zuke emits the two
+  // UTC crons the zone needs across DST plus a guard so only the correct one fires.
+  ci = cicd({
+    provider: "github",
+    pipeline: {
+      triggers: {
+        push: ["main"],
+        schedule: [{ cron: "30 9,13,15 * * 1-4", tz: "Europe/Sofia" }],
+      },
+    },
+  });
+}
+
+await run(Nightly);`,
+  },
+  {
+    id: "observability",
+    tag: "Observability",
+    title: "Export runs to OpenTelemetry",
+    desc: "One plugin turns every run into OpenTelemetry traces and metrics over OTLP/HTTP, into your existing Grafana/Tempo stack — @zuke/otel is dependency-free and hand-rolls the OTLP JSON so core stays OTel-free. You get a run span with a child span per target, plus counters for runs started, suspended, and settled (succeeded/failed/cancelled). A run that suspends and resumes days later in another process still lands as one trace — the trace id derives from the run id — with the wait visible as the gap. Requires a state store; otel() with no endpoint is inert, so it's safe to leave in everywhere.",
+    code: `import { run } from "jsr:@zuke/core";
+import { otel } from "jsr:@zuke/otel";
+import { MyBuild } from "./build.ts";
+
+await run(MyBuild, {
+  plugins: [
+    otel((s) =>
+      s.endpoint("http://localhost:4318")   // or OTEL_EXPORTER_OTLP_ENDPOINT
+        .serviceName("payments-cd")
+        .header("authorization", "Bearer …")
+    ),
+  ],
+});
+
+// Config can come entirely from OTEL_* env — otel() with no endpoint is inert,
+// so the same registration is safe to ship everywhere:
+//   await run(MyBuild, { plugins: [otel()] });`,
+  },
+  {
+    id: "build-registry",
+    tag: "Build registry",
+    title: "Drive agents from a build registry",
+    desc: "Record a build in a shared registry so a registry-backed MCP server can discover and run it — no redeploy, no new instructions. zuke register writes a secret-free BuildDescriptor (its targets, parameters, and launch location); zuke mcp --registry serves every registered pipeline as tools, re-reading the catalog on each call so a build registered later — even by another repo's CI — appears without restarting the server. Execution stays behind the same allow-list, operator-token, and audit-log gates as the single-build server.",
+    code: `// Record this build (writes .zuke/builds/<id>.json, or your HTTP registry):
+//   deno run -A zuke.ts register
+//
+// Serve every registered pipeline; new registrations appear with no restart:
+//   zuke mcp --registry --allow-run --http 0.0.0.0:7777
+//
+// Point builds at a shared HTTP registry so the catalog spans machines:
+import { Build, HttpBuildRegistry, parameter, run, target } from "jsr:@zuke/core";
+
+class Api extends Build {
+  registryUrl = parameter("registry URL").required();
+  registryToken = parameter("registry token").secret();
+
+  override registry() {
+    return new HttpBuildRegistry({
+      url: this.registryUrl.value,
+      token: this.registryToken.value,
+    });
+  }
+
+  deploy = target().executes(() => {/* … */});
+}
+
+await run(Api);`,
+  },
+  {
     id: "coverage-upload",
     tag: "Coverage / Codecov",
     title: "Upload coverage to Codecov",

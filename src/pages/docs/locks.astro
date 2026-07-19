@@ -1,0 +1,172 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "authoring", label: ".lock() authoring" },
+  { id: "lockkey", label: "lockKey()" },
+  { id: "holder", label: "LockHolder" },
+  { id: "ttl", label: "TTL, heartbeat & release" },
+  { id: "conflict", label: "LockConflictError & conflict output" },
+  { id: "state-store", label: "Requires a state store" },
+  { id: "http", label: "HTTP lock endpoints" },
+  { id: "key-safety", label: "Key safety" },
+];
+
+const authoringSnippet = `// target.ts:  lock(configure: Configure<LockSettings>): this
+export class LockSettings {
+  lockKey(...parts: Array<string | number>): this;   // sanitised + joined
+  key(key: string): this;                            // set directly (must be filename-safe)
+  withTtl(ttl: string | number): this;               // "4h"/"30m" or ms
+  onConflict(render: (holder: LockHolder) => string): this;
+}`;
+
+const exampleSnippet = `import { Build, parameter, target } from "jsr:@zuke/core";
+class CD extends Build {
+  repo = parameter("service to deploy");
+  promote = target()
+    .lock((s) =>
+      s.lockKey("deploy", this.repo.value)
+        .withTtl("4h")
+        .onConflict((h) =>
+          \`\${this.repo.value} is being deployed by \${h.actor} \` +
+          \`(run \${h.runId}, since \${h.since}). Wait, then retry.\`))
+    .executes(async (ctx) => {/* … */});
+}`;
+
+const lockKeySnippet = `export function lockKey(...parts: Array<string | number>): string;  // non-[A-Za-z0-9._-]→"_", drop empty, join "-"`;
+
+const holderSnippet = `export interface LockHolder { actor: string; runId: string; since: string; runUrl?: string }
+export class LockConflictError extends Error { readonly holder: LockHolder; /* message = guidance */ }
+export type LockResult = { ok: true; token: string } | { ok: false; holder: LockHolder };`;
+---
+
+<DocsLayout
+  title="Cross-run locks"
+  description="Zuke's cross-run locks: .lock() on a target, lockKey()/LockHolder, TTL with auto-renewing heartbeat and finally-block release, LockConflictError and its exit behavior, the requires-a-state-store rule, the HTTP lock endpoints, and lock key safety."
+  toc={toc}
+>
+  <p class="lead">
+    A lock claims an exclusive resource across runs, processes, even
+    machines — "one deploy of repo X at a time." It lives in the same
+    <a href="/docs/state">state store</a> as durable run state. Acquisition is
+    contended-fails-fast: no queue, no waiting — the loser gets actionable
+    guidance instead.
+  </p>
+
+  <h2 id="authoring">.lock() authoring</h2>
+  <p>
+    Call <code>.lock(configure)</code> on a target to guard it with a lock. The
+    configure lambda runs after params resolve, so the key can read
+    <code>this.&lt;param&gt;.value</code>:
+  </p>
+  <Code code={authoringSnippet} lang="ts" theme="night-owl" />
+  <Code code={exampleSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="lockkey">lockKey()</h2>
+  <p>
+    <code>lockKey(...parts)</code> builds a safe key by joining its parts with
+    <code>-</code>:
+  </p>
+  <Code code={lockKeySnippet} lang="ts" theme="night-owl" />
+  <p>
+    Every character outside <code>[A-Za-z0-9._-]</code> becomes <code>_</code>
+    and empty parts are dropped, so <code>s.lockKey("deploy", this.repo.value)</code>
+    always yields a filename-safe key regardless of what the parameter holds.
+  </p>
+
+  <h2 id="holder">LockHolder</h2>
+  <Code code={holderSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>LockHolder</code> identifies who currently holds a lock — used both
+    in <code>onConflict</code>'s guidance message and in the raw
+    <code>LockResult</code> a store returns on a failed acquisition.
+  </p>
+
+  <h2 id="ttl">TTL, heartbeat &amp; release</h2>
+  <p>
+    <code>.withTtl("4h" | "30m" | ms)</code> bounds a lock whose holder
+    disappears — it is <strong>not</strong> a hard limit on the operation
+    itself. A live holder auto-renews the lock at <strong>half the
+    TTL</strong>, so a long-running deploy under a short TTL never loses its
+    lock while it's still alive. Kill the process (<code>kill -9</code>) and
+    renewals simply stop — the lock frees once the TTL elapses.
+  </p>
+  <p>
+    The lock is released in a <code>finally</code> on settle — success,
+    failure, or cancellation — so the TTL only backstops a killed process, it
+    isn't the normal release path. Acquisition is atomic: two runs racing a
+    free key resolve to exactly one winner, and an expired lock is taken over
+    atomically by the next acquirer.
+  </p>
+
+  <h2 id="conflict">LockConflictError &amp; conflict output</h2>
+  <p>
+    There's no dedicated lock CLI. On a conflict, the target fails with a
+    <code>LockConflictError</code> whose message is the rendered
+    <code>onConflict</code> guidance; the run exits non-zero, the failure
+    footer prints that guidance, and the target is recorded <code>failed</code>
+    in the run record with the guidance as its <code>error</code>. Release a
+    lock held by a run you control with <code>zuke cancel &lt;runId&gt;</code>.
+  </p>
+
+  <h2 id="state-store">Requires a state store</h2>
+  <div class="note">
+    <p>
+      Locks live in the state store — a build that calls <code>.lock()</code>
+      turns on the <code>.zuke/runs</code> filesystem store by default if
+      nothing else configured one. Calling <code>.lock()</code> with state
+      explicitly disabled fails with a friendly error rather than silently
+      not locking. Point the build at an HTTP-backed store (see
+      <a href="/docs/state#backends">FileSystem vs HTTP backends</a>) to share
+      locks across machines — the server is authoritative for expiry there.
+    </p>
+  </div>
+
+  <h2 id="http">HTTP lock endpoints</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Verb + path</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>POST /locks/:key</code></td>
+        <td><code>201 &#123; token &#125;</code> on acquisition, or <code>409</code> plus the current <code>LockHolder</code>.</td>
+      </tr>
+      <tr>
+        <td><code>PUT /locks/:key</code></td>
+        <td>Renew. <code>409</code>/<code>404</code> means the token was lost.</td>
+      </tr>
+      <tr>
+        <td><code>DELETE /locks/:key</code></td>
+        <td>Release. <code>404</code> is not an error.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="key-safety">Key safety</h2>
+  <p>
+    <code>lockKey(...)</code> always sanitizes its input — prefer it.
+    <code>s.key(literal)</code> sets the key directly and bypasses that
+    sanitization, so a caller using it is responsible for keeping the value
+    filename-safe.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

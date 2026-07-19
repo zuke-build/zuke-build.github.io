@@ -1,0 +1,195 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "descriptor", label: "BuildDescriptor & BuildRegistry" },
+  { id: "backends", label: "FS vs HTTP backends" },
+  { id: "resolution", label: "Resolution & env vars" },
+  { id: "register", label: "Registering a build" },
+  { id: "discovery", label: "Dynamic MCP discovery" },
+];
+
+const registryTypeSnippet = `export type PutBuildResult = { ok: true; version: string } | { ok: false; conflict: true };
+export interface BuildRegistry {
+  getBuild(id: string): Promise<{ descriptor: BuildDescriptor; version: string } | null>;
+  register(descriptor: BuildDescriptor, expectedVersion: string | null): Promise<PutBuildResult>;
+  deregister(id: string): Promise<void>;
+  listBuilds(query: BuildQuery): Promise<BuildSummary[]>;
+}
+export type BuildLocation =
+  | { kind: "module"; module: string; cwd: string; repo?: string }
+  | { kind: "command"; command: string[]; cwd: string; repo?: string };
+export interface BuildDescriptor {
+  id: string; name: string; location: BuildLocation;
+  surface: CliDescription;   // exactly describeCli(build) — flags only, no values
+  actor: string; createdAt: string; updatedAt: string;
+}
+export interface BuildQuery { name?: string; since?: string }`;
+
+const httpRegistrySnippet = `class CD extends Build {
+  registryUrl = parameter("registry URL").required();
+  registryToken = parameter("registry token").secret();
+  override registry() {
+    return new HttpBuildRegistry({ url: this.registryUrl.value, token: this.registryToken.value });
+  }
+}`;
+
+const registerCliSnippet = `deno run -A zuke.ts register            # writes .zuke/builds/<id>.json by default
+deno run -A zuke.ts register --json
+zuke mcp --registry --allow-run`;
+---
+
+<DocsLayout
+  title="Build registry"
+  description="A catalog of pipelines and where they live: each build registers a small versioned BuildDescriptor into a pluggable FS or HTTP-backed store, and zuke mcp --registry re-reads it on every call so a newly-registered pipeline appears as a runnable tool with no restart."
+  toc={toc}
+>
+  <p class="lead">
+    The build registry is a catalog of pipelines and where they live. Each
+    build registers a small versioned <code>BuildDescriptor</code> — its id,
+    CLI surface, and launch location — into a pluggable store. Point
+    <code>zuke mcp --registry</code> at that store and it re-reads the
+    catalog on every <code>tools/list</code> and <code>tools/call</code>, so a
+    newly-registered pipeline shows up as a runnable tool with
+    <strong>no restart</strong>.
+  </p>
+
+  <h2 id="descriptor">BuildDescriptor & BuildRegistry</h2>
+  <p>
+    A registry is anything that satisfies <code>BuildRegistry</code>: get one
+    build, register (or update) one with optimistic-concurrency versioning,
+    deregister one, or list them by <code>BuildQuery</code>.
+  </p>
+  <Code code={registryTypeSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      A descriptor is secret-free by construction: <code>surface</code> is
+      exactly <code>describeCli(build)</code> (flags only, no values),
+      module-URL credentials are stripped, and <code>register</code> resolves
+      no parameter values.
+    </p>
+  </div>
+
+  <h2 id="backends">FS vs HTTP backends</h2>
+  <p>
+    Two backends ship, both behind the same <code>BuildRegistry</code>
+    interface:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Backend</th><th>Storage</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>FileSystemBuildRegistry</code></td>
+        <td>
+          <code>constructor(dir: string, host?)</code> — defaults to
+          <code>.zuke/builds</code>, one <code>&lt;id&gt;.json</code> file per
+          build, written with an O_EXCL+rename compare-and-swap.
+        </td>
+      </tr>
+      <tr>
+        <td><code>HttpBuildRegistry</code></td>
+        <td>
+          <code>{`{ url: string; token?: string; fetch?: typeof fetch }`}</code>
+          — <code>GET</code>/<code>PUT</code>/<code>DELETE /builds/:id</code> and
+          <code>GET /builds</code>, ETag/If-Match compare-and-swap, bearer
+          auth.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Override <code>registry()</code> on a build to point it at an HTTP-backed
+    registry — this is the same shape as the run <a href="/docs/state">state
+    store</a>, but a separate concern (<code>.zuke/builds</code> sits beside
+    <code>.zuke/runs</code>; over HTTP it rides a <code>/builds</code> REST
+    contract beside <code>/runs</code>):
+  </p>
+  <Code code={httpRegistrySnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="resolution">Resolution & env vars</h2>
+  <p>Which registry a build uses is resolved in order:</p>
+  <ol>
+    <li>An explicit registry passed in code (<code>false</code> disables it).</li>
+    <li>The build's <code>registry()</code> override.</li>
+    <li>
+      Env: <code>ZUKE_REGISTRY_URL</code> (+ <code>ZUKE_REGISTRY_TOKEN</code>)
+      selects an HTTP registry; otherwise <code>ZUKE_REGISTRY_DIR</code>
+      selects an FS registry.
+    </li>
+    <li>
+      For <code>zuke register</code> and <code>zuke mcp --registry</code>, an
+      FS registry under <code>.zuke/builds</code> by default.
+    </li>
+  </ol>
+  <table class="dtable">
+    <thead>
+      <tr><th>Env var</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>ZUKE_REGISTRY_URL</code></td><td>Selects the HTTP backend; base URL for the <code>/builds</code> contract.</td></tr>
+      <tr><td><code>ZUKE_REGISTRY_TOKEN</code></td><td>Bearer token sent with every HTTP registry request.</td></tr>
+      <tr><td><code>ZUKE_REGISTRY_DIR</code></td><td>Selects the FS backend at this directory (default <code>.zuke/builds</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="register">Registering a build</h2>
+  <p>
+    <code>zuke register</code> writes (or idempotently updates) this build's
+    descriptor into the resolved registry, excluding secrets:
+  </p>
+  <Code code={registerCliSnippet} lang="bash" theme="night-owl" />
+
+  <h2 id="discovery">Dynamic MCP discovery</h2>
+  <p>
+    <code>zuke mcp --registry</code> serves the whole catalog instead of one
+    build. Registry-mode discovery adds two shapes to the
+    <a href="/docs/mcp#tools">tools already documented for <code>zuke
+    mcp</code></a>: <code>list_builds</code> returns the catalog, and
+    <code>describe_build</code> (given a <code>build</code> id) returns one
+    build's surface. Each registered target becomes a
+    <strong><code>run:&lt;buildId&gt;:&lt;target&gt;</code></strong> tool,
+    re-read live — a build registered after the server started appears with
+    no restart.
+  </p>
+  <p>
+    Execution here is a <strong>spawn</strong> of the descriptor's registered
+    launch location, not a call into a live instance — so it's off unless
+    <code>--allow-run</code> is set, exactly like the
+    <a href="/docs/mcp#authorization">single-build server</a>. Authorization
+    is matched against the qualified <code>&lt;buildId&gt;:&lt;target&gt;</code>{" "}
+    name, e.g. <code>--allow-run=Api:*</code> or
+    <code>--protect=Api:deploy</code>. Registry run tools take only
+    <code>dryRun</code>/<code>confirm</code>/<code>operatorToken</code> — no
+    per-parameter inputs, since the spawned build resolves its own parameters
+    from the server's environment — and are always treated as destructive
+    (the descriptor doesn't record read-only-ness).
+  </p>
+  <div class="note">
+    <p>
+      The spawned build inherits the server's environment <strong>minus</strong>{" "}
+      <code>ZUKE_OPERATOR_TOKEN</code> and <code>ZUKE_MCP_TOKEN</code>, so a
+      spawned pipeline can never read the very tokens gating it.
+    </p>
+  </div>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>
