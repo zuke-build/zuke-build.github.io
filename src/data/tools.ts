@@ -20,6 +20,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Bun", pkg: "@zuke/bun", desc: "install, add, run, x, bun test" },
       { name: "pnpm", pkg: "@zuke/pnpm", desc: "frozen installs, dlx, --filter" },
       { name: "Yarn", pkg: "@zuke/yarn", desc: "Classic & Berry: install, add, dlx" },
+      { name: "npx", pkg: "@zuke/npx", desc: "download & run a package binary in one step" },
     ],
   },
   {
@@ -128,14 +129,18 @@ export const toolGroups: ToolGroup[] = [
   },
 ];
 
-/** The engine packages that power every build. */
+/** The first-party engine and plugin packages — everything that isn't a CLI wrapper. */
 export const corePackages = [
   { name: "@zuke/core", desc: "the Build base class, target() graph, $ shell, and cicd()" },
   { name: "@zuke/cli", desc: "the global zuke command: setup, run, list, graph, generate-ci" },
   { name: "@zuke/cmd", desc: "the typed process layer the wrappers are built on" },
   { name: "@zuke/console", desc: "markup, rules, boxes & tables — the levelled logger behind Zuke's output" },
+  { name: "@zuke/otel", desc: "OpenTelemetry export plugin — run & target spans over OTLP, joined across resume" },
 ];
 
-/** Total wrapper + engine package count, for display. */
-export const packageCount =
-  toolGroups.reduce((n, g) => n + g.tools.length, 0) + corePackages.length;
+/** Total distinct @zuke package count, for display (some packages, e.g.
+ * @zuke/ai, appear under more than one capability, so dedupe by name). */
+export const packageCount = new Set([
+  ...toolGroups.flatMap((g) => g.tools.map((t) => t.pkg)),
+  ...corePackages.map((p) => p.name),
+]).size;
