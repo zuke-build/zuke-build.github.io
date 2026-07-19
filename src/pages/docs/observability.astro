@@ -1,0 +1,168 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "plugin", label: "The otel() plugin" },
+  { id: "signals", label: "What it exports" },
+  { id: "config", label: "Setter ↔ env config" },
+  { id: "continuity", label: "Trace continuity across suspend/resume" },
+  { id: "examples", label: "Setup examples" },
+];
+
+const settersSnippet = `endpoint(url): this            // base; /v1/traces & /v1/metrics appended
+tracesEndpoint(url): this      // verbatim
+metricsEndpoint(url): this     // verbatim
+serviceName(name): this
+header(name, value): this
+headers(map): this
+resourceAttribute(name, value): this
+resourceAttributes(map): this
+timeout(duration): this        // "5s"; default 10s`;
+
+const explicitSnippet = `import { run } from "jsr:@zuke/core";
+import { otel } from "jsr:@zuke/otel";
+await run(MyBuild, {
+  plugins: [
+    otel((s) => s.endpoint("http://localhost:4318").serviceName("my-build").header("authorization", "Bearer …")),
+  ],
+});`;
+
+const envOnlySnippet = `// Config entirely from OTEL_* env — same registration works locally and in CI:
+await run(MyBuild, { plugins: [otel()] });`;
+---
+
+<DocsLayout
+  title="Observability (OpenTelemetry)"
+  description="@zuke/otel is a zero-runtime-dependency plugin that exports a run as OpenTelemetry traces and metrics over OTLP/HTTP JSON — one run span with a child span per executed target, plus run/suspend/outcome counters, tracing gap-spanning across suspend/resume."
+  toc={toc}
+>
+  <p class="lead">
+    <code>@zuke/otel</code> is a zero-runtime-dependency plugin that exports a
+    run as <a href="https://opentelemetry.io" target="_blank" rel="noopener noreferrer">OpenTelemetry</a> traces
+    and metrics over OTLP/HTTP JSON — hand-rolled, so core stays
+    OTel-free. Register it on a run and each state transition ships to a
+    collector: one run span with a child span per executed target, plus
+    run/suspend/outcome counters.
+  </p>
+
+  <h2 id="plugin">The otel() plugin</h2>
+  <Code code={`// jsr:@zuke/otel\nexport function otel(configure?: Configure<OtelSettings>): Plugin`} lang="ts" theme="night-owl" />
+  <p>
+    Called with no arguments — or with no endpoint configured, whether by
+    setter or by <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> — the plugin is
+    <strong>inert</strong>, so it's safe to register unconditionally.
+    Otherwise <code>configure</code> gets an <code>OtelSettings</code> with
+    fluent setters, each returning <code>this</code>:
+  </p>
+  <Code code={settersSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="signals">What it exports</h2>
+  <p>
+    The plugin observes <code>onRunStateChange</code> against the durable
+    <code>RunRecord</code>:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Signal</th><th>When</th><th>Shape</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>trace</td>
+        <td>run settles</td>
+        <td>Run span (<code>createdAt</code>→<code>updatedAt</code>) + one child span per executed target.</td>
+      </tr>
+      <tr>
+        <td><code>zuke.run.started</code></td>
+        <td>fresh run begins</td>
+        <td>Counter, tagged <code>zuke.build</code> / <code>zuke.root_target</code>.</td>
+      </tr>
+      <tr>
+        <td><code>zuke.run.suspended</code></td>
+        <td>run parks at a <code>.waitsFor</code> gate</td>
+        <td>Counter per waiting target, tagged <code>zuke.build</code> / <code>zuke.target</code> / <code>trigger</code>.</td>
+      </tr>
+      <tr>
+        <td><code>zuke.runs</code></td>
+        <td>run settles</td>
+        <td>Counter tagged <code>outcome</code> = succeeded/failed/cancelled.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Run span attributes: <code>zuke.run.id</code>, <code>zuke.build</code>,
+    <code>zuke.root_target</code>, <code>zuke.actor</code>,
+    <code>zuke.run.status</code>. Target span attributes:
+    <code>zuke.target</code>, <code>zuke.target.status</code>; a failed
+    target's span is marked error with its redacted message. Metrics are
+    OTLP delta Sums. Only <em>executed</em> targets get a span, and a run is
+    exported once (the dedup set is capped at 1024).
+  </p>
+
+  <h2 id="config">Setter ↔ env config</h2>
+  <p>
+    Every setter has an env fallback, so the same registration works locally
+    and in CI; an explicit setter always wins over its env var.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Setter</th><th>Env var</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.endpoint(url)</code></td><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code> (base; <code>/v1/traces</code> & <code>/v1/metrics</code> appended)</td></tr>
+      <tr><td><code>.tracesEndpoint(url)</code></td><td><code>OTEL_EXPORTER_OTLP_TRACES_ENDPOINT</code> (verbatim)</td></tr>
+      <tr><td><code>.metricsEndpoint(url)</code></td><td><code>OTEL_EXPORTER_OTLP_METRICS_ENDPOINT</code> (verbatim)</td></tr>
+      <tr><td><code>.serviceName(name)</code></td><td><code>OTEL_SERVICE_NAME</code> (else <code>"zuke"</code>)</td></tr>
+      <tr><td><code>.header(s)</code></td><td><code>OTEL_EXPORTER_OTLP_HEADERS</code> (<code>k1=v1,k2=v2</code>)</td></tr>
+      <tr><td><code>.resourceAttribute(s)</code></td><td><code>OTEL_RESOURCE_ATTRIBUTES</code></td></tr>
+      <tr><td><code>.timeout(duration)</code></td><td>— (setter only; <code>"5s"</code> shape, default 10s)</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="continuity">Trace continuity across suspend/resume</h2>
+  <p>
+    A run that suspends and resumes in a different process still lands as
+    <strong>one trace</strong>: the trace id is
+    <code>SHA-256(runId)</code> truncated to 16 bytes, and each target span
+    id is a stable hash of <code>(runId, target)</code>. Every process
+    derives the same ids, so the whole run — including the gap while it was
+    suspended — reassembles into one complete, gap-spanning trace.
+  </p>
+  <div class="note">
+    <p>
+      This requires a <a href="/docs/state">state store</a>: the exported
+      spans and counters come from the durable run record, so a store-less
+      build exports nothing.
+    </p>
+  </div>
+
+  <h2 id="examples">Setup examples</h2>
+  <Code code={explicitSnippet} lang="ts" theme="night-owl" />
+  <Code code={envOnlySnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Export is best-effort: a down or slow collector never fails the build
+      beyond the configured timeout. Output is secret-free — the same
+      redacted projection <code>zuke runs show</code> prints. Available as
+      the new <code>@zuke/otel</code> package on JSR.
+    </p>
+  </div>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

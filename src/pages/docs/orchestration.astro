@@ -1,0 +1,276 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "suspend", label: "Suspend & resume" },
+  { id: "fanout", label: "Fan-out" },
+  { id: "cancel", label: "Cancellation & compensation" },
+  { id: "params", label: "Parameters for fan-out" },
+];
+
+const waitApiSnippet = `// TargetBuilder:  waitsFor(configure: Configure<WaitSettings>): this
+// WaitSettings (fluent):
+on(trigger: WaitTrigger): this
+timeout(duration: string | number): this          // "72h" or ms
+onTimeout(disposition: OnTimeout): this            // default "fail"
+export type OnTimeout = () => TargetBuilder | "fail" | "cancel-run";
+
+// Triggers:
+export function externalSignal(name: string): WaitTrigger
+export function resumeWhen(check: () => boolean | Promise<boolean>, options?: { interval?: string | number }): WaitTrigger`;
+
+const deploySnippet = `import { Build, externalSignal, target } from "jsr:@zuke/core";
+
+class Deploy extends Build {
+  deployToSit = target().executes(async (ctx) => {
+    await applyToSit();
+    await ctx.state.set({ at: "sit-7" });   // survives the suspend
+  });
+
+  awaitTesting = target()
+    .dependsOn(this.deployToSit)
+    .waitsFor((s) => s.on(externalSignal("testing-approved")).timeout("72h").onTimeout(() => this.rollback));
+
+  promoteToProd = target()
+    .dependsOn(this.awaitTesting)
+    .executes((ctx) => {
+      const approval = ctx.signals.get("testing-approved");   // payload
+      promote(approval?.data);
+    });
+
+  rollback = target().executes(() => rollBackSit());
+}`;
+
+const resumeCliSnippet = `zuke resume <run-id> --signal testing-approved --data '{"by":"qa"}'   # deliver a signal
+zuke resume --check [<run-id>]                                        # re-check predicate/timeout; sweeps ALL suspended runs when no id
+# also: --force-graph, --actor <name>`;
+
+const forEachApiSnippet = `forEach<Item>(items: () => readonly Item[], factory: ForEachFactory<Item>, configure?: Configure<ForEachSettings>): this
+export type ForEachFactory<Item> = (item: Item, index: number) => Record<string, TargetBuilder>;  // ordered stages; each depends on the previous
+
+// ForEachSettings:
+concurrency(limit: number): this            // clamped ≥1; default = host CPU count
+continueOnItemFailure(on?: boolean): this`;
+
+const batchDeploySnippet = `import { Build, parameter, target } from "jsr:@zuke/core";
+
+class CD extends Build {
+  repos = parameter("services to deploy").array().required();
+
+  deployBatch = target().forEach(
+    () => this.repos.value,                    // items thunk (string[])
+    (repo) => ({                               // ordered pipeline per item
+      checks: target().executes(() => checkDeployable(repo)),
+      fork:   target().executes(() => forkImage(repo)),
+      deploy: target().executes((ctx) => applyToSit(repo, ctx)),
+    }),
+    (s) => s.concurrency(3).continueOnItemFailure(),
+  );
+}`;
+
+const cancelApiSnippet = `onCancel(compensation: OnCancel): this
+export type OnCancel = TargetBuilder | (() => TargetBuilder);  // thunk references a target declared below`;
+
+const cancelCliSnippet = `zuke cancel <run-id>            # cancel a persisted run from any process (accepts --actor <name>)
+# Ctrl-C / SIGTERM             # cancels the run in the current process
+# MCP cancel_run tool          # cancel over MCP (gated like a run tool)`;
+
+const compensationSnippet = `class CD extends Build {
+  deploy = target()
+    .executes((ctx) => ctx.state.set({ slot: "sit-7" }))   // record what it did
+    .onCancel(() => this.rollback);                          // …and how to undo it
+
+  rollback = target().executes((ctx) => tearDown(ctx.state.get().slot));   // reads deploy's meta
+}`;
+
+const arrayParamSnippet = `tags     = parameter("Image tags").array();                            // string[]
+workers  = parameter("Worker ids").number().array();                   // number[]; "1,x" rejected
+services = parameter("Services").options("api","web","worker").array(); // each element validated
+repos    = parameter("services to deploy").array().required();         // required list; feeds forEach items thunk`;
+
+const arrayCliSnippet = `./zuke deploy --tags latest,canary          # ["latest","canary"]
+./zuke deploy --tags latest --tags canary   # same (repeat == comma)
+TAGS=latest,canary ./zuke deploy            # from env`;
+---
+
+<DocsLayout
+  title="Orchestration"
+  description="Suspend a run for an external approval and resume it later, fan a target out over a runtime list with bounded concurrency, and cancel a run with reverse-topological compensation — the pieces that turn Zuke into a real CD engine."
+  toc={toc}
+>
+  <p class="lead">
+    A build is more than a DAG that runs once and exits. A real deployment
+    pipeline needs to <strong>pause</strong> for a human approval or a soak
+    period and pick back up — possibly days later, in a different process —
+    <strong>fan a step out</strong> over a runtime list of services or
+    tenants, and <strong>cancel cleanly</strong>, undoing exactly the work it
+    did. Zuke builds all three on the same primitive: a
+    <a href="/docs/run-context">durable run</a> whose state survives the
+    process that started it.
+  </p>
+
+  <h2 id="suspend">Suspend &amp; resume</h2>
+  <p>
+    A target declared with <code>.waitsFor()</code> is a <strong>bodyless
+    gate</strong>: reached in the graph, it checks whether its trigger is
+    already satisfied. If so, it passes through and dependents run in the
+    same process. If not, the run's state is saved, the run is marked
+    <code>suspended</code>, any independent branches finish, and the process
+    exits <code>0</code> — a suspended run has <strong>not</strong> failed.
+    A later <code>zuke resume</code>, possibly in a different process,
+    re-instantiates the build and continues only the targets that haven't
+    already succeeded. This requires a <a href="/docs/state">state
+    store</a> (auto-enables the <code>.zuke/runs</code> filesystem store).
+  </p>
+  <Code code={waitApiSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Two built-in triggers: <code>externalSignal(name)</code> waits for a
+    named signal delivered from outside the run (an approval, a webhook);
+    <code>resumeWhen(check)</code> waits for a predicate to become true,
+    re-evaluated on demand rather than polled continuously. A delivered
+    signal's payload shows up on <a href="/docs/run-context#signals"><code>ctx.signals</code></a>
+    as <code>{`{ data, receivedAt }`}</code>.
+  </p>
+  <p>
+    <code>.timeout()</code> bounds how long a wait may stay suspended;
+    <code>.onTimeout()</code> decides what happens when it elapses —
+    <code>"fail"</code> (the default), <code>"cancel-run"</code>, or a thunk
+    returning a target to run instead (a rollback). The canonical shape —
+    deploy, wait for an external approval, then promote:
+  </p>
+  <Code code={deploySnippet} lang="ts" theme="night-owl" />
+  <p>Resuming it once QA signs off:</p>
+  <Code code={resumeCliSnippet} lang="bash" theme="night-owl" />
+  <div class="note">
+    <p>
+      Only the durable record crosses the process boundary — a resumed run
+      gets a fresh <code>ctx.state</code> and <code>ctx.signals</code>
+      rebuilt from what was persisted, nothing else. Write whatever a later
+      target needs into <a href="/docs/run-context#state"><code>ctx.state</code></a>
+      before the wait, as <code>deployToSit</code> does above.
+    </p>
+  </div>
+  <p>
+    Resume is <strong>exactly-once</strong>: it's a compare-and-swap from
+    <code>suspended</code> to <code>running</code>, so one resumer wins and
+    every other — a retrying cron, a doubled webhook — gets a clean
+    <code>AlreadyResumedError</code> and exits non-zero instead of running
+    the promotion twice. Resume also re-checks that the build's graph still
+    matches the suspended run; an added, removed, or re-wired target is a
+    hard error pointing at <code>--force-graph</code> to override it
+    deliberately. <code>resumeWhen</code> doesn't self-poll — Zuke
+    re-evaluates the predicate (and any elapsed timeout) on each
+    <code>--check</code>, so one sweeping cron enforces every deadline
+    across every suspended run.
+  </p>
+
+  <h2 id="fanout">Fan-out</h2>
+  <p>
+    <code>.forEach()</code> runs the same ordered pipeline over a
+    <strong>runtime</strong> list — deploy N repos, migrate N tenants — with
+    bounded concurrency and per-item failure isolation. Items run
+    concurrently up to <code>concurrency</code>; within one item, its stages
+    still run sequentially, each depending on the one before — there's no
+    barrier between items, so a fast item can finish its whole pipeline
+    while a slow one is still on its first stage.
+  </p>
+  <Code code={forEachApiSnippet} lang="ts" theme="night-owl" />
+  <p>The canonical batch deploy — one three-stage pipeline per repo:</p>
+  <Code code={batchDeploySnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>concurrency</code> clamps to at least 1 and defaults to the host's
+    CPU count. <code>continueOnItemFailure()</code> decides whether a
+    failed item's siblings keep going: without it, the first item failure
+    stops the batch; with it, a failed stage skips that item's later stages
+    but lets other items finish. Either way the fan-out target itself
+    <strong>fails if any item failed</strong> — add
+    <code>.proceedAfterFailure()</code> if partial success should still be a
+    passing build.
+  </p>
+  <p>
+    Each item is first-class for reporting: sub-targets are materialised at
+    run time and named <code>parent[&lt;item&gt;].&lt;stage&gt;</code> (e.g.
+    <code>deployBatch[api].deploy</code>), and each gets its own summary row
+    and its own entry in the run record — <code>zuke runs show</code> gives
+    per-item verdicts, not just a batch total. Static views
+    (<code>zuke --list</code>, <code>zuke graph</code>) show only the single
+    fan-out node, annotated <code>[fan-out]</code>, since the item list isn't
+    known until the run starts.
+  </p>
+  <div class="note">
+    <p>
+      <strong>Limitation:</strong> <code>.onCancel()</code> on a fan-out
+      sub-target is not run on cancel — sub-targets don't exist in the
+      static plan a cancel walks. Put compensation on an ordinary target, or
+      on the parent fan-out target itself.
+    </p>
+  </div>
+  <p>
+    Every per-item stage is a full <a href="/docs/concepts#targets">target</a>:
+    it takes <a href="/docs/run-context">ctx</a>, can read and write
+    <code>ctx.state</code>, and can carry its own
+    <code>.timeout()</code> and <code>.retry()</code>.
+  </p>
+
+  <h2 id="cancel">Cancellation &amp; compensation</h2>
+  <p>
+    Cancelling should be safe and complete: work undone, locks released, the
+    run's record ending <code>cancelled</code>. A compensation target,
+    registered with <code>.onCancel()</code>, runs if and only if its target
+    <strong>succeeded</strong>, walked in <strong>reverse topological
+    order</strong> — later work is unwound before what it was built on. This
+    requires a state store (auto-enabled, same as suspend/resume).
+  </p>
+  <Code code={cancelApiSnippet} lang="ts" theme="night-owl" />
+  <p>Trigger a cancel from any of three places:</p>
+  <Code code={cancelCliSnippet} lang="bash" theme="night-owl" />
+  <Code code={compensationSnippet} lang="ts" theme="night-owl" />
+  <p>
+    The compensation body gets a normal <a href="/docs/run-context">ctx</a>,
+    but its <code>ctx.state</code> exposes the <strong>original target's</strong>
+    persisted metadata — not its own — so <code>rollback</code> above reads
+    exactly what <code>deploy</code> recorded at work time
+    (<code>ctx.state.get().slot</code>). Persist whatever a rollback will
+    need while the original target is still running; there's nothing left
+    to compute it from afterward.
+  </p>
+  <div class="note">
+    <p>
+      A live run learns about its own cancellation on its next state write —
+      cancelling flips the record to <code>cancelling</code> and the owning
+      process aborts, with in-flight <code>$</code> commands getting
+      <code>SIGTERM</code> via the <a href="/docs/run-context#cancel">ambient
+      <code>ctx.signal</code></a>. Cancelling is idempotent (a terminal run
+      is a friendly no-op) and maximal — a compensation that itself throws is
+      recorded but doesn't stop the rest of the walk. <code>zuke runs show
+      &lt;id&gt;</code> shows exactly what was unwound.
+    </p>
+  </div>
+
+  <h2 id="params">Parameters for fan-out</h2>
+  <p>
+    <code>.array()</code> turns a parameter into a comma-separated or
+    repeatable list — the natural feed for a <code>forEach</code> items
+    thunk. It composes <strong>last</strong>, after any kind or
+    <code>.options()</code> already declared, so every element is validated
+    before any target runs:
+  </p>
+  <Code code={arrayParamSnippet} lang="ts" theme="night-owl" />
+  <Code code={arrayCliSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Blank entries are dropped and an unsupplied list defaults to
+    <code>[]</code>. Read it inside the <code>forEach</code> items thunk with
+    <code>this.&lt;name&gt;.value</code>, as <code>repos</code> does in the
+    batch deploy example above.
+  </p>
+  <div class="note">
+    <p>
+      <code>@zuke/gh</code> adds a <code>githubWorkflow(...)</code>
+      <code>WaitTrigger</code> for <code>.waitsFor()</code> — it dispatches a
+      workflow in another repo and suspends until that workflow's conclusion.
+      See the <a href="https://jsr.io/@zuke/gh" target="_blank" rel="noopener noreferrer">
+      <code>@zuke/gh</code></a> package for the details.
+    </p>
+  </div>
+</DocsLayout>

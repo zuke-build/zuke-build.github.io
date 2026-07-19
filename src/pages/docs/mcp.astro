@@ -5,7 +5,12 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 const toc = [
   { id: "running", label: "Running it" },
   { id: "register", label: "Registering with a client" },
+  { id: "http", label: "HTTP transport" },
   { id: "tools", label: "Tools" },
+  { id: "authorization", label: "Authorization tiers" },
+  { id: "audit", label: "Audit log" },
+  { id: "errors", label: "Structured errors" },
+  { id: "discovery", label: "Dynamic discovery" },
   { id: "safety", label: "Safety" },
   { id: "protocol", label: "Protocol notes" },
 ];
@@ -21,6 +26,21 @@ claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
 
 const callSnippet = `// tools/call
 { "name": "run:test", "arguments": { "environment": "dev", "coverage": true } }`;
+
+const httpSnippet = `deno run -A zuke.ts mcp --http 7777              # loopback only: 127.0.0.1, ::1, localhost
+ZUKE_MCP_TOKEN=… deno run -A zuke.ts mcp --http 0.0.0.0:7777 --allow-run
+# non-loopback --http REQUIRES ZUKE_MCP_TOKEN (or --token), else the server refuses to start`;
+
+const authorizationSnippet = `# expose everything to run, gate promoteToProd behind an operator token, confirm destructive, authenticated HTTP:
+ZUKE_OPERATOR_TOKEN=… ZUKE_MCP_TOKEN=… zuke mcp --http 0.0.0.0:7777 --allow-run --protect promoteToProd --confirm-destructive`;
+
+const errorSnippet = `{ "error": "lock_conflict", "holder": "…", "guidance": "…" }
+{ "error": "unauthorized", "reason": "…" }
+{ "error": "already_resumed" }
+{ "error": "run_failed", "runId": "…", "message": "…" }
+{ "error": "invalid_status" }
+{ "error": "missing_argument" }
+{ "error": "no_run" }`;
 ---
 
 <DocsLayout
@@ -64,6 +84,26 @@ const callSnippet = `// tools/call
   </p>
   <Code code={registerSnippet} lang="bash" theme="night-owl" />
 
+  <h2 id="http">HTTP transport</h2>
+  <p>
+    Alongside stdio, <code>--http &lt;host:port&gt;</code> serves the same
+    server over streamable HTTP. Each request is a POST of one JSON-RPC
+    message; the reply is that message's JSON-RPC response. A notification
+    (no <code>id</code>) gets a bare <code>202</code>; <code>GET</code> gets
+    <code>405</code> — there's no SSE stream, just spec-compliant POST-only
+    JSON-RPC.
+  </p>
+  <Code code={httpSnippet} lang="bash" theme="night-owl" />
+  <p>
+    A bare port (<code>--http 7777</code>) binds loopback only —
+    <code>127.0.0.1</code>, <code>::1</code>, <code>localhost</code>. Binding
+    a non-loopback host <strong>requires</strong> a bearer token
+    (<code>ZUKE_MCP_TOKEN</code> or <code>--token</code>) — the server
+    refuses to start without one. Every request then needs an
+    <code>Authorization: Bearer &lt;token&gt;</code> header; missing or wrong
+    gets a <code>401</code>.
+  </p>
+
   <h2 id="tools">Tools</h2>
   <p>Read tools are always available:</p>
   <table class="dtable">
@@ -74,33 +114,127 @@ const callSnippet = `// tools/call
       <tr><td><code>list_targets</code></td><td>Every target with its description and dependencies.</td></tr>
       <tr><td><code>describe_build</code></td><td>The full build surface — commands, flags, targets, parameters (the <code>--list --json</code> payload).</td></tr>
       <tr><td><code>graph</code></td><td>Each target and the targets it depends on.</td></tr>
+      <tr><td><code>list_runs</code></td><td>Runs newest-first, when a state store resolves. Optional <code>status</code>/<code>target</code>/<code>since</code> filters.</td></tr>
+      <tr><td><code>show_run</code></td><td>One run's full record — status, per-target results, signals, audit trail — when a state store resolves.</td></tr>
     </tbody>
   </table>
   <p>
     With <code>--allow-run</code>, the server also exposes one
-    <strong><code>run:&lt;target&gt;</code></strong> tool per target. Its input
-    schema is built from the build's declared
+    <strong><code>run:&lt;target&gt;</code></strong> tool per (allow-listed)
+    target. Its input schema is built from the build's declared
     <a href="/docs/concepts#parameters">parameters</a> — a <code>required</code>
     parameter is required, <code>.options(...)</code> becomes an <code>enum</code>,
     a <code>.number()</code> is typed as a number — plus a <code>dryRun</code> flag
     that plans without executing. These tools carry MCP's
-    <code>destructiveHint</code> annotation so a client can prompt before running.
-    A run resolves parameters exactly like the CLI (MCP argument → the environment
+    <code>destructiveHint</code> annotation by default, or
+    <code>readOnlyHint</code> when the target declares
+    <code>.readOnly()</code>, so a client can prompt before running. A run
+    resolves parameters exactly like the CLI (MCP argument → the environment
     → the declared default) and returns the target's captured output with a
     pass/fail marker.
   </p>
   <Code code={callSnippet} lang="json" theme="night-owl" />
+  <p>
+    <code>--allow-run</code> also adds mutating run-state tools, gated by the
+    same allow-list/operator-token policy and audited like a run:
+    <code>signal_run</code> (deliver a signal and resume, exactly-once),
+    <code>resume_check</code> (re-check suspended runs), and
+    <code>cancel_run</code> (cancel plus compensations).
+  </p>
+
+  <h2 id="authorization">Authorization tiers</h2>
+  <p>
+    Once execution is on, three independent tiers narrow what an agent can
+    actually do:
+  </p>
+  <ul>
+    <li>
+      <strong><code>--allow-run[=&lt;globs&gt;]</code></strong> — bare
+      <code>--allow-run</code> exposes every target;
+      <code>--allow-run=deploy,checks*</code> exposes only matching targets
+      as run tools. Everything else stays invisible — not merely refused.
+    </li>
+    <li>
+      <strong><code>--protect &lt;globs&gt;</code></strong> — matching targets
+      additionally require an operator token
+      (<code>ZUKE_OPERATOR_TOKEN</code>) as a tool-call argument. No
+      <code>ZUKE_OPERATOR_TOKEN</code> set means every protected call is
+      denied — fail-closed, not open.
+    </li>
+    <li>
+      <strong><code>--confirm-destructive</code></strong> — a destructive run
+      tool returns its plan instead of executing unless called with
+      <code>confirm: true</code>. A target that declares
+      <code>.readOnly()</code> is exempt (it carries
+      <code>readOnlyHint</code> instead of <code>destructiveHint</code>), and
+      <code>dryRun</code> always skips the gate.
+    </li>
+  </ul>
+  <Code code={authorizationSnippet} lang="bash" theme="night-owl" />
+
+  <h2 id="audit">Audit log</h2>
+  <p>
+    Every mutating or denied call is appended as a <code>RunEvent</code> to a
+    fixed run record id, <code>"mcp-audit"</code> (<code>AUDIT_RUN_ID</code>).
+    Read it with <code>zuke runs show mcp-audit</code>, or via
+    <code>show_run</code>:
+  </p>
+  <Code
+    code={`export type RunEventOutcome = "ok" | "denied" | "error";
+export interface RunEvent {
+  at: string; tool: string;  // "run:deploy", "signal_run"
+  actor: string; outcome: RunEventOutcome;
+  args: Record<string, string>;   // redacted — secrets masked, operator token dropped
+  detail?: string;                // short redacted reason
+}`}
+    lang="ts"
+    theme="night-owl"
+  />
+  <p>
+    <strong>Actor precedence:</strong> <code>--actor</code> →
+    <code>ZUKE_ACTOR</code> → the CI actor → the client's
+    <code>initialize</code> name → <code>"anonymous"</code>. The client-supplied name is an untrusted
+    label — it lands in the trail, never in an authorization decision.
+  </p>
+
+  <h2 id="errors">Structured errors</h2>
+  <p>
+    A denied or failed tool call is still a successful MCP call — it comes
+    back as a tool result with <code>isError: true</code> and a small
+    structured JSON body, never a transport-level error:
+  </p>
+  <Code code={errorSnippet} lang="json" theme="night-owl" />
+  <div class="note">
+    <p>
+      A hidden (non-allow-listed) target answers exactly like a nonexistent
+      tool — <code>"Unknown tool: run:&lt;name&gt;"</code> — so a denial never
+      reveals which protected targets exist.
+    </p>
+  </div>
+
+  <h2 id="discovery">Dynamic discovery</h2>
+  <p>
+    <code>--registry</code> switches the server from describing this one
+    build to serving a whole catalog of registered pipelines, re-read on
+    every call — a build registered after the server started shows up with
+    no restart. See <a href="/docs/registry">Build registry</a> for
+    <code>BuildDescriptor</code>, the FS/HTTP backends, and the
+    <code>run:&lt;buildId&gt;:&lt;target&gt;</code> tool shape.
+  </p>
 
   <h2 id="safety">Safety</h2>
   <p>
-    <strong>Trust model.</strong> The server has no network endpoint. It speaks
-    only over the stdin/stdout of a process the client launches, so its trust
-    boundary is the local machine: anyone who can start <code>zuke mcp</code>
-    already has a shell there and could run
-    <code>deno run -A zuke.ts &lt;target&gt;</code> directly. The server therefore
-    grants no capability beyond what launching it already implies — there's nothing
-    to authenticate, because there's no remote party. Treat it like any other local
-    developer tool: don't wire an untrusted client to it.
+    <strong>Trust model.</strong> Over stdio, the server speaks only to the
+    process that launched it, so its trust boundary is the local machine:
+    anyone who can start <code>zuke mcp</code> already has a shell there and
+    could run <code>deno run -A zuke.ts &lt;target&gt;</code> directly — the
+    server grants no capability beyond what launching it already implies.
+    <code>--http</code> changes that: it gives the server a real network
+    endpoint, so it defaults to loopback (no remote party at all) and
+    requires a bearer token the moment it binds off-loopback, refusing to
+    start otherwise. Treat a non-loopback deployment like any other network
+    service — front it with TLS and your own authentication at the edge, and
+    don't wire an untrusted client to it.
   </p>
   <p>
     Running a target executes real build code, so execution is

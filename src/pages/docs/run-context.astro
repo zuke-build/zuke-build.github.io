@@ -1,0 +1,148 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "shape", label: "The shape of ctx" },
+  { id: "state", label: "ctx.state" },
+  { id: "signals", label: "ctx.signals" },
+  { id: "cancel", label: "Ambient cancellation" },
+  { id: "dryrun", label: "Dry runs" },
+];
+
+const shapeSnippet = `export interface TargetContext {
+  readonly runId: string;                 // stable for every target in the run (crypto.randomUUID())
+  readonly target: string;                // dotted name of the executing target
+  readonly signal: AbortSignal;           // aborted when the run is cancelled
+  readonly state: TargetStateHandle;      // this target's durable metadata
+  stateOf(target: string): TargetStateHandle;   // another target's state handle
+  readonly signals: ReadonlyMap<string, SignalRecord>;  // external signal payloads
+  readonly dryRun: boolean;               // true under a dry run (bodies don't execute)
+}
+export type TargetFn = (ctx: TargetContext) => void | Promise<void>;`;
+
+const exampleSnippet = `import { Build, target } from "jsr:@zuke/core";
+
+class Deploy extends Build {
+  ship = target().executes(async (ctx) => {
+    console.log(\`run \${ctx.runId} · target \${ctx.target}\`);
+    await $\`terraform apply\`;          // SIGTERM'd if the run is cancelled (ambient signal)
+    await ctx.state.set({ slot: "sit-7" });
+  });
+}`;
+
+const stateSnippet = `export interface TargetStateHandle {
+  set(patch: Record<string, JsonValue>): Promise<void>;  // merge a JSON patch, awaits write
+  get(): Record<string, JsonValue>;                       // read current metadata
+}
+
+ship = target().executes(async (ctx) => {
+  await ctx.state.set({ slot: "sit-7" });   // merge — doesn't clobber earlier keys
+  const meta = ctx.state.get();             // { slot: "sit-7", ... }
+});
+
+promote = target()
+  .dependsOn(this.ship)
+  .executes((ctx) => {
+    const shipped = ctx.stateOf("ship").get();   // read a dependency's state
+    console.log(shipped.slot);
+  });`;
+
+const signalsSnippet = `awaitTesting = target().executes((ctx) => {
+  const approval = ctx.signals.get("testing-approved");  // SignalRecord | undefined
+  console.log(approval?.data, approval?.receivedAt);
+});`;
+
+const cancelSnippet = `ship = target().executes(async (ctx) => {
+  await $\`terraform apply\`;                                    // ambient signal — SIGTERM'd on cancel
+  await $\`long-migration\`.signal(ctx.signal).killAfter("30s");  // explicit override, composes with killAfter
+});`;
+---
+
+<DocsLayout
+  title="Run context"
+  description="ctx: TargetContext is the typed handle every target body can receive — run identity, ambient cancellation, durable per-target state, received signals, and a dry-run flag."
+  toc={toc}
+>
+  <p class="lead">
+    Every target body may take one argument, <code>ctx: TargetContext</code> —
+    a typed handle to the run it's executing in. A zero-arg <code>() =&gt; …</code>
+    body is still valid; take <code>ctx</code> only when you need it. It carries
+    run identity, a cancellation signal, this target's durable state, any
+    external signal payloads the run has received, and whether this is a dry
+    run.
+  </p>
+
+  <h2 id="shape">The shape of ctx</h2>
+  <Code code={shapeSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>runId</code> is stable for every target in the run — the same UUID
+    from start to finish, useful for correlating logs. <code>target</code> is
+    the dotted name of the target currently executing.
+  </p>
+  <Code code={exampleSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="state">ctx.state</h2>
+  <p>
+    <code>ctx.state</code> is this target's own <strong>durable metadata</strong> —
+    a small JSON record it can write to and read back, including across a
+    <a href="/docs/orchestration#suspend">suspend/resume</a> boundary. Set
+    merges a patch (it doesn't replace the whole record); get reads the
+    current value synchronously. <code>ctx.stateOf(target)</code> reaches a
+    <em>different</em> target's state handle — typically a dependency's,
+    letting a later target read what an earlier one recorded.
+  </p>
+  <Code code={stateSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      With no state store configured, <code>ctx.state</code> is an in-memory
+      no-op: reads and writes are consistent within the run, but nothing
+      persists once the process exits. Opt into a real store to make it
+      durable — see <a href="/docs/state">Durable run state</a> for the store
+      precedence, the record shape, and the <code>zuke runs</code> CLI.
+    </p>
+  </div>
+
+  <h2 id="signals">ctx.signals</h2>
+  <p>
+    <code>ctx.signals</code> is a read-only map of external signal payloads
+    the run has received — the mechanism a <code>.waitsFor()</code> target
+    uses to unblock, and how a later target reads what was delivered
+    (<code>{`{ data, receivedAt }`}</code>). See
+    <a href="/docs/orchestration#suspend">Suspend &amp; resume</a> for how a
+    signal is delivered with <code>zuke resume --signal</code> and how a
+    target waits on one.
+  </p>
+  <Code code={signalsSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="cancel">Ambient cancellation</h2>
+  <p>
+    <code>ctx.signal</code> is an <code>AbortSignal</code> that aborts when
+    the run is cancelled. You rarely need to pass it around by hand: the
+    run's signal is installed as the <code>$</code> shell's <strong>ambient
+    signal</strong> (via <code>AsyncLocalStorage</code>, scoped per run), so a
+    plain <code>$\`…\`</code> inside a target body is terminated on cancel
+    without threading <code>ctx.signal</code> through every call. Override it
+    on one command — or compose it with <code>.killAfter()</code> for a grace
+    period before <code>SIGKILL</code>:
+  </p>
+  <Code code={cancelSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Zuke never forcibly interrupts arbitrary JavaScript, though: a body that
+    ignores <code>signal</code> and never touches the shell runs to
+    completion even after cancellation is requested. See
+    <a href="/docs/orchestration#cancel">Cancellation &amp; compensation</a>
+    for the full picture — <code>zuke cancel</code>, Ctrl-C, and how
+    compensating targets unwind completed work.
+  </p>
+
+  <h2 id="dryrun">Dry runs</h2>
+  <p>
+    <code>ctx.dryRun</code> reports whether the current run is a dry run. In
+    a dry run a target's body doesn't execute at all — planning stops short
+    of invoking it, whether triggered by <code>--dry-run</code> on the CLI or
+    the <code>dryRun</code> argument to an <a href="/docs/mcp#tools">MCP
+    <code>run:</code> tool</a> — so the flag exists mainly to round out the
+    context's shape rather than something a body branches on at runtime.
+  </p>
+</DocsLayout>

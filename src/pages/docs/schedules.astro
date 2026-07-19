@@ -1,0 +1,192 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "concept", label: "Concept" },
+  { id: "api", label: "ScheduleEntry API" },
+  { id: "providers", label: "Per-provider compilation" },
+  { id: "grammar", label: "Cron grammar" },
+  { id: "errors", label: "Errors" },
+  { id: "drift", label: "Drift & determinism" },
+];
+
+const apiSnippet = `/** A scheduled trigger: a 5-field cron expression in an optional IANA timezone. */
+export interface ScheduleEntry {
+  cron: string;   // standard 5-field: minute hour day-of-month month day-of-week
+  tz?: string;    // IANA zone (e.g. "Europe/Sofia"); omitted/"UTC" = already UTC, emitted verbatim
+}
+// on CiTriggers:  schedule?: ScheduleEntry[];
+// lives at spec.pipeline.triggers.schedule inside cicd(spec)
+export function cicd(spec: CiFileSpec): CiFile
+export interface CiFileSpec {
+  provider: CiProvider;            // "github" | "gitlab" | "azure" | "bitbucket"
+  path?: string;
+  pipeline?: CiPipeline;           // { name?, triggers?, permissions?, concurrency?, jobs? }
+  fanOut?: boolean | FanOutOptions;
+}
+// helpers: utcCronsFor(entry): string[]; scheduleNeedsGuard(entry): boolean;
+//          anyScheduleNeedsGuard(schedule): boolean; guardShell(schedule): string`;
+
+const exampleSnippet = `ci = cicd({
+  provider: "github",
+  pipeline: {
+    triggers: {
+      push: ["main"],
+      // Weekday mornings and afternoons, Sofia local time.
+      schedule: [{ cron: "30 9,13,15 * * 1-4", tz: "Europe/Sofia" }],
+    },
+  },
+});`;
+
+const errorSnippet = `cicd: unsupported schedule — <reason>. Write the cron in UTC directly (drop the tz), or simplify it.
+
+# Azure, DST-zone entry:
+cicd: Azure Pipelines schedules are UTC-only and Zuke's daylight-saving guard is
+GitHub-only. Use a fixed-offset timezone, or write the cron in UTC, for the azure provider.`;
+
+const checkSnippet = `zuke generate-ci --check   # fails on drift: "Run zuke generate-ci and commit the result."
+zuke generate-ci          # running the build also auto-regenerates`;
+---
+
+<DocsLayout
+  title="Scheduled pipelines"
+  description="triggers.schedule declares cron schedules in code, each in an optional local IANA timezone. Zuke compiles each { cron, tz } entry to the provider-native UTC cron(s), adding a DST wall-clock guard on GitHub when a timezone needs two UTC offsets across the year."
+  toc={toc}
+>
+  <p class="lead">
+    <code>triggers.schedule</code> (inside <code>cicd({"{"} pipeline: {"{"} triggers {"}"} {"}"})</code>)
+    declares cron schedules in code, each in an optional local IANA timezone.
+    GitHub Actions and Azure Pipelines only understand UTC cron, so Zuke
+    compiles a <code>{"{"} cron, tz {"}"}</code> entry into the UTC cron(s) that fire
+    at the intended local wall-clock time.
+  </p>
+
+  <h2 id="concept">Concept</h2>
+  <p>
+    A daylight-saving zone uses two UTC offsets across the year, so the
+    intended local time maps to <strong>two</strong> UTC crons (one per
+    offset). Zuke registers both and generates a wall-clock guard so only the
+    firing at the currently-correct offset proceeds. A fixed-offset zone (or
+    plain UTC / an omitted <code>tz</code>) needs a single cron and no guard.
+  </p>
+  <div class="note">
+    <p>
+      Offsets are sampled from a pinned reference year (2024), so the
+      generated crons never change as the calendar advances — the same input
+      always produces the same output.
+    </p>
+  </div>
+
+  <h2 id="api">ScheduleEntry API</h2>
+  <p>
+    Each entry is a plain 5-field cron plus an optional IANA zone:
+  </p>
+  <Code code={apiSnippet} lang="ts" theme="night-owl" />
+  <p>The canonical example — weekday mornings and afternoons, Sofia local time:</p>
+  <Code code={exampleSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="providers">Per-provider compilation</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Provider</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>GitHub</strong> (full)</td>
+        <td>
+          <code>on.schedule</code> is the de-duplicated union of
+          <code>utcCronsFor(entry)</code> across all entries. The Sofia example
+          compiles to two UTC crons — EET (UTC+2): <code>30 7,11,13 * * 1-4</code>,
+          EEST (UTC+3): <code>30 6,10,12 * * 1-4</code>. If any entry needs a
+          guard, Zuke emits a <code>zuke-schedule-guard</code> job (runs on
+          <code>ubuntu-latest</code>, outputs <code>run</code>) that reads
+          <code>TZ='&lt;zone&gt;' date</code> and compares the wall-clock; every
+          other job gets <code>needs: [..., zuke-schedule-guard]</code> and an
+          <code>if:</code> ANDing
+          <code>needs.zuke-schedule-guard.outputs.run == 'true'</code>. On
+          non-schedule events the guard sets <code>run=true</code>
+          (push/PR/manual always proceed); on a scheduled event only the
+          firing at the correct offset proceeds.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Azure</strong></td>
+        <td>
+          Native <code>schedules:</code> for UTC/fixed-offset only —
+          <code>{"{"} cron, branches: {"{"} include: [...] {"}"}, always: true {"}"}</code>.
+          A DST-zone entry throws (the guard is GitHub-only).
+        </td>
+      </tr>
+      <tr>
+        <td><strong>GitLab &amp; Bitbucket</strong></td>
+        <td>
+          Documented limitation — the <code>schedule</code> trigger is
+          ignored. Schedules are configured in the provider web UI, not in the
+          generated file.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      A DST zone registers two UTC crons, so it "fires" twice as often across
+      the year on GitHub; the guard suppresses the off-offset firing and lets
+      non-schedule events through unconditionally.
+    </p>
+  </div>
+
+  <h2 id="grammar">Cron grammar</h2>
+  <p>Zuke supports a deliberate subset of cron syntax — five fields:</p>
+  <ul>
+    <li>minute (0–59), hour (0–23), day-of-month (1–31), month (1–12), day-of-week (0–7)</li>
+    <li>each field: <code>*</code>, a single number, comma lists, ranges (<code>a-b</code>), or slash steps (<code>*/n</code> or <code>a-b/n</code>)</li>
+    <li>day-of-week <code>0</code> and <code>7</code> both mean Sunday</li>
+    <li>the timezone must have a whole-hour UTC offset</li>
+  </ul>
+
+  <h2 id="errors">Errors</h2>
+  <p>
+    An unsupported schedule is reported before any file is generated, with a
+    friendly message pointing at the fix — wrong field count, named
+    fields/hashes/non-numeric values, bad steps, out-of-range values, an
+    unknown timezone, a fractional-hour zone, or a day-crossing shift while a
+    day field is constrained:
+  </p>
+  <Code code={errorSnippet} lang="text" theme="night-owl" />
+
+  <h2 id="drift">Drift &amp; determinism</h2>
+  <p>
+    <code>tz</code> omitted, <code>""</code>, or <code>"UTC"</code> emits the
+    cron verbatim — single, no guard. Overlapping UTC crons across entries are
+    collapsed via a <code>Set</code>. Because offsets are sampled from a pinned
+    reference year, the output is deterministic:
+  </p>
+  <Code code={checkSnippet} lang="bash" theme="night-owl" />
+  <p>
+    <code>zuke generate-ci --check</code> verifies the on-disk file matches
+    the rendered output and fails on drift; running the build also
+    auto-regenerates the file. See
+    <a href="/docs/concepts#cicd">Code-first CI/CD</a> for the rest of the
+    <code>cicd()</code> surface — providers, fan-out, and the portable step
+    subset.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>
