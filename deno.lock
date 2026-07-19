@@ -1,0 +1,31 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@zuke/core@*": "1.9.0",
+    "jsr:@zuke/core@0": "0.14.0",
+    "jsr:@zuke/npm@*": "0.2.0"
+  },
+  "jsr": {
+    "@zuke/core@0.14.0": {
+      "integrity": "a9da05f5eaf49454fbd2e881dc3a98a75e070608511723e6eff09b161e4d8cf7"
+    },
+    "@zuke/core@1.9.0": {
+      "integrity": "ccf1ededb8d5e0f02cd26138e4c4bc17fe4e52f15de6a140d2df8a71677b4507"
+    },
+    "@zuke/npm@0.2.0": {
+      "integrity": "b5ef9d8ca7c328034f4c057b779c90f777c2bd6fa5d62049e3d6951604f20438",
+      "dependencies": [
+        "jsr:@zuke/core@0"
+      ]
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@astrojs/check@~0.9.9",
+        "npm:astro@^6.4.7",
+        "npm:typescript@^5.7.0"
+      ]
+    }
+  }
+}
