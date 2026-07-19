@@ -1120,11 +1120,12 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
             <p class="cat__blurb">{g.blurb}</p>
             <div class="cat__tools">
               {g.tools.map((t) => (
-                <div class="tool">
+                <a class="tool" href={`https://jsr.io/${t.pkg}`}
+                  target="_blank" rel="noopener noreferrer">
                   <span class="tool__name">{t.name}</span>
                   <code class="tool__pkg">{t.pkg}</code>
                   <span class="tool__desc">{t.desc}</span>
-                </div>
+                </a>
               ))}
             </div>
           </section>
@@ -1142,10 +1143,11 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           </p>
           <div class="cat__tools">
             {corePackages.map((p) => (
-              <div class="tool tool--core">
+              <a class="tool tool--core" href={`https://jsr.io/${p.name}`}
+                target="_blank" rel="noopener noreferrer">
                 <code class="tool__pkg tool__pkg--lead">{p.name}</code>
                 <span class="tool__desc">{p.desc}</span>
-              </div>
+              </a>
             ))}
           </div>
         </section>
@@ -1944,9 +1946,12 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     gap: 1px;
     padding: 10px 12px;
     border-radius: var(--radius-sm);
+    color: inherit;
+    text-decoration: none;
     transition: background 0.15s ease;
   }
   .tool:hover { background: color-mix(in oklch, var(--ink) 5%, transparent); }
+  .tool:hover .tool__pkg { color: var(--accent-strong); }
   .tool__name { font-weight: 600; font-size: 0.92rem; color: var(--ink); }
   .tool__pkg { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); }
   .tool__pkg--lead { font-size: 0.86rem; font-weight: 600; }
