@@ -1,0 +1,304 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+import api from "../../../data/api.json";
+
+const toc = [
+  { id: "search", label: "Search" },
+  { id: "packages", label: "Packages" },
+];
+
+// Compact index for the client-side search box: only what a result row
+// needs to render and link. Built at build time from the full api.json so
+// the client never has to fetch or parse doc bodies/signatures.
+const searchIndex = api.packages.flatMap((pkg) =>
+  pkg.symbols.map((sym) => ({
+    n: sym.name,
+    k: sym.kind,
+    p: pkg.dir,
+    h: `/docs/api/${pkg.dir}#${sym.name}`,
+  }))
+);
+
+const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
+---
+
+<DocsLayout
+  title="API reference"
+  description={`The full typed @zuke API — every exported function, class, interface, and type across all ${api.packages.length} packages, generated straight from source.`}
+  toc={toc}
+>
+  <p class="lead">
+    The full typed <code>@zuke</code> surface — every exported function, class,
+    interface, type, and constant across all <strong>{api.packages.length} packages</strong>,
+    generated straight from source with <code>deno doc</code>. Nothing here is
+    hand-written, so it can't drift from what actually ships.
+  </p>
+
+  <h2 id="search">Search</h2>
+  <p>
+    Find a symbol by name across every package — <kbd>↑</kbd>/<kbd>↓</kbd> to
+    move, <kbd>Enter</kbd> to jump, <kbd>Esc</kbd> to clear.
+  </p>
+  <div class="apisearch" id="apisearch">
+    <input
+      type="text"
+      id="apisearch-input"
+      class="apisearch__input"
+      placeholder={`Search ${totalSymbols} symbols… (e.g. "target", "AbsolutePath")`}
+      autocomplete="off"
+      spellcheck="false"
+      role="combobox"
+      aria-expanded="false"
+      aria-controls="apisearch-results"
+      aria-autocomplete="list"
+    />
+    <ul
+      id="apisearch-results"
+      class="apisearch__results"
+      role="listbox"
+      hidden
+    >
+    </ul>
+  </div>
+
+  <h2 id="packages">Packages</h2>
+  <p>Every package is documented on its own page — signatures, doc text, and members.</p>
+  <div class="apigrid">
+    {api.packages.map((pkg) => (
+      <a class="apicard" href={`/docs/api/${pkg.dir}`}>
+        <div class="apicard__head">
+          <code class="apicard__name">{pkg.name}</code>
+          <span class="apicard__count">{pkg.symbols.length}</span>
+        </div>
+        <p class="apicard__summary">{pkg.summary}</p>
+      </a>
+    ))}
+  </div>
+
+  <p class="apigen">
+    Generated from <code>{api.generated}</code>.
+  </p>
+</DocsLayout>
+
+<script type="application/json" id="apisearch-data" is:inline set:html={JSON.stringify(searchIndex)} />
+
+<script>
+  interface IndexEntry {
+    n: string;
+    k: string;
+    p: string;
+    h: string;
+  }
+
+  const dataEl = document.getElementById("apisearch-data");
+  const index: IndexEntry[] = dataEl?.textContent
+    ? JSON.parse(dataEl.textContent)
+    : [];
+
+  const input = document.getElementById(
+    "apisearch-input",
+  ) as HTMLInputElement | null;
+  const results = document.getElementById("apisearch-results");
+  const root = document.getElementById("apisearch");
+  if (input && results && root) {
+    let active = -1;
+
+    const escapeHtml = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const render = (matches: IndexEntry[]) => {
+      results.innerHTML = matches
+        .map(
+          (m, i) => `
+        <li role="option" id="apiopt-${i}" aria-selected="${i === active}" class="apisearch__opt${i === active ? " is-active" : ""}">
+          <a href="${m.h}" tabindex="-1">
+            <code class="apisearch__symname">${escapeHtml(m.n)}</code>
+            <span class="apisearch__kind">${escapeHtml(m.k)}</span>
+            <span class="apisearch__pkg">@zuke/${escapeHtml(m.p)}</span>
+          </a>
+        </li>`,
+        )
+        .join("");
+      results.hidden = matches.length === 0;
+      input.setAttribute("aria-expanded", String(matches.length > 0));
+    };
+
+    const query = (q: string): IndexEntry[] => {
+      const needle = q.trim().toLowerCase();
+      if (!needle) return [];
+      const starts: IndexEntry[] = [];
+      const contains: IndexEntry[] = [];
+      for (const entry of index) {
+        const name = entry.n.toLowerCase();
+        if (name.startsWith(needle)) starts.push(entry);
+        else if (name.includes(needle) || entry.p.includes(needle)) {
+          contains.push(entry);
+        }
+      }
+      return [...starts, ...contains].slice(0, 40);
+    };
+
+    input.addEventListener("input", () => {
+      active = -1;
+      render(query(input.value));
+    });
+
+    input.addEventListener("keydown", (e) => {
+      const items = results.querySelectorAll<HTMLLIElement>("li");
+      if (!items.length) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        active = Math.min(active + 1, items.length - 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        active = Math.max(active - 1, 0);
+      } else if (e.key === "Enter") {
+        const link = items[active >= 0 ? active : 0]?.querySelector("a");
+        if (link instanceof HTMLAnchorElement) {
+          e.preventDefault();
+          window.location.href = link.href;
+        }
+        return;
+      } else if (e.key === "Escape") {
+        input.value = "";
+        active = -1;
+        render([]);
+        return;
+      } else {
+        return;
+      }
+      items.forEach((li, i) => {
+        li.classList.toggle("is-active", i === active);
+        li.setAttribute("aria-selected", String(i === active));
+      });
+      items[active]?.scrollIntoView({ block: "nearest" });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!root.contains(e.target as Node)) render([]);
+    });
+  }
+</script>
+
+<style>
+  .apisearch {
+    position: relative;
+    margin: 4px 0 32px;
+    max-width: 640px;
+  }
+  .apisearch__input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    padding: 12px 16px;
+  }
+  .apisearch__input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .apisearch__results {
+    position: absolute;
+    z-index: var(--z-dropdown);
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 360px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: var(--bg-raised);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-term);
+  }
+  .apisearch__opt a {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: inherit;
+  }
+  .apisearch__opt.is-active a,
+  .apisearch__opt a:hover {
+    background: var(--gradient-soft);
+  }
+  .apisearch__symname {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+  .apisearch__kind {
+    font-size: 0.72rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .apisearch__pkg {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+  }
+
+  .apigrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 18px 0 8px;
+  }
+  .apicard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+  }
+  .apicard:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .apicard__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .apicard__name {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--accent);
+  }
+  .apicard__count {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+  .apicard__summary {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .apigen {
+    margin-top: 28px;
+    color: var(--text-faint);
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+  }
+</style>

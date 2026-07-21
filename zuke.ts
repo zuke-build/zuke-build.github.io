@@ -10,7 +10,7 @@
  *   ./zuke dev        # start the Astro dev server
  *   ./zuke --list     # list every target
  */
-import { Build, FileTasks, run, target } from "jsr:@zuke/core";
+import { Build, run, target } from "jsr:@zuke/core";
 import { $ } from "jsr:@zuke/core/shell";
 import { NpmTasks } from "jsr:@zuke/npm";
 
@@ -53,24 +53,6 @@ class SiteBuild extends Build {
     .dependsOn(this.install)
     .executes(async () => {
       await NpmTasks.run((s) => s.script("dev"));
-    });
-
-  // Refresh the llms.txt files this site serves straight from the framework
-  // repo, so the AI-agent docs never drift. Point ZUKE_REPO at a zuke checkout;
-  // defaults to a sibling clone at ../zuke.
-  syncDocs = target()
-    .description("Copy llms.txt / llms-full.txt from the zuke repo into public/.")
-    .executes(async () => {
-      const repo = Deno.env.get("ZUKE_REPO") ?? "../zuke";
-      for (const file of ["llms.txt", "llms-full.txt"]) {
-        const src = `${repo}/${file}`;
-        if (!(await FileTasks.exists(src))) {
-          throw new Error(
-            `${src} not found — clone zuke beside this repo or set ZUKE_REPO to a checkout.`,
-          );
-        }
-        await $`cp ${src} public/${file}`;
-      }
     });
 
   // The default target runs when no target name is passed to `./zuke`.

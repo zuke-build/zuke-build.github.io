@@ -1,0 +1,307 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+import api from "../../../data/api.json";
+
+interface ApiMember {
+  name: string;
+  kind: string;
+  optional: boolean;
+  signature: string;
+  doc: string;
+}
+interface ApiSymbol {
+  name: string;
+  kind: string;
+  doc: string;
+  signature: string;
+  deprecated: boolean;
+  members?: ApiMember[];
+}
+interface ApiPackage {
+  name: string;
+  dir: string;
+  summary: string;
+  symbols: ApiSymbol[];
+}
+
+export function getStaticPaths() {
+  return (api.packages as ApiPackage[]).map((pkg) => ({
+    params: { pkg: pkg.dir },
+    props: { pkg },
+  }));
+}
+
+interface Props {
+  pkg: ApiPackage;
+}
+const { pkg } = Astro.props;
+
+// A tiny, safe markdown-lite pass: escapes HTML first, then re-introduces a
+// handful of jsDoc constructs as tags — code fences, inline `code`,
+// **bold**, {@link X} — so a symbol's doc reads like prose without pulling
+// in a markdown dependency for text that's already close to plain text.
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const renderInline = (escaped: string) =>
+  escaped
+    .replace(
+      /\{@link\s+([^\s}|]+)(?:\s*\|\s*([^}]+))?\}/g,
+      (_, ref: string, label?: string) => `<code>${(label ?? ref).trim()}</code>`,
+    )
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+
+const renderParagraph = (text: string) =>
+  renderInline(escapeHtml(text.replace(/\n+/g, " ").trim()));
+
+function renderDoc(doc: string): string {
+  if (!doc) return "";
+  const parts: string[] = [];
+  const fence = /```[a-zA-Z0-9]*\n([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let lead = true;
+  let match: RegExpExecArray | null;
+  const flushText = (text: string) => {
+    for (const para of text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)) {
+      parts.push(`<p${lead ? ' class="doc-lead"' : ""}>${renderParagraph(para)}</p>`);
+      lead = false;
+    }
+  };
+  while ((match = fence.exec(doc))) {
+    flushText(doc.slice(lastIndex, match.index));
+    parts.push(`<pre class="doc-pre"><code>${escapeHtml(match[1].replace(/\n$/, ""))}</code></pre>`);
+    lastIndex = fence.lastIndex;
+  }
+  flushText(doc.slice(lastIndex));
+  return parts.join("\n");
+}
+
+const kindLabel: Record<string, string> = {
+  function: "function",
+  class: "class",
+  interface: "interface",
+  typeAlias: "type",
+  variable: "const",
+  reference: "re-export",
+  enum: "enum",
+  namespace: "namespace",
+};
+
+const toc = [
+  { id: "symbols", label: "Symbols" },
+];
+---
+
+<DocsLayout
+  title={pkg.name}
+  description={pkg.summary}
+  toc={toc}
+>
+  <p class="apiback"><a href="/docs/api">← API reference</a></p>
+  <p class="lead">{pkg.summary}</p>
+  <p class="apilinks">
+    <a href={`https://jsr.io/${pkg.name}`} target="_blank" rel="noopener">
+      {pkg.name} on JSR ↗
+    </a>
+    <span class="apilinks__count">{pkg.symbols.length} symbols</span>
+  </p>
+
+  <h2 id="symbols">Symbols</h2>
+  <input
+    type="text"
+    id="pkgfilter"
+    class="pkgfilter"
+    placeholder={`Filter ${pkg.symbols.length} symbols by name or kind…`}
+    autocomplete="off"
+    spellcheck="false"
+  />
+
+  <div class="symlist" id="symlist">
+    {pkg.symbols.map((sym) => (
+      <section
+        class="symcard"
+        id={sym.name}
+        data-name={sym.name.toLowerCase()}
+        data-kind={sym.kind.toLowerCase()}
+      >
+        <div class="symcard__head">
+          <a class="symcard__anchor" href={`#${sym.name}`}>#</a>
+          <code class="symcard__name">{sym.name}</code>
+          <span class={`symbadge symbadge--${sym.kind}`}>
+            {kindLabel[sym.kind] ?? sym.kind}
+          </span>
+          {sym.deprecated && <span class="symbadge symbadge--deprecated">deprecated</span>}
+        </div>
+
+        {sym.signature && (
+          <Code code={sym.signature} lang="ts" theme="night-owl" />
+        )}
+
+        {sym.doc && <div class="symcard__doc" set:html={renderDoc(sym.doc)} />}
+
+        {sym.members?.length ? (
+          <table class="dtable">
+            <thead>
+              <tr><th>Member</th><th>Signature</th><th>Doc</th></tr>
+            </thead>
+            <tbody>
+              {sym.members.map((m) => (
+                <tr>
+                  <td><code>{m.name}{m.optional ? "?" : ""}</code></td>
+                  <td><code>{m.signature}</code></td>
+                  <td set:html={renderParagraph(m.doc)} />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null}
+      </section>
+    ))}
+  </div>
+</DocsLayout>
+
+<script>
+  const input = document.getElementById("pkgfilter") as HTMLInputElement | null;
+  const list = document.getElementById("symlist");
+  if (input && list) {
+    const cards = Array.from(list.querySelectorAll<HTMLElement>(".symcard"));
+    input.addEventListener("input", () => {
+      const needle = input.value.trim().toLowerCase();
+      for (const card of cards) {
+        const hit =
+          !needle ||
+          (card.dataset.name ?? "").includes(needle) ||
+          (card.dataset.kind ?? "").includes(needle);
+        card.hidden = !hit;
+      }
+    });
+  }
+</script>
+
+<style>
+  .apiback {
+    margin: 0 0 6px;
+    font-size: 0.88rem;
+  }
+  .apiback a {
+    color: var(--text-faint);
+  }
+  .apilinks {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 8px;
+    font-size: 0.9rem;
+  }
+  .apilinks__count {
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
+
+  .pkgfilter {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    margin: 0 0 24px;
+  }
+  .pkgfilter:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .symlist {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .symcard {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px 18px;
+    scroll-margin-top: 88px;
+  }
+  .symcard:target {
+    border-color: var(--accent);
+  }
+  .symcard__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .symcard__anchor {
+    color: var(--text-faint);
+    text-decoration: none;
+    font-family: var(--font-mono);
+  }
+  .symcard__anchor:hover { color: var(--accent); }
+  .symcard__name {
+    font-family: var(--font-mono);
+    font-size: 1.02rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .symbadge {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-dim);
+  }
+  .symbadge--function, .symbadge--variable { color: var(--accent); border-color: color-mix(in oklch, var(--accent) 45%, var(--border-strong)); }
+  .symbadge--class, .symbadge--interface { color: var(--ok); border-color: color-mix(in oklch, var(--ok) 45%, var(--border-strong)); }
+  .symbadge--typeAlias { color: var(--warn); border-color: color-mix(in oklch, var(--warn) 45%, var(--border-strong)); }
+  .symbadge--reference { color: var(--text-faint); }
+  .symbadge--deprecated { color: var(--err); border-color: color-mix(in oklch, var(--err) 45%, var(--border-strong)); }
+
+  .symcard__doc {
+    margin-top: 12px;
+    max-width: 82ch;
+  }
+  .symcard__doc :global(p) { color: var(--text-dim); margin: 0 0 10px; }
+  .symcard__doc :global(p.doc-lead) { color: var(--ink); font-size: 1rem; }
+  .symcard__doc :global(p:last-child) { margin-bottom: 0; }
+  .symcard__doc :global(code) {
+    background: color-mix(in oklch, var(--ink) 8%, transparent);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 0.86em;
+  }
+  .symcard__doc :global(.doc-pre) {
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  .symcard__doc :global(.doc-pre code) {
+    background: none;
+    padding: 0;
+    color: var(--term-ink);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+
+  .symcard :global(pre.astro-code) {
+    margin: 10px 0 12px;
+  }
+
+  .symcard .dtable { margin: 12px 0 4px; }
+</style>
