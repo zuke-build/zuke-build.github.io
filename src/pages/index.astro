@@ -12,6 +12,9 @@ class MyBuild extends Build {
   // declare a pipeline → generates .github/workflows
   ci = cicd({ provider: "github" });
 
+  clean = target().executes(() => Deno.remove("dist", { recursive: true }));
+  restore = target().executes(() => DenoTasks.cache((s) => s.paths("mod.ts")));
+
   compile = target()
     .description("Type-check & bundle")
     .dependsOn(this.clean, this.restore)
@@ -44,22 +47,30 @@ Log.table(
   [["@zuke/core", "18 kB"], ["@zuke/cli", "12 kB"]],
 );`;
 
-const healSnippet = `import { aiFixer } from "jsr:@zuke/ai";
+const healSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { aiFixer } from "jsr:@zuke/ai";
 
-test = target()
-  .executes(() => DenoTasks.test((s) => s.allowAll()))
-  // On failure: diagnose from the error + diff, post a committable
-  // suggestion — or apply, commit, and re-run to verify it goes green.
-  .recoverWith(
-    aiFixer((f) =>
-      f.provider("openai").apiKey(this.key)
-        .autoApply()                 // write the fix to the working tree
-        .allowPaths("src/**")        // blast-radius allowlist
-        .maxEdits(5)                 // …and a file cap
-        .commitFixes()               // stage, commit & push to the PR branch
-    ),
-  )
-  .recoverAttempts(2);               // up to two fix-then-rerun cycles`;
+class CI extends Build {
+  key = parameter("OpenAI API key").secret().required();
+
+  test = target()
+    .executes(() => DenoTasks.test((s) => s.allowAll()))
+    // On failure: diagnose from the error + diff, post a committable
+    // suggestion — or apply, commit, and re-run to verify it goes green.
+    .recoverWith(
+      aiFixer((f) =>
+        f.provider("openai").apiKey(this.key)
+          .autoApply()                 // write the fix to the working tree
+          .allowPaths("src/**")        // blast-radius allowlist
+          .maxEdits(5)                 // …and a file cap
+          .commitFixes()               // stage, commit & push to the PR branch
+      ),
+    )
+    .recoverAttempts(2);               // up to two fix-then-rerun cycles
+}
+
+await run(CI);`;
 
 const cacheSnippet = `import { Build, HttpCacheStore, cicd, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
@@ -321,7 +332,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     </div>
 
     <div class="container hero__strip">
-      <span><b>v1</b> released</span>
+      <span><b>v1</b> core, stabilizing</span>
       <span class="dotsep">•</span>
       <span>Deno-native</span>
       <span class="dotsep">•</span>

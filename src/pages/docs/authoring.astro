@@ -1,0 +1,354 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "declaration", label: "Declaration" },
+  { id: "dependencies", label: "Dependencies & ordering" },
+  { id: "conditional", label: "Conditional execution & caching I/O" },
+  { id: "lifecycle", label: "Lifecycle & validation" },
+  { id: "triggers", label: "Triggers & CD" },
+  { id: "resilience", label: "Resilience & orchestration" },
+];
+
+const introSnippet = `import { Build, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class Ci extends Build {
+  lint = target()
+    .description("Lint sources")
+    .executes(async () => {
+      await DenoTasks.lint();
+    });
+
+  test = target()
+    .description("Run the test suite")
+    .dependsOn(this.lint)
+    .executes(async (ctx) => {
+      // ctx is optional: runId, target, signal, state, signals, dryRun
+      await DenoTasks.test((s) => s.allowAll());
+    });
+}
+
+await run(Ci);`;
+
+const groupSnippet = `checks = group(); // declare the batch above the members that join it
+
+clean = target().executes(/* … */);
+lint = target().dependsOn(this.clean).partOf(this.checks).executes(/* … */);
+format = target().dependsOn(this.clean).partOf(this.checks).executes(/* … */);
+
+deploy = target()
+  .dependsOn(this.checks) // one edge; waits for lint and format
+  .executes(/* … */);`;
+
+const depsSnippet = `lint = target()
+  .description("Lint sources")
+  .after(this.restore) // if restore is in the plan, run after it
+  .before(this.test) // if test is in the plan, run before it
+  .executes(async () => {
+    await DenoTasks.lint();
+  });`;
+
+const cacheSnippet = `compile = target()
+  .inputs("src", "deno.json") // re-run only when these change…
+  .outputs("dist") // …or when dist is missing
+  .cacheKey(() => this.configuration.value) // …or when config changes
+  .executes(async () => {
+    await DenoTasks.run((s) => s.script("build.ts"));
+  });`;
+
+const validationSnippet = `const noSecrets: Validation = {
+  name: "no-secrets",
+  validate: async () => {/* scan the diff; throw on a hit */},
+};
+
+deploy = target()
+  .validateBefore(noSecrets) // a throw skips the body and fails the target
+  .executes(async () => {/* … */});`;
+
+const lifecycleSnippet = `flaky = target()
+  .timeout(30_000) // each attempt may run up to 30s…
+  .retry(2, 1_000) // …retried twice, 1s apart, on failure
+  .proceedAfterFailure() // don't abort the rest of the build if it still fails
+  .executes(async () => {
+    await fetch("https://example.com/health");
+  });`;
+
+const resilienceSnippet = `import { externalSignal, target } from "jsr:@zuke/core";
+
+awaitApproval = target()
+  .dependsOn(this.deploy)
+  .waitsFor((s) =>
+    s.on(externalSignal("testing-approved"))
+      .timeout("72h")
+      .onTimeout(() => this.rollback)
+  )
+  .onCancel(() => this.rollback); // undo the deploy if the run is cancelled`;
+---
+
+<DocsLayout
+  title="Authoring targets"
+  description="The complete reference for the target() fluent builder — every method a target can declare, grouped by concern: declaration, dependencies and ordering, conditional execution and caching, lifecycle and validation, triggers, and the resilience and orchestration surface (locks, waits, fan-out, compensation, self-healing)."
+  toc={toc}
+>
+  <p class="lead">
+    A target is declared as a class field on a
+    <a href="/docs/concepts#targets">Build</a> subclass, built up through the
+    fluent <code>TargetBuilder</code> that <code>target()</code> returns. Every
+    configuration method is chainable and returns <code>this</code>; the only
+    thing required before a target can run is a body, set with
+    <code>.executes(...)</code>. This page is the authoritative index of what a
+    target can declare — each method, its exact signature, and where the deeper
+    features are documented in full.
+  </p>
+  <Code code={introSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Dependencies are passed as sibling <em>references</em>
+    (<code>this.lint</code>), never as strings: the framework maps each builder
+    back to its field name during discovery. Because class fields initialise
+    top-to-bottom, <strong>a target can only reference siblings declared above
+    it</strong> — a forward reference is <code>undefined</code> at runtime (and
+    TypeScript flags it as <code>TS2729</code>).
+  </p>
+  <div class="note">
+    <p>
+      The body may take an optional <code>TargetContext</code> argument
+      (<code>ctx</code>): <code>ctx.runId</code>, <code>ctx.target</code>,
+      an <code>AbortSignal</code> at <code>ctx.signal</code> that is aborted on
+      cancellation, a durable <code>ctx.state</code> handle (and
+      <code>ctx.stateOf(target)</code> for another target's), the
+      <code>ctx.signals</code> map of received external signals, and
+      <code>ctx.dryRun</code>. A zero-argument body stays valid. See
+      <a href="/docs/run-context">Run context</a>.
+    </p>
+  </div>
+
+  <h2 id="declaration">Declaration</h2>
+  <p>
+    The basics: what the target <em>is</em> — its summary, its body, whether it
+    is visible, and how it advertises itself. <code>group()</code> creates a
+    parallel <strong>batch</strong>; a target joins one with
+    <code>.partOf(group)</code> and its members then run concurrently with one
+    another even in an otherwise sequential build (each still waiting for its own
+    dependencies). Passing the group to another target's
+    <code>.dependsOn(...)</code> depends on every member at once.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Signature</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.description(text)</code></td><td><code>(text: string) =&gt; this</code></td><td>Human-readable summary shown in <code>--list</code>.</td></tr>
+      <tr><td><code>.executes(fn)</code></td><td><code>(fn: TargetFn) =&gt; this</code></td><td>The body (<strong>required</strong>). Receives an optional <code>TargetContext</code>; may be sync or async.</td></tr>
+      <tr><td><code>.unlisted()</code></td><td><code>() =&gt; this</code></td><td>Hide a helper target from <code>--list</code>/<code>--help</code>; it can still be run by name or depended on.</td></tr>
+      <tr><td><code>.always()</code></td><td><code>() =&gt; this</code></td><td>Run even after the build has already failed, for cleanup/teardown. Still waits for its own dependencies.</td></tr>
+      <tr><td><code>.readOnly()</code></td><td><code>() =&gt; this</code></td><td>Advertise the target query-only over <a href="/docs/mcp">MCP</a> (<code>readOnlyHint</code>, not <code>destructiveHint</code>); exempt from <code>--confirm-destructive</code>. A hint about intent — the body still runs.</td></tr>
+      <tr><td><code>.dryRunnable()</code></td><td><code>() =&gt; this</code></td><td>Run the body under <code>--dry-run</code> (instead of skipping it) with the <code>$</code> shell in echo mode — each command prints its resolved argv and returns empty success without spawning a process.</td></tr>
+      <tr><td><code>.partOf(group)</code></td><td><code>(group: Group) =&gt; this</code></td><td>Join a parallel batch created by <code>group()</code>.</td></tr>
+    </tbody>
+  </table>
+  <Code code={groupSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <code>.dryRunnable()</code> is opt-in because Zuke can only intercept
+      <code>$</code>/<code>Command</code> — any <em>other</em> side effect
+      (writing a file, calling an API directly) still happens under a dry run.
+      A body whose control flow depends on a command's output should branch on
+      <code>ctx.dryRun</code> rather than trust the echoed (empty) result.
+    </p>
+  </div>
+
+  <h2 id="dependencies">Dependencies & ordering</h2>
+  <p>
+    <code>.dependsOn(...)</code> declares <strong>hard prerequisites</strong>:
+    they are pulled into the plan and run first, transitively. Ordering methods
+    (<code>.before()</code>/<code>.after()</code>) are <strong>soft</strong>:
+    they only reorder targets that are <em>already</em> in the plan and never
+    pull new ones in. Both <code>.dependsOn()</code> and <code>.consumes()</code>
+    accept a <a href="#declaration">group</a>, which expands to every member.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Signature</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.dependsOn(...targets)</code></td><td><code>(...t: Array&lt;Target | Group&gt;) =&gt; this</code></td><td>Hard prerequisites; run first, transitively. Pulls targets into the plan.</td></tr>
+      <tr><td><code>.before(...targets)</code></td><td><code>(...t: Target[]) =&gt; this</code></td><td>Soft ordering: run before these <em>if both are planned</em>. Never pulls targets in.</td></tr>
+      <tr><td><code>.after(...targets)</code></td><td><code>(...t: Target[]) =&gt; this</code></td><td>Soft ordering: run after these <em>if both are planned</em>.</td></tr>
+      <tr><td><code>.dependentFor(...targets)</code></td><td><code>(...t: Target[]) =&gt; this</code></td><td>Reverse of <code>dependsOn</code>: each listed target gains this one as a dependency, so this runs before them without editing them. Declare the listed targets above this one.</td></tr>
+      <tr><td><code>.requires(...params)</code></td><td><code>(...p: Parameter[]) =&gt; this</code></td><td>Fail the target (naming the parameter) unless each listed <a href="/docs/concepts#parameters">parameter</a> resolved to a value. For a parameter that is optional build-wide but mandatory here.</td></tr>
+    </tbody>
+  </table>
+  <Code code={depsSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <strong>External ordering lives on the <code>Build</code>, not the
+      target.</strong> Override <code>extraEdges(targets)</code> to return
+      <code>[before, after]</code> pairs statically, or the async
+      <code>orderWith(targets)</code> to <em>load</em> them per run (read a
+      monorepo's dependency graph, hit an API). Both merge, share the same rules
+      (an edge whose endpoints aren't both in the run is ignored; a cycle is a
+      friendly error), and are honoured by runs and by <code>zuke cancel</code>'s
+      reverse-order walk — but neither shows in the static
+      <code>graph</code>/<code>--list</code> views. See
+      <a href="/docs/orchestration#ordering">Orchestration → ordering</a>.
+    </p>
+  </div>
+
+  <h2 id="conditional">Conditional execution & caching I/O</h2>
+  <p>
+    <code>.onlyWhen(condition)</code> gates whether a target runs; the rest
+    declare the target's <strong>cache footprint</strong>. A target that
+    declares <code>.inputs(...)</code> becomes incremental — Zuke fingerprints
+    those paths (SHA-256, directories hashed recursively) and reports the target
+    <code>cached</code> when the fingerprint is unchanged since the last
+    successful run and every declared <code>.outputs(...)</code> still exists.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Signature</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.onlyWhen(condition)</code></td><td><code>(c: () =&gt; boolean | Promise&lt;boolean&gt;) =&gt; this</code></td><td>Run only when the condition holds, else skip (dependents still run). May be async; repeatable — all must hold.</td></tr>
+      <tr><td><code>.whenSkipped(behavior)</code></td><td><code>("run-dependencies" | "skip-dependencies") =&gt; this</code></td><td>When skipped by a condition, also skip dependencies no other planned target needs. The condition is evaluated up front, so it must not rely on run-time state.</td></tr>
+      <tr><td><code>.inputs(...paths)</code></td><td><code>(...p: PathLike[]) =&gt; this</code></td><td>Cache inputs: skip the target when these are unchanged. Repeatable.</td></tr>
+      <tr><td><code>.outputs(...paths)</code></td><td><code>(...p: PathLike[]) =&gt; this</code></td><td>Cache outputs: a hit also requires these to still exist. Repeatable.</td></tr>
+      <tr><td><code>.cacheKey(fn)</code></td><td><code>(fn: () =&gt; string | Promise&lt;string&gt;) =&gt; this</code></td><td>An extra, non-file input to the fingerprint (a parameter, tool version, git commit). Repeatable; may be async.</td></tr>
+      <tr><td><code>.produces(...paths)</code></td><td><code>(...p: PathLike[]) =&gt; this</code></td><td>Declare artifact paths this target produces (metadata).</td></tr>
+      <tr><td><code>.consumes(...targets)</code></td><td><code>(...t: Array&lt;Target | Group&gt;) =&gt; this</code></td><td>Depend on the producers and use their <code>produces</code> artifacts — an alias of <code>dependsOn</code> that reads as artifact use.</td></tr>
+    </tbody>
+  </table>
+  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <p>
+    A target with no inputs and no cache keys always runs. Fingerprints live in
+    <code>.zuke/cache.json</code>; a cached/skipped target counts as satisfied,
+    so its dependents still run. See <a href="/docs/caching#incremental">Caching</a>
+    for the fingerprint algorithm, the <a href="/docs/caching#cachekey">cache
+    key</a>, and the <a href="/docs/caching#outputs">output</a> semantics in full.
+  </p>
+
+  <h2 id="lifecycle">Lifecycle & validation</h2>
+  <p>
+    Checks around the body and how failure is handled. A
+    <strong><code>Validation</code></strong> is any object with a
+    <code>validate(ctx)</code> method: <code>.validateBefore()</code> runs its
+    checks before the body (a throw skips the body and fails the target);
+    <code>.validateAfter()</code> runs them after a successful body. Both are
+    repeatable and order-preserving, and a cached/skipped target runs neither.
+    <code>.timeout()</code> and <code>.retry()</code> compose — the timeout is
+    <strong>per attempt</strong>.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Signature</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.validateBefore(...v)</code></td><td><code>(...v: Validation[]) =&gt; this</code></td><td>Run checks before the body; the first to throw skips it and fails the target.</td></tr>
+      <tr><td><code>.validateAfter(...v)</code></td><td><code>(...v: Validation[]) =&gt; this</code></td><td>Run checks after a successful body; a throw fails the target.</td></tr>
+      <tr><td><code>.timeout(ms)</code></td><td><code>(ms: number) =&gt; this</code></td><td>Fail the body if it runs longer than <code>ms</code> (per attempt). A timed-out body can't be cancelled — it keeps running in the background, but its result is ignored.</td></tr>
+      <tr><td><code>.retry(times, delayMs?)</code></td><td><code>(times: number, delayMs = 0) =&gt; this</code></td><td>Retry the body up to <code>times</code> more attempts on failure, pausing <code>delayMs</code> between (default 0). The last error propagates once exhausted.</td></tr>
+      <tr><td><code>.proceedAfterFailure()</code></td><td><code>() =&gt; this</code></td><td>Keep running the rest of the build if this target fails. The build still reports failure, and this target's own dependents are skipped.</td></tr>
+    </tbody>
+  </table>
+  <Code code={validationSnippet} lang="ts" theme="night-owl" />
+  <Code code={lifecycleSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <a href="https://jsr.io/@zuke/ai">@zuke/ai</a> ships AI reviewers
+      (<code>securityReviewer(...)</code>, …) that implement
+      <code>Validation</code> — attach one the same way to gate the build on a
+      model-assessed score. See <a href="/docs/ai-review">AI review</a>.
+    </p>
+  </div>
+
+  <h2 id="triggers">Triggers & CD</h2>
+  <p>
+    <code>.triggers(...)</code> is the inverse of <code>.dependsOn(...)</code>:
+    running this target <strong>pulls the listed targets into the plan and runs
+    them after it</strong> — a <code>deploy</code> that triggers a
+    <code>notify</code>, say. Unlike <code>.before()</code>/<code>.after()</code>
+    (which only reorder), it adds targets to the plan.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Signature</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.triggers(...targets)</code></td><td><code>(...t: Target[]) =&gt; this</code></td><td>Pull these into the plan and run them <em>after</em> this target.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      Continuous delivery is generated <em>from</em> the build rather than
+      declared on a target: <code>cicd()</code> binds a provider-agnostic
+      pipeline (with optional per-target <code>fanOut</code> jobs) to an output
+      path — see <a href="/docs/concepts#cicd">CI generation</a>. Timezone-aware
+      cron schedules live on that pipeline's triggers — see
+      <a href="/docs/schedules">Schedules</a>.
+    </p>
+  </div>
+
+  <h2 id="resilience">Resilience & orchestration</h2>
+  <p>
+    The long-running and self-healing surface. Each of these has a dedicated
+    page — the row here is the signature and a one-line summary; follow the
+    cross-link for the full model. The three settings-lambda methods
+    (<code>.lock</code>, <code>.waitsFor</code>, <code>.forEach</code>) take a
+    <code>Configure&lt;Settings&gt;</code> function, run after parameters
+    resolve, so the lambda may read <code>this.&lt;param&gt;.value</code>.
+    <code>.lock</code>, <code>.waitsFor</code>, and <code>.onCancel</code>
+    require a <a href="/docs/state">state store</a>.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Signature</th><th>Effect / see</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.lock(configure)</code></td><td><code>(c: Configure&lt;LockSettings&gt;) =&gt; this</code></td><td>Hold a cross-run lock while this target runs; a second run fails with a <code>LockConflictError</code>. Set the key/TTL/conflict message in the lambda. See <a href="/docs/locks">Locks</a>.</td></tr>
+      <tr><td><code>.waitsFor(configure)</code></td><td><code>(c: Configure&lt;WaitSettings&gt;) =&gt; this</code></td><td>Suspend the run at this gate until an external event; resume later in another process. Set <code>.on(trigger)</code>, <code>.timeout()</code>, <code>.onTimeout()</code>. See <a href="/docs/orchestration#suspend">Orchestration → suspend/resume</a>.</td></tr>
+      <tr><td><code>.forEach(items, factory, configure?)</code></td><td><code>(items: () =&gt; readonly Item[], factory: ForEachFactory&lt;Item&gt;, c?: Configure&lt;ForEachSettings&gt;) =&gt; this</code></td><td>Fan out over a runtime list: per item, build an ordered sub-target pipeline; items run with bounded concurrency and per-item failure isolation. See <a href="/docs/orchestration#fanout">Orchestration → fan-out</a>.</td></tr>
+      <tr><td><code>.onCancel(compensation)</code></td><td><code>(c: Target | (() =&gt; Target)) =&gt; this</code></td><td>Register a compensation that undoes this target when the run is cancelled — runs <em>iff this target succeeded</em>, in reverse order. Use the thunk form for a target declared below. See <a href="/docs/orchestration#cancel">Orchestration → compensation</a>.</td></tr>
+      <tr><td><code>.recoverWith(...r)</code></td><td><code>(...r: Remediation[]) =&gt; this</code></td><td>On failure, hand the error to a remediation that may repair it and ask (via <code>&#123; retry: true &#125;</code>) to re-run the body. See <a href="/docs/self-healing#recoverwith">Self-healing</a>.</td></tr>
+      <tr><td><code>.recoverAttempts(n)</code></td><td><code>(n: number) =&gt; this</code></td><td>Bound how many fix-then-rerun cycles are tried (default 1, clamped to at least 1).</td></tr>
+    </tbody>
+  </table>
+  <Code code={resilienceSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      A <strong><code>Remediation</code></strong> is any object with a
+      <code>remediate(ctx)</code> method that returns
+      <code>&#123; retry: boolean; summary?: string &#125;</code>; it runs only after the
+      body fails, receives the failure (a <code>CommandError</code> with
+      <code>stderr</code> when the target failed through the shell), and the real
+      build command is the verifier. The AI fixer in
+      <a href="https://jsr.io/@zuke/ai">@zuke/ai</a> implements it — see
+      <a href="/docs/self-healing#aifixer">Self-healing → AI fixer</a>.
+    </p>
+  </div>
+  <p>
+    For the full framework surface beyond the builder — components, assertions,
+    <code>FileTasks</code>, HTTP and compression helpers, host detection, and the
+    <code>Build</code> lifecycle hooks (<code>onStart</code>/<code>onFinish</code>)
+    — see <a href="/docs/concepts">Concepts</a> and
+    <a href="/docs/library">the standard library</a>.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

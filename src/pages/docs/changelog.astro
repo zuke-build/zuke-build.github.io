@@ -1,0 +1,189 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "model", label: "The release model" },
+  { id: "versions", label: "Current headline versions" },
+  { id: "semver", label: "How versions move" },
+  { id: "notes", label: "Where the release notes live" },
+  { id: "pinning", label: "Pinning a version" },
+];
+
+const importSnippet = `// Track the latest of a major line (recommended):
+import { Build, run, target } from "jsr:@zuke/core@^1";
+
+// Or pin an exact version for a fully reproducible build:
+import { Build, run, target } from "jsr:@zuke/core@1.30.2";`;
+
+const tagSnippet = `core-v1.30.2      # @zuke/core
+cli-v0.7.0        # @zuke/cli
+ai-v1.6.0         # @zuke/ai`;
+---
+
+<DocsLayout
+  title="Changelog"
+  description="Zuke is 55 packages released independently to JSR, each with its own semantic version driven by release-please. This page explains the release model and points to the authoritative release notes; it is not itself a version history."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke isn't one artifact with one version. It's <strong>55 packages</strong>
+    — <code>@zuke/core</code>, the <a href="/docs/cli"><code>@zuke/cli</code></a>
+    command, a generic <code>@zuke/cmd</code> fallback, and 50+ typed
+    <a href="/docs/tools">tool wrappers</a> — each published independently to
+    <a href="https://jsr.io/@zuke">JSR</a> with its own
+    <strong>semantic version</strong>. There is no single "Zuke version", so
+    this page describes the release model and links to the authoritative notes
+    rather than duplicating a version history that would go stale.
+  </p>
+
+  <h2 id="model">The release model</h2>
+  <p>
+    Releases are automated end to end by
+    <a href="https://github.com/googleapis/release-please">release-please</a>,
+    driven by Zuke's own build. The flow is:
+  </p>
+  <ol>
+    <li>
+      Work lands on <code>master</code> as
+      <strong>Conventional Commits</strong> (<code>feat:</code>,
+      <code>fix:</code>, <code>feat!:</code> / <code>BREAKING CHANGE:</code>).
+    </li>
+    <li>
+      release-please maintains a <strong>single</strong> release PR covering
+      every package with pending changes. It bumps the version in each
+      package's <code>deno.json</code>, writes that package's own
+      <code>CHANGELOG.md</code>, and updates the manifest.
+    </li>
+    <li>
+      Merging the release PR tags each release
+      (<code>&lt;component&gt;-v&lt;version&gt;</code>) and cuts the
+      <a href="https://github.com/zuke-build/zuke/releases">GitHub releases</a>.
+    </li>
+    <li>
+      Zuke then <strong>publishes itself to JSR</strong>: the
+      <code>publish</code> target walks the packages core-first and publishes
+      each one whose version isn't yet on JSR. Authentication is OIDC — the JSR
+      package ↔ repo link means no tokens are involved.
+    </li>
+  </ol>
+  <p>
+    Because versions are per-package and each package carries its own
+    changelog, the per-tag entries on the tracker below are the real record.
+  </p>
+  <Code code={tagSnippet} lang="text" theme="night-owl" />
+  <div class="note">
+    <p>
+      Zuke builds, tests, and releases itself — the repository's own
+      <code>zuke.ts</code> runs the full gate and drives both release-please and
+      JSR publishing — the same build declares its own pipeline.
+    </p>
+  </div>
+
+  <h2 id="versions">Current headline versions</h2>
+  <p>
+    A snapshot of a few key packages. These move
+    <strong>independently</strong> — this table is a point-in-time reference,
+    not a coupled release set — so always check
+    <a href="https://jsr.io/@zuke">JSR</a> for the live number of any package.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Package</th><th>Version</th><th>Role</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>@zuke/core</code></td><td>1.30.2</td><td>the build library — the typed target graph, parameters, secrets, and reporter</td></tr>
+      <tr><td><code>@zuke/cli</code></td><td>0.7.0</td><td>the <code>zuke</code> command that discovers and runs a build</td></tr>
+      <tr><td><code>@zuke/cmd</code></td><td>0.3.2</td><td>the generic command wrapper — the fallback for any tool without a dedicated package</td></tr>
+      <tr><td><code>@zuke/deno</code></td><td>0.6.1</td><td>Deno tool wrapper (<code>DenoTasks</code>)</td></tr>
+      <tr><td><code>@zuke/ai</code></td><td>1.6.0</td><td>AI-assisted build helpers</td></tr>
+      <tr><td><code>@zuke/console</code></td><td>1.0.1</td><td>the console reporter</td></tr>
+      <tr><td><code>@zuke/otel</code></td><td>1.0.1</td><td>OpenTelemetry reporter</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      <code>@zuke/core</code> reached its first <strong>stable 1.0.0</strong> on
+      2026-06-22 and follows semantic versioning from there — depend on
+      <code>^1</code> with confidence.
+    </p>
+  </div>
+
+  <h2 id="semver">How versions move</h2>
+  <p>
+    release-please runs with <code>bump-minor-pre-major</code> enabled, which
+    changes what a breaking change does depending on whether a package has
+    reached 1.0:
+  </p>
+  <ul>
+    <li>
+      A package still in <strong><code>0.x</code></strong> (most tool wrappers)
+      takes a <strong>minor</strong> bump on a breaking change and stays in
+      <code>0.x</code>. Treat any <code>0.x</code> minor as potentially
+      breaking.
+    </li>
+    <li>
+      A package that has reached <strong>1.0</strong> — <code>@zuke/core</code>,
+      plus <code>@zuke/ai</code>, <code>@zuke/console</code>,
+      <code>@zuke/otel</code>, and others — follows full semver: a breaking
+      change bumps the <strong>major</strong> version.
+    </li>
+  </ul>
+  <p>
+    So a <code>@zuke/core</code> minor is always additive and safe under
+    <code>^1</code>, whereas a tool wrapper's minor may not be. Pin accordingly.
+  </p>
+
+  <h2 id="notes">Where the release notes live</h2>
+  <p>
+    There is no hand-maintained master changelog to read here — the per-package
+    notes are generated, and these are the authoritative sources:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Source</th><th>What it has</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="https://github.com/zuke-build/zuke/releases">GitHub Releases</a></td>
+        <td>every tagged release, per package, with the generated notes — the primary record of what changed and when</td>
+      </tr>
+      <tr>
+        <td><a href="https://jsr.io/@zuke">JSR — <code>@zuke</code></a></td>
+        <td>the live version of every published package, plus its docs and download stats</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="pinning">Pinning a version</h2>
+  <p>
+    Zuke is imported by URL, so the version is part of the import specifier. For
+    a stable package, tracking a major line gives you fixes and additions
+    automatically; pin an exact version when you need a byte-for-byte
+    reproducible build.
+  </p>
+  <Code code={importSnippet} lang="ts" theme="night-owl" />
+  <p>
+    See <a href="/docs">Getting started</a> for setting Zuke up
+    in a project, and <a href="/docs/tools">Tools</a> for the wrapper packages
+    each versioned separately above.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

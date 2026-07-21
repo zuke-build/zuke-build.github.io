@@ -10,6 +10,7 @@ const toc = [
   { id: "apply", label: "Applying & committing" },
   { id: "agent", label: "Delegating to an agent" },
   { id: "diff", label: "Diff context in CI" },
+  { id: "cost", label: "Cost controls & learning" },
   { id: "knobs", label: "Other knobs" },
   { id: "dogfood", label: "Dogfooding" },
 ];
@@ -74,6 +75,36 @@ const diffSnippet = `aiFixer((f) =>
     // Fetch the base branch itself — auto-detected from GITHUB_BASE_REF —
     // so the workflow needs no manual \`git fetch\` step.
     .diff((d) => d.fetchBase())
+);`;
+
+const budgetSnippet = `import { budget } from "jsr:@zuke/ai";
+
+class CI extends Build {
+  key = parameter("OpenAI API key").secret();
+  ai = budget((b) => b.maxTokens(200_000)); // exact token cap
+
+  lint = target().executes(() => DenoTasks.lint())
+    .recoverWith(aiFixer((f) => f.provider("openai").apiKey(this.key).budget(this.ai)));
+  test = target().executes(() => DenoTasks.test((s) => s.allowAll()))
+    .recoverWith(aiFixer((f) => f.provider("openai").apiKey(this.key).budget(this.ai)));
+}`;
+
+const budgetCostSnippet = `budget((b) =>
+  b.maxTokens(200_000)
+    .prices({ "gpt-5.4-mini": { input: 0.4, output: 1.6 } }) // USD per 1M tokens
+    .maxCost(1.0) // only enforced for models you've priced above
+);`;
+
+const cacheSnippet = `import { aiCache } from "jsr:@zuke/ai";
+
+const cache = aiCache((c) => c.dir(".zuke/ai-cache").ttl(86_400)); // 1-day TTL
+aiFixer((f) => f.provider("openai").apiKey(this.key).cache(cache));`;
+
+const suppressSnippet = `import { suppressions } from "jsr:@zuke/ai";
+
+securityReviewer((r) =>
+  r.provider("openai").apiKey(this.key)
+    .suppress(suppressions((s) => s.file(".zuke/ai-suppress.json")))
 );`;
 ---
 
@@ -224,14 +255,82 @@ const diffSnippet = `aiFixer((f) =>
   </p>
   <Code code={diffSnippet} lang="ts" theme="night-owl" />
 
+  <h2 id="cost">Cost controls &amp; learning</h2>
+  <p>
+    Three opt-in primitives bound what the AI costs and teach it what to ignore.
+    They are shared objects you construct once and hand to any number of reviewers
+    and fixers.
+  </p>
+
+  <h3>Token / cost budget</h3>
+  <p>
+    <code>budget(...)</code> caps spend across <strong>every</strong> reviewer and
+    fixer it is attached to. Each call folds its reported token usage into the
+    running total; once a cap is reached, the next AI step is
+    <strong>skipped (not failed)</strong> with a note, rather than running up the
+    bill.
+  </p>
+  <Code code={budgetSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Token counts come straight from the provider's reported usage, so
+    <code>.maxTokens(n)</code> is an <strong>exact</strong> cap that never goes
+    stale. <strong>No prices ship</strong> — provider pricing changes too often for
+    a baked-in table to stay correct. A USD cap is opt-in: give the budget your own
+    current rates and it estimates cost from them.
+  </p>
+  <Code code={budgetCostSnippet} lang="ts" theme="night-owl" />
+  <p>
+    A model with no supplied price still counts toward the <strong>token</strong>
+    cap — only its cost is left out, and a cost cap is enforced only once a priced
+    call is recorded.
+  </p>
+
+  <h3>Fix / response cache</h3>
+  <p>
+    <code>aiCache(...)</code> reuses a prior model response for an
+    <strong>identical</strong> call (same provider, model, and prompt) instead of
+    paying for another one — handy when the same failure recurs across CI re-runs.
+    A cache hit costs nothing and does not draw down the budget.
+  </p>
+  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <p>
+    The TTL defaults to 7 days (<code>0</code> never expires) and the store is
+    best-effort — see <a href="/docs/caching#ai-response-cache">Caching → AI
+    response cache</a> for the full behaviour, the <code>.disable()</code> /
+    <code>.store()</code> knobs, and custom stores.
+  </p>
+
+  <h3>Learned false-positive suppression (review)</h3>
+  <p>
+    <code>suppressions(...)</code> hides reviewer findings whose
+    <strong>stable ID</strong> you've dismissed. Every finding is fingerprinted and
+    its ID surfaced in the report and PR comment, so silencing a recurring false
+    positive is a copy-paste of that ID into the suppress list
+    (<code>.zuke/ai-suppress.json</code>, a JSON array of IDs):
+  </p>
+  <Code code={suppressSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Suppression is <strong>review-only</strong> — a fixer applies a whole fix, not
+    individual findings, so <code>.suppress()</code> lives on reviewers such as
+    <code>securityReviewer</code>, not on <code>aiFixer</code>. A suppressed finding
+    still appears in the report and PR comment under a
+    <strong>Suppressed (not gating)</strong> section — with its severity, location,
+    and ID — so suppression mutes the build break without burying the finding.
+  </p>
+
   <h2 id="knobs">Other knobs</h2>
   <ul>
     <li><code>.model(...)</code>, <code>.effort(...)</code> — pick the model and thinking depth.</li>
     <li><code>.criteria(...)</code> / <code>.conventions(...)</code> — add or override the project notes sent to the model.</li>
     <li><code>.comment()</code> / <code>.noComment()</code> — toggle PR posting (the job summary is always written).</li>
     <li><code>.maxDiffTokens(n)</code>, <code>.retry(&#123; ... &#125;)</code>, <code>.quiet()</code> — budget, transient-failure retry, and output control.</li>
-    <li><code>.skipIfKeyMissing()</code> — on a fork PR with no secret, skip and announce rather than fail.</li>
   </ul>
+  <p>
+    There's no <code>.skipIfKeyMissing()</code> on the fixer — when the API key is
+    missing (a fork PR with no secret, say), <code>aiFixer</code> skips
+    automatically and unconditionally, announcing the skip rather than failing the
+    build.
+  </p>
 
   <h2 id="dogfood">Dogfooding</h2>
   <p>
