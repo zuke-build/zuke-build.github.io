@@ -57,8 +57,12 @@ await run(MyBuild);`;
 
 const runSnippet = `./zuke compile         # run a target (and its dependencies)
 ./zuke compile --parallel  # run independent targets concurrently
+./zuke compile --skip clean  # run it, but skip a named dependency (repeatable)
+./zuke ci --affected=origin/main  # only targets affected by changes since a base
 ./zuke --list          # list every available target
+./zuke --list --json   # …the build surface (targets, flags, params) as JSON
 ./zuke graph           # print the dependency graph
+./zuke doc jsr:@zuke/deno  # prints the typed API docs for a @zuke package
 ./zuke generate-ci     # write declared CI/CD pipeline files
 ./zuke completions install zsh   # install shell tab-completion
 ./zuke mcp             # run an MCP server over the build for AI agents
@@ -114,6 +118,20 @@ Total                  17.8s
     <code>zuke.json</code>. The <code>zuke.ts</code> file <em>is</em> your build —
     edit it like any other TypeScript module.
   </p>
+  <p>
+    Already have <code>package.json</code> scripts or a <code>Makefile</code>?
+    <code>zuke import</code> reads them and generates a <code>zuke.ts</code> with
+    one <code>target()</code> per task — a working starting point to refine into
+    typed wrappers, rather than a blank page. It auto-detects the source
+    (<code>package.json</code> first, then a <code>Makefile</code>); pass
+    <code>--from makefile</code> to pin it. A command maps to
+    <code>CmdTasks.exec(...)</code>, an <code>&amp;&amp;</code> chain becomes
+    sequential steps, a script delegation or Makefile prerequisite becomes a
+    <code>.dependsOn(...)</code>, and anything too shell-specific to translate is
+    preserved behind a <code>// TODO</code> so the file still compiles. Like
+    <code>zuke setup</code>, it also writes the launchers and
+    <code>deno.json</code>.
+  </p>
 
   <h2 id="first-target">Your first target</h2>
   <p>
@@ -146,6 +164,26 @@ Total                  17.8s
     / <code>Cached</code>) and timing per target, a total, and a one-line verdict
     with a timestamp. A target named <code>default</code> runs when you pass no
     arguments.
+  </p>
+  <p>
+    A few flags narrow what runs. <code>--skip &lt;dep&gt;</code> runs the target
+    but drops a named dependency (repeatable).
+    <code>--affected[=&lt;base&gt;]</code> keeps only the targets a git diff can
+    reach — a changed file inside a target's <code>.inputs()</code>, or anything
+    downstream of one — skipping the rest; the base defaults to
+    <code>HEAD</code>, and <code>--affected=origin/main</code> is the usual CI
+    form. And <code>--list --json</code> emits the whole build surface — targets,
+    flags, and parameters — as JSON for tools and agents.
+  </p>
+  <p>
+    <code>zuke doc &lt;spec&gt;</code> prints the typed API docs for a package.
+    The spec is passed to <code>deno doc</code> as-is: a
+    <code>jsr:</code>/<code>npm:</code>/<code>https:</code> specifier or an
+    absolute path passes through unchanged (say
+    <code>zuke doc jsr:@zuke/deno</code>), while a relative or bare name is
+    resolved as a file path against the working directory. It runs
+    <code>deno doc</code> from an isolated directory, so a surrounding Node
+    project's type resolution can't drown the output.
   </p>
   <Code code={outputSnippet} lang="text" theme="night-owl" />
   <div class="note">

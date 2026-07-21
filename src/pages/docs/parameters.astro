@@ -1,0 +1,324 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "declaring", label: "Declaring a parameter" },
+  { id: "naming", label: "Flags and environment variables" },
+  { id: "typing", label: "Typing the value" },
+  { id: "lists", label: "Lists with .array()" },
+  { id: "optionality", label: ".required() and .default()" },
+  { id: "secrets", label: ".secret() and .from()" },
+  { id: "precedence", label: "Resolution precedence" },
+  { id: "errors", label: "Validation and errors" },
+  { id: "reading", label: "Reading a value" },
+];
+
+const introSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+
+class Deploy extends Build {
+  environment = parameter("Target environment")
+    .options("dev", "staging", "production")
+    .required();
+
+  workers = parameter("Parallel upload workers").number().default(4);
+
+  dryRun = parameter("Print actions without performing them").boolean();
+
+  deploy = target().executes(() => {
+    if (this.dryRun.value) console.log("(dry run)");
+    console.log(
+      \`Deploying to \${this.environment.value} with \${this.workers.value} workers\`,
+    );
+  });
+}
+
+await run(Deploy);`;
+
+const invokeSnippet = `./zuke deploy --environment production --workers 8 --dry-run
+ENVIRONMENT=staging ./zuke deploy        # value from the environment`;
+
+const namingSnippet = `retries    = parameter().number();    // --retries      / RETRIES
+targetEnv  = parameter();             // --target-env    / TARGET_ENV
+apiKey     = parameter().env("CI_API_KEY"); // --api-key / CI_API_KEY`;
+
+const typingSnippet = `// string (the default): value is \`string | undefined\`
+region = parameter("Deploy region");
+
+// number: parsed with Number(); empty or non-finite input is rejected.
+workers = parameter("Upload workers").number();     // number | undefined
+
+// boolean: a flag. Present (--verbose) → true; absent → false.
+verbose = parameter("Verbose logging").boolean();   // boolean
+
+// string restricted to a fixed set of choices.
+level = parameter("Log level").options("debug", "info", "warn");`;
+
+const arraySnippet = `tags = parameter("Image tags").array();   // string[]
+// deploy = target().executes(() => console.log(this.tags.value));`;
+
+const arrayCliSnippet = `./zuke deploy --tags latest,canary          # ["latest", "canary"]
+./zuke deploy --tags latest --tags canary   # same result
+TAGS=latest,canary ./zuke deploy            # from the environment`;
+
+const arrayComposeSnippet = `// number[]: each entry parsed as a number; "1,x" is rejected.
+workers = parameter("Worker ids").number().array();
+
+// each element must be one of the choices; "api,nope" is rejected.
+services = parameter("Services").options("api", "web", "worker").array();`;
+
+const optionalitySnippet = `// Required: value is non-optional; the build fails before any target runs
+// if neither a flag nor the env var (nor an interactive prompt) supplies it.
+environment = parameter("Target environment").required();  // string
+
+// Default: value is non-optional and falls back to the given value.
+workers = parameter("Upload workers").number().default(4); // number
+
+// A boolean is implicitly defaulted to false, so it is always non-optional.
+dryRun = parameter("Dry run").boolean();                   // boolean`;
+
+const secretSnippet = `import { execSecret } from "jsr:@zuke/core";
+
+// .secret() masks the resolved value everywhere Zuke prints.
+token = parameter("Deploy token").secret().required();
+
+// .from(source) pulls the value from a secret manager when neither a flag
+// nor an env var supplied one — a fallback provider, not an override.
+registryToken = parameter("Registry token")
+  .secret()
+  .from(
+    execSecret((s) => s.command("op").arg("read", "op://ci/registry/token")),
+  );`;
+
+const errorSnippet = `Invalid or missing parameters:
+  --environment is required (or set ENVIRONMENT).
+  --workers: expected a number, got "eight"
+  --level: expected one of debug, info, warn, got "trace"`;
+
+const readingSnippet = `deploy = target().executes(() => {
+  const env = this.environment.value; // string  (.required())
+  const n = this.workers.value;       // number  (.default(4))
+  const region = this.region.value;   // string | undefined (plain optional)
+});`;
+---
+
+<DocsLayout
+  title="Parameters"
+  description="Parameters are typed inputs to a Zuke build. You declare them as class fields, and the execution engine resolves each one — from a CLI flag, an environment variable, a secret source, or a default — before any target runs. This page covers declaring, typing, validation, and resolution precedence in full."
+  toc={toc}
+>
+  <p class="lead">
+    Parameters are <strong>typed inputs</strong> to a build. You declare them as
+    class fields — exactly like <a href="/docs/concepts#targets">targets</a> — and
+    read the resolved value inside a target with <code>this.&lt;name&gt;.value</code>.
+    The execution engine resolves every parameter <strong>before any target runs</strong>,
+    so a build never starts with a missing or malformed input. The
+    <a href="/docs/concepts#parameters">Concepts</a> page introduces them in brief;
+    this is the full reference.
+  </p>
+  <Code code={introSnippet} lang="ts" theme="night-owl" />
+  <Code code={invokeSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Each fluent method returns a <strong>new</strong> parameter whose
+    <code>value</code> type reflects the configuration — the builder narrows the
+    type as you go, so <code>value</code> is exactly as strong as the declaration.
+  </p>
+
+  <h2 id="declaring">Declaring a parameter</h2>
+  <p>
+    <code>parameter(description?)</code> starts an <strong>optional string</strong>
+    parameter. The optional description is shown in <code>--help</code> and
+    <code>--list</code>. From there, configure it fluently:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Effect</th><th><code>value</code> type</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>parameter("…")</code></td><td>optional string</td><td><code>string | undefined</code></td></tr>
+      <tr><td><code>.number()</code></td><td>parse as a number</td><td><code>number | undefined</code></td></tr>
+      <tr><td><code>.boolean()</code></td><td>a flag; defaults to <code>false</code></td><td><code>boolean</code></td></tr>
+      <tr><td><code>.options("a", "b")</code></td><td>restrict a string to choices</td><td>unchanged</td></tr>
+      <tr><td><code>.default(v)</code></td><td>provide a default</td><td>non-optional (<code>T</code>)</td></tr>
+      <tr><td><code>.required()</code></td><td>must be supplied</td><td>non-optional (<code>T</code>)</td></tr>
+      <tr><td><code>.env("NAME")</code></td><td>override the env var name</td><td>unchanged</td></tr>
+      <tr><td><code>.secret()</code></td><td>mark sensitive (masked everywhere)</td><td>unchanged</td></tr>
+      <tr><td><code>.from(source)</code></td><td>resolve from a <a href="/docs/secrets">secret manager</a></td><td>unchanged</td></tr>
+      <tr><td><code>.array()</code></td><td>a comma-separated / repeatable list</td><td><code>T[]</code></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      Ordering matters: <code>.number()</code> and <code>.boolean()</code> come
+      first (they change the kind and reset the default), <code>.options()</code>
+      applies to strings, and <code>.array()</code> comes <strong>last</strong> so it
+      composes with the kind and choices declared before it.
+    </p>
+  </div>
+  <div class="note">
+    <p>
+      There is no <code>.choices(...)</code> — the method that restricts a string
+      to a fixed set is <code>.options(...)</code>. Three field names are also
+      reserved: <code>dryRun</code>, <code>confirm</code>, and
+      <code>operatorToken</code> collide with control keys Zuke's
+      <a href="/docs/mcp">MCP server</a> injects, so a parameter using one is
+      rejected at discovery. Rename it.
+    </p>
+  </div>
+
+  <h2 id="naming">Flags and environment variables</h2>
+  <p>
+    The command-line flag and environment variable are <strong>derived from the
+    property name</strong>: the flag is kebab-case, the env var is
+    SCREAMING_SNAKE_CASE. A camelCase field like <code>targetEnv</code> becomes
+    <code>--target-env</code> and <code>TARGET_ENV</code>. Override just the
+    environment variable with <code>.env("NAME")</code> — the flag is unaffected.
+  </p>
+  <Code code={namingSnippet} lang="ts" theme="night-owl" />
+  <p>
+    A flag accepts both <code>--environment production</code> and
+    <code>--environment=production</code>. A boolean is set simply by naming the
+    flag (<code>--dry-run</code>).
+  </p>
+
+  <h2 id="typing">Typing the value</h2>
+  <p>
+    A bare <code>parameter()</code> is a string. <code>.number()</code> and
+    <code>.boolean()</code> change the kind; <code>.options()</code> keeps it a
+    string but restricts the accepted values.
+  </p>
+  <Code code={typingSnippet} lang="ts" theme="night-owl" />
+  <ul>
+    <li><strong><code>.number()</code></strong> parses with <code>Number()</code>; an empty string or a non-finite result (<code>"eight"</code>, <code>""</code>) is rejected with a parse error.</li>
+    <li><strong><code>.boolean()</code></strong> accepts <code>true</code>/<code>1</code>/<code>yes</code> and <code>false</code>/<code>0</code>/<code>no</code> (any casing) from a flag value or env var; anything else is rejected. As a flag with no value it is <code>true</code>, and it defaults to <code>false</code> when absent.</li>
+    <li><strong><code>.options("a", "b")</code></strong> restricts the string to the listed choices; any other value is rejected naming the allowed set.</li>
+  </ul>
+
+  <h2 id="lists">Lists with .array()</h2>
+  <p>
+    <code>.array()</code> turns a parameter into a list. On the command line, a
+    comma separates values <strong>or</strong> the flag is repeated — the two are
+    equivalent. Blank entries are dropped, and an unsupplied list defaults to
+    <code>[]</code> (never <code>undefined</code>).
+  </p>
+  <Code code={arraySnippet} lang="ts" theme="night-owl" />
+  <Code code={arrayCliSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Because <code>.array()</code> reuses the element parser of the parameter it is
+    applied to, it composes with the kind and choices declared before it —
+    <strong>every element</strong> is validated, not just the raw string:
+  </p>
+  <Code code={arrayComposeSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="optionality">.required() and .default()</h2>
+  <p>
+    By default a parameter is optional and its <code>value</code> is
+    <code>T | undefined</code>. Two methods make it non-optional:
+  </p>
+  <Code code={optionalitySnippet} lang="ts" theme="night-owl" />
+  <ul>
+    <li><strong><code>.required()</code></strong> demands a value. If none is supplied — and no default exists and no interactive prompt answers it — the build fails before any target runs, with a message naming the flag and env var.</li>
+    <li><strong><code>.default(v)</code></strong> supplies a fallback, so <code>value</code> is always the declared type. A boolean is implicitly defaulted to <code>false</code>.</li>
+  </ul>
+  <div class="note">
+    <p>
+      When a required parameter is missing and the build runs at an interactive
+      terminal (a TTY, not CI), Zuke <strong>prompts</strong> for the value instead
+      of failing. On CI or non-interactive runs it still errors, so automation stays
+      deterministic.
+    </p>
+  </div>
+
+  <h2 id="secrets">.secret() and .from()</h2>
+  <p>
+    <code>.secret()</code> marks a value sensitive: its resolved value is
+    <strong>redacted from all of Zuke's output</strong> — every banner, target
+    status, summary, and error message — and, under GitHub Actions, Zuke emits an
+    <code>::add-mask::</code> so the runner masks it in its own logs.
+  </p>
+  <p>
+    <code>.from(source)</code> resolves the value from a secret manager (1Password,
+    Vault, a mounted file, …) when neither a flag nor an env var supplied one. It is
+    a <strong>fallback provider, not an override</strong>, and is typically paired
+    with <code>.secret()</code> so the fetched value is redacted.
+  </p>
+  <Code code={secretSnippet} lang="ts" theme="night-owl" />
+  <p>
+    The <a href="/docs/secrets">Secrets guide</a> covers sources
+    (<code>execSecret</code>, <code>fileSecret</code>), the exact redaction
+    guarantee and its boundary, and the <code>SecretError</code> surface in full.
+  </p>
+
+  <h2 id="precedence">Resolution precedence</h2>
+  <p>
+    Every parameter is resolved before the first target executes, from — in order
+    of precedence:
+  </p>
+  <ol>
+    <li>a command-line flag — <code>--environment production</code> or <code>--environment=production</code></li>
+    <li>the environment variable — <code>ENVIRONMENT</code> (or the <code>.env("NAME")</code> override)</li>
+    <li>the <code>.from(...)</code> secret source, if declared</li>
+    <li>the declared default</li>
+  </ol>
+  <p>
+    Each level is consulted only when the ones above it produced nothing, so the
+    source is invoked only when neither a flag nor an environment variable supplied
+    a value. This is what keeps a build portable: in CI a value is usually injected
+    as an environment variable (and the source is never touched); on a developer's
+    machine the source pulls it from their secret manager — no code change either
+    way. For a missing <em>required</em> value, an interactive prompt (at a TTY) is
+    tried before the source.
+  </p>
+
+  <h2 id="errors">Validation and errors</h2>
+  <p>
+    Resolution collects <strong>all</strong> parameter problems and reports them
+    together, before any target runs — a missing required value, or a value that
+    fails to parse (a non-number, a bad boolean, an off-list choice). The failure is
+    a single block naming each offending flag:
+  </p>
+  <Code code={errorSnippet} lang="text" theme="night-owl" />
+  <p>
+    The error class is <code>ParameterError</code>, exported for programmatic use.
+    Reading <code>.value</code> before the build has resolved parameters (for
+    example at construction time) also throws a <code>ParameterError</code> — read
+    parameters inside a target body, not in a field initializer. For a
+    <code>.secret()</code> parameter, the raw value is registered for redaction
+    <strong>before</strong> it is parsed, so even a parse error on a malformed
+    secret is masked rather than echoed.
+  </p>
+
+  <h2 id="reading">Reading a value</h2>
+  <p>
+    Read a parameter inside a target via <code>this.&lt;name&gt;.value</code>. The
+    value is fully typed by the declaration: a <code>.required()</code> or
+    <code>.default()</code> parameter is non-optional, while a plain optional
+    parameter is <code>T | undefined</code>.
+  </p>
+  <Code code={readingSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Resolution lives in the execution engine, not the CLI, so a
+    <a href="/docs/programmatic-api">programmatic <code>execute</code></a> call
+    resolves parameters too — pass raw values via <code>params</code> and/or rely on
+    environment variables. See <a href="/docs/concepts#parameters">Concepts</a> for
+    the short version and <a href="/docs/secrets">Secrets</a> for sensitive inputs.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

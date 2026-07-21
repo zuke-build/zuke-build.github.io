@@ -1,0 +1,285 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "wrappers", label: "Custom tool wrappers" },
+  { id: "toolsettings", label: "The ToolSettings contract" },
+  { id: "definetool", label: "defineTool — no class needed" },
+  { id: "plugins", label: "Plugins: observing the lifecycle" },
+  { id: "hooks", label: "The plugin hooks" },
+  { id: "factory", label: "Packaging a plugin" },
+];
+
+const wrapperSnippet = `import {
+  type Configure,
+  runSettings,
+  ToolSettings,
+} from "jsr:@zuke/core/tooling";
+
+// One settings class per subcommand. buildArgs() assembles the argv purely.
+class MyToolSettings extends ToolSettings {
+  #args: string[] = [];
+
+  fast(): this {
+    this.#args.push("--fast");
+    return this;
+  }
+
+  protected override defaultTool(): string {
+    return "mytool";
+  }
+
+  protected override buildArgs(): string[] {
+    return ["build", ...this.#args];
+  }
+}
+
+// The task function: construct, configure, run. This is the shape of every
+// built-in @zuke/* wrapper.
+export const MyToolTasks = {
+  build: (configure?: Configure<MyToolSettings>) =>
+    runSettings(new MyToolSettings(), configure),
+};
+
+// In a target:
+await MyToolTasks.build((s) => s.fast().cwd("app"));
+// → runs: mytool build --fast   (in ./app)`;
+
+const argvSnippet = `// buildArgs() is pure, so the full argv is unit-testable without spawning:
+const s = new MyToolSettings().fast().args("--verbose");
+assertEquals(s.argv(), ["mytool", "build", "--fast", "--verbose"]);`;
+
+const defineToolSnippet = `import { defineTool } from "jsr:@zuke/core/tooling";
+
+const terraform = defineTool("terraform");
+await terraform((s) => s.arg("plan").option("out", "plan.tfplan"));
+// → terraform plan --out plan.tfplan
+
+const helmUpgrade = defineTool("helm", { subcommand: "upgrade" });
+await helmUpgrade((s) => s.arg("api", "./chart").flag("install"));
+// → helm upgrade api ./chart --install`;
+
+const pluginSnippet = `import { type Plugin, run } from "jsr:@zuke/core";
+
+const timing: Plugin = {
+  name: "timing",
+  onTargetEnd: (target, status, { runId, durationMs }) =>
+    console.log(\`\${runId} \${target}: \${status} in \${durationMs}ms\`),
+  onFinish: (result) => console.log(\`build \${result.ok ? "ok" : "failed"}\`),
+};
+
+await run(MyBuild, { plugins: [timing] });`;
+
+const legacySnippet = `// The old two-argument shape still type-checks and still runs — a function
+// that ignores its trailing arguments is assignable to the enriched signature.
+const legacy: Plugin = {
+  onTargetEnd: (target, status) => console.log(\`\${target}: \${status}\`),
+};`;
+
+const factorySnippet = `// @acme/zuke-slack — a package exports a factory that returns a Plugin.
+import type { Plugin } from "jsr:@zuke/core";
+
+export function slack(opts: { webhook: string }): Plugin {
+  return {
+    name: "slack",
+    onFinish: async (result) => {
+      if (!result.ok) await notify(opts.webhook, "build failed");
+    },
+  };
+}
+
+// Consumer's build file — register one or several plugins at once:
+await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] });`;
+---
+
+<DocsLayout
+  title="Extending Zuke"
+  description="Zuke is built to be extended without forking. Write a typed CLI wrapper by extending ToolSettings from @zuke/core/tooling, and observe the build lifecycle with a Plugin registered through run({ plugins: [...] }) — small public contracts a third-party package can build against."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke is built to be extended <strong>without forking</strong>. Two of its
+    stable extension points are small public contracts a third-party package can
+    build against: a <strong>tool wrapper</strong> adds a typed, fluent CLI task
+    by extending <code>ToolSettings</code>; a <strong>plugin</strong> observes the
+    build lifecycle by implementing a few optional hooks. Both are plain values —
+    no subclassing <a href="/docs/concepts">Build</a>, no runtime dependency
+    beyond <code>@zuke/core</code>.
+  </p>
+
+  <h2 id="wrappers">Custom tool wrappers</h2>
+  <p>
+    A wrapper turns a CLI into a typed, discoverable task in the same
+    settings-lambda style as the built-in
+    <a href="/docs/concepts#tools">@zuke/* wrappers</a>. A distributable wrapper
+    extends the abstract <code>ToolSettings</code> class from
+    <code>@zuke/core/tooling</code>: you implement two methods —
+    <code>defaultTool()</code> (the binary to spawn) and <code>buildArgs()</code>
+    (the subcommand argv) — and the base contributes the shared fluent chainers
+    and the execution logic.
+  </p>
+  <Code code={wrapperSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Each subcommand is its own settings class, and each task function follows the
+    <strong>construct-configure-run</strong> shape:
+    <code>runSettings(new S(), configure)</code> applies the optional
+    <code>Configure&lt;S&gt;</code> lambda — a <code>(settings: S) =&gt; S</code>
+    — then calls <code>.run()</code>, which resolves to a <code>CommandOutput</code>
+    (the same result the <a href="/docs/concepts">$ shell</a> returns).
+  </p>
+  <div class="note">
+    <p>
+      <code>buildArgs()</code> must stay <strong>pure</strong> — no I/O, no
+      environment reads — so argv construction is unit-testable and deterministic.
+      The base assembles argv as an array end-to-end and runs it through
+      Zuke's <code>Command</code>: there is no shell string and no injection
+      surface.
+    </p>
+  </div>
+  <Code code={argvSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="toolsettings">The ToolSettings contract</h2>
+  <p>
+    You override the two abstract methods; the base gives every wrapper the same
+    inherited chainers for free, so a custom wrapper behaves exactly like a
+    built-in one.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th><code>ToolSettings</code> member</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>defaultTool()</code></td><td>the binary to spawn — <strong>abstract, you implement</strong></td></tr>
+      <tr><td><code>buildArgs()</code></td><td>the subcommand argv — <strong>abstract, you implement; must be pure</strong></td></tr>
+      <tr><td><code>defaultResolution()</code></td><td>override to return <code>"node_modules"</code> for a JS-ecosystem tool (default <code>"path"</code>)</td></tr>
+      <tr><td><code>.env(record)</code></td><td>merge extra environment variables for the process</td></tr>
+      <tr><td><code>.cwd(path)</code></td><td>working directory for the process</td></tr>
+      <tr><td><code>.noThrow()</code></td><td>don't throw on a non-zero exit; inspect <code>code</code> on the output instead</td></tr>
+      <tr><td><code>.quiet()</code></td><td>suppress live stdout/stderr streaming to the terminal</td></tr>
+      <tr><td><code>.killAfter(ms)</code></td><td>kill the tool after <code>ms</code>, raising a <code>CommandTimeoutError</code></td></tr>
+      <tr><td><code>.toolPath(path)</code></td><td>override the binary (an explicit path always wins)</td></tr>
+      <tr><td><code>.fromNodeModules()</code> / <code>.fromPath()</code></td><td>per-call binary resolution: <code>node_modules/.bin</code> walk vs. bare <code>PATH</code></td></tr>
+      <tr><td><code>.args(...extra)</code></td><td>escape hatch: append raw arguments after all typed options</td></tr>
+      <tr><td><code>.argv()</code></td><td>the full argv (binary first), pure — for tests and diagnostics</td></tr>
+      <tr><td><code>.resolvedArgv()</code></td><td>like <code>argv()</code> but with <code>node_modules/.bin</code> resolution applied (does I/O)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    A wrapper package is a workspace sibling that depends only on
+    <code>@zuke/core</code> — the existing <code>@zuke/*</code> wrappers are the
+    template. See <a href="/docs/installing-tools">Installing tools</a> for how
+    <code>fromNodeModules()</code> and <code>toolPath()</code> line up with a
+    provisioned binary.
+  </p>
+
+  <h2 id="definetool">defineTool — no class needed</h2>
+  <p>
+    For a one-off CLI that doesn't warrant a dedicated wrapper package,
+    <code>defineTool</code> returns a ready-to-run task with no class. It uses the
+    same settings-lambda style — a <code>DynamicToolSettings</code> with
+    <code>arg</code> / <code>flag</code> / <code>option</code> for argv (applied in
+    call order) plus all the shared chainers above.
+  </p>
+  <Code code={defineToolSnippet} lang="ts" theme="night-owl" />
+  <p>
+    An optional <code>subcommand</code> (a string or string array) is prepended to
+    every invocation. Reach for a full <code>ToolSettings</code> subclass only when
+    you want named, typed methods (<code>.fast()</code>) instead of raw
+    <code>.arg()</code> tokens, or when you're distributing the wrapper.
+  </p>
+
+  <h2 id="plugins">Plugins: observing the lifecycle</h2>
+  <p>
+    A <strong>plugin</strong> is a plain object implementing any of the lifecycle
+    hooks. Register one — or several — by passing them to <code>run</code> (or
+    <code>execute</code>) via <code>{"{ plugins: [...] }"}</code>; each hook runs
+    alongside the build's own lifecycle method, in registration order. Plugins
+    <strong>observe</strong> — they report, time, or notify — they don't change
+    the plan or a target's result.
+  </p>
+  <Code code={pluginSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Every hook is optional and may be async — the executor awaits each before
+    continuing. Because a plugin is strictly an observer, a hook that
+    <strong>throws</strong> is caught, reported, and swallowed; it never breaks the
+    run. (The build's own overridden lifecycle methods, by contrast, are the
+    build's logic and still propagate.)
+  </p>
+  <div class="note">
+    <p>
+      The extra hook arguments are <strong>additive</strong>: a plugin written
+      against the old two-argument signatures keeps working unchanged, since a
+      function that ignores its trailing arguments is still assignable to the
+      enriched type.
+    </p>
+  </div>
+  <Code code={legacySnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="hooks">The plugin hooks</h2>
+  <p>
+    Every hook receives context beyond the bare names. <code>run</code> is a
+    <code>RunInfo</code> (<code>{"{ runId, dryRun }"}</code>) whose
+    <code>runId</code> is <strong>stable across a suspend/resume boundary</strong>,
+    so an exporter can group a run's events under one id; <code>timing</code> is a
+    <code>TargetTiming</code> (<code>{"{ runId, durationMs }"}</code>).
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Hook</th><th>When it runs</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>onStart(run)</code></td><td>Once, before any target runs.</td></tr>
+      <tr><td><code>onTargetStart(target, run)</code></td><td>Just before a target's body executes — not for skipped or cached targets.</td></tr>
+      <tr><td><code>onTargetEnd(target, status, timing)</code></td><td>After each target settles, with its <code>TargetStatus</code> and <code>TargetTiming</code> (<code>durationMs</code> is <code>0</code> for skipped/cached).</td></tr>
+      <tr><td><code>onFinish(result, run)</code></td><td>Once, after the run completes — success or failure; the outcome is <code>result.ok</code>.</td></tr>
+      <tr><td><code>onRunStateChange(record)</code></td><td>On each run-level durable status change (<code>running</code>, <code>suspended</code>, <code>succeeded</code>, <code>failed</code>, <code>cancelling</code>, <code>cancelled</code>).</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      <code>onRunStateChange</code> <strong>only fires when a
+      <a href="/docs/state">state store</a> is configured</strong> — a plain build
+      with no store never produces a <code>RunRecord</code>, and the hook stays
+      silent. The record it receives is the <strong>secret-free projection</strong>:
+      <code>secret()</code> parameters are omitted and errors, state metadata, and
+      audit arguments are run through the redactor first, so it is safe to export.
+      It carries per-target timings, waits, and the audit trail in one payload —
+      which is why a metrics exporter subscribes here rather than to the per-target
+      hooks.
+    </p>
+  </div>
+
+  <h2 id="factory">Packaging a plugin</h2>
+  <p>
+    A plugin is just a value, so a package can export a factory that returns one
+    — configured however it likes:
+  </p>
+  <Code code={factorySnippet} lang="ts" theme="night-owl" />
+  <p>
+    <a href="/docs/observability">@zuke/otel</a> is the full worked example of this
+    pattern: a factory returning a <code>Plugin</code> that turns
+    <code>onRunStateChange</code> records into OpenTelemetry spans and counters —
+    including trace continuity across a suspend/resume — with no runtime
+    dependencies. For the third extension seam, reusable bundles of targets, see
+    reusable components in <a href="/docs/orchestration">Orchestration</a>.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

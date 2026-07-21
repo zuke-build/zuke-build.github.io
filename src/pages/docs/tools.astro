@@ -1,0 +1,233 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { toolGroups, corePackages, packageCount } from "../../data/tools.ts";
+
+const toc = [
+  { id: "model", label: "The wrapper model" },
+  { id: "catalog", label: "The catalog" },
+  { id: "resolution", label: "Resolving the binary" },
+  { id: "define", label: "Define your own tool" },
+  { id: "core", label: "Engine & plugin packages" },
+];
+
+const introSnippet = `import { DenoTasks } from "jsr:@zuke/deno";
+import { NpmTasks } from "jsr:@zuke/npm";
+import { CmdTasks } from "jsr:@zuke/cmd";
+
+// Configure a fluent settings object in a lambda; the task builds the argv.
+await DenoTasks.test((s) => s.allowAll().coverage("cov_profile"));
+await NpmTasks.run((s) => s.script("build").workspace("app"));
+
+// Fallback for any tool without a dedicated wrapper:
+await CmdTasks.exec("git", (s) => s.args("rev-parse", "HEAD"));`;
+
+const resolutionSnippet = `// Per call: resolve npx-style from node_modules/.bin (or force PATH).
+await OxlintTasks.lint((s) => s.fromNodeModules());
+await EslintTasks.lint((s) => s.fromPath());
+
+// Repo-wide, no code change — a per-call setting still wins over this.
+// ZUKE_TOOL_RESOLUTION=node_modules   (or "path")`;
+
+const defineSnippet = `import { defineTool } from "jsr:@zuke/core/tooling";
+
+const terraform = defineTool("terraform");
+await terraform((s) => s.arg("plan").option("out", "plan.tfplan"));
+// → terraform plan --out plan.tfplan
+
+const helmUpgrade = defineTool("helm", { subcommand: "upgrade" });
+await helmUpgrade((s) => s.arg("api", "./chart").flag("install").cwd("infra"));
+// → helm upgrade api ./chart --install   (run in ./infra)`;
+---
+
+<DocsLayout
+  title="Tool catalog"
+  description="A browsable catalog of every @zuke tool wrapper — typed, fluent, injection-free packages published to JSR that turn a CLI into a strongly-typed task you configure in a lambda."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke ships <strong>{packageCount} typed packages</strong> to JSR under the
+    <code>@zuke/*</code> scope. Most are <strong>tool wrappers</strong>: each turns
+    a real CLI — Deno, Docker, kubectl, ESLint, Playwright — into a fluent,
+    strongly-typed task you configure in a lambda, so build steps are
+    refactor-safe and editor-completable. The rest are the engine and plugins the
+    wrappers are built on.
+  </p>
+
+  <h2 id="model">The wrapper model</h2>
+  <p>
+    A wrapper is a <em>settings-lambda</em>: you configure a fluent settings object
+    in a callback, and the task function assembles the argv and runs it. Arguments
+    stay a discrete array end-to-end — never a shell string — so command
+    construction is <strong>injection-free</strong>. Awaiting a task resolves to the
+    same <code>CommandOutput</code> the shell <code>$</code> produces.
+  </p>
+  <Code code={introSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Every settings object also supports the shared chainers <code>.env()</code>,
+    <code>.cwd()</code>, <code>.noThrow()</code>, <code>.quiet()</code>,
+    <code>.toolPath()</code> (binary override) and <code>.args()</code> (an escape
+    hatch for flags without a typed option). Need the binary itself? A build can
+    fetch a pinned, checksum-verified CLI and hand its path to
+    <code>.toolPath(...)</code> — see
+    <a href="/docs/installing-tools">Installing tools</a>.
+  </p>
+  <div class="note">
+    <p>
+      Every card below links to the package's page on
+      <a href="https://jsr.io/@zuke" target="_blank" rel="noopener">JSR</a>, where
+      the full task list and typed settings for that wrapper are documented. To read
+      a wrapper's API in your terminal without <code>@types/node</code> noise, run
+      <code>zuke doc &lt;package&gt;</code> (e.g. <code>zuke doc deno</code>).
+    </p>
+  </div>
+
+  <h2 id="catalog">The catalog</h2>
+  <p>
+    Grouped by capability. A package can appear under more than one heading when it
+    covers more than one job.
+  </p>
+  {
+    toolGroups.map((group) => (
+      <section class="tgroup">
+        <h3>{group.category}</h3>
+        <p class="tblurb">{group.blurb}</p>
+        <div class="tgrid">
+          {group.tools.map((tool) => (
+            <a
+              class="tcard"
+              href={`https://jsr.io/${tool.pkg}`}
+              target="_blank"
+              rel="noopener"
+            >
+              <span class="tname">{tool.name}</span>
+              <code class="tpkg">{tool.pkg}</code>
+              <span class="tdesc">{tool.desc}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  <h2 id="resolution">Resolving the binary</h2>
+  <p>
+    By default a wrapper spawns the bare tool name and lets the OS find it on
+    <code>PATH</code>. In a Node monorepo the tools are usually installed locally and
+    hoisted to the repo root, so Zuke can resolve them npx-style — walking up from the
+    working directory for <code>node_modules/.bin/&lt;tool&gt;</code> and falling back
+    to <code>PATH</code> on a miss. Three ways to turn it on, most specific first:
+  </p>
+  <ul>
+    <li><strong>Per call:</strong> <code>.fromNodeModules()</code> (or <code>.fromPath()</code> to force <code>PATH</code>) on any settings object.</li>
+    <li><strong>Per wrapper:</strong> the JS-ecosystem wrappers default to <code>node_modules</code>-first, so in a workspace package whose binaries are hoisted you write no <code>.toolPath()</code> and no <code>.fromNodeModules()</code> at all.</li>
+    <li><strong>Repo-wide:</strong> <code>ZUKE_TOOL_RESOLUTION=node_modules</code> (or <code>path</code>) flips every wrapper without touching call sites. A per-call setting still wins over the ambient value.</li>
+  </ul>
+  <Code code={resolutionSnippet} lang="ts" theme="night-owl" />
+  <p>
+    An explicit <code>.toolPath(...)</code> always wins over resolution — pins from
+    <code>toolchain()</code> stay hermetic. If a binary is missing, Zuke retries
+    through <code>cmd /c</code> on Windows (npm ships as a <code>.cmd</code> shim
+    there) and otherwise raises a <code>ToolNotFoundError</code> that names the tool
+    and the fix (run <code>npm ci</code>, or provision it via <code>toolchain()</code>).
+    <code>resolvedArgv()</code> reports the argv a run will actually spawn — the
+    resolved shim or the bare fallback — for diagnostics.
+  </p>
+
+  <h2 id="define">Define your own tool</h2>
+  <p>
+    For a CLI without a dedicated package, <code>defineTool</code> (from
+    <code>@zuke/core/tooling</code>) gives you a typed, fluent task in the same style —
+    no class needed. Build the argv with <code>arg</code> / <code>flag</code> /
+    <code>option</code> (in call order), and the shared chainers all apply. An optional
+    <code>subcommand</code> is prepended to every invocation.
+  </p>
+  <Code code={defineSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>flag</code>/<code>option</code> add a <code>--</code> prefix unless the name
+    already starts with a dash (so <code>flag("-v")</code> stays <code>-v</code>).
+    Argv is a discrete array end-to-end, so a <code>defineTool</code> command is just
+    as injection-free as the built-in wrappers. For the full extension surface — custom
+    settings classes and plugins — see <a href="/docs/extending">Extending Zuke</a>.
+  </p>
+
+  <h2 id="core">Engine & plugin packages</h2>
+  <p>
+    Everything that isn't a CLI wrapper — the build engine, the CLI, and the layers
+    the wrappers sit on:
+  </p>
+  <div class="tgrid tgrid-core">
+    {
+      corePackages.map((pkg) => (
+        <a
+          class="tcard"
+          href={`https://jsr.io/${pkg.name}`}
+          target="_blank"
+          rel="noopener"
+        >
+          <code class="tpkg tpkg-lead">{pkg.name}</code>
+          <span class="tdesc">{pkg.desc}</span>
+        </a>
+      ))
+    }
+  </div>
+</DocsLayout>
+
+<style>
+  .tgroup {
+    margin: 26px 0;
+  }
+  .tgroup h3 {
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+  .tblurb {
+    margin: 0 0 14px;
+    color: var(--text-dim);
+    font-size: 0.92rem;
+  }
+  .tgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+  }
+  .tgrid-core {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  .tcard {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 13px 15px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+  }
+  .tcard:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .tname {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .tpkg {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    word-break: break-all;
+  }
+  .tpkg-lead {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .tdesc {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    line-height: 1.45;
+  }
+</style>

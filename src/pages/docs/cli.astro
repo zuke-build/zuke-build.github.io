@@ -1,0 +1,457 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "two-commands", label: "Two commands named zuke" },
+  { id: "project", label: "Project: setup, import, doc, version" },
+  { id: "running", label: "Running targets" },
+  { id: "graph-ci", label: "Graph & CI" },
+  { id: "state", label: "State & orchestration" },
+  { id: "mcp", label: "MCP & registry" },
+  { id: "env", label: "Environment variables" },
+];
+
+const installSnippet = `# The global CLI (project scaffolding), installed once:
+deno install -A -g -n zuke jsr:@zuke/cli
+zuke setup                 # writes zuke.ts and a ./zuke launcher
+
+# Everything after setup runs through the scaffolded launcher:
+./zuke build               # deno run -A zuke.ts build`;
+
+const setupSnippet = `zuke setup                        # scaffold into the current directory
+zuke setup --dir services/api     # scaffold into a subdirectory
+zuke setup --name ApiBuild --yes  # name the Build class, skip prompts
+zuke setup --launcher-name make   # write ./make when a zuke/ dir is in the way`;
+
+const importSnippet = `zuke import                       # auto-detect package.json scripts or a Makefile
+zuke import --from package.json   # force the source
+zuke import --from makefile --yes`;
+
+const docSnippet = `zuke doc core            # → deno doc jsr:@zuke/core
+zuke doc @scope/pkg      # a scoped package
+zuke doc jsr:@zuke/deno  # a jsr:/npm:/https:/file: specifier, passed through
+
+# The build launcher has its own 'doc' command, but it only passes through
+# explicit specifiers/paths (jsr:/npm:/https:/file:/relative) — no bare-name
+# 'core' → jsr:@zuke/core mapping, so give the full specifier:
+./zuke doc jsr:@zuke/deno`;
+
+const completionsSnippet = `# Print a script and source it in the current shell:
+source <(./zuke completions print bash)
+source <(./zuke completions print zsh)
+./zuke completions print fish | source
+
+# Or wire it into your shell's startup once:
+./zuke completions install zsh`;
+
+const runSnippet = `./zuke build                     # run 'build' and all its dependencies
+./zuke                           # run the 'default' target, else print --list
+./zuke test --skip lint          # run 'test' but skip the 'lint' dependency
+./zuke ci --parallel             # run independent targets concurrently
+./zuke ci --parallel=4           # cap the number in flight
+./zuke ci --affected=origin/main # only targets reachable from changed files
+./zuke deploy --dry-run          # print the plan without executing any body
+./zuke build --no-cache          # ignore the incremental cache; re-run all`;
+
+const listSnippet = `./zuke --list          # targets with descriptions and dependencies
+./zuke --list --json   # the whole build surface (commands, flags, targets) as JSON`;
+
+const graphSnippet = `./zuke graph                  # print the 'target → deps' adjacency listing
+./zuke graph --output=html    # render an interactive page to .zuke/graph.html and open it
+./zuke graph --output=html --no-open`;
+
+const ciSnippet = `./zuke generate-ci          # write the CI files declared via cicd()
+./zuke generate-ci --check  # verify they are current instead (fail if stale) — use on CI`;
+
+const runsSnippet = `./zuke ci --state                       # persist a run record under .zuke/runs
+./zuke runs list                        # one row per run, newest first
+./zuke runs list --status failed --limit 20
+./zuke runs list --target deploy --since 2026-07-01T00:00:00Z
+./zuke runs list --counts --json        # aggregate { total, byStatus }
+./zuke runs show <run-id> --json        # one run's full per-target status
+./zuke runs prune --keep 90d --keep-last 50 --dry-run`;
+
+const resumeSnippet = `./zuke resume <run-id>                       # continue a suspended run
+./zuke resume <run-id> --signal approved --data '{"by":"alice"}'
+./zuke resume --check                        # re-check predicate waits & timeouts
+./zuke cancel <run-id> --actor ci-bot        # cancel and run compensations`;
+
+const mcpSnippet = `./zuke mcp                                   # read-only MCP server on stdio
+./zuke mcp --allow-run                        # also expose run:<target> tools
+./zuke mcp --allow-run='build,test:*' --protect='deploy,release'
+./zuke mcp --allow-run --confirm-destructive  # destructive runs return a plan first
+./zuke mcp --http 127.0.0.1:8787              # streamable-HTTP transport
+./zuke mcp --registry --max-concurrent-runs 8 # serve every registered build
+
+./zuke register                              # record this build in the registry`;
+
+const envSnippet = `# Never a flag — the loopback-only guard reads it from the environment:
+ZUKE_MCP_TOKEN=… ./zuke mcp --http 0.0.0.0:8787
+
+# Configure a remote cache with no build-file change:
+ZUKE_REMOTE_CACHE_URL=https://cache.example.com ZUKE_REMOTE_CACHE_TOKEN=… ./zuke ci
+ZUKE_REMOTE_CACHE_DIR=/mnt/zuke-cache ./zuke ci
+
+# Configure durable state / the registry the same way:
+ZUKE_STATE_URL=https://state.example.com ZUKE_STATE_TOKEN=… ./zuke ci --state
+ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
+---
+
+<DocsLayout
+  title="CLI reference"
+  description="Every zuke command and flag, verified against the source: the global @zuke/cli (setup, import, doc, version) and the build launcher ./zuke (running targets, graph, generate-ci, runs, resume, cancel, mcp, register), plus the ZUKE_* environment variables."
+  toc={toc}
+>
+  <p class="lead">
+    The complete command and flag reference. Every entry here is grounded in the
+    argument parser (<code>cli_spec.ts</code>, <code>cli.ts</code>) and the
+    launcher CLI (<code>@zuke/cli</code>), not the help text alone — so what you
+    read is what the parser actually accepts.
+  </p>
+  <Code code={installSnippet} lang="bash" theme="night-owl" />
+
+  <h2 id="two-commands">Two commands named <code>zuke</code></h2>
+  <p>
+    There are two distinct programs, and the flags below belong to one or the
+    other:
+  </p>
+  <ul>
+    <li>
+      <strong>The global CLI</strong> (<code>@zuke/cli</code>, installed with
+      <code>deno install</code>) is the pre-build tool: it scaffolds a project
+      (<code>setup</code>, <code>import</code>), documents packages
+      (<code>doc</code>), and reports its own <code>--version</code>. You run it
+      as <code>zuke</code> before a build file exists.
+    </li>
+    <li>
+      <strong>The build launcher</strong> — the <code>./zuke</code> script
+      <code>setup</code> writes, which is just <code>deno run -A zuke.ts</code>
+      — drives <em>your</em> build: it runs targets and hosts every build-aware
+      command (<code>graph</code>, <code>generate-ci</code>,
+      <code>completions</code>, <code>runs</code>, <code>resume</code>,
+      <code>cancel</code>, <code>mcp</code>, <code>register</code>, and its own
+      <code>doc</code>).
+    </li>
+  </ul>
+  <p>
+    Below, <code>zuke</code> denotes the global CLI and <code>./zuke</code> the
+    build launcher. Both accept <code>--help</code>/<code>-h</code>.
+  </p>
+  <div class="note">
+    <p>
+      The reserved command words (<code>graph</code>, <code>generate-ci</code>,
+      <code>completions</code>, <code>mcp</code>, <code>resume</code>,
+      <code>runs</code>, <code>cancel</code>, <code>register</code>,
+      <code>doc</code>) are not runnable as target names — a target called
+      <code>graph</code> can't be launched by name. The parser, <code>--help</code>,
+      and shell completion all read this list from a single source of truth, so
+      they never drift out of sync.
+    </p>
+  </div>
+
+  <h2 id="project">Project: <code>setup</code>, <code>import</code>, <code>doc</code>, <code>version</code></h2>
+  <p>
+    <code>zuke setup</code> scaffolds a starter <code>zuke.ts</code> and a
+    <code>./zuke</code> launcher into a directory. It prompts for the build class
+    name and whether to overwrite unless <code>--yes</code> is given or stdin
+    isn't a terminal.
+  </p>
+  <Code code={setupSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th><code>zuke setup</code></th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--dir &lt;path&gt;</code></td><td>directory to scaffold into (default <code>.</code>)</td></tr>
+      <tr><td><code>--name &lt;Class&gt;</code></td><td>the <code>Build</code> subclass name for <code>zuke.ts</code> (default <code>MyBuild</code>)</td></tr>
+      <tr><td><code>--launcher-name &lt;name&gt;</code></td><td>base name for the launcher scripts — used when a <code>zuke/</code> directory already occupies the name. Must be a single path segment</td></tr>
+      <tr><td><code>--force</code>, <code>-f</code></td><td>overwrite existing files</td></tr>
+      <tr><td><code>--yes</code>, <code>-y</code></td><td>accept defaults without prompting</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>zuke import</code> takes the same flags plus <code>--from</code>, and
+    generates a <code>zuke.ts</code> from an existing project's build scripts —
+    a <code>package.json</code>'s <code>scripts</code> or a <code>Makefile</code>.
+    Without <code>--from</code> it auto-detects the source.
+  </p>
+  <Code code={importSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th><code>zuke import</code></th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--from &lt;source&gt;</code></td><td><code>package.json</code> or <code>makefile</code>; auto-detected when omitted</td></tr>
+      <tr><td><code>--dir</code>, <code>--name</code>, <code>--force</code>, <code>--yes</code></td><td>as for <code>setup</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>zuke doc &lt;package&gt;</code> prints a package's API by running
+    <code>deno doc</code> from an <strong>isolated empty directory</strong>. A
+    bare name resolves to a Zuke package (<code>core</code> →
+    <code>jsr:@zuke/core</code>); a scoped name (<code>@scope/pkg</code>) becomes
+    <code>jsr:@scope/pkg</code>; and any explicit
+    <code>jsr:</code>/<code>npm:</code>/<code>https:</code>/<code>file:</code>/path
+    specifier passes through. The isolation matters inside a Node repo: run
+    plainly, <code>deno doc</code> resolves the repo's
+    <code>node_modules/@types/*</code> and buries the API under
+    type-resolution warnings; the empty working directory has nothing to
+    resolve. A relative path is pinned to your real directory first.
+  </p>
+  <Code code={docSnippet} lang="bash" theme="night-owl" />
+  <p>
+    <code>zuke --version</code> (or <code>-V</code>) prints the CLI version.
+  </p>
+
+  <h3 id="completions"><code>./zuke completions</code></h3>
+  <p>
+    A build-launcher command: it emits a shell-completion script for
+    <code>bash</code>, <code>zsh</code>, or <code>fish</code> that completes your
+    build's target names, the reserved commands, the built-in flags, and any
+    declared parameters as <code>--flag</code> candidates. Unlisted targets stay
+    hidden, exactly as in <code>--list</code>. It takes an explicit sub-action
+    first — <code>print</code> or <code>install</code> — then the shell.
+  </p>
+  <Code code={completionsSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Sub-action</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>print &lt;shell&gt;</code></td><td>write the script to stdout (source it yourself)</td></tr>
+      <tr><td><code>install &lt;shell&gt;</code></td><td>write the script under your config directory (honouring <code>$XDG_CONFIG_HOME</code>) and wire it into the shell's startup. Idempotent — an already-sourced rc file is left untouched</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The script is a static snapshot of the build it was generated from, so
+    regenerate and re-source it after you add, rename, or remove targets — the
+    same model as <code>deno completions</code>.
+  </p>
+
+  <h2 id="running">Running targets</h2>
+  <p>
+    <code>./zuke &lt;target&gt;</code> runs the target and all its transitive
+    dependencies in order. With no positional argument, the launcher runs a
+    target literally named <code>default</code> if one exists, otherwise it
+    prints <code>--list</code>. Each target prints a start banner and a
+    <code>✔</code>/<code>✘</code> line with its duration; a failure aborts the
+    rest and exits <code>1</code>.
+  </p>
+  <Code code={runSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Flag</th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--skip &lt;dep&gt;</code></td><td>run the target but skip the named dependency (repeatable)</td></tr>
+      <tr><td><code>--parallel[=N]</code></td><td>run independent targets concurrently, still completing every dependency before its dependents. <code>N</code> caps the number in flight (default: the host CPU count). See <a href="/docs/concepts">execution model</a></td></tr>
+      <tr><td><code>--affected[=&lt;base&gt;]</code></td><td>run only the targets a git diff since <code>&lt;base&gt;</code> can reach (default base <code>HEAD</code>); a target with no declared <code>.inputs()</code> can't be proven unaffected, so it always runs. See <a href="/docs/caching#affected">affected targets</a></td></tr>
+      <tr><td><code>--no-cache</code></td><td>ignore the <a href="/docs/caching#incremental">incremental cache</a> and re-run every target</td></tr>
+      <tr><td><code>--no-remote-cache</code></td><td>use the local cache only; skip the <a href="/docs/caching#remote">remote cache store</a> (neither restore nor upload). <code>--no-cache</code> disables both</td></tr>
+      <tr><td><code>--dry-run</code></td><td>resolve the plan and print every target that would run (honouring <code>--skip</code> and each <code>onlyWhen</code>) without executing any body or touching the cache</td></tr>
+      <tr><td><code>--state</code></td><td>persist a <a href="/docs/state">durable run record</a> under <code>.zuke/runs</code> when no store is otherwise configured</td></tr>
+      <tr><td><code>--actor &lt;name&gt;</code></td><td>attribute the run to <code>&lt;name&gt;</code> in its state record (else <code>ZUKE_ACTOR</code>, the CI actor, or <code>"anonymous"</code>)</td></tr>
+      <tr><td><code>--list</code>, <code>-l</code></td><td>list all targets with descriptions and dependencies</td></tr>
+      <tr><td><code>--json</code></td><td>emit the whole build surface (commands, flags, targets, parameters) as JSON — for tools and agents</td></tr>
+    </tbody>
+  </table>
+  <Code code={listSnippet} lang="bash" theme="night-owl" />
+
+  <h2 id="graph-ci">Graph & CI</h2>
+  <p>
+    <code>./zuke graph</code> shows the dependency graph. By default it prints the
+    terminal <code>target → deps</code> adjacency listing; <code>--output=html</code>
+    renders an interactive Cytoscape page to
+    <code>&lt;repo root&gt;/.zuke/graph.html</code> and opens it (Cytoscape loads
+    from a pinned CDN, so the first view needs internet access).
+  </p>
+  <Code code={graphSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Flag</th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--output=html</code></td><td>render the interactive HTML page instead of terminal text (<code>--output text</code> is the default)</td></tr>
+      <tr><td><code>--no-open</code></td><td>with <code>--output=html</code>, write the file without opening a browser</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>./zuke generate-ci</code> writes the CI configuration files the build
+    declares via <code>cicd()</code>. Running any target regenerates them too, so
+    the command is mainly for CI verification.
+  </p>
+  <Code code={ciSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Flag</th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--check</code></td><td>verify the declared files are current instead of writing them, failing if any has drifted (use on CI, so an ephemeral checkout is never left dirty)</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="state">State & orchestration</h2>
+  <p>
+    These commands read and steer <a href="/docs/state">persisted run records</a>.
+    They resolve the state store the same way a run does — <code>ZUKE_STATE_URL</code>
+    / <code>ZUKE_STATE_DIR</code>, the build's <code>stateStore()</code> override,
+    or the default <code>.zuke/runs</code> — and report a friendly error when no
+    store is configured.
+  </p>
+  <Code code={runsSnippet} lang="bash" theme="night-owl" />
+  <p>
+    <code>./zuke runs</code> takes a sub-action: <code>list</code>,
+    <code>show &lt;id&gt;</code>, or <code>prune</code>.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th><code>./zuke runs</code></th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>list</code></td><td>one row per run — id, status, root target, actor, creation time — newest first</td></tr>
+      <tr><td><code>list --status &lt;s&gt;</code></td><td>keep only runs with this status: <code>running</code>, <code>suspended</code>, <code>cancelling</code>, <code>succeeded</code>, <code>failed</code>, or <code>cancelled</code></td></tr>
+      <tr><td><code>list --target &lt;t&gt;</code></td><td>keep only runs whose graph contains that target</td></tr>
+      <tr><td><code>list --since &lt;iso&gt;</code></td><td>keep only runs created at/after an ISO-8601 timestamp</td></tr>
+      <tr><td><code>list --limit &lt;n&gt;</code></td><td>return at most the newest N (must be a positive integer)</td></tr>
+      <tr><td><code>list --counts</code></td><td>print aggregate counts (a total and one line per status) instead of rows; with <code>--json</code> emits <code>&#123; total, byStatus &#125;</code></td></tr>
+      <tr><td><code>show &lt;id&gt;</code></td><td>reconstruct one run in full: header, resolved non-secret parameters, per-target status/duration/error, and any signals received</td></tr>
+      <tr><td><code>prune --keep &lt;age&gt;</code></td><td>keep runs newer than an age (e.g. <code>90d</code>); older <em>terminal</em> runs become eligible</td></tr>
+      <tr><td><code>prune --keep-last &lt;n&gt;</code></td><td>always keep the newest N terminal runs</td></tr>
+      <tr><td><code>prune --dry-run</code></td><td>report what would be deleted without deleting; at least one <code>--keep</code>/<code>--keep-last</code> rule is required</td></tr>
+      <tr><td><code>--json</code></td><td>on <code>list</code>/<code>show</code>, emit machine-readable output (the summary array or the whole record)</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      <code>prune</code> never touches <strong>non-terminal</strong> runs
+      (<code>suspended</code>, <code>running</code>, <code>cancelling</code>) — a
+      run is deleted only when it is terminal and matches neither keep rule. See
+      <a href="/docs/state#retention">retention</a> for who owns pruning on each
+      backend.
+    </p>
+  </div>
+  <p>
+    <code>./zuke resume &lt;id&gt;</code> continues a run parked at a
+    <code>.waitsFor()</code> gate; <code>./zuke cancel &lt;id&gt;</code> stops a
+    run and unwinds its <code>.onCancel(...)</code> compensations in reverse
+    order. Resumption is <strong>exactly-once</strong> — concurrent resumers race
+    a compare-and-swap and all but one get <code>AlreadyResumedError</code>. See
+    <a href="/docs/orchestration#suspend">suspend &amp; resume</a> and
+    <a href="/docs/orchestration#cancel">cancellation</a>.
+  </p>
+  <Code code={resumeSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Flag</th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>resume --signal &lt;name&gt;</code></td><td>deliver a named external signal to the run</td></tr>
+      <tr><td><code>resume --data &lt;json&gt;</code></td><td>with <code>--signal</code>, the signal's JSON payload (default <code>&#123;&#125;</code>; capped at 64 KiB)</td></tr>
+      <tr><td><code>resume --check [&lt;id&gt;]</code></td><td>re-check predicate waits and enforce timeouts across suspended runs — the cron/webhook entry point</td></tr>
+      <tr><td><code>resume --force-graph</code></td><td>continue even if the build graph changed since the run was suspended</td></tr>
+      <tr><td><code>resume --actor &lt;name&gt;</code>, <code>cancel --actor &lt;name&gt;</code></td><td>attribute the resume/cancellation in the audit trail</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>Ctrl-C</code> (or <code>SIGTERM</code>) during a run triggers the same
+    graceful cancellation in-process; a second signal forces an immediate exit.
+  </p>
+
+  <h2 id="mcp">MCP & registry</h2>
+  <p>
+    <code>./zuke mcp</code> runs a <a href="/docs/mcp">Model Context Protocol</a>
+    server over the build so an AI agent operates the pipeline through typed tool
+    calls. It is <strong>read-only by default</strong> (inspect targets,
+    parameters, graph, and runs); <code>--allow-run</code> adds one
+    <code>run:&lt;target&gt;</code> tool per target. Every mutating or denied call
+    is written to an audit trail (<code>./zuke runs show mcp-audit</code>).
+  </p>
+  <Code code={mcpSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Flag</th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>--allow-run[=&lt;globs&gt;]</code></td><td>let agents execute targets, not just inspect them; an optional comma-separated glob allow-list exposes only matching targets as run tools (others stay invisible)</td></tr>
+      <tr><td><code>--protect &lt;globs&gt;</code></td><td>require an operator token (<code>ZUKE_OPERATOR_TOKEN</code>) as a tool-call argument to run the matching targets</td></tr>
+      <tr><td><code>--confirm-destructive</code></td><td>make a destructive run tool return its plan until called with <code>confirm:true</code> (a <code>.readOnly()</code> target is exempt)</td></tr>
+      <tr><td><code>--registry</code></td><td>serve the <a href="/docs/registry">build registry</a> instead of this one build — expose every registered pipeline's targets, re-read live so a newly-registered build appears with no restart</td></tr>
+      <tr><td><code>--max-concurrent-runs &lt;n&gt;</code></td><td>with <code>--registry</code>, cap concurrent run-tool spawns (default 4); a call past the cap gets an immediate busy error, read tools are never counted</td></tr>
+      <tr><td><code>--http &lt;host:port&gt;</code></td><td>serve the streamable-HTTP transport instead of stdio. A bare <code>&lt;port&gt;</code> binds <code>127.0.0.1</code>; a non-loopback host requires a bearer token (<code>ZUKE_MCP_TOKEN</code>)</td></tr>
+      <tr><td><code>--allowed-origin &lt;origin&gt;</code></td><td>with <code>--http</code>, permit an extra browser <code>Origin</code> (repeatable). By default a loopback bind accepts only loopback origins — the drive-by / DNS-rebinding guard; a request with no <code>Origin</code> (a CLI client) is always allowed</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      There is <strong>no <code>--token</code> flag</strong>. The HTTP bearer
+      token is read only from the <code>ZUKE_MCP_TOKEN</code> environment
+      variable, and the operator token from <code>ZUKE_OPERATOR_TOKEN</code> —
+      never from an argument that would land in a process listing or shell
+      history.
+    </p>
+  </div>
+  <p>
+    <code>./zuke register</code> records this build in the build registry (its
+    targets, parameters, and launch location, excluding secrets) so a
+    registry-backed MCP server can discover it. It is idempotent, accepts
+    <code>--actor &lt;name&gt;</code> and <code>--json</code>, and writes to
+    <code>.zuke/builds</code> unless <code>ZUKE_REGISTRY_URL</code>/<code>_DIR</code>
+    or the build's <code>registry()</code> configures a store. See
+    <a href="/docs/registry">the registry</a>.
+  </p>
+
+  <h2 id="env">Environment variables</h2>
+  <p>
+    These configure state, the registry, the remote cache, MCP authorization, and
+    tool resolution without a build-file change — the usual way to point the same
+    build at production infrastructure from CI. For each pluggable backend, the
+    <code>_URL</code> variable (with an optional <code>_TOKEN</code>) selects the
+    HTTP backend; the <code>_DIR</code> variable selects the filesystem backend.
+  </p>
+  <Code code={envSnippet} lang="bash" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Variable</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>ZUKE_MCP_TOKEN</code></td><td>bearer token required by a non-loopback <code>mcp --http</code> bind</td></tr>
+      <tr><td><code>ZUKE_OPERATOR_TOKEN</code></td><td>operator token a protected (<code>--protect</code>) MCP run tool must carry</td></tr>
+      <tr><td><code>ZUKE_STATE_URL</code> / <code>ZUKE_STATE_TOKEN</code></td><td>select an <code>HttpStateStore</code> for durable run state (see <a href="/docs/state#precedence">store precedence</a>)</td></tr>
+      <tr><td><code>ZUKE_STATE_DIR</code></td><td>select a filesystem state store at this directory</td></tr>
+      <tr><td><code>ZUKE_REGISTRY_URL</code> / <code>ZUKE_REGISTRY_TOKEN</code></td><td>select an <code>HttpBuildRegistry</code> for <code>register</code> and registry-backed MCP</td></tr>
+      <tr><td><code>ZUKE_REGISTRY_DIR</code></td><td>select a filesystem build registry at this directory</td></tr>
+      <tr><td><code>ZUKE_REMOTE_CACHE_URL</code> / <code>ZUKE_REMOTE_CACHE_TOKEN</code></td><td>select an <code>HttpCacheStore</code> for the <a href="/docs/caching#remote">remote cache</a></td></tr>
+      <tr><td><code>ZUKE_REMOTE_CACHE_DIR</code></td><td>select a <code>FileSystemCacheStore</code> at this directory</td></tr>
+      <tr><td><code>ZUKE_ACTOR</code></td><td>default actor for a run when <code>--actor</code> is absent (before the CI actor and <code>"anonymous"</code>)</td></tr>
+      <tr><td><code>ZUKE_TOOL_RESOLUTION</code></td><td>ambient override for how tool wrappers locate their binary: <code>path</code> (bare name on <code>$PATH</code>) or <code>node_modules</code> (npx-style <code>node_modules/.bin</code> walk). See <a href="/docs/installing-tools">installing tools</a></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      Store precedence is always: an explicit <code>execute(...)</code> option,
+      then the build's typed override (<code>stateStore()</code>,
+      <code>registry()</code>, <code>remoteCache()</code>), then these
+      environment variables. An unreadable <code>ZUKE_TOOL_RESOLUTION</code> (no
+      <code>--allow-env</code>) or an unrecognised value is treated as unset.
+    </p>
+  </div>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

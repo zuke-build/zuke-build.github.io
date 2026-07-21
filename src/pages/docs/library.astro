@@ -60,8 +60,10 @@ const bin = await installRelease({
   destDir: ".zuke/bin",
   archive: "tar.gz",                       // unpack a tarball ("raw" by default)
   binaryPath: \`\${Deno.build.os}-\${arches[Deno.build.arch]}/helm\`,
-  url: ({ os, arch }) =>
-    \`https://get.helm.sh/helm-v3.14.0-\${os}-\${arches[arch]}.tar.gz\`,
+  url: (p) =>
+    \`https://get.helm.sh/helm-v3.14.0-\${p.osLabel({ macos: "darwin" })}-\${
+      arches[p.arch]
+    }.tar.gz\`,
 });
 
 // returns the installed binary's AbsolutePath — ready for .toolPath(...)
@@ -165,9 +167,9 @@ deploy = target()
     an <code>(&#123; os, arch &#125;) =&gt; string</code> callback and
     <code>hostPlatform()</code>), downloads it, and returns the installed
     binary's <code>AbsolutePath</code> — ready for <code>.toolPath(...)</code>.
-    Set <code>archive: "tar.gz"</code> to unpack a tarball and take
-    <code>binaryPath</code> from inside; the default <code>"raw"</code> installs
-    the download as the binary itself.
+    Set <code>archive: "tar.gz"</code> or <code>archive: "zip"</code> to unpack
+    an archive and take <code>binaryPath</code> from inside; the default
+    <code>"raw"</code> installs the download as the binary itself.
   </p>
   <Code code={installSnippet} lang="ts" theme="night-owl" />
   <div class="note">
@@ -177,8 +179,10 @@ deploy = target()
       verification, and caching — see the dedicated
       <a href="/docs/installing-tools">Installing tools</a> guide. The
       <code>download</code> seam keeps it unit-testable, and on Windows the
-      filename gains an <code>.exe</code> suffix. Zip archives aren't supported
-      yet, so this targets the Unix runners where most release tarballs live.
+      filename gains an <code>.exe</code> suffix. Both <code>.tar.gz</code> and
+      <code>.zip</code> assets are unpacked (via <code>extractTarGzip</code> and
+      <code>extractZip</code>), so the same call handles the tarballs and zips
+      release pages ship.
     </p>
   </div>
 

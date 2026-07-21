@@ -30,7 +30,10 @@ const callSnippet = `// tools/call
 
 const httpSnippet = `deno run -A zuke.ts mcp --http 7777              # loopback only: 127.0.0.1, ::1, localhost
 ZUKE_MCP_TOKEN=… deno run -A zuke.ts mcp --http 0.0.0.0:7777 --allow-run
-# non-loopback --http REQUIRES ZUKE_MCP_TOKEN (or --token), else the server refuses to start`;
+# non-loopback --http REQUIRES ZUKE_MCP_TOKEN, else the server refuses to start`;
+
+const originSnippet = `# loopback bind: browser Origins must be loopback; permit an extra one (repeatable):
+deno run -A zuke.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
 
 const authorizationSnippet = `# expose everything to run, gate promoteToProd behind an operator token, confirm destructive, authenticated HTTP:
 ZUKE_OPERATOR_TOKEN=… ZUKE_MCP_TOKEN=… zuke mcp --http 0.0.0.0:7777 --allow-run --protect promoteToProd --confirm-destructive`;
@@ -109,11 +112,24 @@ const identitySnippet = `class ControlPlane extends Build {
     A bare port (<code>--http 7777</code>) binds loopback only —
     <code>127.0.0.1</code>, <code>::1</code>, <code>localhost</code>. Binding
     a non-loopback host <strong>requires</strong> a bearer token
-    (<code>ZUKE_MCP_TOKEN</code> or <code>--token</code>) — the server
-    refuses to start without one. Every request then needs an
+    (<code>ZUKE_MCP_TOKEN</code>) — the server refuses to start without one.
+    Every request then needs an
     <code>Authorization: Bearer &lt;token&gt;</code> header; missing or wrong
-    gets a <code>401</code>.
+    gets a <code>401</code>. Set <code>ZUKE_MCP_TOKEN</code> and the token is
+    also enforced on a <em>loopback</em> bind.
   </p>
+  <p>
+    On a loopback bind Zuke also guards against a browser drive-by /
+    DNS-rebinding page: a request carrying an <code>Origin</code> header is
+    accepted only when that origin is itself loopback, and rejected
+    <code>403</code> otherwise. A client that sends no <code>Origin</code> (a
+    CLI/MCP client, not a browser) is always allowed, so this is invisible to
+    normal use. Permit a specific extra origin with
+    <code>--allowed-origin &lt;origin&gt;</code> (repeatable); once set, a
+    present <code>Origin</code> must match one exactly. A non-loopback bind
+    runs no default Origin check — front it with your own edge policy.
+  </p>
+  <Code code={originSnippet} lang="bash" theme="night-owl" />
   <p>
     For the single-build server, messages are processed <strong>one at a
     time</strong>, mirroring stdio, so two concurrent runs of the one build

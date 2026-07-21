@@ -217,6 +217,9 @@ const a11y = genericReviewer((r) =>
     <li><code>.include(...)</code> / <code>.exclude(...)</code> filter files by glob (lockfiles are excluded by default).</li>
     <li><code>.maxDiffTokens(n)</code> caps the diff so a huge change doesn't blow the budget.</li>
     <li>Cache the gate at the target level (<code>.cacheKey(headSha)</code>) so it doesn't re-run — or re-pay — when the diff is unchanged.</li>
+    <li><code>.budget(budget(...))</code> caps spend by an exact token count across every reviewer and fixer sharing it (a USD cap is opt-in, from prices you supply). Once the budget is spent, the review is skipped (not failed) with a note.</li>
+    <li><code>.cache(aiCache(...))</code> reuses a prior verdict for an identical review — same provider, model, and diff — with a 7-day default TTL. A cache hit costs nothing and doesn't draw down the budget.</li>
+    <li><code>.suppress(suppressions(...))</code> hides findings you've dismissed as false positives, matched by the stable ID shown next to each finding. A suppressed finding is still listed (under <em>"Suppressed (not gating)"</em>) so the dismissal stays auditable — it mutes the gate, never silently buries a finding.</li>
   </ul>
   <Code code={scopeSnippet} lang="ts" theme="night-owl" />
 

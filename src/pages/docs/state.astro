@@ -76,6 +76,8 @@ class CD extends Build {
 const cliSnippet = `zuke runs list                                                   # all runs, newest first
 zuke runs list --status failed --target deploy --since 2026-07-01
 zuke runs list --limit 20                                        # newest 20 only
+zuke runs list --counts                                          # aggregate counts (total + per status); honours filters
+zuke runs list --counts --json                                   # { total, byStatus }
 zuke runs show 6f1c…                                             # header, params, per-target, signals, events
 zuke runs show 6f1c… --json                                      # raw record`;
 
@@ -113,7 +115,7 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     awaits the write; <code>get()</code> reads it back. With no state store
     configured, <code>ctx.state</code> is an in-memory no-op — consistent
     within the run, nothing persisted. See
-    <a href="/docs/orchestration">run context</a> for the full
+    <a href="/docs/run-context">run context</a> for the full
     <code>TargetContext</code> — run id, cancellation signal, signals,
     dry-run — that <code>ctx.state</code> lives on.
   </p>
@@ -203,7 +205,10 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     <code>--target</code>, and <code>--since</code> filters, AND-combined,
     newest-first, plus <code>--limit &lt;n&gt;</code> (mirroring
     <code>listRuns(&#123; limit &#125;)</code>) to cap the result to the
-    newest N so a large store stays listable. <code>zuke runs show
+    newest N so a large store stays listable. <code>--counts</code> swaps the
+    rows for aggregate counts (total plus per-status), honouring the same
+    filters; with <code>--json</code> it returns
+    <code>&#123; total, byStatus &#125;</code>. <code>zuke runs show
     &lt;id&gt;</code> prints the header, params, per-target status, signals,
     and events — add <code>--json</code> for the raw <code>RunRecord</code>.
   </p>
@@ -273,6 +278,12 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     </p>
   </div>
   <p>The same base URL, auth, and ETag scheme also hosts the build registry under <code>/builds</code>.</p>
+  <p>
+    Hosting your own backend? The canonical wire contract lives in
+    <code>docs/state-api.md</code> (and the
+    <a href="https://jsr.io/@zuke/core">@zuke/core JSR docs</a>) — implement
+    against that plus the conformance kit, don't re-derive it from this prose.
+  </p>
 
   <h2 id="api-stability">API stability</h2>
   <p>

@@ -7,6 +7,7 @@ const toc = [
   { id: "one-tool", label: "ToolTasks.install() — one tool" },
   { id: "pinning", label: "Pinning, verification & caching" },
   { id: "toolchain", label: "toolchain() — many tools" },
+  { id: "tree", label: "installTree() — multi-file runtimes" },
   { id: "npm-package-tools", label: "npm-package tools" },
   { id: "using", label: "Working with an installed tool" },
   { id: "platform", label: "Cross-platform URL resolution" },
@@ -64,6 +65,43 @@ class Deploy extends Build {
     await KubectlTasks.version((s) => s.toolPath(bin.get("kubectl")));
   });
 }`;
+
+const treeSnippet = `import { ToolTasks, prependPath } from "jsr:@zuke/core";
+import { CmdTasks } from "jsr:@zuke/cmd";
+
+const v = "22.11.0";
+
+// Node.js ships bin/node, bin/npm, lib/node_modules/** in one tarball.
+// installTree keeps the whole extracted tree and returns its root.
+const root = await ToolTasks.installTree((s) =>
+  s
+    .name("node")
+    .archive("tar.gz")
+    .strip(1)                                  // unwrap the node-v22.11.0-…/ dir
+    .bins("bin/node", "bin/npm", "bin/npx")    // marked +x on POSIX
+    .checksum(nodeSum)
+    // Node spells macOS "darwin", Windows "win", and uses x64/arm64.
+    .url((p) =>
+      \`https://nodejs.org/dist/v\${v}/node-v\${v}-\${
+        p.osLabel({ macos: "darwin", windows: "win" })
+      }-\${p.archLabel({ x86_64: "x64", aarch64: "arm64" })}.tar.gz\`
+    )
+);
+
+// The root is a callable AbsolutePath: root("bin", "node") is a binary,
+// root("bin") the directory to put on PATH.
+await CmdTasks.exec(String(root("bin", "node")), (s) => s.args("--version"));
+prependPath(root("bin"));   // now npm, npx, … resolve from the installed tree`;
+
+const treeChainSnippet = `tools = toolchain((t) =>
+  t.tree((s) =>
+    s.name("node").archive("tar.gz").strip(1)
+      .bins("bin/node", "bin/npm").checksum(nodeSum).url(nodeUrl)
+  )
+);
+// In install()'s Map<name, AbsolutePath>, "node" maps to the tree's root:
+const bins = await this.tools.install();
+prependPath(bins.get("node")!("bin"));`;
 
 const usingSnippet = `import { HelmTasks } from "jsr:@zuke/helm";
 import { CmdTasks } from "jsr:@zuke/cmd";
@@ -140,6 +178,7 @@ class Test extends Build {
     <tbody>
       <tr><td><a href="#one-tool"><code>ToolTasks.install((s) =&gt; …)</code></a></td><td>one binary</td><td>you need a single release binary</td></tr>
       <tr><td><a href="#toolchain"><code>toolchain()</code></a></td><td>many tools</td><td>a build depends on several tools</td></tr>
+      <tr><td><a href="#tree"><code>ToolTasks.installTree(...)</code> / <code>.tree(...)</code></a></td><td>a multi-file tree</td><td>the tool is a runtime shipping many files (Node.js, a JDK)</td></tr>
       <tr><td><a href="#npm-package-tools"><code>ToolTasks.npm(...)</code> / <code>.npm(...)</code></a></td><td>an npm package</td><td>the tool ships on the npm registry</td></tr>
     </tbody>
   </table>
@@ -245,6 +284,47 @@ class Test extends Build {
     <li><strong>Introspection.</strong> <code>chain.tools</code> returns the configured release settings in order; <code>chain.npmTools</code> the <a href="#npm-package-tools">npm-package tools</a>.</li>
     <li><strong>Cheap to re-run.</strong> A matching checksum is a cache hit, so calling <code>install()</code> again (locally or on CI) is a no-op once the tools are present.</li>
   </ul>
+
+  <h2 id="tree"><code>installTree()</code> — multi-file runtimes</h2>
+  <p>
+    <code>ToolTasks.install()</code> extracts a <strong>single binary</strong>.
+    Some tools aren't one file — a language runtime like <strong>Node.js</strong>
+    or a JDK ships a whole directory (<code>bin/node</code>, <code>bin/npm</code>,
+    <code>lib/node_modules/**</code>, symlinks and all) in one archive.
+    <code>ToolTasks.installTree((s) =&gt; …)</code> unpacks the
+    <strong>entire tree</strong> and resolves to its
+    <a href="/docs/library#paths"><code>AbsolutePath</code></a> <em>root</em>
+    rather than a lone binary. A tree always ships packed, so
+    <code>.archive(...)</code> defaults to <code>"tar.gz"</code> and
+    <code>"raw"</code> is rejected.
+  </p>
+  <Code code={treeSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Because <code>AbsolutePath</code> is callable, the returned root doubles as an
+    accessor: <code>root("bin", "node")</code> is the node binary and
+    <code>root("bin")</code> is the directory to put on <code>PATH</code> (hand it
+    to <code>prependPath</code>). Two settings are specific to a tree install and
+    ignored by a single-binary one:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Method</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.strip(n)</code></td><td>Drop <code>n</code> leading path components while unpacking (tar's <code>--strip-components</code>). A release tarball wraps everything in a <code>tool-v1.2.3/</code> directory, so <code>1</code> unwraps it; <code>.bins(...)</code> and the returned root are then relative to the stripped tree. Defaults to <code>0</code>.</td></tr>
+      <tr><td><code>.bins(...paths)</code></td><td>Paths (relative to the stripped root) to mark executable on POSIX — the tar reader drops mode bits, so a runtime's <code>bin/node</code>, <code>bin/npm</code>, … need it. Chmod follows a symlink to its real target. Skipped on Windows.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>.checksum(...)</code> pins, verifies, and caches exactly as for a single
+    binary, except the hash is always of the <strong>archive</strong>: it's
+    verified before anything is unpacked, and a later run reuses the tree when the
+    pin matches and its declared bins are still present. To group a runtime tree
+    with other tools in a <a href="#toolchain">toolchain</a>, use
+    <code>.tree((s) =&gt; …)</code> — its <code>install()</code> map entry is the
+    tree's root:
+  </p>
+  <Code code={treeChainSnippet} lang="ts" theme="night-owl" />
 
   <h2 id="npm-package-tools">npm-package tools</h2>
   <p>

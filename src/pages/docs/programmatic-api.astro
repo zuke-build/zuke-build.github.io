@@ -1,0 +1,360 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "blocks", label: "The building blocks" },
+  { id: "run", label: "run — the entry point" },
+  { id: "execute", label: "execute — run a plan in code" },
+  { id: "options", label: "execute options" },
+  { id: "discover", label: "discoverTargets — find targets" },
+  { id: "describe", label: "describeCli — inspect the surface" },
+  { id: "renderer", label: "Renderer — custom output" },
+  { id: "cache", label: "BuildCache — inject a cache" },
+  { id: "graph", label: "Graph inspection" },
+];
+
+const blocksSnippet = `import {
+  discoverTargets, // (build) => Map<string, TargetBuilder>
+  execute, // (build, rootTarget, options?) => Promise<BuildResult>
+  executionSet, // (rootTarget) => Set<TargetBuilder>
+  findCycle, // (targets) => string[] | null
+  GraphError,
+  plan, // (rootTarget) => TargetBuilder[]  (topological order)
+  validateGraph, // (targets) => void  (throws GraphError)
+} from "jsr:@zuke/core";`;
+
+const runSnippet = `import { run } from "jsr:@zuke/core";
+import { consoleRenderer } from "jsr:@zuke/console";
+
+class MyBuild extends Build { /* … */ }
+
+// The same entry point the ./zuke launcher uses, with a plugin and a renderer.
+await run(MyBuild, {
+  plugins: [timingPlugin],
+  renderer: consoleRenderer,
+});`;
+
+const executeSnippet = `import { discoverTargets, execute } from "jsr:@zuke/core";
+import { MyBuild } from "./zuke.ts";
+
+const build = new MyBuild();
+const target = discoverTargets(build).get("test");
+if (target) {
+  const result = await execute(build, target, { parallel: true, cache: false });
+  console.log(result.ok ? "green" : "red");
+}`;
+
+const resultSnippet = `interface BuildResult {
+  ok: boolean; // every executed target passed (also true for a suspended run)
+  executed: string[]; // target names, in execution order
+  error?: unknown; // the error that aborted the run, if any
+  suspended?: boolean; // parked at a .waitsFor(...) gate; state was saved
+  cancelled?: boolean; // stopped via signal / \`zuke cancel\`; ok is false
+  runId?: string; // this run's id, for \`zuke runs show\` / \`zuke cancel\`
+}`;
+
+const discoverSnippet = `import { discoverGroups, discoverTargets } from "jsr:@zuke/core";
+
+const build = new MyBuild();
+const targets = discoverTargets(build); // Map<string, TargetBuilder>
+
+targets.get("test"); // a top-level target
+targets.get("release.publish"); // a component target, under its dotted path
+
+// discoverGroups(build) does the same for declared parallel groups.`;
+
+const describeSnippet = `import { describeCli } from "jsr:@zuke/core";
+
+const cli = describeCli(new MyBuild());
+for (const t of cli.targets) console.log(t.name, "→", t.dependsOn.join(", "));
+
+// Drop .secret() parameters from the surface (what \`zuke register\` writes):
+const safe = describeCli(new MyBuild(), { omitSecrets: true });`;
+
+const rendererSnippet = `import { defaultRenderer, execute, type Renderer } from "jsr:@zuke/core";
+
+const quiet: Renderer = {
+  ...defaultRenderer,
+  // Override only the hooks you want to change…
+  targetHeader: () => [],
+};
+await execute(build, target, { renderer: quiet });`;
+
+const cacheSnippet = `import { execute, type BuildCache } from "jsr:@zuke/core";
+
+// A minimal in-memory cache — never touches .zuke/cache.json.
+const cache: BuildCache = {
+  upToDate: async () => false,
+  record: async () => {},
+  save: async () => {},
+};
+await execute(build, target, { cache });`;
+
+const graphSnippet = `import {
+  discoverTargets,
+  GraphError,
+  plan,
+  validateGraph,
+} from "jsr:@zuke/core";
+
+const build = new MyBuild();
+const targets = discoverTargets(build);
+
+try {
+  validateGraph(targets); // throws GraphError on a missing ref or a cycle
+} catch (error) {
+  if (error instanceof GraphError) console.error(error.message);
+}
+
+// The topological order a run would execute, without running anything:
+const order = plan(targets.get("release"));
+console.log(\`\${order.length} targets, in execution order\`);`;
+---
+
+<DocsLayout
+  title="Programmatic API"
+  description="Beyond authoring a zuke.ts, @zuke/core exports the pieces that drive a build so you can embed Zuke in another tool or test it in code: run and execute, discoverTargets, describeCli, the Renderer interface, BuildCache, and the graph helpers."
+  toc={toc}
+>
+  <p class="lead">
+    A <code>zuke.ts</code> is usually driven by the CLI. But
+    <a href="/docs/library"><code>@zuke/core</code></a> exports the same building
+    blocks the CLI uses, so you can <strong>drive a build yourself</strong> — run
+    a target from another program, assert on the result in a test, or introspect
+    a build's command surface without shelling out and parsing
+    <code>--help</code>. Every name below is a real export of
+    <code>mod.ts</code>; the CLI is just a thin layer over them.
+  </p>
+
+  <h2 id="blocks">The building blocks</h2>
+  <p>
+    <code>run</code> is the top of the stack — the one call a build file makes.
+    Underneath it, <code>execute</code> runs a resolved plan, and a family of
+    pure functions inspect the dependency graph:
+  </p>
+  <Code code={blocksSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="run">
+    <code>run</code> — the entry point
+  </h2>
+  <p>
+    <code>run(BuildClass, options?)</code> is what you call at the bottom of a
+    build file. It instantiates the build, parses <code>Deno.args</code>, runs the
+    requested command, and sets the process exit code. It returns
+    <code>Promise&lt;void&gt;</code> and calls <code>Deno.exit</code> itself, so
+    it's the <em>launcher</em>, not the seam you drive a build through in code —
+    for that, reach for <a href="#execute"><code>execute</code></a>.
+  </p>
+  <Code code={runSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      <code>run</code> acts only when its module is the program's entry point;
+      imported elsewhere (for example under test) it does nothing, so no
+      <code>import.meta.main</code> guard is needed. Its <code>RunOptions</code>
+      is deliberately small — <code>{`{ args?, plugins?, renderer? }`}</code>.
+      The richer knobs (<code>cache</code>, <code>parallel</code>,
+      <code>remoteCache</code>, <code>state</code>, …) live on
+      <a href="#options"><code>ExecuteOptions</code></a>, because on the CLI they
+      come from flags; drive <code>execute</code> directly to set them in code.
+    </p>
+  </div>
+
+  <h2 id="execute">
+    <code>execute</code> — run a plan in code
+  </h2>
+  <p>
+    <code>execute(build, rootTarget, options?)</code> is the workhorse. It
+    resolves the build's <a href="/docs/concepts#parameters">parameters</a>, plans
+    the graph from <code>rootTarget</code>, runs each target body in order (or
+    concurrently with <code>parallel</code>), and resolves to a
+    <code>BuildResult</code> — it never calls <code>Deno.exit</code>, which is
+    exactly what makes it testable. The <code>rootTarget</code> is a
+    <code>TargetBuilder</code>, which you get from
+    <a href="#discover"><code>discoverTargets</code></a>.
+  </p>
+  <Code code={executeSnippet} lang="ts" theme="night-owl" />
+  <p>The result carries everything the caller needs to react to the run:</p>
+  <Code code={resultSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>ok</code> is <code>true</code> when every executed target passed —
+    including a run that <strong>suspended</strong> at a
+    <code>.waitsFor(...)</code> gate (the process would exit 0). A
+    <strong>cancelled</strong> run — via <code>options.signal</code> / Ctrl-C, or
+    another process running <a href="/docs/orchestration"><code>zuke cancel</code></a>
+    — is <code>ok: false</code> with <code>cancelled: true</code>, after its
+    compensations have run.
+  </p>
+
+  <h2 id="options">
+    <code>execute</code> options
+  </h2>
+  <p>
+    <code>ExecuteOptions</code> mirrors the CLI flags, plus a few seams that exist
+    only for embedding and testing. Every field is optional.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th><code>ExecuteOptions</code></th><th>Type</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>silent</code></td><td><code>boolean</code></td><td>Suppress all banner/summary output.</td></tr>
+      <tr><td><code>reporter</code></td><td><code>Reporter</code></td><td>Custom output sink (<code>{`{ info(line), error(line) }`}</code>); overrides <code>silent</code>.</td></tr>
+      <tr><td><code>renderer</code></td><td><code>Renderer</code></td><td>Restyle the per-target banners and summary (see <a href="#renderer">below</a>).</td></tr>
+      <tr><td><code>plugins</code></td><td><code>Plugin[]</code></td><td><a href="/docs/concepts#extending">Lifecycle observers</a> invoked alongside the build's hooks.</td></tr>
+      <tr><td><code>skip</code></td><td><code>string[]</code></td><td>Target names to skip even if planned (<code>--skip</code>).</td></tr>
+      <tr><td><code>parallel</code></td><td><code>boolean | number</code></td><td>Run independent targets concurrently; a number caps concurrency, <code>true</code> uses the CPU count (<code>--parallel</code>).</td></tr>
+      <tr><td><code>cache</code></td><td><code>boolean | BuildCache</code></td><td>Incremental <a href="/docs/caching">caching</a>; <code>false</code> disables it (<code>--no-cache</code>). A <a href="#cache"><code>BuildCache</code></a> is used directly.</td></tr>
+      <tr><td><code>remoteCache</code></td><td><code>RemoteCacheStore | false</code></td><td>Share outputs across machines; <code>false</code> uses the local cache only (<code>--no-remote-cache</code>). Ignored when <code>cache</code> is <code>false</code> or a supplied <code>BuildCache</code>.</td></tr>
+      <tr><td><code>params</code></td><td><code>Record&lt;string, string&gt;</code></td><td>Raw <a href="/docs/concepts#parameters">parameter</a> values, keyed by property name.</td></tr>
+      <tr><td><code>dryRun</code></td><td><code>boolean</code></td><td>Print the plan without running any body or touching the cache (<code>--dry-run</code>).</td></tr>
+      <tr><td><code>affected</code></td><td><code>AffectedOptions</code></td><td>Restrict the run to targets affected by files changed since a git base (<code>--affected</code>).</td></tr>
+      <tr><td><code>state</code></td><td><code>boolean</code></td><td>Persist durable <a href="/docs/state">run state</a> under <code>.zuke/runs</code> when nothing else configures a store (<code>--state</code>).</td></tr>
+      <tr><td><code>stateStore</code></td><td><code>StateStore | false</code></td><td>Supply the durable <a href="/docs/state">state store</a> directly; <code>false</code> disables state entirely.</td></tr>
+      <tr><td><code>actor</code></td><td><code>string</code></td><td>Who to attribute the run to in its state record (<code>--actor</code>).</td></tr>
+      <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td>Cancel the run when this aborts, running the succeeded targets' compensations.</td></tr>
+      <tr><td><code>readEnv</code></td><td><code>(name) =&gt; string | undefined</code></td><td>Environment reader for parameter fallback; defaults to <code>Deno.env.get</code> (a test seam).</td></tr>
+      <tr><td><code>prompt</code></td><td><code>(flag, desc) =&gt; string | undefined</code></td><td>Prompt for a missing required parameter; defaults to an interactive TTY prompt off CI (a test seam).</td></tr>
+      <tr><td><code>github</code></td><td><code>boolean</code></td><td>Force GitHub Actions output formatting on/off (auto-detected otherwise).</td></tr>
+      <tr><td><code>color</code></td><td><code>boolean</code></td><td>Force ANSI colour on/off (auto-detected otherwise).</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      One field is intentionally absent above: <code>resume</code>. It carries the
+      continuation state of a suspended run and is set by
+      <code>resumeRun</code>, not passed by hand — call
+      <a href="/docs/orchestration"><code>resumeRun</code></a> to continue a
+      suspended run rather than constructing it yourself.
+    </p>
+  </div>
+
+  <h2 id="discover">
+    <code>discoverTargets</code> — find targets
+  </h2>
+  <p>
+    <code>discoverTargets(build)</code> introspects a build instance and returns a
+    <code>Map&lt;string, TargetBuilder&gt;</code> of every declared target, keyed
+    by its property name. Discovery recurses into plain object fields, so a
+    reusable <strong>component</strong> contributes its targets under a dotted
+    path (<code>release.publish</code>). This is how you turn a target name into
+    the <code>rootTarget</code> that <a href="#execute"><code>execute</code></a>
+    needs.
+  </p>
+  <Code code={discoverSnippet} lang="ts" theme="night-owl" />
+
+  <h2 id="describe">
+    <code>describeCli</code> — inspect the surface
+  </h2>
+  <p>
+    <code>describeCli(build)</code> returns a structured <code>CliDescription</code>
+    of a build's whole command surface — its reserved commands, option flags,
+    targets (with descriptions and dependencies), and
+    <a href="/docs/concepts#parameters">parameters</a> — the same data that backs
+    <code>zuke --list --json</code>. Use it to build tooling around a build in
+    code, with no <code>--help</code> text to parse.
+  </p>
+  <Code code={describeSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Each <code>CliTargetInfo</code> carries <code>name</code>,
+    <code>description</code>, <code>dependsOn</code>, <code>default</code>, and
+    <code>unlisted</code>; each <code>CliParameterInfo</code> distinguishes the
+    property <code>name</code> (the key <code>execute</code>'s <code>params</code>
+    map and MCP tool calls use) from its kebab-case <code>flag</code>. Pass
+    <code>{`{ omitSecrets: true }`}</code> to drop <code>.secret()</code>
+    parameters — the posture the build <a href="/docs/registry">registry</a> uses
+    so a secret never crosses the run boundary.
+  </p>
+
+  <h2 id="renderer">
+    <code>Renderer</code> — custom output
+  </h2>
+  <p>
+    The per-target banners and the end-of-build summary are produced by a
+    <code>Renderer</code>. Each method is <strong>pure</strong> — it returns the
+    lines to print rather than writing them — so the executor keeps control of
+    the output streams and a custom renderer stays unit-testable. Zuke ships
+    <code>defaultRenderer</code>; spread it and override only the hooks you care
+    about, or inject <a href="/docs/console"><code>consoleRenderer</code></a> from
+    <code>@zuke/console</code> for an alternative look.
+  </p>
+  <Code code={rendererSnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th><code>Renderer</code> method</th><th>Produces</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>targetHeader(style, name)</code></td><td>the banner that opens a target's section</td></tr>
+      <tr><td><code>targetPassFooter(style, name, ms)</code></td><td>the footer after a target body succeeds</td></tr>
+      <tr><td><code>targetFailFooter(style, name, ms, error)</code></td><td>the failure footer, split into <code>{`{ info, error }`}</code> lines</td></tr>
+      <tr><td><code>targetDryRunFooter(style, name)</code></td><td>the footer for a dry-run target that never executed</td></tr>
+      <tr><td><code>summaryBlock(style, reports, totalMs, ok)</code></td><td>the end-of-build summary table and verdict</td></tr>
+      <tr><td><code>jobSummaryMarkdown(reports, totalMs, ok)</code></td><td>the GitHub Actions job-summary Markdown</td></tr>
+    </tbody>
+  </table>
+  <p>
+    A renderer receives each <code>TargetReport</code> and the <code>Style</code>
+    palette, so custom rendering doesn't have to reimplement colour handling.
+  </p>
+
+  <h2 id="cache">
+    <code>BuildCache</code> — inject a cache
+  </h2>
+  <p>
+    The <code>cache</code> option normally takes a boolean, but it also accepts a
+    <code>BuildCache</code> instance directly. This is mainly a test seam: supply
+    a pre-seeded or isolated <a href="/docs/caching">cache</a> so a run's cache
+    behaviour is deterministic without touching <code>.zuke/cache.json</code>.
+  </p>
+  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <p>
+    The interface is three methods —
+    <code>upToDate(target)</code> (is a target's fingerprint unchanged and its
+    outputs still present?), <code>record(target)</code> (store the fingerprint
+    after a successful run), and <code>save()</code> (persist the store) — so a
+    custom in-memory implementation is a few lines when you need one.
+  </p>
+
+  <h2 id="graph">Graph inspection</h2>
+  <p>
+    The planning primitives are exported as pure functions, so you can reason
+    about a build's graph without running it:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Function</th><th>Returns</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>plan(root)</code></td><td><code>TargetBuilder[]</code> — the deduplicated topological order a run would execute</td></tr>
+      <tr><td><code>executionSet(root)</code></td><td><code>Set&lt;TargetBuilder&gt;</code> — <code>root</code> plus the transitive closure of its dependencies</td></tr>
+      <tr><td><code>findCycle(targets)</code></td><td><code>string[] | null</code> — the names forming a dependency cycle, or <code>null</code></td></tr>
+      <tr><td><code>validateGraph(targets)</code></td><td><code>void</code> — throws <code>GraphError</code> on a missing reference or a cycle</td></tr>
+    </tbody>
+  </table>
+  <Code code={graphSnippet} lang="ts" theme="night-owl" />
+  <p>
+    See <a href="/docs/library">Using Zuke as a library</a> for the file, HTTP,
+    and install helpers a build shares with these, and
+    <a href="/docs/concepts#extending">Extending Zuke</a> for the
+    <code>Plugin</code> lifecycle that <code>run</code> and <code>execute</code>
+    both accept.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>
