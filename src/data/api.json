@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "core@1.30.2",
+  "generated": "core@1.30.3",
   "packages": [
     {
       "name": "@zuke/core",
@@ -3894,7 +3894,7 @@
               "kind": "method",
               "optional": false,
               "signature": "array(this: Parameter<E, E | undefined>): Parameter<E, E[]>",
-              "doc": "Accept a comma-separated list (or a repeated flag), exposing `value` as an\narray. `--tags a,b` and `--tags a --tags b` both yield `[\"a\", \"b\"]`; blank\nentries are dropped, and an unsupplied list defaults to `[]`.\n\nEach element is parsed by this parameter's own element parser, so it\ncomposes: `.options(\"a\", \"b\").array()` validates **every** element against\nthe choices, and `.number().array()` yields a `number[]`, rejecting a\nnon-numeric entry. (Apply `.options()`/`.number()` before `.array()`.)"
+              "doc": "Accept a comma-separated list (or a repeated flag), exposing `value` as an\narray. `--tags a,b` and `--tags a --tags b` both yield `[\"a\", \"b\"]`; blank\nentries are dropped, and an unsupplied *optional* list defaults to `[]`\n(a required one is reported missing — see below).\n\nEach element is parsed by this parameter's own element parser, so it\ncomposes: `.options(\"a\", \"b\").array()` validates **every** element against\nthe choices, and `.number().array()` yields a `number[]`, rejecting a\nnon-numeric entry. (Apply `.options()`/`.number()` before `.array()`.)\n\n`.array()` composes **last**, after `.required()` too: a\n`.required().array()` list stays required, so an unsupplied value is\nreported as missing rather than silently resolving to the empty-list\ndefault. An optional (non-required) list defaults to `[]`."
             },
             {
               "name": "resolve_",
@@ -5760,7 +5760,7 @@
               "kind": "method",
               "optional": false,
               "signature": "forEach(items: unknown, factory: ForEachFactory<Item>, configure?: Configure<ForEachSettings>): this",
-              "doc": "Fan out over a **runtime list**: for each item, build an ordered pipeline of\nsub-targets and run them with per-item failure isolation and bounded\nconcurrency. `items` is a thunk (evaluated when the target runs, so it can\nread `this.<param>.value`); `factory` returns a record of sub-targets per\nitem, each implicitly depending on the one before it. Items run\nconcurrently, each item's stages sequentially — the pipeline model.\n\nThe sub-targets are materialised at run time (named\n`parent[item].stage`) — `--list`/`graph` show only the one fan-out node —\nand each is a first-class target with its own status in the summary and the\nrun record. The fan-out target fails if any item's pipeline fails.\n\n```ts\ndeployBatch = target()\n  .forEach(\n    () => this.repos.value, // string[]\n    (repo) => ({\n      checks: target().executes(() => checkDeployable(repo)),\n      deploy: target().executes((ctx) => applyToSit(repo, ctx)),\n    }),\n    (s) => s.concurrency(3).continueOnItemFailure(),\n  );\n```"
+              "doc": "Fan out over a **runtime list**: for each item, build an ordered pipeline of\nsub-targets and run them with per-item failure isolation and bounded\nconcurrency. `items` is a thunk (evaluated when the target runs, so it can\nread `this.<param>.value`); `factory` returns a record of sub-targets per\nitem, each implicitly depending on the one before it. Items run\nconcurrently, each item's stages sequentially — the pipeline model.\n\nThe sub-targets are materialised at run time (named\n`parent[item].stage`) — `--list`/`graph` show only the one fan-out node —\nand each is a first-class target with its own status in the summary and the\nrun record. The fan-out target fails if any item's pipeline fails.\n\nA fan-out cannot contain a **wait gate**: neither the fan-out target itself\nnor any stage may use {@link waitsFor} — a materialised sub-target has no\nresume path, so the gate would be silently swallowed. Combining them fails\nthe target with guidance. Gate a fan-out by putting the wait on a separate\ntarget that the fan-out `.dependsOn(...)`.\n\n```ts\ndeployBatch = target()\n  .forEach(\n    () => this.repos.value, // string[]\n    (repo) => ({\n      checks: target().executes(() => checkDeployable(repo)),\n      deploy: target().executes((ctx) => applyToSit(repo, ctx)),\n    }),\n    (s) => s.concurrency(3).continueOnItemFailure(),\n  );\n```"
             },
             {
               "name": "description_",
