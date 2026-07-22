@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "core@1.30.2",
+  "generated": "core@1.30.3",
   "packages": [
     {
       "name": "@zuke/core",
@@ -5760,7 +5760,7 @@
               "kind": "method",
               "optional": false,
               "signature": "forEach(items: unknown, factory: ForEachFactory<Item>, configure?: Configure<ForEachSettings>): this",
-              "doc": "Fan out over a **runtime list**: for each item, build an ordered pipeline of\nsub-targets and run them with per-item failure isolation and bounded\nconcurrency. `items` is a thunk (evaluated when the target runs, so it can\nread `this.<param>.value`); `factory` returns a record of sub-targets per\nitem, each implicitly depending on the one before it. Items run\nconcurrently, each item's stages sequentially — the pipeline model.\n\nThe sub-targets are materialised at run time (named\n`parent[item].stage`) — `--list`/`graph` show only the one fan-out node —\nand each is a first-class target with its own status in the summary and the\nrun record. The fan-out target fails if any item's pipeline fails.\n\n```ts\ndeployBatch = target()\n  .forEach(\n    () => this.repos.value, // string[]\n    (repo) => ({\n      checks: target().executes(() => checkDeployable(repo)),\n      deploy: target().executes((ctx) => applyToSit(repo, ctx)),\n    }),\n    (s) => s.concurrency(3).continueOnItemFailure(),\n  );\n```"
+              "doc": "Fan out over a **runtime list**: for each item, build an ordered pipeline of\nsub-targets and run them with per-item failure isolation and bounded\nconcurrency. `items` is a thunk (evaluated when the target runs, so it can\nread `this.<param>.value`); `factory` returns a record of sub-targets per\nitem, each implicitly depending on the one before it. Items run\nconcurrently, each item's stages sequentially — the pipeline model.\n\nThe sub-targets are materialised at run time (named\n`parent[item].stage`) — `--list`/`graph` show only the one fan-out node —\nand each is a first-class target with its own status in the summary and the\nrun record. The fan-out target fails if any item's pipeline fails.\n\nA fan-out cannot contain a **wait gate**: neither the fan-out target itself\nnor any stage may use {@link waitsFor} — a materialised sub-target has no\nresume path, so the gate would be silently swallowed. Combining them fails\nthe target with guidance. Gate a fan-out by putting the wait on a separate\ntarget that the fan-out `.dependsOn(...)`.\n\n```ts\ndeployBatch = target()\n  .forEach(\n    () => this.repos.value, // string[]\n    (repo) => ({\n      checks: target().executes(() => checkDeployable(repo)),\n      deploy: target().executes((ctx) => applyToSit(repo, ctx)),\n    }),\n    (s) => s.concurrency(3).continueOnItemFailure(),\n  );\n```"
             },
             {
               "name": "description_",
