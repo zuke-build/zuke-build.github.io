@@ -3894,7 +3894,7 @@
               "kind": "method",
               "optional": false,
               "signature": "array(this: Parameter<E, E | undefined>): Parameter<E, E[]>",
-              "doc": "Accept a comma-separated list (or a repeated flag), exposing `value` as an\narray. `--tags a,b` and `--tags a --tags b` both yield `[\"a\", \"b\"]`; blank\nentries are dropped, and an unsupplied list defaults to `[]`.\n\nEach element is parsed by this parameter's own element parser, so it\ncomposes: `.options(\"a\", \"b\").array()` validates **every** element against\nthe choices, and `.number().array()` yields a `number[]`, rejecting a\nnon-numeric entry. (Apply `.options()`/`.number()` before `.array()`.)"
+              "doc": "Accept a comma-separated list (or a repeated flag), exposing `value` as an\narray. `--tags a,b` and `--tags a --tags b` both yield `[\"a\", \"b\"]`; blank\nentries are dropped, and an unsupplied *optional* list defaults to `[]`\n(a required one is reported missing — see below).\n\nEach element is parsed by this parameter's own element parser, so it\ncomposes: `.options(\"a\", \"b\").array()` validates **every** element against\nthe choices, and `.number().array()` yields a `number[]`, rejecting a\nnon-numeric entry. (Apply `.options()`/`.number()` before `.array()`.)\n\n`.array()` composes **last**, after `.required()` too: a\n`.required().array()` list stays required, so an unsupplied value is\nreported as missing rather than silently resolving to the empty-list\ndefault. An optional (non-required) list defaults to `[]`."
             },
             {
               "name": "resolve_",
