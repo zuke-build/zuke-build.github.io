@@ -16801,7 +16801,14 @@
               "kind": "method",
               "optional": false,
               "signature": "ref(target: string): this",
-              "doc": "The branch, commit, or path to check out (required)."
+              "doc": "The branch or commit to check out — or, with {@link paths}, the source to\nrestore those paths from. Required unless {@link paths} is given."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...paths: string[]): this",
+              "doc": "Restore one or more paths (`git checkout [<ref>] -- <paths>`). The `--`\nseparates paths from any ref so a path is never misread as a branch name;\nrepeatable. With no {@link ref}, restores the paths from the index\n(discarding working-tree changes)."
             },
             {
               "name": "create",
