@@ -1,0 +1,39 @@
+---
+import DocsLayout from "./DocsLayout.astro";
+import api from "../data/api.json";
+
+interface Props {
+  title: string;
+  description?: string;
+  toc?: { id: string; label: string }[];
+}
+const { title, description, toc = [] } = Astro.props;
+
+// Standalone API section: same three-column layout as docs, but the sidebar
+// lists the generated packages instead of the docs nav.
+const nav = [
+  {
+    group: "API reference",
+    items: [{ href: "/api", label: "Overview" }],
+  },
+  {
+    group: "Packages",
+    items: api.packages.map((pkg) => ({
+      href: `/api/${pkg.dir}`,
+      label: pkg.name,
+    })),
+  },
+  {
+    group: "More",
+    items: [
+      { href: "/docs", label: "Docs" },
+      { href: "/examples", label: "Examples" },
+      { href: "https://jsr.io/@zuke", label: "JSR packages ↗" },
+    ],
+  },
+];
+---
+
+<DocsLayout title={title} description={description} toc={toc} nav={nav} suffix="Zuke API">
+  <slot />
+</DocsLayout>

@@ -1,7 +1,7 @@
 ---
 import { Code } from "astro:components";
-import DocsLayout from "../../../layouts/DocsLayout.astro";
-import api from "../../../data/api.json";
+import ApiLayout from "../../layouts/ApiLayout.astro";
+import api from "../../data/api.json";
 
 interface ApiMember {
   name: string;
@@ -94,12 +94,12 @@ const toc = [
 ];
 ---
 
-<DocsLayout
+<ApiLayout
   title={pkg.name}
   description={pkg.summary}
   toc={toc}
 >
-  <p class="apiback"><a href="/docs/api">← API reference</a></p>
+  <p class="apiback"><a href="/api">← API reference</a></p>
   <p class="lead">{pkg.summary}</p>
   <p class="apilinks">
     <a href={`https://jsr.io/${pkg.name}`} target="_blank" rel="noopener">
@@ -160,7 +160,7 @@ const toc = [
       </section>
     ))}
   </div>
-</DocsLayout>
+</ApiLayout>
 
 <script>
   const input = document.getElementById("pkgfilter") as HTMLInputElement | null;

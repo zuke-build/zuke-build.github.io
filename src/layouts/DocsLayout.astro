@@ -1,19 +1,23 @@
 ---
 import Base from "./Base.astro";
 
+type NavGroup = { group: string; items: { href: string; label: string }[] };
 interface Props {
   title: string;
   description?: string;
   // table-of-contents anchors for the current page
   toc?: { id: string; label: string }[];
+  // sidebar navigation; defaults to the docs nav
+  nav?: NavGroup[];
+  // suffix for the <title> tag
+  suffix?: string;
 }
-const { title, description, toc = [] } = Astro.props;
 const { pathname } = Astro.url;
 const here = pathname.replace(/\/$/, "") || "/docs";
 // Links off the site (absolute http[s]) open in a new tab.
 const isExternal = (href: string) => /^https?:\/\//.test(href);
 
-const nav = [
+const docsNav: NavGroup[] = [
   {
     group: "Guide",
     items: [
@@ -54,7 +58,7 @@ const nav = [
     items: [
       { href: "/docs/authoring", label: "Authoring targets" },
       { href: "/docs/cli", label: "CLI reference" },
-      { href: "/docs/api", label: "API reference" },
+      { href: "/api", label: "API reference" },
       { href: "/docs/programmatic-api", label: "Programmatic API" },
       { href: "/docs/extending", label: "Extending Zuke" },
       { href: "/docs/tools", label: "Tool catalog" },
@@ -66,9 +70,17 @@ const nav = [
     ],
   },
 ];
+
+const {
+  title,
+  description,
+  toc = [],
+  nav = docsNav,
+  suffix = "Zuke docs",
+} = Astro.props;
 ---
 
-<Base title={`${title} · Zuke docs`} description={description}>
+<Base title={`${title} · ${suffix}`} description={description}>
   <div class="container docs">
     <aside class="docs__side">
       <nav aria-label="Documentation">

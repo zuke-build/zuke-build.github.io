@@ -6,6 +6,11 @@ import { defineConfig } from "astro/config";
 export default defineConfig({
   site: "https://zuke-build.github.io",
   trailingSlash: "ignore",
+  // The API reference moved from /docs/api to the standalone /api section.
+  redirects: {
+    "/docs/api": "/api",
+    "/docs/api/[pkg]": "/api/[pkg]",
+  },
   markdown: {
     shikiConfig: {
       theme: "night-owl",

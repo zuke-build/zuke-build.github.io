@@ -1,6 +1,6 @@
 ---
-import DocsLayout from "../../../layouts/DocsLayout.astro";
-import api from "../../../data/api.json";
+import ApiLayout from "../../layouts/ApiLayout.astro";
+import api from "../../data/api.json";
 
 const toc = [
   { id: "search", label: "Search" },
@@ -15,14 +15,14 @@ const searchIndex = api.packages.flatMap((pkg) =>
     n: sym.name,
     k: sym.kind,
     p: pkg.dir,
-    h: `/docs/api/${pkg.dir}#${sym.name}`,
+    h: `/api/${pkg.dir}#${sym.name}`,
   }))
 );
 
 const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
 ---
 
-<DocsLayout
+<ApiLayout
   title="API reference"
   description={`The full typed @zuke API — every exported function, class, interface, and type across all ${api.packages.length} packages, generated straight from source.`}
   toc={toc}
@@ -65,7 +65,7 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
   <p>Every package is documented on its own page — signatures, doc text, and members.</p>
   <div class="apigrid">
     {api.packages.map((pkg) => (
-      <a class="apicard" href={`/docs/api/${pkg.dir}`}>
+      <a class="apicard" href={`/api/${pkg.dir}`}>
         <div class="apicard__head">
           <code class="apicard__name">{pkg.name}</code>
           <span class="apicard__count">{pkg.symbols.length}</span>
@@ -78,7 +78,7 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
   <p class="apigen">
     Generated from <code>{api.generated}</code>.
   </p>
-</DocsLayout>
+</ApiLayout>
 
 <script type="application/json" id="apisearch-data" is:inline set:html={JSON.stringify(searchIndex)} />
 
