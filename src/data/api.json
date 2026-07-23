@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "core@1.30.4",
+  "generated": "core@1.31.0",
   "packages": [
     {
       "name": "@zuke/core",
