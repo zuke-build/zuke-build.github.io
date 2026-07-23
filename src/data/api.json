@@ -5421,6 +5421,29 @@
           "deprecated": false
         },
         {
+          "name": "SubcommandSettings",
+          "kind": "class",
+          "doc": "Base for a wrapper over a CLI organised into **subcommand groups** — a command\npath built with {@link command} plus repeatable `--flag [value]` options built\nwith {@link flag}. The agent and cloud wrappers (`gh`, `gcloud`, `claude`,\n`gemini`, `codex`) share this shape; each sets its binary via\n{@link ToolSettings.defaultTool} and, when needed, a fixed prefix via\n{@link leadingTokens} or between-command global flags via {@link middleTokens}.\n\nThe argv is assembled as\n`[...leadingTokens(), ...command, ...middleTokens(), ...flags]`, keeping every\ntoken a discrete argv entry so command construction stays injection-free.",
+          "signature": "class SubcommandSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "command",
+              "kind": "method",
+              "optional": false,
+              "signature": "command(...parts: Array<string | number>): this",
+              "doc": "Append command-path tokens — the group, verb, and operands — in order."
+            },
+            {
+              "name": "flag",
+              "kind": "method",
+              "optional": false,
+              "signature": "flag(name: string, value?: string | number): this",
+              "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nthe bare `--name`. Repeatable."
+            }
+          ]
+        },
+        {
           "name": "table",
           "kind": "function",
           "doc": "An aligned text table: a styled header row, an optional dividing rule, then\none line per row. Column widths fit the widest visible cell; cells may already\ncarry ANSI colour. Rows shorter than the columns are padded with empty cells.",
@@ -16414,16 +16437,9 @@
           "name": "GcloudSettings",
           "kind": "class",
           "doc": "Settings for a `gcloud` invocation.",
-          "signature": "class GcloudSettings extends ToolSettings",
+          "signature": "class GcloudSettings extends SubcommandSettings",
           "deprecated": false,
           "members": [
-            {
-              "name": "command",
-              "kind": "method",
-              "optional": false,
-              "signature": "command(...parts: Array<string | number>): this",
-              "doc": "The command path and verb, e.g. `command(\"run\", \"deploy\", \"api\")`."
-            },
             {
               "name": "containerImagesAddTag",
               "kind": "method",
@@ -16486,13 +16502,6 @@
               "optional": false,
               "signature": "noPrompt(): this",
               "doc": "Disable interactive prompts, accepting defaults (gcloud's `--quiet`). Named\n`noPrompt` to avoid clashing with the base `.quiet()`, which suppresses\nZuke's own output streaming."
-            },
-            {
-              "name": "flag",
-              "kind": "method",
-              "optional": false,
-              "signature": "flag(name: string, value?: string | number): this",
-              "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nit renders the bare `--name`. Repeatable."
             }
           ]
         },
@@ -17374,29 +17383,15 @@
           "name": "GhSettings",
           "kind": "class",
           "doc": "Settings for a `gh` invocation.",
-          "signature": "class GhSettings extends ToolSettings",
+          "signature": "class GhSettings extends SubcommandSettings",
           "deprecated": false,
           "members": [
-            {
-              "name": "command",
-              "kind": "method",
-              "optional": false,
-              "signature": "command(...parts: Array<string | number>): this",
-              "doc": "The command path and verb, e.g. `command(\"pr\", \"create\")`."
-            },
             {
               "name": "repo",
               "kind": "method",
               "optional": false,
               "signature": "repo(slug: string): this",
               "doc": "Target repository as `OWNER/REPO` (`-R`/`--repo`)."
-            },
-            {
-              "name": "flag",
-              "kind": "method",
-              "optional": false,
-              "signature": "flag(name: string, value?: string | number): this",
-              "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nit renders the bare `--name`. Repeatable."
             }
           ]
         },
@@ -17824,24 +17819,9 @@
           "name": "ClaudeCommandSettings",
           "kind": "class",
           "doc": "Shared builder for `claude <group> …` subcommand groups (`mcp`, `config`):\nname the verb and operands with `.command(...)` and pass anything else with\n`.flag(...)`.",
-          "signature": "class ClaudeCommandSettings extends ToolSettings",
+          "signature": "class ClaudeCommandSettings extends SubcommandSettings",
           "deprecated": false,
-          "members": [
-            {
-              "name": "command",
-              "kind": "method",
-              "optional": false,
-              "signature": "command(...parts: Array<string | number>): this",
-              "doc": "The verb and operands, e.g. `command(\"add\", \"my-server\")`."
-            },
-            {
-              "name": "flag",
-              "kind": "method",
-              "optional": false,
-              "signature": "flag(name: string, value?: string | number): this",
-              "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nit renders the bare `--name`. Repeatable."
-            }
-          ]
+          "members": []
         },
         {
           "name": "ClaudeConfigSettings",
@@ -18213,24 +18193,9 @@
           "name": "CodexMcpSettings",
           "kind": "class",
           "doc": "Settings for a `codex mcp …` invocation (manage MCP servers): name the verb\nand operands with `.command(...)` and pass anything else with `.flag(...)`.",
-          "signature": "class CodexMcpSettings extends ToolSettings",
+          "signature": "class CodexMcpSettings extends SubcommandSettings",
           "deprecated": false,
-          "members": [
-            {
-              "name": "command",
-              "kind": "method",
-              "optional": false,
-              "signature": "command(...parts: Array<string | number>): this",
-              "doc": "The verb and operands, e.g. `command(\"add\", \"my-server\")`."
-            },
-            {
-              "name": "flag",
-              "kind": "method",
-              "optional": false,
-              "signature": "flag(name: string, value?: string | number): this",
-              "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nit renders the bare `--name`. Repeatable."
-            }
-          ]
+          "members": []
         },
         {
           "name": "CodexSandboxMode",
@@ -18287,24 +18252,9 @@
           "name": "GeminiCommandSettings",
           "kind": "class",
           "doc": "Shared builder for `gemini <group> …` subcommand groups (`mcp`,\n`extensions`): name the verb and operands with `.command(...)` and pass\nanything else with `.flag(...)`.",
-          "signature": "class GeminiCommandSettings extends ToolSettings",
+          "signature": "class GeminiCommandSettings extends SubcommandSettings",
           "deprecated": false,
-          "members": [
-            {
-              "name": "command",
-              "kind": "method",
-              "optional": false,
-              "signature": "command(...parts: Array<string | number>): this",
-              "doc": "The verb and operands, e.g. `command(\"add\", \"my-server\")`."
-            },
-            {
-              "name": "flag",
-              "kind": "method",
-              "optional": false,
-              "signature": "flag(name: string, value?: string | number): this",
-              "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nit renders the bare `--name`. Repeatable."
-            }
-          ]
+          "members": []
         },
         {
           "name": "GeminiExtensionsSettings",
@@ -19024,7 +18974,7 @@
         {
           "name": "TofuTasks",
           "kind": "variable",
-          "doc": "Typed task functions for the OpenTofu CLI.",
+          "doc": "Typed task functions for the `tofu` CLI.",
           "signature": "const TofuTasks: TofuTasksApi",
           "deprecated": false
         },
