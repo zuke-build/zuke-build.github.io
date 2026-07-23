@@ -828,6 +828,10 @@ await run(CiBuild);`,
     position: sticky;
     top: 88px;
     align-self: start;
+    max-height: calc(100vh - 88px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 24px;
   }
   .ex-nav__h {
     display: block;
