@@ -2398,7 +2398,7 @@
         {
           "name": "extractTarGzip",
           "kind": "function",
-          "doc": "Read the `.tar.gz` at `src`, gunzip and unpack it, and write each entry under\n`destDir` (creating parent directories as needed). Symlink entries are\nrecreated as symlinks; pass {@link ExtractOptions.strip} to drop leading path\ncomponents.",
+          "doc": "Read the `.tar.gz` at `src`, gunzip and unpack it, and write each entry under\n`destDir` (creating parent directories as needed). Symlink entries are\nrecreated as symlinks and directory entries as directories; pass\n{@link ExtractOptions.strip} to drop leading path components.",
           "signature": "async function extractTarGzip(src: PathLike, destDir: PathLike, options?: ExtractOptions): Promise<void>",
           "deprecated": false
         },
@@ -6065,7 +6065,7 @@
         {
           "name": "TargetFn",
           "kind": "typeAlias",
-          "doc": "The executable body of a target. May be synchronous or asynchronous.",
+          "doc": "The executable body of a target. May be synchronous or asynchronous, and any\nreturned value is ignored — so a body can return a tool-wrapper call directly\n(`.executes(() => DenoTasks.lint())`, which resolves to a `CommandOutput`)\nwithout wrapping it in an `async` block just to discard the result. A single\nreturned promise is awaited before dependents run; a returned *array* of\npromises is not (it is not a thenable), so `await Promise.all([...])` inside\nthe body when you fan work out, rather than returning the array.",
           "signature": "type TargetFn = unknown",
           "deprecated": false
         },
@@ -6675,7 +6675,7 @@
         {
           "name": "untar",
           "kind": "function",
-          "doc": "Extract the entries from a `ustar` archive (regular files only).",
+          "doc": "Extract the entries from a tar archive — regular files, symlinks, and\ndirectories. A path longer than the 100-byte `name` field is reconstructed\nfrom whichever long-name form the archive uses: the POSIX `ustar` `prefix`\nsplit, GNU tar's `@LongLink` pseudo-entries (typeflags `'L'` name / `'K'`\nlink target, whose *data* is the following member's value — Node's Linux\nrelease tarballs use this), or pax extended headers (typeflag `'x'`, with\n`path=`/`linkpath=` records — bsdtar/macOS use this). These metadata\npseudo-entries accumulate onto the next real member, matching GNU/bsdtar, so a\nmixed archive is read correctly; a pax record wins over a GNU long name, which\nwins over the header's own fields.",
           "signature": "function untar(archive: Uint8Array): TarEntry[]",
           "deprecated": false
         },
