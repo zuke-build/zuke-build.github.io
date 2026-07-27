@@ -1705,6 +1705,13 @@
               "doc": "Kill the process if it runs longer than `ms` milliseconds, raising a\n{@link CommandTimeoutError}. Fires even under {@link noThrow}."
             },
             {
+              "name": "maxCapturedBytes",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxCapturedBytes(bytes: number): this",
+              "doc": "Cap how much of **each** captured stream is kept in memory, in bytes\n(default 8 MiB). Capture keeps the newest bytes: once the cap is reached the\noldest are dropped, {@link CommandOutput.truncated} is set, and\n{@link CommandOutput.text} prefixes a notice. Raise it for a command whose\nwhole output you must parse; lower it to bound a chatty one. Live streaming\nto the terminal is never capped — every byte still reaches it.\n"
+            },
+            {
               "name": "signal",
               "kind": "method",
               "optional": false,
@@ -1716,7 +1723,7 @@
               "kind": "method",
               "optional": false,
               "signature": "commandLine(): string",
-              "doc": "The command line, for diagnostics."
+              "doc": "The command line, for diagnostics — argv joined by spaces, with the resolved\nvalue of every `secret` parameter of the enclosing run masked. This is the\nonly rendered form of the command (the echo under `--dry-run`, a\n{@link CommandError} message), so a secret passed as an argv token cannot\nleak through one. The argv given to the operating system is unchanged."
             },
             {
               "name": "then",
@@ -1730,7 +1737,7 @@
               "kind": "method",
               "optional": false,
               "signature": "text(): Promise<string>",
-              "doc": "Run and resolve to trimmed stdout. Throws on non-zero unless `noThrow`."
+              "doc": "Run and resolve to trimmed stdout — prefixed with a truncation notice if the\ncapture cap was hit. Throws on non-zero unless `noThrow`."
             },
             {
               "name": "lines",
@@ -1783,7 +1790,7 @@
               "kind": "method",
               "optional": false,
               "signature": "text(): string",
-              "doc": "Trimmed stdout."
+              "doc": "Trimmed stdout, prefixed with a one-line notice when {@link truncated} — so\na caller reading the output cannot mistake a tail for the whole of it."
             }
           ]
         },
@@ -5207,6 +5214,22 @@
           "deprecated": false
         },
         {
+          "name": "ShellArgsError",
+          "kind": "class",
+          "doc": "Raised when {@link splitShellArgs} reaches the end of the input with a quote\nstill open. Names the offending quote character and the offset at which it was\nopened so the bad spot in a long command line is findable.",
+          "signature": "class ShellArgsError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
           "name": "shimFallbackArgv",
           "kind": "function",
           "doc": "On Windows, wrap an argv in a `cmd /c` invocation so `.cmd`/`.bat` shims\n(such as npm's) become spawnable; returns `null` on other platforms.",
@@ -5289,6 +5312,13 @@
               "doc": "Terminate the process and wait for it to exit. Sends `signal` (default\n`SIGTERM`); if the process has not exited within `graceMs` (default 5s), it\nescalates to `SIGKILL` so a process that ignores `SIGTERM` cannot hang\nteardown. A process that has already exited is treated as stopped. A\ndry-run stub (no child) is a no-op."
             }
           ]
+        },
+        {
+          "name": "splitShellArgs",
+          "kind": "function",
+          "doc": "Split `input` into argv the way a POSIX shell would, honouring the **quoting\nrules only**:\n\n- Unquoted runs of whitespace separate arguments; leading, trailing, and\n  repeated whitespace produce no empty arguments.\n- Single quotes are fully literal — no escape sequences at all, so `'a\\b'`\n  yields `a\\b`.\n- Inside double quotes a backslash escapes only `\"`, `\\`, `` ` ``, `$`, and a\n  newline; before anything else it stays literal, so `\"\\d+\"` yields `\\d+`\n  rather than silently losing the backslash.\n- Outside quotes a backslash escapes the following character, so `a\\ b` is one\n  argument.\n- A backslash-newline pair is a line continuation and is removed, both\n  unquoted and inside double quotes; a backslash at the very end of the input\n  is a dangling continuation and is dropped.\n- Adjacent segments concatenate (`a\"b c\"d` → `ab cd`) and a quoted empty\n  string is a real, empty argument (`''` → `[\"\"]`).\n\n**Non-goals**, deliberately not implemented — the input is turned into argv,\nnever interpreted: no variable expansion (`\"$HOME\"` stays `$HOME`), no\nglobbing, no tilde expansion, no command substitution, and no operator\nhandling of any kind (`|`, `&&`, `;`, `>` are ordinary characters). A caller\nthat needs those must split on them itself, or run a real shell.\n\n`\\r` is treated as a separator alongside space, tab, and newline so a command\nline read from a CRLF file cannot smuggle an invisible carriage return into an\nargument.\n",
+          "signature": "function splitShellArgs(input: string): string[]",
+          "deprecated": false
         },
         {
           "name": "StateHost",
@@ -6599,6 +6629,13 @@
               "doc": "Kill the tool if it runs longer than `ms` milliseconds, raising a\n`CommandTimeoutError`. Fires even under {@link noThrow}."
             },
             {
+              "name": "maxCapturedBytes",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxCapturedBytes(bytes: number): this",
+              "doc": "Cap how much of **each** captured stream the run keeps in memory, in bytes\n(default 8 MiB). Once the cap is reached the oldest bytes are dropped,\n`CommandOutput.truncated` is set, and `CommandOutput.text` prefixes a\nnotice. Raise it for a tool whose whole output must be parsed — a coverage\nreport, a `--json` dump — and lower it to bound a chatty one. Live\nstreaming to the terminal is never capped.\n"
+            },
+            {
               "name": "toolPath",
               "kind": "method",
               "optional": false,
@@ -7006,6 +7043,13 @@
               "doc": "Reload remote modules instead of using the cache (`--reload`)."
             },
             {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
+            },
+            {
               "name": "paths",
               "kind": "method",
               "optional": false,
@@ -7027,6 +7071,13 @@
               "optional": false,
               "signature": "paths(...paths: PathLike[]): this",
               "doc": "The files to type-check (at least one is required)."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
             }
           ]
         },
@@ -7129,6 +7180,13 @@
               "optional": false,
               "signature": "json(): this",
               "doc": "Output the documentation as JSON (`--json`)."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
             },
             {
               "name": "html",
@@ -7298,6 +7356,13 @@
               "optional": false,
               "signature": "allow(permission: DenoPermission, ...values: string[]): this",
               "doc": "Grant one permission, optionally scoped to values (`--allow-read=a,b`)."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date instead of silently updating it\n(`--frozen`). Use it whenever the module graph must match the committed\n`deno.lock` exactly — running an `npm:` tool in CI, say, so its transitive\ntree stays pinned to the audited integrity hashes rather than being\nresolved afresh. Named `frozen` — not `frozenLockfile` — to mirror the real\nDeno CLI flag exactly. This is a deliberate divergence from\n`PnpmSettings.frozenLockfile()` in `@zuke/pnpm`, which follows pnpm's own\nflag name instead: guideline 7 (mirror the real CLI) takes priority over\ncross-package naming symmetry."
             }
           ]
         },
@@ -7386,13 +7451,6 @@
               "optional": false,
               "signature": "reload(): this",
               "doc": "Reload the module cache (`--reload`)."
-            },
-            {
-              "name": "frozen",
-              "kind": "method",
-              "optional": false,
-              "signature": "frozen(): this",
-              "doc": "Fail if the lockfile is out of date (`--frozen`) instead of updating it. Use\nit whenever the module graph must match the committed `deno.lock` exactly —\nrunning an `npm:` tool in CI, say, so its transitive tree stays pinned to\nthe audited integrity hashes rather than being resolved afresh."
             }
           ]
         },
@@ -7517,6 +7575,13 @@
               "optional": false,
               "signature": "taskArgs(...args: Array<string | number>): this",
               "doc": "Arguments forwarded to the task."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
             }
           ]
         },
@@ -9640,7 +9705,7 @@
               "kind": "method",
               "optional": false,
               "signature": "password(value: string): this",
-              "doc": "The password (`-p`); prefer {@link passwordStdin} in CI."
+              "doc": "The password (`-p`). This lands directly in the process argv, where it\ncan leak through `ps`/process listings, shell history, or CI job logs —\n{@link passwordStdin} is the safe choice in CI (and generally), since it\npipes the secret through STDIN instead of putting it on the command line."
             },
             {
               "name": "passwordStdin",
@@ -10788,6 +10853,20 @@
               "optional": false,
               "signature": "wait(): this",
               "doc": "Wait until services are running/healthy (`--wait`)."
+            },
+            {
+              "name": "abortOnContainerExit",
+              "kind": "method",
+              "optional": false,
+              "signature": "abortOnContainerExit(): this",
+              "doc": "Stop all containers if any container stops (`--abort-on-container-exit`)."
+            },
+            {
+              "name": "exitCodeFrom",
+              "kind": "method",
+              "optional": false,
+              "signature": "exitCodeFrom(service: string): this",
+              "doc": "Exit with this service's container's exit code (`--exit-code-from`)."
             },
             {
               "name": "scale",
@@ -12968,6 +13047,13 @@
       "summary": "`@zuke/vitest` — typed `vitest` task wrappers for Zuke builds.",
       "symbols": [
         {
+          "name": "VitestPool",
+          "kind": "typeAlias",
+          "doc": "The Vitest worker pool implementation (`--pool`).",
+          "signature": "type VitestPool = threads | forks | vmThreads | vmForks",
+          "deprecated": false
+        },
+        {
           "name": "VitestSettings",
           "kind": "class",
           "doc": "Settings for a `vitest` run.",
@@ -13036,6 +13122,27 @@
               "optional": false,
               "signature": "forceRun(): this",
               "doc": "Force one-shot mode even under watch (`--run`)."
+            },
+            {
+              "name": "pool",
+              "kind": "method",
+              "optional": false,
+              "signature": "pool(name: VitestPool): this",
+              "doc": "Choose the worker pool implementation (`--pool`)."
+            },
+            {
+              "name": "maxWorkers",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxWorkers(count: number): this",
+              "doc": "Cap the number of parallel workers (`--maxWorkers`)."
+            },
+            {
+              "name": "minWorkers",
+              "kind": "method",
+              "optional": false,
+              "signature": "minWorkers(count: number): this",
+              "doc": "Set the minimum number of parallel workers (`--minWorkers`)."
             },
             {
               "name": "bail",
@@ -13289,6 +13396,13 @@
               "doc": "Run in headed browsers (`--headed`)."
             },
             {
+              "name": "ui",
+              "kind": "method",
+              "optional": false,
+              "signature": "ui(): this",
+              "doc": "Open the interactive UI mode (`--ui`)."
+            },
+            {
               "name": "workers",
               "kind": "method",
               "optional": false,
@@ -13301,6 +13415,13 @@
               "optional": false,
               "signature": "reporter(name: string): this",
               "doc": "Choose the reporter (`--reporter=`)."
+            },
+            {
+              "name": "updateSnapshots",
+              "kind": "method",
+              "optional": false,
+              "signature": "updateSnapshots(): this",
+              "doc": "Update snapshots instead of failing on a mismatch (`--update-snapshots`)."
             },
             {
               "name": "config",
@@ -15032,6 +15153,13 @@
               "optional": false,
               "signature": "projects(...values: PathLike[]): this",
               "doc": "Project config files or directories to build (positional); repeatable."
+            },
+            {
+              "name": "noEmit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noEmit(): this",
+              "doc": "Type-check without emitting output (`--noEmit`). `tsc --build` accepts the\nsame compiler-option overrides as a plain compile, applied on top of each\nproject's build; this is not inherited from {@link TscBaseSettings} —\n{@link TscSettings.noEmit} is a separate, unrelated field on the other\nsubclass."
             },
             {
               "name": "clean",
