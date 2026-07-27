@@ -7342,6 +7342,13 @@
               "optional": false,
               "signature": "reload(): this",
               "doc": "Reload the module cache (`--reload`)."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Fail if the lockfile is out of date (`--frozen`) instead of updating it. Use\nit whenever the module graph must match the committed `deno.lock` exactly —\nrunning an `npm:` tool in CI, say, so its transitive tree stays pinned to\nthe audited integrity hashes rather than being resolved afresh."
             }
           ]
         },
