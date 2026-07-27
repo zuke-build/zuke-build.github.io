@@ -498,6 +498,14 @@ async function resumeCheck(build: Build, options: Omit<ResumeOptions, "runId" | 
   new signal simply re-suspend. Returns the number of runs that ended in
   failure. This is the sweep a cron or webhook drives (`zuke resume --check`).
 
+  A run whose record is {@link "./state/types.ts".RunRecord.degraded} is
+  counted as failed on every sweep until an operator resolves it: it cannot
+  be advanced without deciding whether its targets are safe to repeat, and a
+  non-zero result is the only channel a cron watches. Its refusal is reported
+  through the reporter (the console unless silenced) so the cause is visible,
+  and it stays `suspended`, so a later sweep with
+  {@link ResumeOptions.resumeDegraded} still picks it up.
+
 async function resumeRun(build: Build, options: ResumeOptions): Promise<BuildResult>
   Resume the suspended run `options.runId` for `build`. Transitions it to
   `running` (exactly one resumer wins), optionally delivers a signal, checks the
@@ -509,7 +517,8 @@ async function resumeRun(build: Build, options: ResumeOptions): Promise<BuildRes
 
   @throws
       if the run does not exist, is not suspended, the build lacks its root
-      target, or the graph drifted (unless {@link ResumeOptions.forceGraph}).
+      target, the graph drifted (unless {@link ResumeOptions.forceGraph}), or the
+      record is degraded (unless {@link ResumeOptions.resumeDegraded}).
 
 function resumeWhen(check: () => boolean | Promise<boolean>, options: ResumeWhenOptions): WaitTrigger
   A trigger satisfied when an async `check` predicate returns `true`. Zuke does
@@ -2751,6 +2760,13 @@ interface ResumeOptions
     Who to attribute the resumption to (stamped on the run).
   forceGraph?: boolean
     Continue even if the build graph changed since the run was suspended.
+  resumeDegraded?: boolean
+    Resume even though the record is {@link "./state/types.ts".RunRecord.degraded}
+    — a state write was permanently lost, so a target that succeeded may still
+    be recorded `running` or `pending`. The resume trusts the record as written,
+    which means such a target runs again; passing this accepts that risk,
+    on the grounds that the operator — not Zuke — knows whether the target is
+    safe to repeat.
   silent?: boolean
     Suppress banner/summary output.
   reporter?: Reporter
@@ -2866,6 +2882,21 @@ interface RunRecord
     External signals received so far, keyed by name (see `.waitsFor(...)`).
   events: RunEvent[]
     Append-only audit trail of MCP tool calls against this run (see {@link RunEvent}).
+  degraded?: boolean
+    True when at least one state write for this run was permanently lost —
+    a conflicting write from another process could not be re-applied within the
+    writer's retry budget. Writes are best-effort, so the run itself carried on;
+    the flag is how a later reader learns that a transition which really
+    happened may be missing from the record. In particular a target that
+    succeeded can still be recorded `running` or `pending`, so a resume would
+    re-run it — which is why a resume refuses a degraded record unless
+    `--resume-degraded` overrides it (see
+    {@link "../resume.ts".ResumeOptions.resumeDegraded}).
+
+    It is set by the writer when it loses a write and persisted by the next
+    write that lands — the failing one, by definition, could not carry it. A
+    drop that leaves the mutation in memory for a later write to re-persist does
+    not set it. Absent (or `false`) means no write is known to be missing.
 
 interface RunSummary
   A compact run listing row, returned by {@link "./store.ts".StateStore.listRuns}.
@@ -3617,6 +3648,75 @@ type ToolResolution = "node_modules" | "path"
 
 type ToolTask = (configure?: Configure<DynamicToolSettings>) => Promise<CommandOutput>
   A ready-to-run task for a {@link defineTool} tool.
+
+A conformance kit for tool-wrapper tests.
+
+Every `@zuke/*` wrapper package owes its unit test the same three checks: the
+settings class spawns the binary it claims to, it resolves that binary the way
+the wrapper intends (bare on `PATH`, or npx-style from `node_modules/.bin`),
+and a missing binary surfaces as a
+{@link "./tooling.ts".ToolNotFoundError} rather than some raw
+`Deno.errors.NotFound`. Hand-written per package, that is a temp-directory /
+`ZUKE_TOOL_RESOLUTION` save-and-restore dance copied dozens of times — and a
+wrapper that quietly forgets the resolution check keeps passing.
+
+{@link assertWrapperConformance} runs all three, hermetically (nothing real is
+ever spawned), and takes the expected resolution mode as a required
+argument so each wrapper asserts its default instead of remembering it:
+
+```ts
+Deno.test("biome conforms", async () => {
+  await assertWrapperConformance(() => new BiomeCheckSettings(), "biome", {
+    resolution: "node_modules",
+  });
+});
+```
+@module
+
+async function assertWrapperConformance(makeSettings: () => ToolSettings, tool: string, options: WrapperConformanceOptions): Promise<void>
+  Assert that a tool wrapper conforms: `makeSettings()` spawns `tool`, resolves
+  it per `options.resolution`, and reports a missing binary as a
+  {@link "./tooling.ts".ToolNotFoundError}.
+
+  `makeSettings` is called once per check, so each check gets a pristine
+  instance. The resolution check runs against a throwaway temp directory holding
+  a fake `node_modules/.bin/<tool>` shim, with `ZUKE_TOOL_RESOLUTION` unset for
+  the duration and restored afterwards; no real subprocess is ever launched.
+
+  A wrapper whose `run()` resolves something at run time must have that pinned
+  inside `makeSettings` — `() => new DockerComposeUpSettings().usePlugin()`,
+  say — or the missing-binary check would probe the ambient host. It reports a
+  `ToolNotFoundError` raised for any binary other than the planted one as a
+  failure, so such a wrapper cannot pass by accident on a host that lacks the
+  real tool.
+
+  @throws {Error}
+      naming the wrapper and the fix, on the first failed check.
+
+function missingTool<S extends ToolSettings>(settings: S): S
+  Point `settings` at a binary that cannot exist, so running it raises a
+  {@link "./tooling.ts".ToolNotFoundError} without ever launching a real
+  process — the way a wrapper test proves each of its task functions reaches
+  execution.
+
+  The platform is pinned to `linux` because on Windows a missing binary is
+  retried through `cmd /c`, which exists, so the failure would surface as a
+  command error instead:
+
+  ```ts
+  await assertRejects(() => BiomeTasks.check(missingTool), ToolNotFoundError);
+  ```
+
+interface WrapperConformanceOptions
+  Options for {@link assertWrapperConformance}.
+
+  resolution: ToolResolution
+    The resolution strategy the wrapper must use when nothing overrides it:
+    `"node_modules"` for a JS-ecosystem tool installed under `node_modules`,
+    `"path"` for a natively installed one. Required, with no default: an
+    npm-distributed wrapper that forgot to override `defaultResolution()` is
+    exactly the bug this kit exists to catch, and a default would let that
+    wrapper's test pass by saying nothing.
 
 Primitive terminal rendering, shared by the executor's build reporting
 (`./report.ts`) and the `@zuke/console` package: ANSI styling, terminal-width
