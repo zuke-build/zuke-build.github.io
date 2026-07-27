@@ -597,6 +597,13 @@
           "deprecated": false
         },
         {
+          "name": "assertWrapperConformance",
+          "kind": "function",
+          "doc": "Assert that a tool wrapper conforms: `makeSettings()` spawns `tool`, resolves\nit per `options.resolution`, and reports a missing binary as a\n{@link \"./tooling.ts\".ToolNotFoundError}.\n\n`makeSettings` is called once per check, so each check gets a pristine\ninstance. The resolution check runs against a throwaway temp directory holding\na fake `node_modules/.bin/<tool>` shim, with `ZUKE_TOOL_RESOLUTION` unset for\nthe duration and restored afterwards; no real subprocess is ever launched.\n\nA wrapper whose `run()` resolves something at run time must have that pinned\ninside `makeSettings` — `() => new DockerComposeUpSettings().usePlugin()`,\nsay — or the missing-binary check would probe the ambient host. It reports a\n`ToolNotFoundError` raised for any binary other than the planted one as a\nfailure, so such a wrapper cannot pass by accident on a host that lacks the\nreal tool.\n",
+          "signature": "async function assertWrapperConformance(makeSettings: unknown, tool: string, options: WrapperConformanceOptions): Promise<void>",
+          "deprecated": false
+        },
+        {
           "name": "box",
           "kind": "function",
           "doc": "A bordered panel around `content` (a string, split on newlines, or an array\nof lines). Content may carry ANSI codes; padding is measured on the visible\ntext so the border stays flush.",
@@ -3653,6 +3660,13 @@
           ]
         },
         {
+          "name": "missingTool",
+          "kind": "function",
+          "doc": "Point `settings` at a binary that cannot exist, so running it raises a\n{@link \"./tooling.ts\".ToolNotFoundError} without ever launching a real\nprocess — the way a wrapper test proves each of its task functions reaches\nexecution.\n\nThe platform is pinned to `linux` because on Windows a missing binary is\nretried through `cmd /c`, which exists, so the failure would surface as a\ncommand error instead:\n\n```ts\nawait assertRejects(() => BiomeTasks.check(missingTool), ToolNotFoundError);\n```",
+          "signature": "function missingTool(settings: S): S",
+          "deprecated": false
+        },
+        {
           "name": "NpmRunner",
           "kind": "typeAlias",
           "doc": "Runs `npm install <args>` — the injectable subprocess seam. Defaults to\nspawning the ambient `npm`; a test injects a fake that records the argv and\nplants the expected bin, so provisioning stays hermetic and network-free.",
@@ -4473,7 +4487,7 @@
         {
           "name": "resumeCheck",
           "kind": "function",
-          "doc": "Re-attempt every suspended run in the store (or just `runId`): predicate-based\nwaits are re-evaluated and expired waits time out. Signal-based waits with no\nnew signal simply re-suspend. Returns the number of runs that ended in\nfailure. This is the sweep a cron or webhook drives (`zuke resume --check`).",
+          "doc": "Re-attempt every suspended run in the store (or just `runId`): predicate-based\nwaits are re-evaluated and expired waits time out. Signal-based waits with no\nnew signal simply re-suspend. Returns the number of runs that ended in\nfailure. This is the sweep a cron or webhook drives (`zuke resume --check`).\n\nA run whose record is {@link \"./state/types.ts\".RunRecord.degraded} is\n**counted as failed** on every sweep until an operator resolves it: it cannot\nbe advanced without deciding whether its targets are safe to repeat, and a\nnon-zero result is the only channel a cron watches. Its refusal is reported\nthrough the reporter (the console unless silenced) so the cause is visible,\nand it stays `suspended`, so a later sweep with\n{@link ResumeOptions.resumeDegraded} still picks it up.",
           "signature": "async function resumeCheck(build: Build, options: Omit<ResumeOptions, runId | signal | data> & unknown): Promise<unknown>",
           "deprecated": false
         },
@@ -4539,6 +4553,13 @@
               "optional": true,
               "signature": "forceGraph?: boolean",
               "doc": "Continue even if the build graph changed since the run was suspended."
+            },
+            {
+              "name": "resumeDegraded",
+              "kind": "property",
+              "optional": true,
+              "signature": "resumeDegraded?: boolean",
+              "doc": "Resume even though the record is {@link \"./state/types.ts\".RunRecord.degraded}\n— a state write was permanently lost, so a target that succeeded may still\nbe recorded `running` or `pending`. The resume trusts the record as written,\nwhich means such a target **runs again**; passing this accepts that risk,\non the grounds that the operator — not Zuke — knows whether the target is\nsafe to repeat."
             },
             {
               "name": "silent",
@@ -4921,6 +4942,13 @@
               "optional": false,
               "signature": "events: RunEvent[]",
               "doc": "Append-only audit trail of MCP tool calls against this run (see {@link RunEvent})."
+            },
+            {
+              "name": "degraded",
+              "kind": "property",
+              "optional": true,
+              "signature": "degraded?: boolean",
+              "doc": "True when at least one state write for this run was **permanently lost** —\na conflicting write from another process could not be re-applied within the\nwriter's retry budget. Writes are best-effort, so the run itself carried on;\nthe flag is how a later reader learns that a transition which really\nhappened may be missing from the record. In particular a target that\nsucceeded can still be recorded `running` or `pending`, so a resume would\nre-run it — which is why a resume refuses a degraded record unless\n`--resume-degraded` overrides it (see\n{@link \"../resume.ts\".ResumeOptions.resumeDegraded}).\n\nIt is set by the writer when it loses a write and persisted by the **next**\nwrite that lands — the failing one, by definition, could not carry it. A\ndrop that leaves the mutation in memory for a later write to re-persist does\n*not* set it. Absent (or `false`) means no write is known to be missing."
             }
           ]
         },
@@ -6893,6 +6921,22 @@
           "doc": "On Windows, spawn a resolved `.cmd`/`.bat` shim (such as npm's `node_modules`\nshims) through `cmd /c` — a batch shim is not a PE executable, so\n`Deno.Command` cannot launch it directly. Returns `argv` unchanged on other\nplatforms or when the binary is not a batch shim.",
           "signature": "function windowsCmdShim(argv: ReadonlyArray<string>, os: Deno.build.os): string[]",
           "deprecated": false
+        },
+        {
+          "name": "WrapperConformanceOptions",
+          "kind": "interface",
+          "doc": "Options for {@link assertWrapperConformance}.",
+          "signature": "interface WrapperConformanceOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resolution",
+              "kind": "property",
+              "optional": false,
+              "signature": "resolution: ToolResolution",
+              "doc": "The resolution strategy the wrapper must use when nothing overrides it:\n`\"node_modules\"` for a JS-ecosystem tool installed under `node_modules`,\n`\"path\"` for a natively installed one. Required, with no default: an\nnpm-distributed wrapper that forgot to override `defaultResolution()` is\nexactly the bug this kit exists to catch, and a default would let that\nwrapper's test pass by saying nothing."
+            }
+          ]
         }
       ]
     },
