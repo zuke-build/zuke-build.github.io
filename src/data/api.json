@@ -2340,7 +2340,7 @@
               "kind": "property",
               "optional": true,
               "signature": "renderer?: Renderer",
-              "doc": "Renderer for the per-target banners and the end-of-build summary. Defaults\nto Zuke's built-in {@link defaultRenderer}; `@zuke/console` exports an\nalternative a build can inject to restyle its output."
+              "doc": "Renderer for the per-target banners and the end-of-build summary. Defaults\nto Zuke's built-in {@link \"./renderer.ts\".defaultRenderer}; `@zuke/console`\nexports an alternative a build can inject to restyle its output."
             },
             {
               "name": "signal",
@@ -7071,6 +7071,20 @@
               "optional": false,
               "signature": "paths(...paths: PathLike[]): this",
               "doc": "The files to type-check (at least one is required)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Type-check against a specific configuration file (`--config`) instead of the\none Deno would discover by walking up from the checked files.\n\nThe discovered config decides how bare specifiers resolve, so pointing at\nanother one type-checks the same sources against a different dependency\nset — for example checking a workspace member against the *published*\nversion of a sibling it declares, rather than the local member that\nworkspace resolution would substitute."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`), neither reading nor writing it.\n\nUse it for a check whose resolutions are deliberately not the project's:\nwriting them into the committed lock would corrupt it, and reading it would\npin the very versions the check is trying to vary."
             },
             {
               "name": "frozen",

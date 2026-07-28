@@ -2265,8 +2265,8 @@ interface ExecuteOptions
     outside GitHub Actions) when omitted; off by default with a custom reporter.
   renderer?: Renderer
     Renderer for the per-target banners and the end-of-build summary. Defaults
-    to Zuke's built-in {@link defaultRenderer}; `@zuke/console` exports an
-    alternative a build can inject to restyle its output.
+    to Zuke's built-in {@link "./renderer.ts".defaultRenderer}; `@zuke/console`
+    exports an alternative a build can inject to restyle its output.
   signal?: AbortSignal
     Cancel the run when this signal aborts (wired to Ctrl-C/SIGTERM by the CLI,
     or fired by another process running `zuke cancel`). Every target body's
@@ -4023,6 +4023,21 @@ class DenoCheckSettings extends DenoSettings
 
   paths(...paths: PathLike[]): this
     The files to type-check (at least one is required).
+  config(path: PathLike): this
+    Type-check against a specific configuration file (`--config`) instead of the
+    one Deno would discover by walking up from the checked files.
+
+    The discovered config decides how bare specifiers resolve, so pointing at
+    another one type-checks the same sources against a different dependency
+    set — for example checking a workspace member against the published
+    version of a sibling it declares, rather than the local member that
+    workspace resolution would substitute.
+  noLock(): this
+    Ignore the lockfile entirely (`--no-lock`), neither reading nor writing it.
+
+    Use it for a check whose resolutions are deliberately not the project's:
+    writing them into the committed lock would corrupt it, and reading it would
+    pin the very versions the check is trying to vary.
   frozen(): this
     Error out if the lockfile is out of date (`--frozen`). See
     {@link DenoPermissionSettings.frozen} for why the name mirrors the real
