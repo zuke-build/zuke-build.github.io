@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "core@1.32.0",
+  "generated": "core@1.32.1",
   "packages": [
     {
       "name": "@zuke/core",
@@ -19441,6 +19441,13 @@
               "optional": false,
               "signature": "verbose(): this",
               "doc": "Verbose output (`--verbose`)."
+            },
+            {
+              "name": "logOpts",
+              "kind": "method",
+              "optional": false,
+              "signature": "logOpts(opts: string): this",
+              "doc": "Restrict which commits are scanned, passed straight through to `git log`\n(`--log-opts`).\n\nWithout this, `gitleaks detect` walks the whole history reachable from the\nrefs present in the checkout — so on a pull request, where CI typically\nfetches every branch, a secret-shaped string on an unrelated branch fails\nthe scan and the failure appears on whichever pull request is looked at.\nPassing a range such as `origin/main..HEAD` scopes the scan to the commits\nunder review.\n\nHas no effect alongside {@linkcode noGit}, which makes gitleaks treat the\nsource as a plain directory and ignore history entirely."
             }
           ]
         },
