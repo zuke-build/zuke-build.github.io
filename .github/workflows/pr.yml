@@ -1,0 +1,41 @@
+name: PR
+
+# The gate for anything landing on `main` — including the automated docs sync
+# the Zuke release opens. `./zuke build` is the same command `deploy.yml` runs
+# (npm ci → astro check → astro build), so a malformed llms.txt or api.json
+# fails here instead of after it is already deployed.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One run per PR; a new push supersedes the previous check.
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # This job name is the required status check on `main` — renaming it
+    # silently un-gates the branch, since the old name never reports again.
+    name: Build the site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Build with Zuke
+        run: ./zuke build
