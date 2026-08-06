@@ -525,10 +525,24 @@
           ]
         },
         {
+          "name": "appendJobSummary",
+          "kind": "function",
+          "doc": "Append `markdown` to the Actions job summary, returning whether it was\nwritten. Outside Actions (no `GITHUB_STEP_SUMMARY`) it is a no-op returning\n`false`, so the same code path works locally.\n\nBest-effort by design: an unwritable summary file reports `false` rather than\nthrowing. A report that could not be *displayed* must never fail the build\nthat produced it — the build's own result is the signal that matters.",
+          "signature": "function appendJobSummary(markdown: string): boolean",
+          "deprecated": false
+        },
+        {
           "name": "Architecture",
           "kind": "typeAlias",
           "doc": "The CPU architectures Zuke recognises.",
           "signature": "type Architecture = x86_64 | aarch64",
+          "deprecated": false
+        },
+        {
+          "name": "ArchiveFormat",
+          "kind": "typeAlias",
+          "doc": "A packed download format, unpacked after the checksum is verified.",
+          "signature": "type ArchiveFormat = tar.gz | zip",
           "deprecated": false
         },
         {
@@ -1135,6 +1149,50 @@
           "deprecated": false
         },
         {
+          "name": "CiCheckout",
+          "kind": "interface",
+          "doc": "The repository checkout, emitted as an `actions/checkout` step after any\n{@link CiHardenRunner} and before the job's own steps. Like hardening, the\npinned {@link action} reference is required.",
+          "signature": "interface CiCheckout",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "action",
+              "kind": "property",
+              "optional": false,
+              "signature": "action: string",
+              "doc": "The pinned action reference, e.g. `actions/checkout@<sha>`."
+            },
+            {
+              "name": "persistCredentials",
+              "kind": "property",
+              "optional": true,
+              "signature": "persistCredentials?: boolean",
+              "doc": "Keep the token in git config so a later step can push. Defaults to `false`:\na job that does not push should not leave a credential behind."
+            },
+            {
+              "name": "ref",
+              "kind": "property",
+              "optional": true,
+              "signature": "ref?: string",
+              "doc": "The ref to check out. Defaults to the one that triggered the run."
+            },
+            {
+              "name": "fetchDepth",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetchDepth?: number",
+              "doc": "How much history to fetch. `0` means the full history — needed by anything\nthat walks past commits, such as a secret scan."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The step name. Defaults to `\"Checkout\"`."
+            }
+          ]
+        },
+        {
           "name": "CiConcurrency",
           "kind": "interface",
           "doc": "A concurrency group: at most one run per group, optionally cancelling the prior one.",
@@ -1246,6 +1304,43 @@
           ]
         },
         {
+          "name": "CiHardenRunner",
+          "kind": "interface",
+          "doc": "Runner hardening, emitted as a `step-security/harden-runner` step before\nanything else in the job.\n\nThis cannot move into the build: the point of the step is to install an egress\ncontrol *before* build code runs, so a build that set it up itself would be\nthe very code it is meant to contain. Generating it is the next best thing —\nthe policy is declared in one place, in code, next to the job it protects.\n\nThe pinned {@link action} reference is required rather than defaulted. A\ndefault would mean either a floating tag (which supply-chain scanners reject\nas an unpinned use) or a commit SHA baked into `@zuke/core` that goes stale\nbetween releases. Passing it makes the pin the caller's — and lets a build\nsource it from wherever its bumps are automated.",
+          "signature": "interface CiHardenRunner",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "action",
+              "kind": "property",
+              "optional": false,
+              "signature": "action: string",
+              "doc": "The pinned action reference, e.g. `step-security/harden-runner@<sha>`."
+            },
+            {
+              "name": "egress",
+              "kind": "property",
+              "optional": true,
+              "signature": "egress?: audit | block",
+              "doc": "`\"audit\"` records outbound connections; `\"block\"` drops everything outside\n{@link allowedEndpoints}. Defaults to `\"audit\"` — the safe choice for a job\nwith no secrets, where a false block would be worse than an unrecorded call."
+            },
+            {
+              "name": "allowedEndpoints",
+              "kind": "property",
+              "optional": true,
+              "signature": "allowedEndpoints?: string[]",
+              "doc": "The hosts a `\"block\"` policy permits, as `host:port`. Ignored when auditing.\nEvery entry should be traceable to something the build actually reaches."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The step name. Defaults to `\"Harden the runner\"`."
+            }
+          ]
+        },
+        {
           "name": "ciHost",
           "kind": "function",
           "doc": "A short identifier for the detected CI host, or `\"local\"` when not on CI.\nRecognises GitHub Actions, GitLab CI, Azure Pipelines, Bitbucket Pipelines,\nand the generic `CI` convention.\n\nPrefer {@link detectCiHost} for new code: its values match {@link CiProvider}.\nThis function is kept for compatibility and uses longer, host-specific names.",
@@ -1300,6 +1395,34 @@
               "optional": true,
               "signature": "matrix?: Record<string, Array<string | number>>",
               "doc": "A build matrix: each key fans out over its values."
+            },
+            {
+              "name": "failFast",
+              "kind": "property",
+              "optional": true,
+              "signature": "failFast?: boolean",
+              "doc": "Let the other matrix legs finish when one fails (`fail-fast: false`). Default\nGitHub behaviour cancels them, which hides whether a failure is\nplatform-specific — the thing a cross-OS matrix exists to answer."
+            },
+            {
+              "name": "permissions",
+              "kind": "property",
+              "optional": true,
+              "signature": "permissions?: Record<string, string>",
+              "doc": "The token permissions this job's `GITHUB_TOKEN` carries. Set it per job\nrather than pipeline-wide so a job holds only what it needs — the isolation\nthat lets one job push commits while another only reads. GitHub only."
+            },
+            {
+              "name": "harden",
+              "kind": "property",
+              "optional": true,
+              "signature": "harden?: CiHardenRunner | false",
+              "doc": "Harden the runner before this job's steps. Overrides\n{@link CiPipeline.harden}; pass `false` to opt this job out of a\npipeline-wide default."
+            },
+            {
+              "name": "checkout",
+              "kind": "property",
+              "optional": true,
+              "signature": "checkout?: CiCheckout | false",
+              "doc": "Check the repository out before this job's steps. Overrides\n{@link CiPipeline.checkout}; pass `false` to opt out."
             },
             {
               "name": "env",
@@ -1367,6 +1490,20 @@
               "doc": "Limit concurrent runs (GitHub only). Ignored elsewhere."
             },
             {
+              "name": "harden",
+              "kind": "property",
+              "optional": true,
+              "signature": "harden?: CiHardenRunner",
+              "doc": "Harden every job's runner, unless a job overrides it or opts out with\n`harden: false`. Declared once here rather than repeated per job, since the\npolicy is usually uniform across a workflow. GitHub only."
+            },
+            {
+              "name": "checkout",
+              "kind": "property",
+              "optional": true,
+              "signature": "checkout?: CiCheckout",
+              "doc": "Check the repository out in every job, unless a job overrides it or opts out\nwith `checkout: false`. GitHub only."
+            },
+            {
               "name": "jobs",
               "kind": "property",
               "optional": true,
@@ -1395,6 +1532,34 @@
               "optional": true,
               "signature": "name?: string",
               "doc": "Human-readable step name."
+            },
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": true,
+              "signature": "id?: string",
+              "doc": "A stable identifier for the step, so later steps can read its outputs\n(`${{ steps.<id>.outputs.x }}`). GitHub only."
+            },
+            {
+              "name": "if",
+              "kind": "property",
+              "optional": true,
+              "signature": "if?: string",
+              "doc": "A condition gating this step — a raw provider expression, e.g.\n`runner.os == 'Windows'` or `always()`. GitHub only."
+            },
+            {
+              "name": "shell",
+              "kind": "property",
+              "optional": true,
+              "signature": "shell?: string",
+              "doc": "The shell to run `run` with (`bash`, `pwsh`, `sh`, …). Omit for the runner's\ndefault, which differs per OS. GitHub only."
+            },
+            {
+              "name": "continueOnError",
+              "kind": "property",
+              "optional": true,
+              "signature": "continueOnError?: boolean",
+              "doc": "Continue the job even when this step fails (`continue-on-error`). GitHub only."
             },
             {
               "name": "run",
@@ -1427,6 +1592,66 @@
           ]
         },
         {
+          "name": "CiSyncOptions",
+          "kind": "interface",
+          "doc": "Filesystem seams for {@link syncCiFiles} (overridable for tests).",
+          "signature": "interface CiSyncOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "check",
+              "kind": "property",
+              "optional": true,
+              "signature": "check?: boolean",
+              "doc": "Verify instead of write: report an out-of-date file as `stale` rather than\noverwriting it. Intended for CI, where committed config must match the build."
+            },
+            {
+              "name": "read",
+              "kind": "property",
+              "optional": true,
+              "signature": "read?: unknown",
+              "doc": "Read a file's contents, or `null` when it does not exist."
+            },
+            {
+              "name": "write",
+              "kind": "property",
+              "optional": true,
+              "signature": "write?: unknown",
+              "doc": "Write a file, creating parent directories as needed."
+            }
+          ]
+        },
+        {
+          "name": "CiSyncResult",
+          "kind": "interface",
+          "doc": "The outcome of syncing one {@link CiFile}.",
+          "signature": "interface CiSyncResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The file's path."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: CiSyncStatus",
+              "doc": "Whether it was written, already current, or (in check mode) out of date."
+            }
+          ]
+        },
+        {
+          "name": "CiSyncStatus",
+          "kind": "typeAlias",
+          "doc": "What {@link syncCiFiles} did to a file.",
+          "signature": "type CiSyncStatus = written | unchanged | stale",
+          "deprecated": false
+        },
+        {
           "name": "CiTriggers",
           "kind": "interface",
           "doc": "When the pipeline runs.",
@@ -1448,11 +1673,25 @@
               "doc": "Branches whose pull/merge requests trigger the pipeline. An empty array\nmeans every branch (no filter); omit the field to disable the trigger."
             },
             {
+              "name": "pullRequestTypes",
+              "kind": "property",
+              "optional": true,
+              "signature": "pullRequestTypes?: string[]",
+              "doc": "Which pull-request activity types fire the pipeline, on top of the branch\nfilter — GitHub's default is `opened`, `synchronize`, `reopened`. Add\n`edited` when a gate reads the pull request's own description, since editing\nit changes what a check should see without pushing a commit. GitHub only."
+            },
+            {
               "name": "manual",
               "kind": "property",
               "optional": true,
               "signature": "manual?: boolean",
               "doc": "Allow manual runs (workflow dispatch / web)."
+            },
+            {
+              "name": "branchProtectionRule",
+              "kind": "property",
+              "optional": true,
+              "signature": "branchProtectionRule?: boolean",
+              "doc": "Run when a branch protection rule is created, edited, or deleted\n(`branch_protection_rule`) — a supply-chain scan wants to re-score when the\nrepository's own protections change. GitHub only."
             },
             {
               "name": "schedule",
@@ -2080,6 +2319,13 @@
           "members": []
         },
         {
+          "name": "discoverCiFiles",
+          "kind": "function",
+          "doc": "Find every {@link CiFile} declared on a build instance. A fan-out file is\nresolved here — its jobs are expanded from the build's targets — so the\nreturned files render the same whether they fan out or not.",
+          "signature": "function discoverCiFiles(build: Build): CiFile[]",
+          "deprecated": false
+        },
+        {
           "name": "discoverGroups",
           "kind": "function",
           "doc": "Discover all parallel {@link Group} batches declared on a build instance,\nbinding each its property path (for labelling, e.g. in the graph). Groups\nthat are not assigned to a build property simply stay unnamed.",
@@ -2105,6 +2351,13 @@
           "kind": "typeAlias",
           "doc": "A download function: fetch `url` into the file at `dest`.",
           "signature": "type DownloadFn = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "DownloadFormat",
+          "kind": "typeAlias",
+          "doc": "How a downloaded artifact is treated: `\"raw\"` is the binary itself, an\n{@link ArchiveFormat} is unpacked and one path taken from inside.",
+          "signature": "type DownloadFormat = raw | ArchiveFormat",
           "deprecated": false
         },
         {
@@ -3318,15 +3571,15 @@
               "name": "archive",
               "kind": "property",
               "optional": true,
-              "signature": "archive?: raw | tar.gz | zip",
-              "doc": "The download format. `\"raw\"` (default) treats the download as the binary\nitself; `\"tar.gz\"` and `\"zip\"` unpack it and take {@link binaryPath} from\ninside. Many release assets ship one or the other."
+              "signature": "archive?: DownloadFormat | unknown",
+              "doc": "The download format. `\"raw\"` (default) treats the download as the binary\nitself; `\"tar.gz\"` and `\"zip\"` unpack it and take {@link binaryPath} from\ninside. Many release assets ship one or the other.\n\nLike {@link url} and {@link checksum} this accepts a resolver, because the\nformat is routinely per-platform: a Go or Rust project typically publishes\n`.tar.gz` for Linux and macOS and `.zip` for Windows. Pass\n`(p) => p.os === \"windows\" ? \"zip\" : \"tar.gz\"` rather than declaring one\nformat that is wrong on a third of the platforms."
             },
             {
               "name": "binaryPath",
               "kind": "property",
               "optional": true,
-              "signature": "binaryPath?: string",
-              "doc": "For a `\"tar.gz\"` or `\"zip\"` archive, the binary's path within the archive.\nDefaults to {@link name}."
+              "signature": "binaryPath?: string | unknown",
+              "doc": "For a `\"tar.gz\"` or `\"zip\"` archive, the binary's path within the archive.\nDefaults to {@link name}.\n\nAlso resolver-friendly, for the same reason: the same release usually names\nthe binary `tool` inside its Unix archive and `tool.exe` inside its Windows\none, so `(p) => p.os === \"windows\" ? \"tool.exe\" : \"tool\"` is the common\nshape. (The *installed* filename gets its `.exe` automatically — this is the\npath to copy **out of** the archive.)"
             },
             {
               "name": "platform",
@@ -3390,8 +3643,8 @@
               "name": "archive",
               "kind": "property",
               "optional": false,
-              "signature": "archive: tar.gz | zip",
-              "doc": "The archive format — a multi-file runtime always ships packed."
+              "signature": "archive: ArchiveFormat | unknown",
+              "doc": "The archive format — a multi-file runtime always ships packed. Accepts a\nper-platform resolver for the usual `.tar.gz` on Unix / `.zip` on Windows\nsplit (see {@link InstallReleaseOptions.archive})."
             },
             {
               "name": "strip",
@@ -5502,6 +5755,13 @@
           ]
         },
         {
+          "name": "syncCiFiles",
+          "kind": "function",
+          "doc": "Bring each declared {@link CiFile} on disk in line with its definition. By\ndefault a changed file is rewritten; in `check` mode it is reported `stale`\ninstead (so CI can fail when the committed config has drifted).",
+          "signature": "async function syncCiFiles(files: unknown, options?: CiSyncOptions): Promise<CiSyncResult[]>",
+          "deprecated": false
+        },
+        {
           "name": "table",
           "kind": "function",
           "doc": "An aligned text table: a styled header row, an optional dividing rule, then\none line per row. Column widths fit the widest visible cell; cells may already\ncarry ANSI colour. Rows shorter than the columns are padded with empty cells.",
@@ -6425,15 +6685,15 @@
               "name": "archive",
               "kind": "method",
               "optional": false,
-              "signature": "archive(format: raw | tar.gz | zip): this",
-              "doc": "Treat the download as a `\"tar.gz\"` or `\"zip\"` to unpack (default `\"raw\"`,\nthe bare binary). Pair with {@link binaryPath} for the binary inside."
+              "signature": "archive(format: DownloadFormat | unknown): this",
+              "doc": "Treat the download as a `\"tar.gz\"` or `\"zip\"` to unpack (default `\"raw\"`,\nthe bare binary). Pair with {@link binaryPath} for the binary inside. Pass a\n`(platform) => format` resolver when the format is per-platform, as it is\nfor most Go and Rust releases — `.tar.gz` on Linux and macOS, `.zip` on\nWindows (see {@link InstallReleaseOptions.archive})."
             },
             {
               "name": "binaryPath",
               "kind": "method",
               "optional": false,
-              "signature": "binaryPath(path: string): this",
-              "doc": "For an archive, the binary's path within it (defaults to the name)."
+              "signature": "binaryPath(path: string | unknown): this",
+              "doc": "For an archive, the binary's path within it (defaults to the name). Also\naccepts a `(platform) => path` resolver, for the usual case of a `.exe`\ninside the Windows archive only."
             },
             {
               "name": "strip",
@@ -6509,15 +6769,15 @@
               "name": "archive_",
               "kind": "property",
               "optional": true,
-              "signature": "archive_?: raw | tar.gz | zip",
-              "doc": "Download format. Set by {@link archive}."
+              "signature": "archive_?: DownloadFormat | unknown",
+              "doc": "Download format (or a per-platform resolver). Set by {@link archive}."
             },
             {
               "name": "binaryPath_",
               "kind": "property",
               "optional": true,
-              "signature": "binaryPath_?: string",
-              "doc": "The binary's path within a `tar.gz`. Set by {@link binaryPath}."
+              "signature": "binaryPath_?: string | unknown",
+              "doc": "The binary's path within an archive (or a resolver). Set by {@link binaryPath}."
             },
             {
               "name": "strip_",
@@ -16987,6 +17247,27 @@
               "doc": "The remote to fetch from."
             },
             {
+              "name": "refspec",
+              "kind": "method",
+              "optional": false,
+              "signature": "refspec(...specs: string[]): this",
+              "doc": "Add a refspec to fetch, after the remote — `master`, or\n`master:refs/remotes/origin/master` to also update the remote-tracking ref\n(which is what makes `origin/master` resolvable in a shallow CI checkout\nthat never fetched it). Repeatable.\n\nPrefix the source with `+` to force the update. Pair it with\n{@link depth}: a shallow fetch is not a fast-forward of the history already\npresent, and git rejects such an update unless it is forced."
+            },
+            {
+              "name": "noTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTags(): this",
+              "doc": "Skip fetching tags (`--no-tags`)."
+            },
+            {
+              "name": "depth",
+              "kind": "method",
+              "optional": false,
+              "signature": "depth(commits: number): this",
+              "doc": "Limit history to this many commits (`--depth`). `1` is enough to diff\nagainst a base branch and avoids pulling a whole history into a CI job."
+            },
+            {
               "name": "all",
               "kind": "method",
               "optional": false,
@@ -17429,6 +17710,375 @@
           "deprecated": false
         },
         {
+          "name": "GhAppTokenApi",
+          "kind": "interface",
+          "doc": "The shape of the app-token task, mixed into `GhTasks`.",
+          "signature": "interface GhAppTokenApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "appToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "appToken(configure?: Configure<GhAppTokenSettings>): Promise<GhAppTokenResult>",
+              "doc": "Mint a GitHub App installation token, scoped to the repositories and\npermissions the settings request. The returned token is registered with the\nActions log masker, so it is safe to pass onward through `env`."
+            }
+          ]
+        },
+        {
+          "name": "GhAppTokenResult",
+          "kind": "interface",
+          "doc": "A minted installation token and when it stops working.",
+          "signature": "interface GhAppTokenResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "token",
+              "kind": "property",
+              "optional": false,
+              "signature": "token: string",
+              "doc": "The installation token, usable as a bearer token or a git password."
+            },
+            {
+              "name": "expiresAt",
+              "kind": "property",
+              "optional": false,
+              "signature": "expiresAt: string",
+              "doc": "ISO-8601 expiry — one hour out, as GitHub issues it."
+            },
+            {
+              "name": "installationId",
+              "kind": "property",
+              "optional": false,
+              "signature": "installationId: number",
+              "doc": "The installation the token was minted for."
+            }
+          ]
+        },
+        {
+          "name": "GhAppTokenSettings",
+          "kind": "class",
+          "doc": "Settings for {@link GhAppTokenApi.appToken}.",
+          "signature": "class GhAppTokenSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "appId",
+              "kind": "method",
+              "optional": false,
+              "signature": "appId(id: string | number): this",
+              "doc": "The GitHub App's id (the `App ID` on its settings page)."
+            },
+            {
+              "name": "privateKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "privateKey(pem: string): this",
+              "doc": "The app's private key, as the PEM's **contents** — GitHub issues PKCS#1\n(`BEGIN RSA PRIVATE KEY`); PKCS#8 is accepted too."
+            },
+            {
+              "name": "owner",
+              "kind": "method",
+              "optional": false,
+              "signature": "owner(login: string): this",
+              "doc": "The user or organisation the app is installed on."
+            },
+            {
+              "name": "repositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositories(...names: string[]): this",
+              "doc": "Scope the token to these repositories (names only, without the owner).\nOmit to cover every repository the installation can reach — prefer naming\nthem, so a leaked token is narrow."
+            },
+            {
+              "name": "permission",
+              "kind": "method",
+              "optional": false,
+              "signature": "permission(name: string, level: GhPermissionLevel): this",
+              "doc": "Request one permission, e.g. `.permission(\"contents\", \"write\")`. Repeatable.\nNarrowing to what the target needs beats inheriting the app's full set;\nrequesting more than the installation grants is an error from GitHub.\n\nThe API names multi-word permissions with underscores (`pull_requests`), so\na hyphen is normalised to one. That spelling is the trap here:\n`create-github-app-token` takes its inputs as `permission-pull-requests`,\nand passing that form straight through is rejected as a permission the\ninstallation does not grant — which reads as a misconfigured app rather\nthan a misspelled key."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "Use a different REST base (GitHub Enterprise Server)."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(seconds: unknown): this",
+              "doc": "Override the clock, in seconds since the epoch (a test seam)."
+            },
+            {
+              "name": "jwt_",
+              "kind": "method",
+              "optional": false,
+              "signature": "jwt_(): Promise<string>",
+              "doc": "Sign the app JWT this settings object describes."
+            },
+            {
+              "name": "installationPath_",
+              "kind": "method",
+              "optional": false,
+              "signature": "installationPath_(): string",
+              "doc": "The path that resolves this app's installation id."
+            },
+            {
+              "name": "tokenRequest_",
+              "kind": "method",
+              "optional": false,
+              "signature": "tokenRequest_(): Record<string, unknown>",
+              "doc": "The `access_tokens` request body — only the fields that were narrowed."
+            },
+            {
+              "name": "appId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "appId_?: string",
+              "doc": "The app's numeric id. Set by {@link appId}."
+            },
+            {
+              "name": "privateKey_",
+              "kind": "property",
+              "optional": true,
+              "signature": "privateKey_?: string",
+              "doc": "The app's PEM private key. Set by {@link privateKey}."
+            },
+            {
+              "name": "owner_",
+              "kind": "property",
+              "optional": true,
+              "signature": "owner_?: string",
+              "doc": "The account the app is installed on. Set by {@link owner}."
+            },
+            {
+              "name": "repositories_",
+              "kind": "property",
+              "optional": false,
+              "signature": "repositories_: string[]",
+              "doc": "Repositories to scope the token to. Set by {@link repositories}."
+            },
+            {
+              "name": "permissions_",
+              "kind": "property",
+              "optional": false,
+              "signature": "permissions_: Record<string, GhPermissionLevel>",
+              "doc": "Requested permissions. Set by {@link permission}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "REST base URL. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "Seconds since the epoch, for the JWT's claims. Set by {@link now}."
+            }
+          ]
+        },
+        {
+          "name": "GhPermissionLevel",
+          "kind": "typeAlias",
+          "doc": "A permission level an installation token can be narrowed to.",
+          "signature": "type GhPermissionLevel = read | write | admin",
+          "deprecated": false
+        },
+        {
+          "name": "GhSarifApi",
+          "kind": "interface",
+          "doc": "The shape of the SARIF task, mixed into `GhTasks`.",
+          "signature": "interface GhSarifApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "uploadSarif",
+              "kind": "method",
+              "optional": false,
+              "signature": "uploadSarif(configure?: Configure<GhSarifSettings>): Promise<GhSarifUploadResult>",
+              "doc": "Upload a SARIF report to GitHub code scanning, so its findings land in the\nrepository's Security tab. Needs a token with `security-events: write`."
+            }
+          ]
+        },
+        {
+          "name": "GhSarifSettings",
+          "kind": "class",
+          "doc": "Settings for {@link GhSarifApi.uploadSarif}.",
+          "signature": "class GhSarifSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "The SARIF report to upload (required)."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "The `owner/repo` to upload for. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(sha: string): this",
+              "doc": "The commit SHA the results describe. Defaults to `GITHUB_SHA`."
+            },
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(ref: string): this",
+              "doc": "The full ref the results describe (`refs/heads/main`). Defaults to `GITHUB_REF`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with — needs `security-events: write`. Defaults to\n`GITHUB_TOKEN` in the environment, so it never has to reach argv."
+            },
+            {
+              "name": "checkoutUri",
+              "kind": "method",
+              "optional": false,
+              "signature": "checkoutUri(uri: string): this",
+              "doc": "The URI of the checkout the results are relative to (`file:///…`)."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "Use a different REST base (GitHub Enterprise Server)."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the Actions environment."
+            },
+            {
+              "name": "body_",
+              "kind": "method",
+              "optional": false,
+              "signature": "body_(): Promise<Record<string, string>>",
+              "doc": "The request body. The `sarif` field is the report gzipped then base64'd,\nwhich is what the endpoint accepts — a plain JSON body is rejected."
+            },
+            {
+              "name": "file_",
+              "kind": "property",
+              "optional": true,
+              "signature": "file_?: string",
+              "doc": "The SARIF file to upload. Set by {@link file}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo` to upload for. Set by {@link repo}."
+            },
+            {
+              "name": "commit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "commit_?: string",
+              "doc": "The commit the results describe. Set by {@link commit}."
+            },
+            {
+              "name": "ref_",
+              "kind": "property",
+              "optional": true,
+              "signature": "ref_?: string",
+              "doc": "The ref the results describe. Set by {@link ref}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token to authenticate with. Set by {@link token}."
+            },
+            {
+              "name": "checkoutUri_",
+              "kind": "property",
+              "optional": true,
+              "signature": "checkoutUri_?: string",
+              "doc": "Where the checkout that produced the results lives. Set by {@link checkoutUri}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "REST base URL. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
+          "name": "GhSarifUploadResult",
+          "kind": "interface",
+          "doc": "What GitHub returns for an accepted SARIF upload.",
+          "signature": "interface GhSarifUploadResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": false,
+              "signature": "id: string",
+              "doc": "The opaque id of the upload, for polling its processing status."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "The URL that reports whether GitHub finished processing the report."
+            }
+          ]
+        },
+        {
           "name": "GhSettings",
           "kind": "class",
           "doc": "Settings for a `gh` invocation.",
@@ -17447,14 +18097,14 @@
         {
           "name": "GhTasks",
           "kind": "variable",
-          "doc": "Typed task functions for the `gh` GitHub CLI.",
+          "doc": "Typed task functions for GitHub: the `gh` CLI and the REST-only operations.",
           "signature": "const GhTasks: GhTasksApi",
           "deprecated": false
         },
         {
           "name": "GhTasksApi",
           "kind": "interface",
-          "doc": "The shape of {@link GhTasks}.",
+          "doc": "The shape of {@link GhTasks}: the `gh` CLI plus the GitHub operations that\nhave no CLI subcommand (see {@link GhAppTokenApi}, {@link GhSarifApi}) and\nwould otherwise force a build back to a marketplace action.",
           "signature": "interface GhTasksApi",
           "deprecated": false,
           "members": [
@@ -17603,10 +18253,24 @@
           ]
         },
         {
+          "name": "mintAppToken",
+          "kind": "function",
+          "doc": "Mint an installation token from the settings a lambda configures.",
+          "signature": "async function mintAppToken(configure?: Configure<GhAppTokenSettings>): Promise<GhAppTokenResult>",
+          "deprecated": false
+        },
+        {
           "name": "readWorkflowResult",
           "kind": "function",
           "doc": "Read the {@link WorkflowResult} a completed {@link githubWorkflow} wait wrote\nto a target's state, or `undefined` if the wait has not completed (or this is\nnot a github-workflow gate). Call it from a **dependent** target's body with\nthe gate's handle: `readWorkflowResult(ctx.stateOf(\"<gate-target>\"))`.",
           "signature": "function readWorkflowResult(state: TargetStateHandle): WorkflowResult | undefined",
+          "deprecated": false
+        },
+        {
+          "name": "uploadSarifReport",
+          "kind": "function",
+          "doc": "Upload the SARIF report the settings describe.",
+          "signature": "async function uploadSarifReport(configure?: Configure<GhSarifSettings>): Promise<GhSarifUploadResult>",
           "deprecated": false
         },
         {
@@ -20205,6 +20869,13 @@
               "optional": true,
               "signature": "baseBranch?: string",
               "doc": "The base branch the diff is taken against (used by the GitHub workflow's\nfetch step). Defaults to `\"master\"`."
+            },
+            {
+              "name": "fetchBase",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetchBase?: boolean",
+              "doc": "Emit the `git fetch` step that makes the base branch available, and point\nthe reviewers at what it fetched. Defaults to `true`, because a pull-request\ncheckout is shallow and has no base to diff against.\n\nSet it to `false` when the build's review target fetches its own base — then\nthe workflow drops the step, and the reviewers use their own configured base\nrather than the fetched `FETCH_HEAD`. Preferable where it applies: the same\n`zuke review` then works locally, where no workflow step exists to run."
             },
             {
               "name": "path",
