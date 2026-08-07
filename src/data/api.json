@@ -1135,11 +1135,41 @@
           "deprecated": false
         },
         {
+          "name": "CHECKOUT_ACTION",
+          "kind": "variable",
+          "doc": "The action a {@link CiCheckout} is generated from when pins are resolved.",
+          "signature": "const CHECKOUT_ACTION: actions/checkout",
+          "deprecated": false
+        },
+        {
           "name": "checkStateStore",
           "kind": "function",
           "doc": "Run the state-store conformance scenarios against the store `make` builds.",
           "signature": "async function checkStateStore(make: StateStoreFactory, options?: ConformanceOptions): Promise<ConformanceResult[]>",
           "deprecated": false
+        },
+        {
+          "name": "CiActionRef",
+          "kind": "interface",
+          "doc": "A pinned action reference, and the version its commit corresponds to.\n\nThe version is emitted as a trailing `# v1.2.3` comment, which is not\ndecoration: Dependabot reads it to know which version a pinned SHA is, and\nrewrites both together when it bumps. A generated workflow that dropped it\nwould leave automated bumps with no version to track.",
+          "signature": "interface CiActionRef",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ref",
+              "kind": "property",
+              "optional": false,
+              "signature": "ref: string",
+              "doc": "The pinned reference, `owner/repo@<sha>`."
+            },
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": true,
+              "signature": "version?: string",
+              "doc": "The version the SHA corresponds to, e.g. `v7.0.1`."
+            }
+          ]
         },
         {
           "name": "cicd",
@@ -1158,9 +1188,9 @@
             {
               "name": "action",
               "kind": "property",
-              "optional": false,
-              "signature": "action: string",
-              "doc": "The pinned action reference, e.g. `actions/checkout@<sha>`."
+              "optional": true,
+              "signature": "action?: CiUses",
+              "doc": "The pinned action reference. Omit it when the file supplies a `pins` resolver."
             },
             {
               "name": "persistCredentials",
@@ -1223,11 +1253,25 @@
           "deprecated": false,
           "members": [
             {
+              "name": "derived",
+              "kind": "method",
+              "optional": false,
+              "signature": "derived(): boolean",
+              "doc": "Whether this file's jobs are derived from the build rather than declared."
+            },
+            {
               "name": "pipelineFor",
               "kind": "method",
               "optional": false,
               "signature": "pipelineFor(targets: Map<string, TargetBuilder>): CiPipeline",
-              "doc": "The pipeline this file renders. With fan-out, the build's `targets` are\nexpanded into one job per target; otherwise the declared {@link pipeline}."
+              "doc": "The pipeline this file renders. Jobs come from the invoked targets, or from\na full fan-out of the graph, or — failing both — from the declared\n{@link pipeline}."
+            },
+            {
+              "name": "at",
+              "kind": "method",
+              "optional": false,
+              "signature": "at(path: string): CiFile",
+              "doc": "The same file bound to `path` — used to name a file from its field."
             },
             {
               "name": "render",
@@ -1248,7 +1292,14 @@
               "kind": "property",
               "optional": false,
               "signature": "path: string",
-              "doc": "The output path."
+              "doc": "The output path, once resolved."
+            },
+            {
+              "name": "explicitPath",
+              "kind": "property",
+              "optional": false,
+              "signature": "explicitPath: boolean",
+              "doc": "Whether {@link path} came from the spec rather than a default."
             },
             {
               "name": "pipeline",
@@ -1263,6 +1314,20 @@
               "optional": true,
               "signature": "fanOut?: FanOutOptions",
               "doc": "Fan-out options, when this file expands the build's targets into jobs."
+            },
+            {
+              "name": "invokes",
+              "kind": "property",
+              "optional": true,
+              "signature": "invokes?: unknown",
+              "doc": "The targets this file runs as jobs, when declared with `invokes`."
+            },
+            {
+              "name": "pins",
+              "kind": "property",
+              "optional": true,
+              "signature": "pins?: CiPinResolver",
+              "doc": "Resolves pinned action references, so a SHA is stated once per repository."
             }
           ]
         },
@@ -1276,16 +1341,23 @@
             {
               "name": "provider",
               "kind": "property",
-              "optional": false,
-              "signature": "provider: CiProvider",
-              "doc": "The provider to render for — the one field you must choose."
+              "optional": true,
+              "signature": "provider?: CiProvider",
+              "doc": "The provider to render for. Defaults to `\"github\"`, which is what the\n`.github/workflows` default path assumes anyway."
+            },
+            {
+              "name": "pins",
+              "kind": "property",
+              "optional": true,
+              "signature": "pins?: CiPinResolver",
+              "doc": "Resolves each action's pinned reference by name, so hardening and checkout\ncan be requested without restating a SHA.\n\nWith a resolver, every job is hardened and checked out by default — the\nprelude nearly every job needs — and a job opts out with `harden: false` or\nadjusts the policy without naming the action again."
             },
             {
               "name": "path",
               "kind": "property",
               "optional": true,
               "signature": "path?: string",
-              "doc": "The output path (relative to the working directory). Defaults to the\nprovider's conventional location (`.github/workflows/ci.yml`,\n`.gitlab-ci.yml`, or `azure-pipelines.yml`)."
+              "doc": "The output path (relative to the working directory).\n\nDefaults to the **field name** the file is declared on, in the provider's\nconventional directory: `releaseWorkflow = cicd({...})` writes\n`.github/workflows/release.yml`. A trailing `Workflow`/`Ci`/`Yaml` is\ndropped, and camelCase becomes kebab-case. Recovering the name from the\nfield is how `target()` works too, so a workflow needs no more ceremony\nthan a target.\n\nFalls back to the provider's single conventional file\n(`.github/workflows/ci.yml`, `.gitlab-ci.yml`, …) when the name is not\navailable — a file built outside a build class."
             },
             {
               "name": "pipeline",
@@ -1300,6 +1372,13 @@
               "optional": true,
               "signature": "fanOut?: boolean | FanOutOptions",
               "doc": "Fan the build's targets out into one CI job per target, wired by their\ndependencies (see {@link fanOutPipeline}). `true` uses the defaults; pass\n{@link FanOutOptions} to customise. When set, {@link pipeline} supplies the\npipeline-level fields (name, triggers, …) and its `jobs` are ignored."
+            },
+            {
+              "name": "invokes",
+              "kind": "property",
+              "optional": true,
+              "signature": "invokes?: unknown",
+              "doc": "The targets this workflow runs — one job each, in place of hand-written\n{@link CiPipeline.jobs}.\n\nThis is the intended way to declare a workflow. A job is almost entirely\nimplied by its target, so naming the targets is usually the whole\ndeclaration: the id, the display name, the `./zuke <target>` command, and\nthe `needs:` edges between jobs all come from the build graph. Pass a\n{@link CiInvocation} instead of a bare target only for what the runner\ndecides rather than the build — a matrix, token scopes, an egress policy.\n\nEach job runs its target's *whole* subgraph in one process, exactly as\n`./zuke <target>` does locally — so dependencies inside a target run\nin-process and need no cache to share their output. Use {@link fanOut}\ninstead to give every target in the graph its own job, which does need a\nremote cache.\n\nTargets are passed as references (`this.ci`), not names, so a rename is a\ncompile error rather than a workflow that silently runs nothing. As with\n`dependsOn`, that means the declaration must appear **below** the targets it\ninvokes — class fields initialise top-to-bottom, so a forward reference is\n`undefined`. Declaring workflows last is the simplest way to satisfy it."
             }
           ]
         },
@@ -1313,9 +1392,9 @@
             {
               "name": "action",
               "kind": "property",
-              "optional": false,
-              "signature": "action: string",
-              "doc": "The pinned action reference, e.g. `step-security/harden-runner@<sha>`."
+              "optional": true,
+              "signature": "action?: CiUses",
+              "doc": "The pinned action reference, e.g. `step-security/harden-runner@<sha>`.\nOmit it when the file supplies a {@link CiFileSpec.pins} resolver, which is\nthe better arrangement: the SHA is then stated once for the repository\nrather than at every use."
             },
             {
               "name": "egress",
@@ -1352,6 +1431,134 @@
           "kind": "typeAlias",
           "doc": "The CI host a build is running on, or `\"local\"` when not on CI. The names\nmatch {@link CiProvider} so they compose with CI generation and per-host\nintegrations (e.g. posting a review to the right pull-request API).",
           "signature": "type CiHost = github | gitlab | azure | bitbucket | local",
+          "deprecated": false
+        },
+        {
+          "name": "CiInvocation",
+          "kind": "interface",
+          "doc": "One job's worth of a workflow, derived from a target.\n\nA job's shape is almost entirely implied by the target it runs: the id and\ndisplay name come from the target, the command is `./zuke <target>`, and the\n`needs:` edges come from the target's `dependsOn`. So an invoked target\nusually needs nothing said about it at all — pass the target and the job is\ngenerated.\n\nThe fields here are the residue that genuinely cannot be inferred, because\nthey are properties of the *runner* rather than of the work: which OS matrix\nto fan out over, which token scopes the job needs, how much egress to permit,\nhow long to allow. Set one only when the default is wrong.",
+          "signature": "interface CiInvocation",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": false,
+              "signature": "target: TargetBuilder",
+              "doc": "The target this job runs."
+            },
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": true,
+              "signature": "id?: string",
+              "doc": "Override the job id (defaults to the target's name, CI-sanitised)."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "Override the display name (defaults to the target's description, else its name)."
+            },
+            {
+              "name": "runsOn",
+              "kind": "property",
+              "optional": true,
+              "signature": "runsOn?: string",
+              "doc": "The runner, when it differs from the pipeline default."
+            },
+            {
+              "name": "matrix",
+              "kind": "property",
+              "optional": true,
+              "signature": "matrix?: Record<string, Array<string | number>>",
+              "doc": "A build matrix — fanning one target out over several OSes, say."
+            },
+            {
+              "name": "failFast",
+              "kind": "property",
+              "optional": true,
+              "signature": "failFast?: boolean",
+              "doc": "Let the other matrix legs finish when one fails."
+            },
+            {
+              "name": "permissions",
+              "kind": "property",
+              "optional": true,
+              "signature": "permissions?: Record<string, string>",
+              "doc": "The token permissions this job needs (see {@link CiJob.permissions})."
+            },
+            {
+              "name": "timeoutMinutes",
+              "kind": "property",
+              "optional": true,
+              "signature": "timeoutMinutes?: number",
+              "doc": "Fail the job after this many minutes."
+            },
+            {
+              "name": "harden",
+              "kind": "property",
+              "optional": true,
+              "signature": "harden?: CiHardenRunner | false",
+              "doc": "Harden this job's runner, overriding the pipeline default."
+            },
+            {
+              "name": "checkout",
+              "kind": "property",
+              "optional": true,
+              "signature": "checkout?: CiCheckout | false",
+              "doc": "Check out in this job, overriding the pipeline default."
+            },
+            {
+              "name": "if",
+              "kind": "property",
+              "optional": true,
+              "signature": "if?: string",
+              "doc": "A condition gating the job."
+            },
+            {
+              "name": "env",
+              "kind": "property",
+              "optional": true,
+              "signature": "env?: Record<string, string>",
+              "doc": "Environment variables for the target's own step — where a secret is mapped\nin, e.g. `{ GITHUB_TOKEN: \"${{ secrets.GITHUB_TOKEN }}\" }`."
+            },
+            {
+              "name": "after",
+              "kind": "property",
+              "optional": true,
+              "signature": "after?: unknown",
+              "doc": "Extra `needs:` edges beyond those implied by the target's `dependsOn`. Use\nit to order two invoked targets that are independent in the build graph but\nmust not run concurrently in CI."
+            },
+            {
+              "name": "before",
+              "kind": "property",
+              "optional": true,
+              "signature": "before?: CiStep[]",
+              "doc": "Steps to run before the target, for something no target can do (see below)."
+            },
+            {
+              "name": "then",
+              "kind": "property",
+              "optional": true,
+              "signature": "then?: CiStep[]",
+              "doc": "Steps to run after the target."
+            },
+            {
+              "name": "steps",
+              "kind": "property",
+              "optional": true,
+              "signature": "steps?: CiStep[]",
+              "doc": "Replace the generated `./zuke <target>` step entirely. The escape hatch of\nlast resort — prefer {@link before}/{@link then}, and prefer moving the work\ninto the target over either."
+            }
+          ]
+        },
+        {
+          "name": "CiInvokes",
+          "kind": "typeAlias",
+          "doc": "A target to invoke, bare when the derived job needs no adjustment.",
+          "signature": "type CiInvokes = TargetBuilder | CiInvocation",
           "deprecated": false
         },
         {
@@ -1455,6 +1662,13 @@
           ]
         },
         {
+          "name": "CiPinResolver",
+          "kind": "typeAlias",
+          "doc": "Resolves an action's pinned reference by name, e.g. `\"actions/checkout\"`.\n\nSupplying one is what lets a workflow declare hardening and checkout by\n*intent* rather than by repeating a SHA at every use. Without it each\n{@link CiHardenRunner} and {@link CiCheckout} must carry its own `action`.",
+          "signature": "type CiPinResolver = unknown",
+          "deprecated": false
+        },
+        {
           "name": "CiPipeline",
           "kind": "interface",
           "doc": "A complete, provider-agnostic CI pipeline.",
@@ -1480,7 +1694,7 @@
               "kind": "property",
               "optional": true,
               "signature": "permissions?: Record<string, string>",
-              "doc": "Workflow-level token permissions (GitHub only), e.g.\n`{ contents: \"read\", \"pull-requests\": \"write\" }`. Ignored elsewhere."
+              "doc": "Workflow-level token permissions (GitHub only), e.g.\n`{ contents: \"read\", \"pull-requests\": \"write\" }`. Ignored elsewhere.\n\nDefaults to `{ contents: \"read\" }` — least privilege, and what a workflow\nthat only reads the repository needs. A job that needs more declares it, so\nthe wider scope sits next to the job that justifies it. Pass `{}` for no\npermissions at all, which is stricter than the default rather than absent."
             },
             {
               "name": "concurrency",
@@ -1572,7 +1786,7 @@
               "name": "uses",
               "kind": "property",
               "optional": true,
-              "signature": "uses?: string",
+              "signature": "uses?: CiUses",
               "doc": "A GitHub Action reference (e.g. `actions/checkout@v4`). Rendered only for\nGitHub; skipped for GitLab and Azure."
             },
             {
@@ -1701,6 +1915,13 @@
               "doc": "Timezone-aware scheduled runs. Each entry is a 5-field cron in an optional\nIANA timezone (`{ cron: \"30 9 * * 1-5\", tz: \"Europe/Sofia\" }`). Fully\nsupported on **GitHub** (compiled to UTC crons, with a generated guard step\nfor daylight-saving zones) and **Azure** (native `schedules:`, UTC/fixed\noffset only); **ignored** on GitLab and Bitbucket, whose schedules are\nconfigured in the provider UI, not in-file. See {@link \"./ci_schedule.ts\"}."
             }
           ]
+        },
+        {
+          "name": "CiUses",
+          "kind": "typeAlias",
+          "doc": "A step's `uses:` value — a bare reference, or one carrying its version.",
+          "signature": "type CiUses = string | CiActionRef",
+          "deprecated": false
         },
         {
           "name": "CliCommandInfo",
@@ -3181,6 +3402,13 @@
           "kind": "function",
           "doc": "Gzip-compress `data` using the platform `CompressionStream`.",
           "signature": "async function gzip(data: Uint8Array): Promise<Uint8Array>",
+          "deprecated": false
+        },
+        {
+          "name": "HARDEN_RUNNER_ACTION",
+          "kind": "variable",
+          "doc": "The action a {@link CiHardenRunner} is generated from when pins are resolved.",
+          "signature": "const HARDEN_RUNNER_ACTION: step-security/harden-runner",
           "deprecated": false
         },
         {
@@ -20876,6 +21104,20 @@
               "optional": true,
               "signature": "fetchBase?: boolean",
               "doc": "Emit the `git fetch` step that makes the base branch available, and point\nthe reviewers at what it fetched. Defaults to `true`, because a pull-request\ncheckout is shallow and has no base to diff against.\n\nSet it to `false` when the build's review target fetches its own base — then\nthe workflow drops the step, and the reviewers use their own configured base\nrather than the fetched `FETCH_HEAD`. Preferable where it applies: the same\n`zuke review` then works locally, where no workflow step exists to run."
+            },
+            {
+              "name": "hardenRunner",
+              "kind": "property",
+              "optional": true,
+              "signature": "hardenRunner?: string",
+              "doc": "The pinned `step-security/harden-runner@<sha>` to harden the runner with.\nDefaults to a pin baked in here.\n\nPass it when the build sources pins from somewhere that stays current — a\ngenerated workflow whose SHA comes from a constant in a published package is\na trap: a bot bumps the committed file, the next run regenerates it from the\nstale constant, and the bump is silently reverted.\n\nA bare `owner/repo@<sha>`, without the `# vX.Y.Z` comment the other\ngenerated workflows carry: attaching one needs a core newer than this\npackage's declared floor, and Dependabot bumps a comment-less pin anyway.\nAdopt the richer form once the floor moves past that release."
+            },
+            {
+              "name": "checkout",
+              "kind": "property",
+              "optional": true,
+              "signature": "checkout?: string",
+              "doc": "The pinned `actions/checkout@<sha>` to check the repository out with."
             },
             {
               "name": "path",
