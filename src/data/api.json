@@ -1172,6 +1172,36 @@
           ]
         },
         {
+          "name": "CiBootstrap",
+          "kind": "interface",
+          "doc": "The single step every GitHub job starts with: the `zuke-build/zuke` composite\naction, which hardens the runner, checks the repository out, and installs\nDeno if asked — the three steps a Zuke job used to spell out separately.\n\nIt is the default because those three are not three decisions. They are one\nprelude whose parts only work in one order, and writing them out three times\nper workflow meant three pinned SHAs to keep current in every generated file\nrather than one, inside an action that is itself versioned and tested.\n\nThe {@link CiHardenRunner} and {@link CiCheckout} options are still how a job\nconfigures it — they become the action's inputs. What changes is how many\nsteps that renders, not what a build declares. A job that opts out of either\nwith `harden: false` or `checkout: false` falls back to the separate steps,\nsince one action cannot do half of itself.",
+          "signature": "interface CiBootstrap",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "action",
+              "kind": "property",
+              "optional": true,
+              "signature": "action?: CiUses",
+              "doc": "The pinned action reference. Defaults to the release this version of Zuke\nwas built against, or to whatever a `pins` resolver returns for\n{@link ZUKE_ACTION} — which is the form to prefer, because a pin baked into\na published package goes stale between releases and a bot's bump to the\ngenerated file would be reverted by the next regeneration."
+            },
+            {
+              "name": "denoVersion",
+              "kind": "property",
+              "optional": true,
+              "signature": "denoVersion?: string",
+              "doc": "Install this Deno version, for a job that runs `deno` directly rather than\nthrough the `./zuke` launcher (which bootstraps its own)."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The step name. Defaults to `\"Harden and check out with Zuke\"`."
+            }
+          ]
+        },
+        {
           "name": "cicd",
           "kind": "function",
           "doc": "Declare a CI file as a build field. Running the build regenerates it (and the\n`generate-ci` command writes it on demand), so the committed configuration is\ngenerated from code rather than hand-maintained.\n\nThe provider is the only required field: `cicd({ provider: \"github\" })`\ndeclares a workflow at `.github/workflows/ci.yml` that runs the build on\npush/PR to `main`. Override only what else you need.\n\n```ts\nclass MyBuild extends Build {\n  ci = cicd({ provider: \"github\" }); // sensible default workflow\n  // …or customise:\n  gitlab = cicd({ provider: \"gitlab\", pipeline: { jobs: [{ steps: [...] }] } });\n}\n```",
@@ -1511,6 +1541,13 @@
               "doc": "Check out in this job, overriding the pipeline default."
             },
             {
+              "name": "bootstrap",
+              "kind": "property",
+              "optional": true,
+              "signature": "bootstrap?: CiBootstrap | false",
+              "doc": "The prelude action for this job, overriding the pipeline default."
+            },
+            {
               "name": "if",
               "kind": "property",
               "optional": true,
@@ -1632,6 +1669,13 @@
               "doc": "Check the repository out before this job's steps. Overrides\n{@link CiPipeline.checkout}; pass `false` to opt out."
             },
             {
+              "name": "bootstrap",
+              "kind": "property",
+              "optional": true,
+              "signature": "bootstrap?: CiBootstrap | false",
+              "doc": "The prelude action for this job. Overrides {@link CiPipeline.bootstrap};\npass `false` to render hardening and checkout as separate steps instead."
+            },
+            {
               "name": "env",
               "kind": "property",
               "optional": true,
@@ -1716,6 +1760,13 @@
               "optional": true,
               "signature": "checkout?: CiCheckout",
               "doc": "Check the repository out in every job, unless a job overrides it or opts out\nwith `checkout: false`. GitHub only."
+            },
+            {
+              "name": "bootstrap",
+              "kind": "property",
+              "optional": true,
+              "signature": "bootstrap?: CiBootstrap | false",
+              "doc": "The prelude action every job starts with, unless a job says otherwise with\n`bootstrap: false`. Defaults to the `zuke-build/zuke` action; see\n{@link CiBootstrap}. GitHub only."
             },
             {
               "name": "jobs",
@@ -7462,6 +7513,13 @@
               "doc": "The resolution strategy the wrapper must use when nothing overrides it:\n`\"node_modules\"` for a JS-ecosystem tool installed under `node_modules`,\n`\"path\"` for a natively installed one. Required, with no default: an\nnpm-distributed wrapper that forgot to override `defaultResolution()` is\nexactly the bug this kit exists to catch, and a default would let that\nwrapper's test pass by saying nothing."
             }
           ]
+        },
+        {
+          "name": "ZUKE_ACTION",
+          "kind": "variable",
+          "doc": "The name a {@link CiPinResolver} is asked for the prelude action, so a\nrepository that pins its own actions can pin this one the same way.",
+          "signature": "const ZUKE_ACTION: zuke-build/zuke",
+          "deprecated": false
         }
       ]
     },
