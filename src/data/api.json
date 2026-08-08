@@ -21178,6 +21178,13 @@
               "doc": "The pinned `actions/checkout@<sha>` to check the repository out with.\nLike {@link hardenRunner}, supplying it renders the separate steps."
             },
             {
+              "name": "pins",
+              "kind": "property",
+              "optional": true,
+              "signature": "pins?: CiPinResolver",
+              "doc": "Resolves each action's pinned reference by name, exactly as `cicd`'s own\noption does.\n\nSupply it when the build sources pins from somewhere that stays current.\nWithout it the prelude action falls back to the reference baked into the\ncore this package resolved against — which is a release behind as soon as\nthe action is released again, and silently so: this file would name a\ndifferent commit from every other generated workflow in the repository,\nand only a diff would show it."
+            },
+            {
               "name": "path",
               "kind": "property",
               "optional": true,
