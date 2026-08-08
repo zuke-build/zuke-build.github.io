@@ -21168,14 +21168,14 @@
               "kind": "property",
               "optional": true,
               "signature": "hardenRunner?: string",
-              "doc": "The pinned `step-security/harden-runner@<sha>` to harden the runner with.\nDefaults to a pin baked in here.\n\nPass it when the build sources pins from somewhere that stays current — a\ngenerated workflow whose SHA comes from a constant in a published package is\na trap: a bot bumps the committed file, the next run regenerates it from the\nstale constant, and the bump is silently reverted.\n\nA bare `owner/repo@<sha>`, without the `# vX.Y.Z` comment the other\ngenerated workflows carry: attaching one needs a core newer than this\npackage's declared floor, and Dependabot bumps a comment-less pin anyway.\nAdopt the richer form once the floor moves past that release."
+              "doc": "The pinned `step-security/harden-runner@<sha>` to harden the runner with.\n\nSupplying this — or {@link checkout} — renders the two separate steps\ninstead of the prelude action, because naming an action means those\nspecific actions were asked for. Leave both unset for the default, which\nis the one action that does both and carries its own pin."
             },
             {
               "name": "checkout",
               "kind": "property",
               "optional": true,
               "signature": "checkout?: string",
-              "doc": "The pinned `actions/checkout@<sha>` to check the repository out with."
+              "doc": "The pinned `actions/checkout@<sha>` to check the repository out with.\nLike {@link hardenRunner}, supplying it renders the separate steps."
             },
             {
               "name": "path",
