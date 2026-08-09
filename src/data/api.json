@@ -17989,11 +17989,48 @@
       "summary": "`@zuke/gh` — typed GitHub tooling for Zuke builds: the `gh` (GitHub CLI) task",
       "symbols": [
         {
+          "name": "assertRefName",
+          "kind": "function",
+          "doc": "Reject a branch or tag name that git itself would.\n\nNot cosmetic. These names are interpolated into request paths, and URL\nnormalisation resolves `..` before the request is sent — so\n`../../../user/repos` as a branch turns `/repos/o/n/git/ref/heads/<branch>`\ninto `/repos/o/n/user/repos`, sending a write-scoped token somewhere the\ncaller never named. Validating here rather than trusting every caller is the\ndifference between an API that is safe to hand a string and one that is safe\nonly when used carefully.\n\nThe rules are git's own (see `git check-ref-format`), minus those that only\nmatter for multi-level refs.",
+          "signature": "function assertRefName(name: string, what: string): void",
+          "deprecated": false
+        },
+        {
+          "name": "commitFiles",
+          "kind": "function",
+          "doc": "Perform the configured commit.",
+          "signature": "async function commitFiles(configure?: unknown): Promise<GhCommitResult>",
+          "deprecated": false
+        },
+        {
           "name": "CorrelateMode",
           "kind": "typeAlias",
           "doc": "How {@link githubWorkflow} correlates the run it dispatched:\n- `\"marker\"` — match the `zuke:<runId>:<target>` marker echoed into the run's\n  `run-name:` (exact, but the target workflow must opt in).\n- `\"created-window\"` — claim the `workflow_dispatch` run on the dispatch ref\n  created just after dispatch; **best-effort**, for workflows that can't echo\n  the marker (fails loudly if two candidates are in the window).",
           "signature": "type CorrelateMode = marker | created-window",
           "deprecated": false
+        },
+        {
+          "name": "GhApiError",
+          "kind": "class",
+          "doc": "A GitHub REST call that did not succeed, carrying the status.\n\nThe status is the point. One caller here recovers from a missing ref, and\ndoing that on a bare `catch` would swallow an expired token or a missing\npermission and retry them as though the ref simply did not exist — turning an\nauthorisation failure into a confusing one about creating a tag.",
+          "signature": "class GhApiError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: number",
+              "doc": "The HTTP status of the failing response."
+            }
+          ]
         },
         {
           "name": "GhAppTokenApi",
@@ -18180,6 +18217,187 @@
               "optional": false,
               "signature": "now_: unknown",
               "doc": "Seconds since the epoch, for the JWT's claims. Set by {@link now}."
+            }
+          ]
+        },
+        {
+          "name": "GhCommitApi",
+          "kind": "interface",
+          "doc": "The commit and tag operations {@link GhTasks} exposes.",
+          "signature": "interface GhCommitApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(configure?: unknown): Promise<GhCommitResult>",
+              "doc": "Commit files through the API, with no git credential on disk.\n\nCommits onto `.branch(...)`, or creates it from `.from(...)` when that is\nset. The ref update is not forced, so a commit landing between reading the\nhead and writing it is rejected rather than silently overwritten."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(configure?: unknown): Promise<void>",
+              "doc": "Point an annotated tag at a commit, creating or moving its ref."
+            }
+          ]
+        },
+        {
+          "name": "GhCommitResult",
+          "kind": "interface",
+          "doc": "The commit a {@link GhTasksApi.commit} call created.",
+          "signature": "interface GhCommitResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "sha",
+              "kind": "property",
+              "optional": false,
+              "signature": "sha: string",
+              "doc": "The new commit's SHA."
+            },
+            {
+              "name": "branch",
+              "kind": "property",
+              "optional": false,
+              "signature": "branch: string",
+              "doc": "The branch it landed on."
+            }
+          ]
+        },
+        {
+          "name": "GhCommitSettings",
+          "kind": "class",
+          "doc": "Settings for committing files through the API.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them needs to name only what it is committing.",
+          "signature": "class GhCommitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: string, content: string): this",
+              "doc": "Add a file to the commit, replacing any earlier one at the same path."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "The branch to commit onto. It must exist unless {@link from} is set."
+            },
+            {
+              "name": "from",
+              "kind": "method",
+              "optional": false,
+              "signature": "from(base: string): this",
+              "doc": "Create {@link branch} from this one rather than committing onto an\nexisting branch. Creating a ref and moving one are different calls, and\nwhich is wanted is the caller's to say rather than something to infer."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "The commit message."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "files_",
+              "kind": "property",
+              "optional": false,
+              "signature": "files_: Map<string, string>",
+              "doc": "The files to write, by path."
+            },
+            {
+              "name": "branch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "branch_?: string",
+              "doc": "The branch to commit onto. Set by {@link branch}."
+            },
+            {
+              "name": "from_",
+              "kind": "property",
+              "optional": true,
+              "signature": "from_?: string",
+              "doc": "The branch to create from, when creating one. Set by {@link from}."
+            },
+            {
+              "name": "message_",
+              "kind": "property",
+              "optional": true,
+              "signature": "message_?: string",
+              "doc": "The commit message. Set by {@link message}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
             }
           ]
         },
@@ -18381,6 +18599,141 @@
           ]
         },
         {
+          "name": "GhTagSettings",
+          "kind": "class",
+          "doc": "Settings for pointing a tag at a commit.",
+          "signature": "class GhTagSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The tag name, e.g. `v1.2.3`."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(sha: string): this",
+              "doc": "The commit SHA to tag. Defaults to `GITHUB_SHA`."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "The annotation message. Defaults to the tag name."
+            },
+            {
+              "name": "move",
+              "kind": "method",
+              "optional": false,
+              "signature": "move(): this",
+              "doc": "Move the tag if it already exists, rather than failing.\n\nForced by necessity: pointing a major tag at a newer release is a\nnon-fast-forward by definition. A tag that does not exist yet is created,\nsince for the first release of a major those are the same intent."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The tag name. Set by {@link name}."
+            },
+            {
+              "name": "commit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "commit_?: string",
+              "doc": "The commit the tag points at. Set by {@link commit}."
+            },
+            {
+              "name": "message_",
+              "kind": "property",
+              "optional": true,
+              "signature": "message_?: string",
+              "doc": "The annotation message. Set by {@link message}."
+            },
+            {
+              "name": "move_",
+              "kind": "property",
+              "optional": false,
+              "signature": "move_: boolean",
+              "doc": "Whether to move an existing tag. Set by {@link move}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
           "name": "GhTasks",
           "kind": "variable",
           "doc": "Typed task functions for GitHub: the `gh` CLI and the REST-only operations.",
@@ -18550,6 +18903,13 @@
           "kind": "function",
           "doc": "Read the {@link WorkflowResult} a completed {@link githubWorkflow} wait wrote\nto a target's state, or `undefined` if the wait has not completed (or this is\nnot a github-workflow gate). Call it from a **dependent** target's body with\nthe gate's handle: `readWorkflowResult(ctx.stateOf(\"<gate-target>\"))`.",
           "signature": "function readWorkflowResult(state: TargetStateHandle): WorkflowResult | undefined",
+          "deprecated": false
+        },
+        {
+          "name": "tagCommit",
+          "kind": "function",
+          "doc": "Perform the configured tag.",
+          "signature": "async function tagCommit(configure?: unknown): Promise<void>",
           "deprecated": false
         },
         {
