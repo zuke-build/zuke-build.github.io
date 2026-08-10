@@ -101,6 +101,13 @@
           ]
         },
         {
+          "name": "acquireLease",
+          "kind": "function",
+          "doc": "Take a lease named `prefix` over `runId`, or `null` if a live holder has it.\n\nWhile held, the lease renews on a background heartbeat until\n{@link HeldLease.release}. That timer never keeps the process alive.\n\n**Only an explicit refusal counts as loss.** A store reports `false` from a\nrenewal when the claim is demonstrably somebody else's; it *throws* for a\nfilesystem mutex it could not take in time, or an HTTP 503, or a DNS blip —\nnone of which say anything about who holds the lease. Treating those as loss\nwould abort a healthy build because the state service had a bad second, so\nthey are swallowed and the next tick tries again. A store that stays\nunreachable lets the claim lapse at its TTL, which is the documented backstop\nand the honest outcome.",
+          "signature": "async function acquireLease(store: StateStore, prefix: string, runId: string, actor: string, now: unknown, ttlMs?: number, runUrl?: string): Promise<HeldLease | null>",
+          "deprecated": false
+        },
+        {
           "name": "AffectedOptions",
           "kind": "interface",
           "doc": "Configure {@link ExecuteOptions.affected}: the base revision and diff seam.",
@@ -3567,6 +3574,29 @@
           "deprecated": false
         },
         {
+          "name": "HeldLease",
+          "kind": "interface",
+          "doc": "A held lease. Release it when the work it covers is over.",
+          "signature": "interface HeldLease",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "release",
+              "kind": "method",
+              "optional": false,
+              "signature": "release(): Promise<void>",
+              "doc": "Stop the heartbeat and release the claim (best-effort)."
+            },
+            {
+              "name": "lost",
+              "kind": "property",
+              "optional": false,
+              "signature": "lost: AbortSignal",
+              "doc": "Aborts if the lease is lost — the store reports the claim is no longer this\nholder's, which means something else has taken the work over.\n\nA signal rather than a callback because a holder is not always ready to\nreceive one at the moment it acquires: a resume takes the lease before the\nrun it will drive exists. A signal can be read late and still be true."
+            }
+          ]
+        },
+        {
           "name": "hostPlatform",
           "kind": "function",
           "doc": "The current host's {@link Platform} (from `Deno.build`, with the OS\nnormalised) — the analogue of {@link \"./host.ts\".isCI} for \"what machine am I\nrunning on\". Its `os` is a Zuke {@link OperatingSystem} (`macos`, not\n`darwin`); use the `osLabel`/`archLabel` helpers to name it for a download URL.\n\n```ts\nconst p = hostPlatform();\np.os;                                          // \"linux\" | \"macos\" | \"windows\"\nconst cpu = p.archLabel({ x86_64: \"amd64\", aarch64: \"arm64\" });\n```",
@@ -5261,6 +5291,13 @@
               "optional": false,
               "signature": "done: ReadonlySet<string>",
               "doc": "Names of targets recorded `succeeded` — seeded as done, never re-run."
+            },
+            {
+              "name": "lease",
+              "kind": "property",
+              "optional": true,
+              "signature": "lease?: HeldLease",
+              "doc": "The lease the resumer took before moving the record out of `suspended`.\n\nHeld by the resumer rather than acquired here, because the record must never\nread `running` in the store without its lease already held — that pairing is\nwhat tells a sweep the difference between a live run and an abandoned one."
             }
           ]
         },
@@ -5292,6 +5329,20 @@
           "kind": "function",
           "doc": "Public entry point. Instantiate the build, parse arguments, run, and set the\nprocess exit code.\n\nCall it at the bottom of your build file — no `import.meta.main` guard\nneeded. `run` acts only when its module is the program's entry point; when\nthe file is imported instead (for example under test) it does nothing.\n\n```ts\nawait run(MyBuild);\n// …with plugins:\nawait run(MyBuild, { plugins: [timing] });\n```",
           "signature": "async function run(BuildClass: unknown, options?: RunOptions): Promise<void>",
+          "deprecated": false
+        },
+        {
+          "name": "RUN_LEASE_PREFIX",
+          "kind": "variable",
+          "doc": "The lease name a run's own claim is taken under.\n\nNamed once because two places have to agree on it exactly: the process\nclaiming a run, and any sweep deciding whether that run still has an owner.",
+          "signature": "const RUN_LEASE_PREFIX: zuke-run",
+          "deprecated": false
+        },
+        {
+          "name": "RUN_LEASE_TTL_MS",
+          "kind": "variable",
+          "doc": "How long a lease lives before a crashed holder's claim lapses.\n\nThe holder renews at half this interval, so a live process keeps its claim\nindefinitely while a dead one becomes reclaimable within the TTL. Sixty\nseconds trades promptness for tolerance: long enough that an ordinary pause —\na slow step, a busy host, a paused container — does not look like death, short\nenough that a genuinely dead run is picked up on the next sweep rather than\nhours later.",
+          "signature": "const RUN_LEASE_TTL_MS: 60000",
           "deprecated": false
         },
         {
