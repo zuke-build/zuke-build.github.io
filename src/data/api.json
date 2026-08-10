@@ -18010,9 +18010,16 @@
           "deprecated": false
         },
         {
+          "name": "findPullRequest",
+          "kind": "function",
+          "doc": "Look for an open pull request without opening one.",
+          "signature": "async function findPullRequest(configure?: unknown): Promise<GhPullRequestResult | undefined>",
+          "deprecated": false
+        },
+        {
           "name": "GhApiError",
           "kind": "class",
-          "doc": "A GitHub REST call that did not succeed, carrying the status.\n\nThe status is the point. One caller here recovers from a missing ref, and\ndoing that on a bare `catch` would swallow an expired token or a missing\npermission and retry them as though the ref simply did not exist — turning an\nauthorisation failure into a confusing one about creating a tag.",
+          "doc": "A GitHub REST call that did not succeed, carrying the status.\n\nThe status is the point. Callers recover from specific failures — a missing\nref, a pull request that already exists — and doing that on a bare `catch`\nwould swallow an expired token or a missing permission and retry it as\nthough it were the expected case.",
           "signature": "class GhApiError extends Error",
           "deprecated": false,
           "members": [
@@ -18232,7 +18239,7 @@
               "kind": "method",
               "optional": false,
               "signature": "commit(configure?: unknown): Promise<GhCommitResult>",
-              "doc": "Commit files through the API, with no git credential on disk.\n\nCommits onto `.branch(...)`, or creates it from `.from(...)` when that is\nset. The ref update is not forced, so a commit landing between reading the\nhead and writing it is rejected rather than silently overwritten."
+              "doc": "Commit files through the API, with no git credential on disk.\n\nCommits onto `.branch(...)`, or creates it from `.from(...)` when that is\nset. The ref update is not forced, so a commit landing between reading the\nhead and writing it is rejected rather than silently overwritten — unless\n`.replace()` is set, which resets an existing branch onto its base and\ndiscards whatever was on it."
             },
             {
               "name": "tag",
@@ -18293,6 +18300,13 @@
               "optional": false,
               "signature": "from(base: string): this",
               "doc": "Create {@link branch} from this one rather than committing onto an\nexisting branch. Creating a ref and moving one are different calls, and\nwhich is wanted is the caller's to say rather than something to infer."
+            },
+            {
+              "name": "replace",
+              "kind": "method",
+              "optional": false,
+              "signature": "replace(): this",
+              "doc": "Reset {@link branch} onto {@link from} when it already exists, rather than\nfailing because it does.\n\nFor a branch only one automated caller ever writes, and whose contents are\nregenerated in full each time. Without this, a job that creates the branch\nand then fails before opening its pull request can never retry: the second\nrun is refused because the ref it wants to create is already there, and the\nwork is stuck until someone deletes the branch by hand.\n\nDeliberately not the default. Discarding commits on a branch that already\nexists is exactly what should not happen to a branch someone is working on,\nso it stays something the caller asks for."
             },
             {
               "name": "message",
@@ -18365,6 +18379,13 @@
               "doc": "The branch to create from, when creating one. Set by {@link from}."
             },
             {
+              "name": "replace_",
+              "kind": "property",
+              "optional": false,
+              "signature": "replace_: boolean",
+              "doc": "Whether an existing {@link branch} is reset. Set by {@link replace}."
+            },
+            {
               "name": "message_",
               "kind": "property",
               "optional": true,
@@ -18407,6 +18428,194 @@
           "doc": "A permission level an installation token can be narrowed to.",
           "signature": "type GhPermissionLevel = read | write | admin",
           "deprecated": false
+        },
+        {
+          "name": "GhPullRequestApi",
+          "kind": "interface",
+          "doc": "The pull-request operation {@link GhTasks} exposes.",
+          "signature": "interface GhPullRequestApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "pullRequest",
+              "kind": "method",
+              "optional": false,
+              "signature": "pullRequest(configure?: unknown): Promise<GhPullRequestResult>",
+              "doc": "Open a pull request from `.head(...)` onto `.base(...)`, or return the one\nalready open for that branch.\n\nIdempotent on purpose. An unattended job that proposes the same branch\ntwice — because a later step failed and the whole thing ran again — should\nfind its existing proposal rather than fail on it.\n\nAn existing pull request is returned as it stands: the title and body set\nhere are not written over it, since the caller asked for a proposal to\nexist and one does. `created` says which happened."
+            },
+            {
+              "name": "findPullRequest",
+              "kind": "method",
+              "optional": false,
+              "signature": "findPullRequest(configure?: unknown): Promise<GhPullRequestResult | undefined>",
+              "doc": "Find the open pull request from `.head(...)` onto `.base(...)`, without\nopening one.\n\nFor a caller that must know whether a proposal already exists *before* it\nwrites anything — because the answer changes what it should do, not just\nwhat it should report. Opening one to find out is not a substitute: by\nthen the branch it would have to prepare has already been written."
+            }
+          ]
+        },
+        {
+          "name": "GhPullRequestResult",
+          "kind": "interface",
+          "doc": "The pull request a {@link GhPullRequestApi.pullRequest} call resolved to.",
+          "signature": "interface GhPullRequestResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "number",
+              "kind": "property",
+              "optional": false,
+              "signature": "number: number",
+              "doc": "Its number."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "Its web URL."
+            },
+            {
+              "name": "created",
+              "kind": "property",
+              "optional": false,
+              "signature": "created: boolean",
+              "doc": "Whether this call opened it, as opposed to finding one already open.\n\nWorth reporting rather than hiding: \"proposed\" and \"already proposed\" are\ndifferent things to a human reading a build log, even though neither is a\nfailure."
+            }
+          ]
+        },
+        {
+          "name": "GhPullRequestSettings",
+          "kind": "class",
+          "doc": "Settings for opening a pull request.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them needs to name only what it is proposing.",
+          "signature": "class GhPullRequestSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "head",
+              "kind": "method",
+              "optional": false,
+              "signature": "head(branch: string): this",
+              "doc": "The branch being proposed."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: string): this",
+              "doc": "The branch it targets."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "The pull request's title."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(text: string): this",
+              "doc": "The pull request's body."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "head_",
+              "kind": "property",
+              "optional": true,
+              "signature": "head_?: string",
+              "doc": "The branch being proposed. Set by {@link head}."
+            },
+            {
+              "name": "base_",
+              "kind": "property",
+              "optional": true,
+              "signature": "base_?: string",
+              "doc": "The branch it targets. Set by {@link base}."
+            },
+            {
+              "name": "title_",
+              "kind": "property",
+              "optional": true,
+              "signature": "title_?: string",
+              "doc": "The title. Set by {@link title}."
+            },
+            {
+              "name": "body_",
+              "kind": "property",
+              "optional": false,
+              "signature": "body_: string",
+              "doc": "The body. Set by {@link body}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
         },
         {
           "name": "GhSarifApi",
@@ -18896,6 +19105,13 @@
           "kind": "function",
           "doc": "Mint an installation token from the settings a lambda configures.",
           "signature": "async function mintAppToken(configure?: Configure<GhAppTokenSettings>): Promise<GhAppTokenResult>",
+          "deprecated": false
+        },
+        {
+          "name": "openPullRequest",
+          "kind": "function",
+          "doc": "Perform the configured pull request.",
+          "signature": "async function openPullRequest(configure?: unknown): Promise<GhPullRequestResult>",
           "deprecated": false
         },
         {
