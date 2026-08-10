@@ -2488,6 +2488,29 @@
           "deprecated": false
         },
         {
+          "name": "DeclaredEffect",
+          "kind": "interface",
+          "doc": "One effect declared on a target: its name and its body.",
+          "signature": "interface DeclaredEffect",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The effect's name, unique within the target and stable across runs."
+            },
+            {
+              "name": "fn",
+              "kind": "property",
+              "optional": false,
+              "signature": "fn: EffectFn",
+              "doc": "The body run once the intent is durably recorded."
+            }
+          ]
+        },
+        {
           "name": "DEFAULT_POLL_INTERVAL_MS",
           "kind": "variable",
           "doc": "How often {@link ServiceBuilder.readyWhen} is polled while waiting.",
@@ -2661,6 +2684,87 @@
               "doc": "Append a flag and its value as two tokens, e.g. `--output dist`."
             }
           ]
+        },
+        {
+          "name": "EffectContext",
+          "kind": "interface",
+          "doc": "The context an effect body receives: the target's own context, plus which\neffect this is and whether it has been driven before.",
+          "signature": "interface EffectContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "effect",
+              "kind": "property",
+              "optional": false,
+              "signature": "effect: string",
+              "doc": "The effect's declared name."
+            },
+            {
+              "name": "redriven",
+              "kind": "property",
+              "optional": false,
+              "signature": "redriven: boolean",
+              "doc": "True when a previous attempt at this effect already committed its intent —\nso its side effect may have happened, wholly or partly, and this run is\nrepeating it.\n\nEffects are at-least-once. A body that can tell the difference should say\nso in what it writes, rather than assume it is the first to get here."
+            }
+          ]
+        },
+        {
+          "name": "EffectFn",
+          "kind": "typeAlias",
+          "doc": "The body of a declared effect (see {@link TargetBuilder.effect}).",
+          "signature": "type EffectFn = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "EffectState",
+          "kind": "interface",
+          "doc": "The durable intent-and-completion row for one of a target's effects.\n\nThere is no idempotency key here. An effect is identified by where it sits —\nthe run, the target, and its declared name — which the record already spells\nout structurally, so a key would be a second spelling of the same fact and a\nplace for a secret to end up.",
+          "signature": "interface EffectState",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: EffectStatus",
+              "doc": "How far the effect got."
+            },
+            {
+              "name": "intentAt",
+              "kind": "property",
+              "optional": false,
+              "signature": "intentAt: string",
+              "doc": "ISO-8601 time the intent was committed — always *before* the body ran."
+            },
+            {
+              "name": "settledAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "settledAt?: string",
+              "doc": "ISO-8601 time it settled, if it has."
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": true,
+              "signature": "error?: string",
+              "doc": "The failure message when `status` is `failed`."
+            },
+            {
+              "name": "attempts",
+              "kind": "property",
+              "optional": false,
+              "signature": "attempts: number",
+              "doc": "How many times the body has been driven. Above one means it was re-driven."
+            }
+          ]
+        },
+        {
+          "name": "EffectStatus",
+          "kind": "typeAlias",
+          "doc": "Where one declared effect has got to (see `.effect(...)`).\n\n`pending` is the load-bearing one: it means the intent was committed and the\nbody may or may not have run. A process that dies mid-effect leaves exactly\nthat, which is what tells a later resume to drive it again.",
+          "signature": "type EffectStatus = pending | done | failed",
+          "deprecated": false
         },
         {
           "name": "envBuildRegistry",
@@ -5633,6 +5737,13 @@
           "deprecated": false,
           "members": [
             {
+              "name": "effect",
+              "kind": "method",
+              "optional": false,
+              "signature": "effect(name: string, fn: EffectFn): this",
+              "doc": "Refuse a crash-durable effect on a service.\n\nA service target's whole job is launching a process; it runs no body, so\nthere is no point at which its effects would be driven and they would be\ndropped without a word. Inherited from {@link TargetBuilder} only because\nthis is a subclass of it, so the refusal is stated here rather than left to\nbe discovered."
+            },
+            {
               "name": "start",
               "kind": "method",
               "optional": false,
@@ -6208,6 +6319,13 @@
               "doc": "Run only when `condition` holds; otherwise the target is skipped (and its\ndependents still run). The predicate may be async and can read resolved\nparameters or the environment. Repeatable — all conditions must hold.\n\n```ts\ndeploy = target()\n  .onlyWhen(() => this.environment.value === \"production\")\n  .executes(...);\n```"
             },
             {
+              "name": "effect",
+              "kind": "method",
+              "optional": false,
+              "signature": "effect(name: string, fn: EffectFn): this",
+              "doc": "Declare a **crash-durable effect**: `fn` runs only after the intent to run\nit has been written to the run record, so a process killed anywhere inside\nit leaves evidence that it was owed.\n\nThat evidence is what a resume uses to drive it again. Note the precondition\nas it stands today: a resume only picks up a run recorded `suspended`, and a\nprocess killed outright leaves its run `running`, so an effect owed by a\nkilled process is re-driven once something moves that run back to\n`suspended` — a reaping sweep, or an operator. An effect owed by a run that\nsuspended for any other reason is re-driven by the ordinary resume.\n\nThe guarantee is **at-least-once**, not exactly-once: a process that dies\nafter the side effect but before recording it will repeat the effect. Write bodies that tolerate that, either because repeating is\nharmless or because the far side converges (an upsert rather than an\nappend).\n\n```ts\ngate = target().dependsOn(this.checks).always()\n  .effect(\"post-gate\", async (ctx) => {\n    await postCheckRun(ctx.outcomeOf(\"checks\")?.status === \"succeeded\");\n  });\n```\n\n**Pin the inputs.** A re-drive happens later, sometimes much later, so a\nbody that looks up \"the current value\" of anything acts on a world that has\nmoved on. Read what the effect acts on from durable state instead —\n`ctx.state` or `ctx.stateOf(...)`, written by an earlier target — which is\nreplayed from the record and cannot be overridden from outside.\n\nA parameter is *nearly* as good and not quite: the record seeds a resume, so\na parameter nobody re-supplies keeps the value the run started with, but a\nresume that passes one explicitly overrides it (the only way to re-supply a\nsecret, since secrets are kept out of the record). For a value that must not\ndrift across a re-drive, prefer state.\n\nEffects run after the body, in declaration order, and are repeatable. A\ntarget may declare effects and no body at all. Requires a state store, which\nis enabled automatically — an intent that cannot be recorded is a target\nthat fails before its effect runs, by design."
+            },
+            {
               "name": "executes",
               "kind": "method",
               "optional": false,
@@ -6416,6 +6534,13 @@
               "optional": true,
               "signature": "fn_?: TargetFn",
               "doc": "The target body."
+            },
+            {
+              "name": "effects_",
+              "kind": "property",
+              "optional": false,
+              "signature": "effects_: DeclaredEffect[]",
+              "doc": "Crash-durable effects, in declaration order (set by {@link effect})."
             },
             {
               "name": "name_",
@@ -6795,6 +6920,13 @@
               "optional": true,
               "signature": "waitingFor?: WaitState",
               "doc": "The pending wait when `status` is `waiting` (set by `.waitsFor(...)`)."
+            },
+            {
+              "name": "effects",
+              "kind": "property",
+              "optional": true,
+              "signature": "effects?: Record<string, EffectState>",
+              "doc": "The declared effects of this target, keyed by effect name — present only\nonce at least one has been armed."
             }
           ]
         },
