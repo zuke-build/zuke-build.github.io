@@ -6275,7 +6275,7 @@
               "kind": "method",
               "optional": false,
               "signature": "always(): this",
-              "doc": "Run this target even after the build has failed — for cleanup/teardown that\nmust happen regardless. It still waits for its own dependencies to complete;\nthe build's overall result is unchanged. Repeatable conditions/inputs apply."
+              "doc": "Run this target even after the build has failed — for cleanup, teardown, or\nan aggregate that has to report on the failure.\n\nIt still waits for its own dependencies, but waits for them to **settle**\nrather than to succeed: a dependency that failed releases it, the same as\none that passed or was skipped. Anything else would make the modifier\nunusable for the case it exists for, since a target that depends on the work\nit is cleaning up would be held back by exactly the failure that should\ntrigger it. Use {@link TargetContext.outcomeOf} to see what actually\nhappened.\n\nA dependency parked at a `.waitsFor(...)` gate is the exception: it has not\nsettled, so the target waits for the resume rather than reporting on a run\nthat is still in progress.\n\nThe build's overall result is unchanged — an `always` target that passes\ndoes not rescue a failed build. Repeatable conditions/inputs apply."
             },
             {
               "name": "dryRunnable",
