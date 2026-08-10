@@ -18279,6 +18279,236 @@
           ]
         },
         {
+          "name": "GhCheckConclusion",
+          "kind": "typeAlias",
+          "doc": "A check run's conclusion, as GitHub spells them.\n\n`\"stale\"` is deliberately absent: GitHub sets it itself and rejects it from a\ncaller.",
+          "signature": "type GhCheckConclusion = success | failure | neutral | cancelled | skipped | timed_out | action_required",
+          "deprecated": false
+        },
+        {
+          "name": "GhCheckRunApi",
+          "kind": "interface",
+          "doc": "The check-run operation {@link GhTasks} exposes.",
+          "signature": "interface GhCheckRunApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "checkRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "checkRun(configure?: unknown): Promise<GhCheckRunResult>",
+              "doc": "Post a completed check run for `.headSha(...)` named `.name(...)`, updating\nthe one already on that commit if there is one.\n\nThe lookup and the write are two calls, so this is an upsert by\nconvergence, not an atomic one: two callers racing on a commit that has no\ncheck run yet can both find nothing and both create one. What it removes is\nthe *serial* duplicate — the retry, the re-drive, the supervisor finishing\na dead process's work — which is the case that actually happens."
+            }
+          ]
+        },
+        {
+          "name": "GhCheckRunResult",
+          "kind": "interface",
+          "doc": "The check run a {@link GhCheckRunApi.checkRun} call left on the commit.",
+          "signature": "interface GhCheckRunResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": false,
+              "signature": "id: number",
+              "doc": "Its numeric id."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "Its web URL."
+            },
+            {
+              "name": "created",
+              "kind": "property",
+              "optional": false,
+              "signature": "created: boolean",
+              "doc": "Whether this call created it, as opposed to updating one already there.\n\nWorth reporting rather than hiding: a caller that expected to create and\nupdated instead has learned that something else posted first, which is the\ndifference between a first attempt and a re-drive."
+            }
+          ]
+        },
+        {
+          "name": "GhCheckRunSettings",
+          "kind": "class",
+          "doc": "Settings for posting a completed check run.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them names only what it is reporting.",
+          "signature": "class GhCheckRunSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The check run's name — what appears in the PR's checks list, and what a\nbranch protection rule names as a required status context."
+            },
+            {
+              "name": "headSha",
+              "kind": "method",
+              "optional": false,
+              "signature": "headSha(sha: string): this",
+              "doc": "The full SHA of the commit being reported on.\n\nPin this at the start of the work, not when the result is posted. A caller\nthat resolves the head of a pull request at post time reports on whatever\nhas been pushed since — which, for a required context, is a green check on\na commit nothing ever tested."
+            },
+            {
+              "name": "conclusion",
+              "kind": "method",
+              "optional": false,
+              "signature": "conclusion(value: GhCheckConclusion): this",
+              "doc": "The conclusion to report."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "The output panel's title. Defaults to the check run's name."
+            },
+            {
+              "name": "summary",
+              "kind": "method",
+              "optional": false,
+              "signature": "summary(markdown: string): this",
+              "doc": "The output panel's body, as markdown."
+            },
+            {
+              "name": "externalId",
+              "kind": "method",
+              "optional": false,
+              "signature": "externalId(id: string): this",
+              "doc": "A correlation id of the caller's own, stored on the check run.\n\nAlso what this operation matches on when deciding whether a check run is\n\"the same one\": with an external id set, two callers writing the same name\non the same commit for different reasons stay distinct, and a re-drive of\none of them updates its own check run rather than the other's."
+            },
+            {
+              "name": "detailsUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "detailsUrl(url: string): this",
+              "doc": "Where the check run's \"Details\" link points."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The check run's name — half of its identity. Set by {@link name}."
+            },
+            {
+              "name": "headSha_",
+              "kind": "property",
+              "optional": true,
+              "signature": "headSha_?: string",
+              "doc": "The commit it reports on. Set by {@link headSha}."
+            },
+            {
+              "name": "conclusion_",
+              "kind": "property",
+              "optional": true,
+              "signature": "conclusion_?: GhCheckConclusion",
+              "doc": "The conclusion to report. Set by {@link conclusion}."
+            },
+            {
+              "name": "title_",
+              "kind": "property",
+              "optional": true,
+              "signature": "title_?: string",
+              "doc": "The output panel's title. Set by {@link title}."
+            },
+            {
+              "name": "summary_",
+              "kind": "property",
+              "optional": true,
+              "signature": "summary_?: string",
+              "doc": "The output panel's markdown body. Set by {@link summary}."
+            },
+            {
+              "name": "externalId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "externalId_?: string",
+              "doc": "The caller's own correlation id. Set by {@link externalId}."
+            },
+            {
+              "name": "detailsUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "detailsUrl_?: string",
+              "doc": "Where the check run's \"Details\" link points. Set by {@link detailsUrl}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
           "name": "GhCommitApi",
           "kind": "interface",
           "doc": "The commit and tag operations {@link GhTasks} exposes.",
@@ -19163,6 +19393,13 @@
           "kind": "function",
           "doc": "Perform the configured pull request.",
           "signature": "async function openPullRequest(configure?: unknown): Promise<GhPullRequestResult>",
+          "deprecated": false
+        },
+        {
+          "name": "postCheckRun",
+          "kind": "function",
+          "doc": "Perform the configured check run.",
+          "signature": "async function postCheckRun(configure?: unknown): Promise<GhCheckRunResult>",
           "deprecated": false
         },
         {
