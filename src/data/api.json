@@ -6616,6 +6616,20 @@
               "doc": "The durable state handle of **another target** in this run — the seam a body\nreads a dependency's published metadata through (e.g. the result a\n`.waitsFor(githubWorkflow(...))` gate recorded to its state). `stateOf(this\ntarget)` is equivalent to {@link state}. It reads the run's **current**\nrecord, so it sees writes a dependency made earlier in the run — including\nacross a suspend/resume, since the record is durable."
             },
             {
+              "name": "outcomeOf",
+              "kind": "method",
+              "optional": false,
+              "signature": "outcomeOf(target: string): TargetOutcomeView | undefined",
+              "doc": "What another target in this run did, or `undefined` if it has no outcome\nyet — it has not run, or is running now.\n\nThe seam for a target that must **decide** on the run's results rather than\nmerely follow them: an aggregate gate reporting one verdict for a fan of\nchecks, some of which are allowed to fail. `.dependsOn(...)` alone cannot\nexpress that, because a failed dependency never lets its dependents run;\npair this with `.always()` and `.proceedAfterFailure()` on the checks.\n\nIt reads what this run has settled so far, whichever process settled it:\noutcomes from a previous process come back after a resume, because they\nare in the durable record. A sibling running **concurrently** has no\noutcome yet — depend on what you intend to read."
+            },
+            {
+              "name": "outcomes",
+              "kind": "method",
+              "optional": false,
+              "signature": "outcomes(): ReadonlyMap<string, TargetOutcomeView>",
+              "doc": "Every outcome this run has settled so far, keyed by dotted target name — a\nsnapshot, not a live view. Targets that have not settled are absent rather\nthan present with a placeholder status."
+            },
+            {
               "name": "runId",
               "kind": "property",
               "optional": false,
@@ -6665,6 +6679,43 @@
           "doc": "The executable body of a target. May be synchronous or asynchronous, and any\nreturned value is ignored — so a body can return a tool-wrapper call directly\n(`.executes(() => DenoTasks.lint())`, which resolves to a `CommandOutput`)\nwithout wrapping it in an `async` block just to discard the result. A single\nreturned promise is awaited before dependents run; a returned *array* of\npromises is not (it is not a thenable), so `await Promise.all([...])` inside\nthe body when you fan work out, rather than returning the array.",
           "signature": "type TargetFn = unknown",
           "deprecated": false
+        },
+        {
+          "name": "TargetOutcomeView",
+          "kind": "interface",
+          "doc": "What another target in this run did, as {@link TargetContext.outcomeOf}\nreports it.\n\nThe status is the **record's** vocabulary, not the summary's: a target whose\nbody ran and one served from the cache both read `\"succeeded\"`, because that\nis the distinction the durable record keeps. A body branching on this wants\n\"did it work\", which both answer the same way.",
+          "signature": "interface TargetOutcomeView",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: TargetRunStatus",
+              "doc": "The target's status: `succeeded`, `failed`, `skipped`, `waiting`, …"
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": true,
+              "signature": "error?: string",
+              "doc": "The failure's message, when it failed. Redacted like every stored string."
+            },
+            {
+              "name": "startedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "startedAt?: string",
+              "doc": "When it started, ISO-8601, if it did."
+            },
+            {
+              "name": "endedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "endedAt?: string",
+              "doc": "When it settled, ISO-8601, if it has."
+            }
+          ]
         },
         {
           "name": "TargetReport",
