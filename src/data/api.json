@@ -732,6 +732,13 @@
               "doc": "The {@link \"./state/store.ts\".StateStore} that persists this build's run\nrecords. Override to declare one in code; the default is none, and — unless\noverridden — the executor falls back to the `ZUKE_STATE_URL` /\n`ZUKE_STATE_DIR` environment variables, then (only when the run opts into\ndurable state) a filesystem store under `<root>/.zuke/runs`.\n\n```ts\nclass CD extends Build {\n  override stateStore() {\n    return new HttpStateStore({ url: this.stateUrl.value, token: this.stateToken.value });\n  }\n  deploy = target().executes(async (ctx) => { await ctx.state.set({ at: \"sit-7\" }); });\n}\n```"
             },
             {
+              "name": "deadline",
+              "kind": "method",
+              "optional": false,
+              "signature": "deadline(): string | number | undefined",
+              "doc": "A wall-clock budget for a whole run, after which a reaping sweep settles it\n`failed` — a duration like `\"45m\"` or milliseconds. No deadline by default.\n\nIt bounds *running*, not existing. A run parked at a `.waitsFor(...)` gate\nis not spending it — the deadline is pushed forward on resume by however\nlong the run was parked, so a build with a 72-hour approval gate and a\n45-minute deadline still has its 45 minutes when the approval arrives. The\nwaiting is bounded by the gate's own `.timeout()`.\n\nA run with a live process working on it is never settled for time either:\nthe sweep asks whether anyone is still there before it looks at the\ndeadline. Nothing this is for escapes that — a hung process stops renewing\nits lease, and a run killed over and over has no holder at all.\n\nWhat it is really for is the run that stops making progress without failing\n— a process that hangs, or one killed so hard that its work is repeatedly\npicked up and abandoned again. Without a deadline such a run has no end\nstate at all; with one it reaches a terminal status, which is what anything\ndownstream is waiting for.\n\n```ts\nclass Ci extends Build {\n  override deadline() {\n    return \"45m\";\n  }\n}\n```"
+            },
+            {
               "name": "extraEdges",
               "kind": "method",
               "optional": false,
@@ -5643,6 +5650,20 @@
               "optional": true,
               "signature": "degraded?: boolean",
               "doc": "True when at least one state write for this run was **permanently lost** —\na conflicting write from another process could not be re-applied within the\nwriter's retry budget. Writes are best-effort, so the run itself carried on;\nthe flag is how a later reader learns that a transition which really\nhappened may be missing from the record. In particular a target that\nsucceeded can still be recorded `running` or `pending`, so a resume would\nre-run it — which is why a resume refuses a degraded record unless\n`--resume-degraded` overrides it (see\n{@link \"../resume.ts\".ResumeOptions.resumeDegraded}) — and why a\ncancellation compensates every target whose success the record cannot rule\nout, rather than only those recorded `succeeded` (see\n{@link \"../cancel.ts\".runCompensations}).\n\nIt is set by the writer when it loses a write and persisted by the **next**\nwrite that lands — the failing one, by definition, could not carry it. A\ndrop that leaves the mutation in memory for a later write to re-persist does\n*not* set it. Absent (or `false`) means no write is known to be missing."
+            },
+            {
+              "name": "deadlineAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "deadlineAt?: string",
+              "doc": "ISO-8601 wall-clock deadline for the whole run, stamped once at creation\nfrom `Build.deadline()`. Absent when the build sets none.\n\nA budget for *running*, not for existing. A run parked at an approval gate\nis not spending it — its budget there is the wait's own timeout — so only a\nsweep over `running` runs consults this."
+            },
+            {
+              "name": "intendedTerminal",
+              "kind": "property",
+              "optional": true,
+              "signature": "intendedTerminal?: RunStatus",
+              "doc": "The terminal status the process that moved this run to `cancelling` means\nto leave it in. Absent means `cancelled`, which is what an ordinary\n`zuke cancel` intends and what every record written before this field\nexisted meant.\n\nRecorded rather than inferred, because the settlement can be finished by a\n*different* process than the one that began it: a canceller that crashes\nleaves the run `cancelling`, and whoever recovers it has no other way to\nknow whether an operator was cancelling the run or a sweep was failing an\nabandoned one."
             }
           ]
         },
