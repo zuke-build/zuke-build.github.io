@@ -4841,7 +4841,7 @@
               "kind": "method",
               "optional": false,
               "signature": "add(value: string): void",
-              "doc": "Register a secret value to mask. Ignores empty strings and duplicates."
+              "doc": "Register a secret value to mask. Ignores empty strings and duplicates.\n\nA **multi-line** value registers each of its lines as well as the whole\nstring, because redaction runs a line at a time and a whole-value pattern\ncan never match one line of it. Lines are trimmed, and a very short one is\nskipped so it cannot mask ordinary text wherever it appears."
             },
             {
               "name": "redact",
@@ -4855,7 +4855,7 @@
               "kind": "method",
               "optional": false,
               "signature": "size(): number",
-              "doc": "The number of distinct secret values registered."
+              "doc": "The number of distinct patterns registered. A single-line secret\ncontributes one; a multi-line secret contributes the whole value plus each\nof its qualifying lines."
             }
           ]
         },
