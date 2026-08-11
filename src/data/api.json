@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "core@1.37.0",
+  "generated": "core@1.38.0",
   "packages": [
     {
       "name": "@zuke/core",
@@ -555,7 +555,7 @@
         {
           "name": "archiveOutputs",
           "kind": "function",
-          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents.",
+          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents.\nA declared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory.",
           "signature": "async function archiveOutputs(outputs: unknown, host: OutputHost): Promise<Uint8Array>",
           "deprecated": false
         },
@@ -5190,8 +5190,8 @@
         {
           "name": "restoreOutputs",
           "kind": "function",
-          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written. Entry names are\nvalidated first: an absolute path or one escaping the workspace (`..`) is\nrejected before anything is written, so a malicious archive can't plant files\noutside the current directory.",
-          "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost): Promise<string[]>",
+          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\nsymlink or directory entry (which {@link archiveOutputs} never produces),\nwhen it lands under `.git` or `.zuke`, and — when `outputs` is given — when it\nfalls outside the target's declared outputs.\n",
+          "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost, outputs?: unknown): Promise<string[]>",
           "deprecated": false
         },
         {
