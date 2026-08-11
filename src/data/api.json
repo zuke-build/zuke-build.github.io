@@ -3254,7 +3254,7 @@
               "kind": "method",
               "optional": false,
               "signature": "deleteRun(id: string): Promise<void>",
-              "doc": "Delete a run's file (under its lock); a missing run is a no-op."
+              "doc": "Delete a run's file (under its lock); a missing run is a no-op.\n\nThe run's lock records are deliberately left alone. It is tempting to take\nthem with the run — they are named after it, so once it is gone nothing can\nlook them up again — but \"expired\" does not mean \"abandoned\" in this store:\n{@link renewLock} extends a lock whenever the token matches, whatever its\nexpiry, so a lapsed claim is still the holder's until somebody *acquires*\nit. Deleting the record instead makes the next renewal answer `false`, which\nthe holder reads as the lease being lost, and a run that is merely slow —\nthe exact case the lease exists to tell apart from a dead one — stops.\nPruning must never be able to do that.\n\nThe litter is small and bounded in practice: {@link releaseLock} removes a\nlock's file, and a run releases its lease whenever it settles, so only a\nholder that dies without releasing leaves one behind. Clearing those safely\nbelongs to whoever can prove the holder is gone — a reaping sweep, which\nproves it by acquiring — not to a command deleting old records."
             },
             {
               "name": "acquireLock",
