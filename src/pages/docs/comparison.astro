@@ -1,0 +1,234 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { packageCount } from "../../data/tools.ts";
+
+const toc = [
+  { id: "scope", label: "Scope" },
+  { id: "matrix", label: "Capability matrix" },
+];
+
+const columns = [
+  "Zuke",
+  "deno task",
+  "npm scripts",
+  "GNU Make",
+  "Nx",
+  "Turborepo",
+  "Dagger",
+];
+
+const rows: { capability: string; cells: string[] }[] = [
+  {
+    capability: "Dependency wiring",
+    cells: [
+      "typed <code>this.field</code> references",
+      "JSON array of task names",
+      "none (<code>pre</code>/<code>post</code> naming)",
+      "Makefile prerequisites",
+      "JSON <code>dependsOn</code> + inferred graph",
+      "JSON <code>dependsOn</code>",
+      "inferred from code data flow",
+    ],
+  },
+  {
+    capability: "Bad reference caught",
+    cells: [
+      "compile error, then pre-flight scan",
+      "CLI name yes; in-array unknown",
+      "only for a directly-run script",
+      "yes, before any recipe",
+      "when the task graph is built",
+      "yes, before the run starts",
+      "compile error in the host language",
+    ],
+  },
+  {
+    capability: "Authoring language",
+    cells: [
+      "TypeScript, no DSL",
+      "JSON + shell subset",
+      "JSON + shell strings",
+      "Makefile DSL",
+      "JSON + TypeScript executors",
+      "JSON + <code>package.json</code> scripts",
+      "Go/Python/TypeScript/… code",
+    ],
+  },
+  {
+    capability: "Typed wrappers for tool flags",
+    cells: [
+      "50+ <code>*Tasks</code> packages",
+      "—",
+      "—",
+      "—",
+      "executor options, JSON-schema",
+      "—",
+      "no (plain <code>withExec</code> argv)",
+    ],
+  },
+  {
+    capability: "Command construction",
+    cells: [
+      "argv arrays end to end, no shell",
+      "built-in shell subset",
+      "OS shell strings",
+      "shell per recipe line",
+      "per-executor, no stated contract",
+      "<code>package.json</code> shell strings",
+      "argv arrays",
+    ],
+  },
+  {
+    capability: "Suspend and resume a run",
+    cells: [
+      "<code>.waitsFor()</code> + <code>zuke resume</code>",
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+    ],
+  },
+  {
+    capability: "Cancellation with compensations",
+    cells: [
+      "<code>.onCancel()</code>, reverse order",
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+      "cancel visible in traces only",
+    ],
+  },
+  {
+    capability: "Long-lived process dependencies",
+    cells: [
+      "<code>service()</code>",
+      "—",
+      "—",
+      "—",
+      "<code>continuous: true</code>",
+      "<code>persistent</code> + <code>with</code>",
+      "—",
+    ],
+  },
+  {
+    capability: "MCP server for agents",
+    cells: [
+      "built in (<code>zuke mcp</code>)",
+      "—",
+      "—",
+      "—",
+      "official <code>nx-mcp</code>",
+      "proposed, not shipped",
+      "modules exposed as MCP servers",
+    ],
+  },
+  {
+    capability: "Machine-readable self-description",
+    cells: [
+      "<code>--list --json</code>, generated <code>llms.txt</code>",
+      "—",
+      "<code>npm pkg get scripts</code>",
+      "—",
+      "workspace/graph tools over MCP",
+      "—",
+      "typed API + MCP",
+    ],
+  },
+];
+---
+
+<DocsLayout
+  title="How Zuke compares"
+  description="A capability matrix for Zuke against deno task, npm scripts, GNU Make, Nx, Turborepo, and Dagger — on the capabilities Zuke was built to provide. Checked against official documentation."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke exists for the build that has outgrown a list of commands: a real
+    dependency graph, typed inputs, external tools driven through checked argv,
+    and pipelines that have to survive waiting for something outside the build.
+  </p>
+
+  <h2 id="scope">Scope</h2>
+  <p>
+    Zuke is also a <strong>single-maintainer project</strong>. All
+    {packageCount} JSR packages are <code>1.x</code> and follow full semver — see
+    <a href="/docs/versioning">Versioning &amp; compatibility</a> for what that
+    promises. The package a consumer actually installs is the
+    <a href="/docs/cli"><code>@zuke/cli</code></a> command, <code>1.x</code> too,
+    and the front door to the <code>mcp</code>, <code>resume</code>, and
+    <code>cancel</code> surface below.
+  </p>
+  <p>
+    The table covers tools a JavaScript or TypeScript team would realistically
+    choose, on the capabilities Zuke was built to provide.
+    <a href="https://nuke.build/" target="_blank" rel="noopener noreferrer">NUKE</a>
+    is deliberately absent — it needs the .NET SDK — even though it is the direct
+    precedent for Zuke's design and is credited as such in the project's
+    acknowledgements.
+  </p>
+  <div class="note">
+    <p>
+      A <strong>—</strong> means the capability was <strong>not found in the
+      official documentation reviewed</strong> for this page. That is weaker
+      evidence than a positive finding: the docs may simply be silent.
+    </p>
+  </div>
+
+  <h2 id="matrix">Capability matrix</h2>
+  <div class="tablewrap">
+    <table class="dtable cmp">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          {columns.map((c) => <th>{c === "Zuke" ? <strong>Zuke</strong> : <code>{c}</code>}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr>
+            <th scope="row">{row.capability}</th>
+            {row.cells.map((cell, i) => (
+              <td class:list={[{ zuke: i === 0 }]} set:html={cell} />
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  <p class="checked">Checked against official documentation on 2026-07-28.</p>
+</DocsLayout>
+
+<style>
+  .tablewrap {
+    overflow-x: auto;
+    margin: 18px 0 10px;
+  }
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable thead th { color: var(--text); font-weight: 700; white-space: nowrap; }
+  .dtable tbody th {
+    color: var(--text);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .dtable td { color: var(--text-dim); }
+  .dtable td.zuke { color: var(--text); }
+  .dtable :global(code) { font-size: 0.9em; }
+  .checked {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+</style>

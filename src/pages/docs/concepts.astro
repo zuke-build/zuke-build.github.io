@@ -99,7 +99,7 @@ const cicdSnippet = `import { Build, cicd, target } from "jsr:@zuke/core";
 class MyBuild extends Build {
   // declare a pipeline as a build field
   ci = cicd({
-    provider: "github",                       // or "gitlab" | "azure"
+    provider: "github",                       // or "gitlab" | "azure" | "bitbucket"
     pipeline: {
       jobs: [{
         matrix: { os: ["ubuntu-latest", "macos-latest"] },
@@ -326,13 +326,18 @@ class MyBuild extends Build {
   <h2 id="shell">The $ shell</h2>
   <p>
     The <code>$</code> tagged template from <code>@zuke/core/shell</code> runs
-    processes with sensible defaults. Interpolated values are escaped, so
-    untrusted input can't break out of a command:
+    processes with sensible defaults. Interpolated values become
+    <strong>discrete argv entries</strong> — they are never spliced into a shell
+    string, and no shell is involved at all — so there is no shell-injection
+    surface to escape <em>around</em>:
   </p>
   <Code code={shellSnippet} lang="ts" theme="night-owl" />
   <p>
     Chain <code>.text()</code> for trimmed stdout, <code>.code()</code> for the
-    exit status, or <code>.noThrow()</code> to handle failures yourself.
+    exit status, or <code>.noThrow()</code> to handle failures yourself. See
+    <a href="/docs/library#shell">the core library</a> for the full member list,
+    the 8 MiB capture cap, and the argument-injection caveat that argv safety
+    does <em>not</em> cover.
   </p>
 
   <h2 id="tools">Tool wrappers</h2>
@@ -366,9 +371,23 @@ class MyBuild extends Build {
     Pipelines are part of the build, not a separate YAML file you maintain by
     hand. Declare a <code>cicd()</code> field and Zuke generates the workflow for
     your provider — <strong>GitHub Actions</strong>, <strong>GitLab CI</strong>,
-    or <strong>Azure Pipelines</strong>:
+    <strong>Azure Pipelines</strong>, or <strong>Bitbucket</strong>. The provider
+    is the only required field: <code>cicd(&#123; provider: "github" &#125;)</code>
+    alone declares a workflow at <code>.github/workflows/ci.yml</code> that runs
+    <code>./zuke</code> on push/PR to <code>main</code>. Override only what else
+    you need:
   </p>
   <Code code={cicdSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Every generated GitHub job opens with the published
+      <a href="/docs/github-action"><code>zuke-build/zuke</code> action</a> as
+      its <strong>prelude</strong> — pinned by SHA with its version comment — so
+      the workflow hardens the runner and checks out before it runs anything.
+      Pass <code>bootstrap: false</code> on a job or the pipeline to opt out, or
+      supply your own pin.
+    </p>
+  </div>
   <p>
     Running any target regenerates the declared files, and on CI Zuke verifies
     the committed files are still current. You can also write or check them

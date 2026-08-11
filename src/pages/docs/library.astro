@@ -3,6 +3,9 @@ import { Code } from "astro:components";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
+  { id: "shell", label: "The $ shell" },
+  { id: "capture", label: "Bounded capture" },
+  { id: "injection", label: "Injection: what $ does and doesn't cover" },
   { id: "files", label: "File operations" },
   { id: "glob", label: "Globbing" },
   { id: "http", label: "HTTP" },
@@ -12,6 +15,41 @@ const toc = [
   { id: "paths", label: "Paths" },
   { id: "host", label: "CI & host detection" },
 ];
+
+const shellSnippet = `import { $ } from "jsr:@zuke/core/shell";
+
+await $\`deno test -A\`;                              // throws CommandError on non-zero exit
+const sha = await $\`git rev-parse HEAD\`.text();      // trimmed stdout
+const files = await $\`git diff --name-only\`.lines(); // string[]
+const code = await $\`flaky-cmd\`.noThrow().code();    // exit code, never throws
+await $\`build\`.env({ NODE_ENV: "prod" }).cwd("./app").quiet();
+
+const server = $\`npm run dev\`.spawn();               // start without awaiting`;
+
+const captureSnippet = `// Raise the cap for a command whose whole stdout must be parsed…
+const all = await $\`huge-report\`.maxCapturedBytes(64 * 1024 * 1024).text();
+
+// …the same setting exists on every tool wrapper's settings lambda.
+await SomeTasks.run((s) => s.maxCapturedBytes(64 * 1024 * 1024));
+
+const out = await $\`chatty\`;
+out.truncated;   // true once the cap was reached — the NEWEST bytes are kept`;
+
+const injectionSnippet = `const files = ["a.ts", "b.ts"];
+await $\`deno fmt \${files}\`;      // → ["deno", "fmt", "a.ts", "b.ts"]
+
+const dirty = "; rm -rf /";
+await $\`echo \${dirty}\`;          // prints the literal string; runs nothing else
+
+// …but a value that STARTS with "-" is still read as a flag by the tool:
+const ref = "--output=/tmp/leak";  // untrusted
+await $\`git diff --name-only \${ref}\`;   // git honours it as an option`;
+
+const splitSnippet = `import { splitShellArgs } from "jsr:@zuke/core/shell";
+
+splitShellArgs(\`deno test --filter "my suite"\`);
+// → ["deno", "test", "--filter", "my suite"]
+// Unclosed quote → ShellArgsError naming the quote and its offset.`;
 
 const filesSnippet = `import { FileTasks } from "jsr:@zuke/core";
 
@@ -89,26 +127,138 @@ main.relativeTo(root); // "src/main.ts"
 repoRoot("dist");      // <repo root>/dist — resolved at runtime via zuke.json
 await $\`deno run \${main}\`;  // toString() drops straight into $\`\` and args()`;
 
-const hostSnippet = `import { ciHost, isCI } from "jsr:@zuke/core";
+const hostSnippet = `import { detectCiHost, hostPlatform, isCI, operatingSystem } from "jsr:@zuke/core";
 
 deploy = target()
   .onlyWhen(() => isCI())          // run only on a CI runner
   .executes(async () => {
-    // "github-actions" | "gitlab-ci" | "local" | …
-    console.log(\`running on \${ciHost()}\`);
-  });`;
+    // A CiHost whose values line up with the CiProvider names cicd() uses.
+    console.log(\`running on \${detectCiHost()}\`);
+  });
+
+publish = target()
+  // "linux" | "macos" | "windows" — normalised, so you branch on "macos", not "darwin".
+  .onlyWhen(() => operatingSystem() === "linux")
+  .executes(() => {});
+
+// hostPlatform() adds the Architecture and the label helpers used to build
+// tool download URLs (see Installing tools).
+const cpu = hostPlatform().archLabel({ x86_64: "amd64", aarch64: "arm64" });`;
 ---
 
 <DocsLayout
   title="Core library"
-  description="Batteries-included helpers in @zuke/core: filesystem tasks, globbing, HTTP, compression, tool installs, assertions, paths, and CI detection."
+  description="Batteries-included helpers in @zuke/core: the injection-safe $ shell with bounded capture, filesystem tasks, globbing, HTTP, compression, tool installs, assertions, paths, and CI detection."
   toc={toc}
 >
   <p class="lead">
     Beyond running processes, <code>@zuke/core</code> ships a small standard
     library so a build rarely needs an extra dependency. Everything here is
-    exported from <code>jsr:@zuke/core</code>, works on the bare Deno runtime,
-    and is designed to be unit-testable.
+    exported from <code>jsr:@zuke/core</code> (the <code>$</code> shell from the
+    <code>/shell</code> submodule), works on the bare Deno runtime, and is
+    designed to be unit-testable.
+  </p>
+
+  <h2 id="shell">The <code>$</code> shell</h2>
+  <p>
+    Ergonomic process execution built on <code>Deno.Command</code>. A
+    <code>$</code> tagged template builds a <strong>lazy</strong> command;
+    awaiting it runs the process and throws a <code>CommandError</code> on a
+    non-zero exit.
+  </p>
+  <Code code={shellSnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Member</th><th>Behaviour</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>.text()</code></td><td>Run; resolve to trimmed stdout. Throws on non-zero unless <code>.noThrow()</code>.</td></tr>
+      <tr><td><code>.lines()</code></td><td>Run; resolve to <code>string[]</code> (stdout split on newlines; empty output → <code>[]</code>).</td></tr>
+      <tr><td><code>.code()</code></td><td>Run; resolve to the numeric exit code. <strong>Never throws</strong> on non-zero.</td></tr>
+      <tr><td><code>.noThrow()</code></td><td>Suppress throwing on a non-zero exit.</td></tr>
+      <tr><td><code>.env(record)</code></td><td>Merge environment variables.</td></tr>
+      <tr><td><code>.cwd(path)</code></td><td>Set the working directory.</td></tr>
+      <tr><td><code>.quiet()</code></td><td>Suppress live stdout/stderr streaming.</td></tr>
+      <tr><td><code>.killAfter(ms)</code></td><td>Terminate the child if it outlives <code>ms</code>, raising a <code>CommandTimeoutError</code>. Polite then forceful: <code>SIGTERM</code>, a grace window, then <code>SIGKILL</code> — so a child that traps and ignores the first signal can't hang the run.</td></tr>
+      <tr><td><code>.signal(sig)</code></td><td>The signal used to terminate it (default <code>SIGTERM</code>); composes with <code>.killAfter()</code> and <a href="/docs/run-context#cancel">run cancellation</a>.</td></tr>
+      <tr><td><code>.maxCapturedBytes(n)</code></td><td>Raise or lower the per-stream capture cap — see <a href="#capture">below</a>.</td></tr>
+      <tr><td><code>.spawn()</code></td><td>Start the process <strong>without</strong> awaiting it, returning a handle — how <a href="/docs/services">services</a> stay running.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Awaiting a command resolves to a <code>CommandOutput</code>
+    (<code>&#123; code, stdout, stderr, truncated &#125;</code>, plus a
+    <code>.text()</code> helper for trimmed stdout) — the same shape a
+    <a href="/docs/tools">tool wrapper</a> resolves to. By default a command
+    streams its output live to your terminal <em>and</em> captures stdout;
+    <code>.text()</code>/<code>.lines()</code> capture without echoing;
+    <code>.quiet()</code> does neither.
+  </p>
+  <div class="note">
+    <p>
+      A secret <a href="/docs/secrets">parameter</a> interpolated into a command
+      is masked wherever the line is <em>rendered</em> — a dry-run echo, a
+      failure's error message, a spawned service's recorded line — not only in
+      Zuke's own reporter output. The argv handed to the operating system is
+      untouched.
+    </p>
+  </div>
+
+  <h2 id="capture">Bounded capture</h2>
+  <p>
+    Each captured stream keeps at most <strong>8 MiB</strong>, so a runaway
+    child cannot grow the buffer until the run dies of memory exhaustion. Past
+    the cap the <strong>newest</strong> bytes are kept — the end of the output is
+    the part anyone reads for a failure — <code>truncated</code> is
+    <code>true</code>, and <code>.text()</code> prefixes
+    <code>[output truncated to last 8 MiB]</code> so a caller cannot mistake a
+    tail for the whole of it.
+  </p>
+  <Code code={captureSnippet} lang="ts" theme="night-owl" />
+  <p>
+    The cap must be a <strong>positive whole number of bytes</strong>; there is
+    no unlimited sentinel, so to keep everything pass a cap larger than the
+    output you expect. Live streaming to the terminal is never capped — every
+    byte still reaches it as it arrives.
+  </p>
+
+  <h2 id="injection">Injection: what <code>$</code> does and doesn't cover</h2>
+  <p>
+    Interpolated values become <strong>discrete argv entries</strong>. They are
+    never spliced into a shell string, and <strong>no shell is involved at
+    all</strong> — so there is no shell-injection surface. Arrays expand to
+    multiple arguments.
+  </p>
+  <Code code={injectionSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      That is shell injection, and <em>only</em> shell injection.
+      <strong>Argument injection is still yours to validate:</strong> a value
+      beginning with <code>-</code> is passed through faithfully as one argv
+      entry, and the invoked tool reads it as a <strong>flag</strong>, not as
+      data. Validate any untrusted value you interpolate into a leading position
+      — reject a leading <code>-</code>, or separate data from options with
+      <code>--</code> where the tool supports it. Zuke does this for the inputs
+      it accepts itself: <code>--affected</code> rejects a base revision
+      starting with <code>-</code> for exactly this reason.
+    </p>
+  </div>
+  <p>
+    Input that arrives as one already-written command line — a
+    <code>package.json</code> script, a Makefile recipe — has to become discrete
+    argv before it can be run. <code>splitShellArgs</code> does that with POSIX
+    quoting semantics:
+  </p>
+  <Code code={splitSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Single quotes are fully literal; inside double quotes a backslash escapes
+    only the five characters a POSIX shell says it does; a backslash-newline
+    pair is a line continuation. Expansion, globbing, substitution, and
+    operators are <strong>documented non-goals</strong> — the input becomes
+    argv, it is never interpreted. This is what
+    <a href="/docs/cli#project"><code>zuke import</code></a> uses, which is why
+    a segment it cannot translate faithfully is preserved verbatim behind a
+    <code>// TODO</code> rather than mistranslated.
   </p>
 
   <h2 id="files">File operations</h2>
@@ -134,6 +284,11 @@ deploy = target()
     <code>&#123;a,b&#125;</code>.
   </p>
   <Code code={globSnippet} lang="ts" theme="night-owl" />
+  <p>
+    To match a pattern <em>without</em> touching the filesystem,
+    <code>globToRegExp(pattern)</code> compiles the same syntax to a
+    <code>RegExp</code> — handy for filtering an in-memory list of paths.
+  </p>
 
   <h2 id="http">HTTP</h2>
   <p>
@@ -220,14 +375,43 @@ deploy = target()
 
   <h2 id="host">CI &amp; host detection</h2>
   <p>
-    <code>isCI()</code> and <code>ciHost()</code> (e.g.
-    <code>"github-actions"</code>, <code>"gitlab-ci"</code>,
-    <code>"local"</code>) let a build branch on where it runs — pair them with
-    <code>.onlyWhen(...)</code> to gate work like deploys to CI:
+    <code>isCI()</code> answers <em>whether</em> a build is on a runner, and
+    <strong><code>detectCiHost()</code></strong> answers <em>which</em> one
+    (<code>"github-actions"</code>, <code>"gitlab-ci"</code>,
+    <code>"local"</code>, …) — pair them with <code>.onlyWhen(...)</code> to
+    gate work like deploys to CI:
   </p>
   <Code code={hostSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Prefer <strong><code>detectCiHost()</code></strong> in new code: it
+      returns the same detection as a <code>CiHost</code> whose values line up
+      with the <code>CiProvider</code> names
+      <a href="/docs/concepts#cicd"><code>cicd()</code></a> uses, so a build can
+      match the host it is <em>on</em> against the provider it generates
+      <em>for</em>. <code>ciHost()</code> is kept for compatibility.
+    </p>
+  </div>
   <p>
     From here, see <a href="/docs/concepts">Core concepts</a> for the build model
     or <a href="/examples">Examples</a> for complete build files.
   </p>
 </DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

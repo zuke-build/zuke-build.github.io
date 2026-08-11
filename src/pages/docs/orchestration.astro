@@ -4,6 +4,9 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
   { id: "suspend", label: "Suspend & resume" },
+  { id: "github-workflow", label: "Waiting on a GitHub workflow" },
+  { id: "reaping", label: "Abandoned runs — reaping" },
+  { id: "deadline", label: "Build.deadline()" },
   { id: "fanout", label: "Fan-out" },
   { id: "cancel", label: "Cancellation & compensation" },
   { id: "ordering", label: "Lazy ordering — orderWith()" },
@@ -19,7 +22,41 @@ export type OnTimeout = () => TargetBuilder | "fail" | "cancel-run";
 
 // Triggers:
 export function externalSignal(name: string): WaitTrigger
-export function resumeWhen(check: () => boolean | Promise<boolean>, options?: { interval?: string | number }): WaitTrigger`;
+export function resumeWhen(check: () => boolean | Promise<boolean>, options?: { interval?: string | number }): WaitTrigger
+// …and from @zuke/gh, built on the same exported WaitTrigger / WaitContext seam:
+export function githubWorkflow(configure: Configure<GithubWorkflowSettings>): WaitTrigger`;
+
+const ghWaitSnippet = `import { Build, run, target } from "jsr:@zuke/core";
+import { githubWorkflow, readWorkflowResult } from "jsr:@zuke/gh";
+
+class Release extends Build {
+  e2e = target().waitsFor((s) =>
+    s.on(githubWorkflow((g) => g.repo("acme/app").workflow("e2e.yml").ref("main")))
+      .timeout("2h").onTimeout(() => this.rollback)
+  );
+
+  ship = target().dependsOn(this.e2e).executes((ctx) => {
+    // The gate publishes its result to its own state — read it via stateOf.
+    const result = readWorkflowResult(ctx.stateOf("e2e"));
+    if (!result?.passed) throw new Error("e2e suite failed");
+  });
+
+  rollback = target().executes(() => rollBack());
+}`;
+
+const ghContractSnippet = `# .github/workflows/e2e.yml — in the repo being dispatched
+on:
+  workflow_dispatch:
+    inputs:
+      zuke_marker: { required: false }   # rename → .markerInput("name") on the gate
+      # any \`required: true\` input here must be supplied via .inputs(...) on the gate
+run-name: \${{ inputs.zuke_marker }}      # the ENTIRE run-name; equality, not substring`;
+
+const deadlineSnippet = `class Ci extends Build {
+  override deadline() {
+    return "45m";
+  }
+}`;
 
 const deploySnippet = `import { Build, externalSignal, target } from "jsr:@zuke/core";
 
@@ -44,8 +81,8 @@ class Deploy extends Build {
 }`;
 
 const resumeCliSnippet = `zuke resume <run-id> --signal testing-approved --data '{"by":"qa"}'   # deliver a signal
-zuke resume --check [<run-id>]                                        # re-check predicate/timeout; sweeps ALL suspended runs when no id
-# also: --force-graph, --actor <name>`;
+zuke resume --check [<run-id>]                                        # reap abandoned runs, then re-check predicate/timeout across ALL suspended runs
+# also: --force-graph, --resume-degraded, --actor <name>`;
 
 const forEachApiSnippet = `forEach<Item>(items: () => readonly Item[], factory: ForEachFactory<Item>, configure?: Configure<ForEachSettings>): this
 export type ForEachFactory<Item> = (item: Item, index: number) => Record<string, TargetBuilder>;  // ordered stages; each depends on the previous
@@ -57,7 +94,7 @@ continueOnItemFailure(on?: boolean): this`;
 const batchDeploySnippet = `import { Build, parameter, target } from "jsr:@zuke/core";
 
 class CD extends Build {
-  repos = parameter("services to deploy").array().required();
+  repos = parameter("services to deploy").required().array();
 
   deployBatch = target().forEach(
     () => this.repos.value,                    // items thunk (string[])
@@ -96,7 +133,7 @@ const orderWithSnippet = `override async orderWith(t: Map<string, Target>): Prom
 const arrayParamSnippet = `tags     = parameter("Image tags").array();                            // string[]
 workers  = parameter("Worker ids").number().array();                   // number[]; "1,x" rejected
 services = parameter("Services").options("api","web","worker").array(); // each element validated
-repos    = parameter("services to deploy").array().required();         // required list; feeds forEach items thunk`;
+repos    = parameter("services to deploy").required().array();         // required list (.required() BEFORE .array()); feeds forEach items thunk`;
 
 const arrayCliSnippet = `./zuke deploy --tags latest,canary          # ["latest","canary"]
 ./zuke deploy --tags latest --tags canary   # same (repeat == comma)
@@ -105,7 +142,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
 
 <DocsLayout
   title="Orchestration"
-  description="Suspend a run for an external approval and resume it later, fan a target out over a runtime list with bounded concurrency, and cancel a run with reverse-topological compensation — the pieces that turn Zuke into a real CD engine."
+  description="Suspend a run for an external approval or an external GitHub workflow and resume it later, reap runs whose process died, bound a run with Build.deadline(), fan a target out over a runtime list with bounded concurrency, and cancel a run with reverse-topological compensation — the pieces that turn Zuke into a real CD engine."
   toc={toc}
 >
   <p class="lead">
@@ -172,6 +209,183 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     re-evaluates the predicate (and any elapsed timeout) on each
     <code>--check</code>, so one sweeping cron enforces every deadline
     across every suspended run.
+  </p>
+
+  <h2 id="github-workflow">Waiting on an external GitHub workflow</h2>
+  <p>
+    <a href="https://jsr.io/@zuke/gh" target="_blank" rel="noopener noreferrer"><code>@zuke/gh</code></a>'s
+    <code>githubWorkflow</code> trigger dispatches a GitHub Actions workflow —
+    often in another repo — and suspends until it finishes, replacing
+    hand-rolled "dispatch, then poll <code>gh run list</code>" glue. It is a
+    third-party trigger built on the exported <code>WaitTrigger</code> /
+    <code>WaitContext</code> seam, so you can write your own the same way.
+  </p>
+  <Code code={ghWaitSnippet} lang="ts" theme="night-owl" />
+  <ul>
+    <li>
+      <strong>Dispatch-once, then poll.</strong> On first reach it records a
+      correlation marker in the gate's durable state, dispatches, and suspends.
+      Each <code>resume --check</code> polls the run; a resume in a
+      <em>different process</em> never re-dispatches, because the marker
+      persisted with the run. The marker is written <strong>before</strong> the
+      dispatch call, so a process killed mid-dispatch re-polls rather than
+      starting a second workflow — the cost of that ordering being the mirror
+      case, where a dispatch that never landed is reported when the discovery
+      window elapses instead of immediately.
+    </li>
+    <li>
+      <strong>Correlation.</strong> <code>workflow_dispatch</code> returns no
+      run id, so by default the trigger passes a marker input
+      (<code>zuke_marker</code>) and matches it against the run's display title.
+      For a workflow you can't modify, <code>.correlate("created-window")</code>
+      correlates <strong>best-effort</strong>: it claims the
+      <code>workflow_dispatch</code> run on the dispatch ref created just after
+      dispatch, and fails loudly if two candidates share the window.
+    </li>
+    <li>
+      <strong>Fast-fail.</strong> If no run is identified within a short
+      discovery window (<code>.discoveryTimeout(...)</code>, default one
+      minute), the gate fails with guidance instead of eating the whole
+      <code>.timeout()</code>. The deadline is measured from the persisted
+      dispatch time, so it holds across a suspend/resume.
+    </li>
+    <li>
+      <strong>Result.</strong> On completion the per-job conclusions
+      (<code>&#123; passed, jobs: [&#123; name, conclusion, url &#125;] &#125;</code>)
+      are written to the gate target's state; a dependent reads them with
+      <code>readWorkflowResult(ctx.stateOf("&lt;gate&gt;"))</code> and branches
+      on a failed suite.
+    </li>
+    <li>
+      <strong>Auth</strong> uses <code>GH_TOKEN</code> /
+      <code>GITHUB_TOKEN</code>; the GitHub API is an injectable transport, so
+      it is testable without a real GitHub.
+    </li>
+  </ul>
+  <h3>The dispatched workflow's contract</h3>
+  <p>
+    The gate is only half the wiring. Three requirements on the
+    <strong>target</strong> workflow are load-bearing — each is a deterministic
+    dispatch <code>422</code> or a gate that hangs until timeout:
+  </p>
+  <Code code={ghContractSnippet} lang="yaml" theme="night-owl" />
+  <ul>
+    <li>
+      <strong>Marker input name.</strong> GitHub <code>422</code>s a dispatch
+      carrying an input the workflow does not declare, so a workflow that names
+      its marker input anything else rejects the dispatch outright — declare
+      <code>zuke_marker</code>, or point the gate at your name with
+      <code>.markerInput("&lt;name&gt;")</code>.
+    </li>
+    <li>
+      <strong>Required inputs.</strong> Every <code>required: true</code> input
+      on the target workflow must be supplied from the gate with
+      <code>.inputs(&#123; … &#125;)</code> /
+      <code>.input(name, value)</code>, or the dispatch <code>422</code>s. The
+      settings lambda is evaluated when the build is defined and has
+      <strong>no access to run state</strong> — it can read params but not a
+      value an earlier target recorded, so an input produced at run time needs a
+      custom <code>WaitTrigger</code>.
+    </li>
+    <li>
+      <strong>Strict run-name equality.</strong> Marker correlation matches
+      <code>display_title === marker</code> — <strong>exact equality, not
+      substring</strong>. A decorated run-name like
+      <code>run-name: E2E [$&#123;&#123; inputs.zuke_marker &#125;&#125;]</code>
+      dispatches fine and then never correlates, so the gate just times out.
+      Echo the marker as the workflow's <em>entire</em> <code>run-name:</code>,
+      or switch to <code>.correlate("created-window")</code>.
+    </li>
+  </ul>
+
+  <h2 id="reaping">Abandoned runs — reaping</h2>
+  <p>
+    A run that ends cleanly settles itself, and a run that suspends is picked up
+    by the sweep above. A run whose process was <strong>killed</strong> does
+    neither: it stays <code>running</code>, and a resume only ever acts on
+    <code>suspended</code> runs. Anything that run recorded as owed — a
+    <a href="/docs/run-context#effects">crash-durable effect</a> above all —
+    would wait forever.
+  </p>
+  <p>
+    So <code>zuke resume --check</code> looks at <code>running</code> runs
+    <strong>first</strong>, before it sweeps the suspended ones:
+  </p>
+  <ul>
+    <li>
+      <strong>Is anyone still there?</strong> — asked first, always. The run's
+      <a href="/docs/locks#lease">lease</a> answers it: a live process keeps
+      renewing, so a lease that can be acquired means its holder is gone; one
+      that cannot means the run is merely slow, and slow is left alone. A live
+      run is <em>never</em> settled or moved, deadline or no deadline, because
+      doing so would run its compensations beside the work they undo.
+    </li>
+    <li>
+      <strong>Nobody there</strong> → the run goes back to <code>suspended</code>,
+      with a <code>reap</code> event on its audit trail saying why. The same
+      sweep then resumes it, so an abandoned run is recovered in one pass rather
+      than waiting another interval for nothing but a state change.
+    </li>
+    <li>
+      <strong>Nobody there, and past its <a href="#deadline"><code>deadline()</code></a></strong>
+      → the run is settled <strong><code>failed</code></strong>, compensations
+      and all. It did not stop because anyone asked; it ran out of time, and
+      anything waiting on it needs an answer rather than silence.
+    </li>
+    <li>
+      <strong>Only this build's runs.</strong> A state store is commonly shared
+      and a listing has no build filter, so the sweep skips runs it does not
+      recognise: the record's build name and its root target must both be this
+      build's. Before <em>settling</em> a run — irreversible, and it runs the
+      compensations — the graph has to agree as well, because a class name is
+      not an identity. Handing a run back to <code>suspended</code> asks only
+      the looser question, since that is reversible and a resume refuses a graph
+      it does not recognise.
+    </li>
+  </ul>
+  <p>
+    A run left <code>cancelling</code> by a settlement whose own process died is
+    finished too, in whichever terminal that settlement was heading for —
+    recorded on the run (<code>intendedTerminal</code>), because the process
+    that finishes it is not the one that began it.
+  </p>
+  <div class="note">
+    <p>
+      <strong>What no check here can see:</strong> two builds that share a class
+      name, a root-target name <em>and</em> a graph shape are indistinguishable
+      in a run record, even though their target bodies may do entirely different
+      things. If several repos share one state service and any of them might
+      collide that way, give each its own store — a separate
+      <code>ZUKE_STATE_DIR</code>, or a distinct prefix or instance behind
+      <code>ZUKE_STATE_URL</code>.
+    </p>
+  </div>
+
+  <h2 id="deadline"><code>Build.deadline()</code></h2>
+  <p>A wall-clock budget for a whole run. It bounds <strong>running</strong>, not existing:</p>
+  <Code code={deadlineSnippet} lang="ts" theme="night-owl" />
+  <p>
+    A run parked at a <code>.waitsFor(...)</code> gate is <strong>not</strong>
+    spending it: the deadline is pushed forward on resume by however long the
+    run was parked, so a build with a 72-hour approval gate and a 45-minute
+    deadline still has its 45 minutes of running time when the approval finally
+    arrives. The gate's own <code>.timeout()</code> is what bounds the waiting.
+  </p>
+  <p>
+    A live run is never settled for time either — the sweep asks whether anyone
+    is still working on the run before it looks at the deadline, and leaves it
+    alone if someone is. That costs nothing the deadline was for: a process that
+    hangs stops renewing its lease, and a run killed and abandoned repeatedly
+    has no holder at all. What it rules out is settling a run underneath a
+    process that is still working on it.
+  </p>
+  <p>
+    What it is really for is the run that stops making progress without failing:
+    a process that hangs, or one killed so hard that its work is picked up and
+    abandoned repeatedly. Without a deadline such a run has no end state at all;
+    with one it reaches a terminal status, which is what anything downstream is
+    waiting for. The value is stamped once at creation as
+    <code>deadlineAt</code> on the <a href="/docs/state">run record</a>.
   </p>
 
   <h2 id="fanout">Fan-out</h2>
@@ -268,6 +482,20 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     order</strong> — later work is unwound before what it was built on. This
     requires a state store (auto-enabled, same as suspend/resume).
   </p>
+  <div class="note">
+    <p>
+      <strong>…unless the record is
+      <a href="/docs/state#degraded">degraded</a>.</strong> A record that lost a
+      state write cannot be read as an account of what ran: a target that really
+      did deploy may still be recorded <code>pending</code> or
+      <code>running</code>. Cancel then compensates every target whose success
+      it <em>cannot rule out</em> — anything not recorded <code>failed</code> or
+      <code>skipped</code> — and names that reason in its output. A rollback
+      that runs for work which never happened is a no-op for an idempotent
+      compensation, while skipping one for work that did happen leaves the side
+      effect behind.
+    </p>
+  </div>
   <Code code={cancelApiSnippet} lang="ts" theme="night-owl" />
   <p>Trigger a cancel from any of three places:</p>
   <Code code={cancelCliSnippet} lang="bash" theme="night-owl" />
@@ -327,21 +555,11 @@ TAGS=latest,canary ./zuke deploy            # from env`;
   </p>
   <div class="note">
     <p>
-      <code>@zuke/gh</code> adds a <code>githubWorkflow(...)</code>
-      <code>WaitTrigger</code> for <code>.waitsFor()</code> — it dispatches a
-      workflow in another repo and suspends until that workflow's conclusion.
-      See the <a href="https://jsr.io/@zuke/gh" target="_blank" rel="noopener noreferrer">
-      <code>@zuke/gh</code></a> package for the details.
-    </p>
-    <p>
-      For a workflow you can't modify, <code>.correlate("created-window")</code>
-      gives a <strong>best-effort</strong> correlation: it claims the
-      <code>workflow_dispatch</code> run created just after dispatch, and
-      fails loudly if two candidates share that window.
-      <code>.discoveryTimeout(...)</code> (default ~one minute) fast-fails if
-      no run is identified, so a workflow that never surfaces doesn't eat the
-      whole <code>.timeout()</code> — the deadline is measured from the
-      persisted dispatch time, so it holds across a suspend/resume.
+      An array parameter is also the natural feed for a
+      <a href="#github-workflow"><code>githubWorkflow</code></a> gate's
+      <code>.inputs(...)</code>: the settings lambda runs after parameters
+      resolve, so it can read <code>this.&lt;param&gt;.value</code> — but not
+      run state.
     </p>
   </div>
 </DocsLayout>

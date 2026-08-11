@@ -295,7 +295,7 @@ await run(Deploy);`,
 
 class CD extends Build {
   // A validated list — each element checked before any target runs.
-  repos = parameter("services to deploy").array().required();
+  repos = parameter("services to deploy").required().array();
 
   deployBatch = target().forEach(
     () => this.repos.value,                    // items thunk (string[])
@@ -671,7 +671,7 @@ import { DenoTasks } from "jsr:@zuke/deno";
 class CiBuild extends Build {
   // → generates .github/workflows on \`zuke generate-ci\`
   pipeline = cicd({
-    provider: "github",                    // or "gitlab" | "azure"
+    provider: "github",                    // or "gitlab" | "azure" | "bitbucket"
     pipeline: {
       jobs: [{
         matrix: { os: ["ubuntu-latest", "macos-latest"] },

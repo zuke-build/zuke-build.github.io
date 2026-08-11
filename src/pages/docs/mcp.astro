@@ -187,14 +187,30 @@ const identitySnippet = `class ControlPlane extends Build {
       <strong><code>--allow-run[=&lt;globs&gt;]</code></strong> — bare
       <code>--allow-run</code> exposes every target;
       <code>--allow-run=deploy,checks*</code> exposes only matching targets
-      as run tools. Everything else stays invisible — not merely refused.
+      as run tools. Everything else stays invisible — not merely refused. The
+      allow-list gates <strong>invocation</strong>: invoking a target runs its
+      dependencies, which is what depending on a target means, so allow-listing
+      <code>release</code> allows everything <code>release</code> does. Scope it
+      to the entry points you want an agent to have, not to individual steps.
+      The read tools narrow to match — with an allow-list they describe the
+      allow-listed targets and their dependency closure and nothing else, so a
+      target outside it is genuinely unreachable rather than merely undisplayed.
     </li>
     <li>
-      <strong><code>--protect &lt;globs&gt;</code></strong> — matching targets
-      additionally require an operator token
-      (<code>ZUKE_OPERATOR_TOKEN</code>) as a tool-call argument. No
-      <code>ZUKE_OPERATOR_TOKEN</code> set means every protected call is
-      denied — fail-closed, not open.
+      <strong><code>--protect &lt;globs&gt;</code></strong> — a run that would
+      <em>execute</em> a matching target gains a required
+      <code>operatorToken</code> argument, checked in constant time against
+      <code>ZUKE_OPERATOR_TOKEN</code>. Protection is a property of the
+      <strong>operation</strong>, so it is enforced across the
+      <strong>whole plan</strong>: a protected <code>deploy</code> reached as a
+      dependency of an unprotected <code>release</code> still demands the token,
+      and <code>run:release</code> advertises the requirement in its schema.
+      This is <strong>fail-closed</strong> — no token configured means every
+      protected target is denied, and a call whose plan cannot be resolved (a
+      run record whose root target no longer exists) is denied rather than
+      assumed harmless, so a misconfigured server can never silently expose one.
+      A denial is a structured <code>&#123;"error": "unauthorized", …&#125;</code>
+      result, and the token is never written to the audit log or any output.
     </li>
     <li>
       <strong><code>--confirm-destructive</code></strong> — a destructive run

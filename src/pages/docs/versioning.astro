@@ -1,0 +1,250 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { packageCount } from "../../data/tools.ts";
+
+const toc = [
+  { id: "tier", label: "One tier: full semver" },
+  { id: "floor", label: "The @zuke/core floor" },
+  { id: "failure", label: "The failure mode, concretely" },
+  { id: "verify", label: "Verifying the floors" },
+  { id: "pinning", label: "Pinning guidance" },
+  { id: "upgrades", label: "Upgrade notes" },
+];
+
+const floorSnippet = `{
+  "imports": {
+    "@zuke/core": "jsr:@zuke/core@^1.31.0"
+  }
+}`;
+
+const pinSnippet = `// Take patches and non-breaking minors automatically:
+import { Build, run, target } from "jsr:@zuke/core@^1";
+import { DenoTasks } from "jsr:@zuke/deno@^1";`;
+
+const diagnoseSnippet = `# What did the lockfile actually resolve for core?
+deno info jsr:@zuke/gh
+
+# Which core version introduced the symbol the import needs?
+#   grep it in packages/core/CHANGELOG.md, or search llms-full.txt`;
+
+const verifySnippet = `./zuke coreFloorCheck   # type-check every package against the core floor it declares`;
+---
+
+<DocsLayout
+  title="Versioning & compatibility"
+  description="One semver tier across all @zuke packages, the hand-maintained @zuke/core floor each wrapper declares and why it is verified in CI, how an under-declared floor fails at runtime rather than type-check time, and pinning guidance."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke publishes <strong>{packageCount} independent JSR packages</strong> from
+    one workspace. They don't all move at the same speed, and knowing which
+    promise each package makes — and how they interlock — is what keeps an
+    upgrade from surprising you at runtime instead of at
+    <code>deno check</code> time.
+  </p>
+
+  <h2 id="tier">One tier: every package follows full semver</h2>
+  <p>
+    <strong>All {packageCount} packages are <code>1.x</code>.</strong>
+    <code>@zuke/core</code>, the <a href="/docs/cli"><code>@zuke/cli</code></a>
+    command, and every <a href="/docs/tools">tool wrapper</a> make the same
+    promise: a <code>1.x</code> release never breaks a public symbol, so a minor
+    or patch upgrade is safe to take without reading the diff, and a breaking
+    change bumps the <strong>major</strong> version. Depend on
+    <code>jsr:@zuke/core@^1</code> (and <code>jsr:@zuke/deno@^1</code>, …) and
+    let minors resolve.
+  </p>
+  <p>
+    release-please's <code>bump-minor-pre-major</code> is <strong>off</strong>,
+    so nothing silently ships a breaking change under a minor bump. Read a
+    package's <code>CHANGELOG.md</code> when its major moves — that is the only
+    release that can require a code change on your side.
+  </p>
+  <div class="note">
+    <p>
+      What a wrapper's <code>1.x</code> promise does <strong>not</strong> cover
+      is the upstream CLI it drives: its flags track a tool that can rename or
+      drop one. When upstream changes, the wrapper keeps the old method working
+      (deprecated) or bumps its major — the promise is about the wrapper's own
+      typed surface, not about upstream's stability.
+    </p>
+  </div>
+
+  <h2 id="floor">Every wrapper declares a <code>@zuke/core</code> floor</h2>
+  <p>
+    Each tool wrapper's <code>deno.json</code> pins a minimum core version it
+    needs:
+  </p>
+  <Code code={floorSnippet} lang="json" theme="night-owl" />
+  <p>
+    That floor is <strong>hand-maintained</strong> — nothing regenerates it —
+    but it is not unverified: the <code>coreFloorCheck</code> target type-checks
+    every package against the core version it declares, and a dedicated
+    <strong>Core version floors</strong> CI job runs it on every PR.
+  </p>
+  <p>
+    The floor exists because a wrapper often imports a symbol that only exists
+    from some specific core release onward — a new settings class, a new
+    exported type. If the floor is under-declared, a consumer can pin a wrapper
+    version whose code needs core <code>1.31</code> while their lockfile still
+    resolves an older core that doesn't export the symbol. The failure doesn't
+    show up until the wrapper is actually imported <strong>at runtime</strong>,
+    because the repository's own CI type-checks every package against the
+    <strong>workspace-local</strong> <code>packages/core</code>, not against the
+    floor each <code>deno.json</code> claims.
+  </p>
+
+  <h2 id="failure">The failure mode, concretely</h2>
+  <p>This happened in the Zuke repository, and is what the check now prevents:</p>
+  <ol>
+    <li>
+      Five wrappers (<code>@zuke/claude</code>, <code>@zuke/codex</code>,
+      <code>@zuke/gcloud</code>, <code>@zuke/gemini</code>,
+      <code>@zuke/gh</code>) started importing <code>SubcommandSettings</code>,
+      a type new in <code>@zuke/core@1.31.0</code>.
+    </li>
+    <li>Their declared floor was still an older range that predates that symbol.</li>
+    <li>
+      CI was green: <code>deno check</code> resolves the workspace's local
+      <code>packages/core</code> member regardless of what each wrapper's
+      <code>deno.json</code> claims, so the type-check never saw the gap.
+    </li>
+    <li>
+      A consumer whose <code>deno.lock</code> had already pinned an older,
+      published core — satisfying the wrapper's stale floor — hit a
+      <strong>runtime</strong> failure: the import resolved to a real core
+      release that doesn't export <code>SubcommandSettings</code>.
+    </li>
+    <li>
+      The fix was a follow-up PR raising the floor in the five affected
+      <code>deno.json</code>s (and <code>deno.lock</code>) to
+      <code>^1.31.0</code>, once core <code>1.31.0</code> had actually
+      published — it cannot land in the same change that introduces the new
+      symbol, because the version it needs to name does not exist yet.
+    </li>
+  </ol>
+  <p>
+    <strong>How to diagnose it.</strong> If an import resolves at type-check
+    time but throws or logs a missing export at runtime: find which core symbol
+    the failing import needs and which version introduced it, then compare that
+    to the floor the wrapper declares and to what your own
+    <code>deno.lock</code> actually resolved for <code>@zuke/core</code>.
+  </p>
+  <Code code={diagnoseSnippet} lang="bash" theme="night-owl" />
+  <p>
+    If the lockfile-resolved core predates the version the symbol needs, the
+    wrapper's floor is under-declared —
+    <a href="https://github.com/zuke-build/zuke/issues">file an issue</a>, or
+    bump your own pin to the version that introduced the symbol as a
+    workaround.
+  </p>
+
+  <h2 id="verify">Verifying the floors</h2>
+  <Code code={verifySnippet} lang="bash" theme="night-owl" />
+  <p>
+    It works by writing a throwaway config per package containing that package's
+    own imports and <strong>no <code>workspace</code> field</strong>, then
+    type-checking the package's <code>mod.ts</code> with
+    <code>deno check --config</code> pointed at it. Without a workspace to
+    resolve against, <code>@zuke/core</code> comes from JSR instead of the local
+    member — precisely the substitution that made the ordinary type-check blind
+    to this class of bug.
+  </p>
+  <p>Two details are load-bearing:</p>
+  <ul>
+    <li>
+      <strong>The floor is pinned to the range's exact minimum.</strong> A caret
+      range resolves to the <em>newest</em> matching version, so checking
+      <code>^1.25.0</code> as written would exercise the current core and pass
+      no matter how new a symbol the package uses. Verified against
+      <code>1.25.0</code> exactly, it tests the actual claim.
+    </li>
+    <li>
+      <strong><code>minimumDependencyAge</code> is zeroed</strong> in the
+      generated config. Deno otherwise refuses a version published within the
+      last day as a supply-chain precaution — sensible when installing
+      dependencies to run, wrong here, where the case most needing verification
+      is a floor naming the core just released alongside it.
+    </li>
+  </ul>
+  <div class="note">
+    <p>
+      Because it reaches JSR, <code>coreFloorCheck</code> is deliberately
+      <strong>not</strong> part of <code>./zuke ci</code>, which stays runnable
+      offline.
+    </p>
+  </div>
+
+  <h2 id="pinning">Pinning guidance</h2>
+  <ul>
+    <li>
+      Depend on the <strong>caret range</strong>, not an exact version:
+      <code>jsr:@zuke/core@^1</code> (or a wrapper's own
+      <code>jsr:@zuke/&lt;tool&gt;@^1</code>) so patch and non-breaking minor
+      releases resolve automatically.
+    </li>
+    <li>
+      <strong>Always commit <code>deno.lock</code>.</strong> It pins the exact
+      resolved version of every package (core included) that your build actually
+      runs against — the caret range in <code>deno.json</code> only bounds
+      what's <em>allowed</em>, the lockfile fixes what's <em>used</em>.
+      Regenerate it whenever you deliberately take an upgrade, and review the
+      diff.
+    </li>
+  </ul>
+  <Code code={pinSnippet} lang="ts" theme="night-owl" />
+  <div class="note">
+    <p>
+      Zuke's own gate enforces this on itself: every entrypoint that loads
+      <code>zuke.ts</code> runs <code>--frozen</code>, and a
+      <code>lockCheck</code> target fails if a run modified the lock — so a
+      stale lock is caught before CI rather than silently healed on whichever
+      machine happened to run the gate.
+    </p>
+  </div>
+
+  <h2 id="upgrades">Upgrade notes</h2>
+  <p>For what changed in a given release:</p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Source</th><th>What it has</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a href="/docs/changelog">The release model</a></td>
+        <td>how a release is cut, and the project-level milestones</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/zuke-build/zuke/blob/master/CHANGELOG.md">Root <code>CHANGELOG.md</code></a></td>
+        <td>project-level milestones, in the repository</td>
+      </tr>
+      <tr>
+        <td><a href="https://github.com/zuke-build/zuke/blob/master/packages/core/CHANGELOG.md">Per-package <code>CHANGELOG.md</code></a></td>
+        <td>generated per-release notes — release-please output from Conventional Commits, so the authoritative per-package history</td>
+      </tr>
+      <tr>
+        <td><a href="https://jsr.io/@zuke">JSR — <code>@zuke</code></a></td>
+        <td>the live version of every published package</td>
+      </tr>
+    </tbody>
+  </table>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

@@ -9,6 +9,7 @@ const toc = [
   { id: "lifecycle", label: "Lifecycle & validation" },
   { id: "triggers", label: "Triggers & CD" },
   { id: "resilience", label: "Resilience & orchestration" },
+  { id: "build", label: "What the Build declares" },
 ];
 
 const introSnippet = `import { Build, run, target } from "jsr:@zuke/core";
@@ -117,10 +118,11 @@ awaitApproval = target()
       (<code>ctx</code>): <code>ctx.runId</code>, <code>ctx.target</code>,
       an <code>AbortSignal</code> at <code>ctx.signal</code> that is aborted on
       cancellation, a durable <code>ctx.state</code> handle (and
-      <code>ctx.stateOf(target)</code> for another target's), the
-      <code>ctx.signals</code> map of received external signals, and
-      <code>ctx.dryRun</code>. A zero-argument body stays valid. See
-      <a href="/docs/run-context">Run context</a>.
+      <code>ctx.stateOf(target)</code> for another target's),
+      <code>ctx.outcomeOf(target)</code>/<code>ctx.outcomes()</code> for what
+      the rest of the run did, the <code>ctx.signals</code> map of received
+      external signals, and <code>ctx.dryRun</code>. A zero-argument body stays
+      valid. See <a href="/docs/run-context">Run context</a>.
     </p>
   </div>
 
@@ -140,9 +142,10 @@ awaitApproval = target()
     </thead>
     <tbody>
       <tr><td><code>.description(text)</code></td><td><code>(text: string) =&gt; this</code></td><td>Human-readable summary shown in <code>--list</code>.</td></tr>
-      <tr><td><code>.executes(fn)</code></td><td><code>(fn: TargetFn) =&gt; this</code></td><td>The body (<strong>required</strong>). Receives an optional <code>TargetContext</code>; may be sync or async.</td></tr>
+      <tr><td><code>.executes(fn)</code></td><td><code>(fn: TargetFn) =&gt; this</code></td><td>The body (<strong>required</strong>, unless the target declares an <code>.effect(...)</code> or is a gate). Receives an optional <code>TargetContext</code>; may be sync or async, and its return value is ignored — so <code>() =&gt; DenoTasks.lint()</code> needs no async wrapper.</td></tr>
+      <tr><td><code>.effect(name, fn)</code></td><td><code>(name: string, fn: (ctx: EffectContext) =&gt; unknown) =&gt; this</code></td><td>A <strong>crash-durable side effect</strong>: its intent is recorded before it runs, and it is re-driven after an unclean exit. Runs after the body, in declaration order; repeatable, and names must be unique. Requires a <a href="/docs/state">state store</a> (auto-enabled). See <a href="/docs/run-context#effects">Run context → effects</a>.</td></tr>
       <tr><td><code>.unlisted()</code></td><td><code>() =&gt; this</code></td><td>Hide a helper target from <code>--list</code>/<code>--help</code>; it can still be run by name or depended on.</td></tr>
-      <tr><td><code>.always()</code></td><td><code>() =&gt; this</code></td><td>Run even after the build has already failed, for cleanup/teardown. Still waits for its own dependencies.</td></tr>
+      <tr><td><code>.always()</code></td><td><code>() =&gt; this</code></td><td>Run even after the build has already failed, for cleanup/teardown or an aggregate that must report on the failure. It still waits for its own dependencies, but for them to <strong>settle</strong> rather than succeed — a failed dependency releases it, the same as one that passed. Read what happened with <a href="/docs/run-context#outcomes"><code>ctx.outcomeOf(...)</code></a>. A dependency parked at a <a href="/docs/orchestration#suspend">wait</a> is the exception: it has not settled, so the target waits for the resume.</td></tr>
       <tr><td><code>.readOnly()</code></td><td><code>() =&gt; this</code></td><td>Advertise the target query-only over <a href="/docs/mcp">MCP</a> (<code>readOnlyHint</code>, not <code>destructiveHint</code>); exempt from <code>--confirm-destructive</code>. A hint about intent — the body still runs.</td></tr>
       <tr><td><code>.dryRunnable()</code></td><td><code>() =&gt; this</code></td><td>Run the body under <code>--dry-run</code> (instead of skipping it) with the <code>$</code> shell in echo mode — each command prints its resolved argv and returns empty success without spawning a process.</td></tr>
       <tr><td><code>.partOf(group)</code></td><td><code>(group: Group) =&gt; this</code></td><td>Join a parallel batch created by <code>group()</code>.</td></tr>
@@ -191,7 +194,11 @@ awaitApproval = target()
       (an edge whose endpoints aren't both in the run is ignored; a cycle is a
       friendly error), and are honoured by runs and by <code>zuke cancel</code>'s
       reverse-order walk — but neither shows in the static
-      <code>graph</code>/<code>--list</code> views. See
+      <code>graph</code>/<code>--list</code> views nor in generated CI. An edge
+      whose endpoint isn't a target in the build at all — a
+      <a href="/docs/orchestration#fanout">fan-out</a> item name, a typo, an
+      ad-hoc <code>target()</code> — is <strong>logged as ignored</strong> when
+      the run plans, rather than silently doing nothing. See
       <a href="/docs/orchestration#ordering">Orchestration → ordering</a>.
     </p>
   </div>
@@ -308,7 +315,7 @@ awaitApproval = target()
       <tr><td><code>.lock(configure)</code></td><td><code>(c: Configure&lt;LockSettings&gt;) =&gt; this</code></td><td>Hold a cross-run lock while this target runs; a second run fails with a <code>LockConflictError</code>. Set the key/TTL/conflict message in the lambda. See <a href="/docs/locks">Locks</a>.</td></tr>
       <tr><td><code>.waitsFor(configure)</code></td><td><code>(c: Configure&lt;WaitSettings&gt;) =&gt; this</code></td><td>Suspend the run at this gate until an external event; resume later in another process. Set <code>.on(trigger)</code>, <code>.timeout()</code>, <code>.onTimeout()</code>. See <a href="/docs/orchestration#suspend">Orchestration → suspend/resume</a>.</td></tr>
       <tr><td><code>.forEach(items, factory, configure?)</code></td><td><code>(items: () =&gt; readonly Item[], factory: ForEachFactory&lt;Item&gt;, c?: Configure&lt;ForEachSettings&gt;) =&gt; this</code></td><td>Fan out over a runtime list: per item, build an ordered sub-target pipeline; items run with bounded concurrency and per-item failure isolation. See <a href="/docs/orchestration#fanout">Orchestration → fan-out</a>.</td></tr>
-      <tr><td><code>.onCancel(compensation)</code></td><td><code>(c: Target | (() =&gt; Target)) =&gt; this</code></td><td>Register a compensation that undoes this target when the run is cancelled — runs <em>iff this target succeeded</em>, in reverse order. Use the thunk form for a target declared below. See <a href="/docs/orchestration#cancel">Orchestration → compensation</a>.</td></tr>
+      <tr><td><code>.onCancel(compensation)</code></td><td><code>(c: Target | (() =&gt; Target)) =&gt; this</code></td><td>Register a compensation that undoes this target when the run is cancelled — runs <em>iff this target succeeded</em>, or, on a <a href="/docs/state#degraded">degraded record</a>, if its success cannot be ruled out; in reverse order. Use the thunk form for a target declared below. See <a href="/docs/orchestration#cancel">Orchestration → compensation</a>.</td></tr>
       <tr><td><code>.recoverWith(...r)</code></td><td><code>(...r: Remediation[]) =&gt; this</code></td><td>On failure, hand the error to a remediation that may repair it and ask (via <code>&#123; retry: true &#125;</code>) to re-run the body. See <a href="/docs/self-healing#recoverwith">Self-healing</a>.</td></tr>
       <tr><td><code>.recoverAttempts(n)</code></td><td><code>(n: number) =&gt; this</code></td><td>Bound how many fix-then-rerun cycles are tried (default 1, clamped to at least 1).</td></tr>
     </tbody>
@@ -326,11 +333,42 @@ awaitApproval = target()
       <a href="/docs/self-healing#aifixer">Self-healing → AI fixer</a>.
     </p>
   </div>
+  <h2 id="build">What the <code>Build</code> itself declares</h2>
+  <p>
+    A few things belong to the build rather than to any one target. Beyond the
+    lifecycle hooks (<code>onStart</code>, <code>onTargetStart</code>,
+    <code>onTargetEnd</code>, <code>onFinish</code> — all may be async), the base
+    class exposes one override per subsystem:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Override</th><th>Returns</th><th>Effect / see</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>stateStore()</code></td><td><code>StateStore | undefined</code></td><td>Persist run records to a store you construct. See <a href="/docs/state#precedence">Durable run state</a>.</td></tr>
+      <tr><td><code>deadline()</code></td><td><code>string | number | undefined</code></td><td>A wall-clock budget for a whole run (<code>"45m"</code>), stamped once at creation and enforced by the reaping sweep. It bounds <strong>running</strong>, not existing. See <a href="/docs/orchestration#deadline">Build.deadline()</a>.</td></tr>
+      <tr><td><code>remoteCache()</code></td><td><code>RemoteCacheStore</code></td><td>Share built <code>.outputs()</code> across machines. See <a href="/docs/caching#remote">Caching → remote cache</a>.</td></tr>
+      <tr><td><code>registry()</code></td><td><code>BuildRegistry</code></td><td>Where <code>zuke register</code> catalogs this build. See <a href="/docs/registry">Build registry</a>.</td></tr>
+      <tr><td><code>recoverWith()</code></td><td><code>Remediation[]</code></td><td>Build-wide remediations, applied to every target. See <a href="/docs/self-healing">Self-healing</a>.</td></tr>
+      <tr><td><code>mcpIdentity()</code></td><td><code>McpIdentity</code></td><td>How MCP tool calls are attributed in the audit trail. See <a href="/docs/mcp#identity">MCP server</a>.</td></tr>
+      <tr><td><code>extraEdges(targets)</code></td><td><code>OrderingEdge[]</code></td><td>Static soft-ordering edges beyond <code>.before()</code>/<code>.after()</code>.</td></tr>
+      <tr><td><code>orderWith(targets)</code></td><td><code>Promise&lt;OrderingEdge[]&gt;</code></td><td>The same edges, <em>loaded</em> per run. See <a href="/docs/orchestration#ordering">Orchestration → ordering</a>.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      <code>onTargetStart</code> fires just before a body executes — not for a
+      skipped or cached target — and <code>onTargetEnd</code> fires after each
+      target settles, with its final status. For <em>exporting</em> rather than
+      observing, prefer a <a href="/docs/extending">plugin</a>, whose hooks
+      mirror these. A field literally named <code>default</code> is the default
+      target, run when no target is named on the command line.
+    </p>
+  </div>
   <p>
     For the full framework surface beyond the builder — components, assertions,
-    <code>FileTasks</code>, HTTP and compression helpers, host detection, and the
-    <code>Build</code> lifecycle hooks (<code>onStart</code>/<code>onFinish</code>)
-    — see <a href="/docs/concepts">Concepts</a> and
+    <code>FileTasks</code>, the <code>$</code> shell, HTTP and compression
+    helpers, and host detection — see <a href="/docs/concepts">Concepts</a> and
     <a href="/docs/library">the standard library</a>.
   </p>
 </DocsLayout>

@@ -5,6 +5,8 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 const toc = [
   { id: "shape", label: "The shape of ctx" },
   { id: "state", label: "ctx.state" },
+  { id: "outcomes", label: "Reading what the run did" },
+  { id: "effects", label: "Crash-durable effects" },
   { id: "signals", label: "ctx.signals" },
   { id: "cancel", label: "Ambient cancellation" },
   { id: "dryrun", label: "Dry runs" },
@@ -16,10 +18,43 @@ const shapeSnippet = `export interface TargetContext {
   readonly signal: AbortSignal;           // aborted when the run is cancelled
   readonly state: TargetStateHandle;      // this target's durable metadata
   stateOf(target: string): TargetStateHandle;   // another target's state handle
+  outcomeOf(target: string): TargetOutcomeView | undefined;   // what another target did
+  outcomes(): ReadonlyMap<string, TargetOutcomeView>;         // every outcome settled so far
   readonly signals: ReadonlyMap<string, SignalRecord>;  // external signal payloads
   readonly dryRun: boolean;               // true under a dry run (bodies don't execute)
 }
-export type TargetFn = (ctx: TargetContext) => void | Promise<void>;`;
+export type TargetFn = (ctx: TargetContext) => unknown | Promise<unknown>;
+
+// An effect body gets the same context plus what it needs to be re-driven safely.
+export interface EffectContext extends TargetContext {
+  readonly effect: string;    // the effect's declared name
+  readonly redriven: boolean; // true when a previous attempt already committed its intent
+}`;
+
+const outcomesSnippet = `import { Build, target } from "jsr:@zuke/core";
+
+class Ci extends Build {
+  unit = target().proceedAfterFailure().executes(() => {});
+  docs = target().onlyWhen(() => false).executes(() => {});
+
+  report = target().dependsOn(this.unit, this.docs).always().executes((ctx) => {
+    const skipped = [...ctx.outcomes()]
+      .filter(([, outcome]) => outcome.status === "skipped")
+      .map(([name]) => name);
+    console.log(\`skipped: \${skipped.join(", ")}\`);
+    console.log(\`unit: \${ctx.outcomeOf("unit")?.status}\`);   // "succeeded" | "failed" | …
+  });
+}`;
+
+const effectSnippet = `class Ci extends Build {
+  checks = target().proceedAfterFailure().executes(() => {});
+
+  gate = target().dependsOn(this.checks).always()
+    .effect("post-gate", async (ctx) => {
+      const failed = [...ctx.outcomes()].some(([, o]) => o.status === "failed");
+      await postVerdict(failed ? "failure" : "success", ctx.redriven);
+    });
+}`;
 
 const exampleSnippet = `import { Build, target } from "jsr:@zuke/core";
 
@@ -61,16 +96,16 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
 
 <DocsLayout
   title="Run context"
-  description="ctx: TargetContext is the typed handle every target body can receive — run identity, ambient cancellation, durable per-target state, received signals, and a dry-run flag."
+  description="ctx: TargetContext is the typed handle every target body can receive — run identity, ambient cancellation, durable per-target state, the outcomes of other targets, crash-durable effects, received signals, and a dry-run flag."
   toc={toc}
 >
   <p class="lead">
     Every target body may take one argument, <code>ctx: TargetContext</code> —
     a typed handle to the run it's executing in. A zero-arg <code>() =&gt; …</code>
     body is still valid; take <code>ctx</code> only when you need it. It carries
-    run identity, a cancellation signal, this target's durable state, any
-    external signal payloads the run has received, and whether this is a dry
-    run.
+    run identity, a cancellation signal, this target's durable state, what every
+    other target in the run has done, any external signal payloads the run has
+    received, and whether this is a dry run.
   </p>
 
   <h2 id="shape">The shape of ctx</h2>
@@ -102,6 +137,99 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
       precedence, the record shape, and the <code>zuke runs</code> CLI.
     </p>
   </div>
+
+  <h2 id="outcomes">Reading what the rest of the run did</h2>
+  <p>
+    <code>ctx.outcomeOf(name)</code> reports another target's status in this
+    run, and <code>ctx.outcomes()</code> returns all of them keyed by target
+    name. The status is the <a href="/docs/state">run record's</a>
+    vocabulary — <code>succeeded</code>, <code>failed</code>,
+    <code>skipped</code>, <code>waiting</code>, <code>running</code> — so a
+    target whose body ran and one served from the incremental cache both read
+    <code>succeeded</code>, which is the distinction the record keeps.
+  </p>
+  <Code code={outcomesSnippet} lang="ts" theme="night-owl" />
+  <p>
+    This is what makes an aggregate target — a required status check over a set
+    of checks, some of which are allowed to fail — expressible:
+    <code>.dependsOn(...)</code> alone can't say "run whatever happened", so
+    pair <code>.always()</code> on the reporter with
+    <code>.proceedAfterFailure()</code> on the checks.
+  </p>
+  <ul>
+    <li>
+      <strong>A target that has not settled has no outcome</strong> —
+      <code>undefined</code> rather than a placeholder. That includes the target
+      doing the asking, and any sibling still running concurrently. Depend on
+      what you intend to read.
+    </li>
+    <li>
+      <strong>Outcomes survive a resume.</strong> The process that resumes never
+      re-runs what already succeeded, and still reports it — those come from the
+      durable <a href="/docs/state">run record</a>.
+    </li>
+    <li>
+      <strong>A store is not required.</strong> A run with no state store
+      answers the same way for everything settled in that process.
+    </li>
+  </ul>
+
+  <h2 id="effects">Crash-durable effects — <code>.effect()</code></h2>
+  <p>
+    A target body that dies halfway leaves no trace of what it was doing. For
+    work where that matters — posting a required status check, publishing a
+    release, telling another system something finished — declare it as an
+    <strong>effect</strong>. The intent to run it is written to the
+    <a href="/docs/state">run record</a> and confirmed <em>before</em> the body
+    runs, so a process killed anywhere inside it leaves evidence that the effect
+    was owed, and a resume drives it again.
+  </p>
+  <Code code={effectSnippet} lang="ts" theme="night-owl" />
+  <ul>
+    <li>
+      <strong>At-least-once, not exactly-once.</strong> A process that dies
+      <em>after</em> the side effect but before recording it will repeat the
+      effect. Write bodies that tolerate it — because repeating is harmless, or
+      because the far side converges (an upsert rather than an append).
+      <code>ctx.redriven</code> is <code>true</code> when a previous attempt
+      already committed its intent.
+    </li>
+    <li>
+      <strong>A completed effect is skipped, not repeated.</strong> Once
+      recorded <code>done</code>, re-driving the target is free.
+    </li>
+    <li>
+      <strong>What re-drives it, precisely.</strong> A resume acts on a run
+      recorded <code>suspended</code>, so an effect owed by a run that suspended
+      at a wait is driven again by an ordinary
+      <code>zuke resume</code> / <code>zuke resume --check</code>. A process
+      that was <em>killed</em> leaves its run <code>running</code>, and a run in
+      that state is not resumable until something moves it back to
+      <code>suspended</code> — so an effect owed by a killed process waits for a
+      <a href="/docs/orchestration#reaping">reaping sweep</a> or an operator.
+      The intent itself is durable either way.
+    </li>
+    <li>
+      <strong>Pin what the effect acts on.</strong> Read it from
+      <code>ctx.state</code> / <code>ctx.stateOf(...)</code>, which is replayed
+      from the record and cannot be overridden from outside. A parameter is
+      nearly as good — the record seeds a resume, so one nobody re-supplies
+      keeps its original value — but a resume that passes it explicitly wins,
+      which is how a secret gets re-supplied. For a value that must not drift,
+      use state.
+    </li>
+    <li>
+      <strong>A store is required</strong>, and enabled automatically. With
+      state explicitly disabled the run is refused rather than performing an
+      effect nothing recorded as owed.
+    </li>
+    <li>
+      <strong>Effects run after the body</strong>, in declaration order, and are
+      repeatable. A target may declare effects and no body at all. An intent
+      that cannot be recorded <strong>fails the target</strong>, with the body
+      never having run: no durable intent, no side effect.
+    </li>
+  </ul>
 
   <h2 id="signals">ctx.signals</h2>
   <p>

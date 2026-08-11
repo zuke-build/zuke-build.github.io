@@ -151,8 +151,10 @@ const readingSnippet = `deploy = target().executes(() => {
     <p>
       Ordering matters: <code>.number()</code> and <code>.boolean()</code> come
       first (they change the kind and reset the default), <code>.options()</code>
-      applies to strings, and <code>.array()</code> comes <strong>last</strong> so it
-      composes with the kind and choices declared before it.
+      applies to strings, <code>.required()</code>/<code>.default()</code> set
+      optionality, and <code>.array()</code> comes <strong>last</strong> so it
+      composes with everything before it — so a required list is
+      <code>.required().array()</code>, in that order.
     </p>
   </div>
   <div class="note">
@@ -198,8 +200,11 @@ const readingSnippet = `deploy = target().executes(() => {
   <p>
     <code>.array()</code> turns a parameter into a list. On the command line, a
     comma separates values <strong>or</strong> the flag is repeated — the two are
-    equivalent. Blank entries are dropped, and an unsupplied list defaults to
-    <code>[]</code> (never <code>undefined</code>).
+    equivalent. Blank entries are dropped, and an unsupplied <em>optional</em>
+    list defaults to <code>[]</code> (never <code>undefined</code>). Declare it
+    <code>.required().array()</code> to reject a missing value instead of
+    silently yielding an empty list — the required flag carries through
+    <code>.array()</code>.
   </p>
   <Code code={arraySnippet} lang="ts" theme="night-owl" />
   <Code code={arrayCliSnippet} lang="bash" theme="night-owl" />

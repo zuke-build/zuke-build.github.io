@@ -9,6 +9,7 @@ const toc = [
   { id: "ttl", label: "TTL, heartbeat & release" },
   { id: "conflict", label: "LockConflictError & conflict output" },
   { id: "state-store", label: "Requires a state store" },
+  { id: "lease", label: "The run's own lease" },
   { id: "http", label: "HTTP lock endpoints" },
   { id: "key-safety", label: "Key safety" },
 ];
@@ -122,6 +123,68 @@ export type LockResult = { ok: true; token: string } | { ok: false; holder: Lock
       locks across machines — the server is authoritative for expiry there.
     </p>
   </div>
+
+  <h2 id="lease">The run's own lease</h2>
+  <p>
+    Separately from any lock a target declares, a run with a
+    <a href="/docs/state">state store</a> holds a <strong>lease</strong> on
+    itself for as long as it is running: <code>zuke-run-&lt;run-id&gt;</code>,
+    taken before the record is written <code>running</code> and released when
+    the run settles. A background heartbeat renews it at half its 60-second TTL.
+  </p>
+  <p>
+    Its whole job is to make <strong>"slow" and "dead" different things</strong>.
+    A run record cannot tell them apart on its own — a process mid-step and a
+    process that was <code>SIGKILL</code>ed both leave a record that says
+    <code>running</code> and stops changing. The lease answers it: a live holder
+    keeps renewing, so a claim that has lapsed means the holder is gone and the
+    run can be <a href="/docs/orchestration#reaping">taken over</a>.
+  </p>
+  <ul>
+    <li>
+      <strong>Ordering matters.</strong> The lease is taken <em>before</em> the
+      record says <code>running</code>, and on a resume before the record leaves
+      <code>suspended</code> — so a <code>running</code> record always has a live
+      holder. Acquiring afterwards would leave a window in which a perfectly
+      healthy run looked abandoned.
+    </li>
+    <li>
+      <strong>A resume refuses a run whose holder has not let go.</strong> Two
+      processes working one run is worse than a delayed resume, so the claim is
+      checked before the compare-and-swap and a resumer that cannot take it
+      stops.
+    </li>
+    <li>
+      <strong>Losing it stops the run.</strong> If a renewal is refused — the
+      claim is demonstrably somebody else's now — the run aborts rather than
+      carrying on beside whoever took it over.
+    </li>
+    <li>
+      <strong>A refused renewal is loss; a failed one is not.</strong> A store
+      answers "no" when the claim has changed hands, but it <em>throws</em> for
+      a filesystem mutex it could not take in time, an HTTP <code>503</code>, or
+      a DNS blip. None of those say who holds the lease, so they are retried on
+      the next tick rather than aborting a healthy build over a bad second.
+    </li>
+    <li>
+      <strong>The heartbeat never keeps a process alive</strong> — and, like any
+      timer, it does not fire while the event loop is blocked in synchronous
+      work. A run that blocks for longer than the TTL can therefore have its
+      lease lapse and be taken over; losing the claim then stops it, so the
+      outcome is a stopped run rather than two writers.
+    </li>
+    <li>
+      <strong>Whoever takes the claim gives it back.</strong> A resume releases
+      the lease it took on every path out, including one where the run fails — a
+      claim held by nobody would make a run that has demonstrably stopped look
+      like one still being worked on.
+    </li>
+    <li>
+      <strong>A crashed holder's claim lapses at the TTL.</strong> Nothing polls
+      for it: expiry is evaluated by the store the next time somebody tries to
+      acquire.
+    </li>
+  </ul>
 
   <h2 id="http">HTTP lock endpoints</h2>
   <table class="dtable">
