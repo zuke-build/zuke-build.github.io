@@ -547,11 +547,12 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <h2>Run processes without the footguns.</h2>
         <p class="lead">
           The <code>$</code> tagged template from <code>@zuke/core/shell</code>
-          escapes interpolations automatically, so untrusted values can't break
-          out of a command. Chain <code>.text()</code>, <code>.code()</code>, or
+          turns every interpolation into a discrete argv entry — no shell is
+          involved at all, so there is nothing for an untrusted value to break
+          out of. Chain <code>.text()</code>, <code>.code()</code>, or
           <code>.noThrow()</code> for exactly the behaviour you want.
         </p>
-        <a class="btn btn-ghost" href="/docs">Read the shell guide →</a>
+        <a class="btn btn-ghost" href="/docs/library#shell">Read the shell guide →</a>
       </div>
     </div>
   </section>
@@ -1020,7 +1021,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <li>The list is an <code>.array()</code> parameter, validated element-by-element before anything runs.</li>
           <li>The end of JSON-array-in-a-text-field: typed, checked, reportable inputs.</li>
         </ul>
-        <a class="btn btn-ghost" href="/docs/orchestration#fan-out">Read the fan-out guide →</a>
+        <a class="btn btn-ghost" href="/docs/orchestration#fanout">Read the fan-out guide →</a>
       </div>
       <div class="cd-visual" data-reveal>
         <div class="codecard panel">

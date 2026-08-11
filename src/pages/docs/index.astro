@@ -105,9 +105,16 @@ Total                  17.8s
   <Code code={installSnippet} lang="bash" theme="night-owl" />
   <div class="note">
     <p>
-      No Deno yet? The generated <code>./zuke</code> launcher will install a
-      pinned, known-good version on first run — so contributors don't need to set
-      anything up by hand.
+      The launcher <code>zuke setup</code> scaffolds runs <code>zuke.ts</code>
+      with the Deno on your <code>PATH</code>, and points at Deno's install docs
+      when there isn't one — a generated launcher has no pinned checksum to
+      verify a download against. For a fresh checkout that needs
+      <em>nothing</em> installed, copy Zuke's own
+      <a href="https://github.com/zuke-build/zuke/blob/master/zuke"><code>zuke</code></a>
+      / <a href="https://github.com/zuke-build/zuke/blob/master/zuke.ps1"><code>zuke.ps1</code></a>
+      launchers into your repo instead: they install a pinned Deno on first use,
+      verified against a per-platform SHA-256 (override with
+      <code>DENO_VERSION</code> plus its <code>DENO_SHA256</code>).
     </p>
   </div>
 
@@ -190,7 +197,10 @@ Total                  17.8s
     <p>
       Under GitHub Actions the same run renders as collapsible
       <code>::group::</code> blocks with <code>::error::</code> annotations and
-      secret masking, plus a matching Markdown summary table on the job page.
+      secret masking, plus a matching Markdown summary table on the job page. To
+      get the hardening, checkout, and run in one step, start the job with the
+      published <a href="/docs/github-action"><code>zuke-build/zuke</code>
+      action</a>.
     </p>
   </div>
 
@@ -256,6 +266,7 @@ Total                  17.8s
     <li><a href="/docs/ai-review">AI code review</a> — gate a build on a model-assessed security review with <code>@zuke/ai</code>.</li>
     <li><a href="/docs/self-healing">Self-healing builds</a> — let an AI fixer diagnose, suggest, and auto-fix a failed target, then re-run the real command to verify.</li>
     <li><a href="/docs/mcp">MCP server</a> — expose the build to AI agents as typed tools over the Model Context Protocol with <code>zuke mcp</code>.</li>
+    <li><a href="/docs/github-action">GitHub Action</a> — start a job with <code>zuke-build/zuke@v1</code>: harden the runner, check out, and run a target in one pinned step.</li>
     <li><a href="/examples">Examples</a> — real-world build files for Node, Deno libraries, Docker, and generated CI pipelines.</li>
     <li><a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR packages</a> — the full set of typed tool wrappers.</li>
   </ul>

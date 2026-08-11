@@ -5,6 +5,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 const toc = [
   { id: "bin-resolution", label: "Resolving from node_modules/.bin" },
   { id: "workspaces", label: "npm workspaces" },
+  { id: "managers", label: "Other package managers" },
   { id: "zuke-doc", label: "Reading a wrapper's API — zuke doc" },
   { id: "npm-tools", label: "Provisioning npm-registry tools" },
   { id: "setup-collision", label: "setup collision guard" },
@@ -22,6 +23,16 @@ const workspaceSnippet = `import { NpmTasks } from "jsr:@zuke/npm";
 
 await NpmTasks.run((s) => s.script("build").workspace("app"));         // one workspace
 await NpmTasks.run((s) => s.script("build").workspaces().ifPresent()); // every workspace, skipping those missing the script`;
+
+const managersSnippet = `import { BunTasks } from "jsr:@zuke/bun";
+import { NpxTasks } from "jsr:@zuke/npx";
+import { PnpmTasks } from "jsr:@zuke/pnpm";
+import { YarnTasks } from "jsr:@zuke/yarn";
+
+await PnpmTasks.install((s) => s.frozenLockfile());
+await BunTasks.run((s) => s.script("build"));
+await YarnTasks.add((s) => s.packages("zod").dev());
+await NpxTasks.npx((s) => s.command("cowsay").yes().execArgs("hello"));`;
 
 const docSnippet = `zuke doc core                      # jsr:@zuke/core
 zuke doc @scope/pkg                # a scoped package
@@ -95,6 +106,26 @@ const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # wri
   </p>
   <Code code={workspaceSnippet} lang="ts" theme="night-owl" />
 
+  <h2 id="managers">Other package managers</h2>
+  <p>
+    The same pattern applies to every JS package manager, each with its own
+    wrapper — and all of them default to
+    <a href="#bin-resolution"><code>node_modules</code>-first resolution</a>:
+  </p>
+  <Code code={managersSnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th>Package</th><th>Tasks</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>@zuke/npm</code></td><td><code>NpmTasks</code></td><td><code>install</code>, <code>ci</code>, <code>run</code>, <code>exec</code>, <code>publish</code>, <code>version</code></td></tr>
+      <tr><td><code>@zuke/bun</code></td><td><code>BunTasks</code></td><td><code>install</code>, <code>add</code>, <code>remove</code>, <code>run</code>, <code>x</code>, and <code>bun test</code></td></tr>
+      <tr><td><code>@zuke/pnpm</code></td><td><code>PnpmTasks</code></td><td><code>install</code>, <code>add</code>, <code>remove</code>, <code>run</code>, <code>dlx</code>, <code>publish</code> — with <code>--filter</code> for workspaces</td></tr>
+      <tr><td><code>@zuke/yarn</code></td><td><code>YarnTasks</code></td><td><code>install</code>, <code>add</code>, <code>remove</code>, <code>run</code>, <code>dlx</code> — Classic and Berry</td></tr>
+      <tr><td><code>@zuke/npx</code></td><td><code>NpxTasks</code></td><td>download and run a package binary in one step — npm's sibling of <code>bun x</code> and <code>pnpm dlx</code></td></tr>
+    </tbody>
+  </table>
+
   <h2 id="zuke-doc">Reading a wrapper's API — <code>zuke doc</code></h2>
   <p>
     <code>deno doc jsr:@zuke/deno</code> run inside a Node repo drowns the
@@ -136,3 +167,21 @@ const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # wri
   </p>
   <Code code={setupSnippet} lang="bash" theme="night-owl" />
 </DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

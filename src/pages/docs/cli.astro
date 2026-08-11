@@ -74,7 +74,8 @@ const runsSnippet = `./zuke ci --state                       # persist a run rec
 
 const resumeSnippet = `./zuke resume <run-id>                       # continue a suspended run
 ./zuke resume <run-id> --signal approved --data '{"by":"alice"}'
-./zuke resume --check                        # re-check predicate waits & timeouts
+./zuke resume --check                        # reap abandoned runs, then re-check waits & timeouts
+./zuke resume <run-id> --resume-degraded     # continue despite a lost state write
 ./zuke cancel <run-id> --actor ci-bot        # cancel and run compensations`;
 
 const mcpSnippet = `./zuke mcp                                   # read-only MCP server on stdio
@@ -257,6 +258,20 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     </tbody>
   </table>
   <Code code={listSnippet} lang="bash" theme="night-owl" />
+  <div class="note">
+    <p>
+      <strong>An unrecognised <code>--flag</code> is a hard error.</strong> Zuke
+      names it, suggests the nearest known flag when one is within two edits
+      (<code>--dry-rn</code> → <code>--dry-run</code>), and exits <code>1</code>
+      without running anything — a typo used to be silently ignored, which meant
+      <code>--dry-rn</code> ran the build for real. The same applies to an
+      unknown target name. <code>--help</code> still wins when it appears
+      alongside a bad flag, a bare <code>--</code> separator is skipped, and a
+      built-in given an inline value it does not accept
+      (<code>--skip=lint</code>) is told to pass the value as the next argument
+      instead.
+    </p>
+  </div>
 
   <h2 id="graph-ci">Graph & CI</h2>
   <p>
@@ -348,8 +363,9 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     <tbody>
       <tr><td><code>resume --signal &lt;name&gt;</code></td><td>deliver a named external signal to the run</td></tr>
       <tr><td><code>resume --data &lt;json&gt;</code></td><td>with <code>--signal</code>, the signal's JSON payload (default <code>&#123;&#125;</code>; capped at 64 KiB)</td></tr>
-      <tr><td><code>resume --check [&lt;id&gt;]</code></td><td>re-check predicate waits and enforce timeouts across suspended runs — the cron/webhook entry point</td></tr>
+      <tr><td><code>resume --check [&lt;id&gt;]</code></td><td>the cron/webhook entry point. Makes <strong>three passes</strong>: <a href="/docs/orchestration#reaping">reap abandoned runs</a> (a <code>running</code> record whose <a href="/docs/locks#lease">lease</a> can be acquired belongs to a dead process, so it returns to <code>suspended</code> and is resumed in the same sweep — or settles <code>failed</code> with its compensations if it is past the build's <a href="/docs/orchestration#deadline"><code>deadline()</code></a>), then finish runs left <code>cancelling</code> by a dead settler, then re-check predicate waits and enforce timeouts across suspended runs</td></tr>
       <tr><td><code>resume --force-graph</code></td><td>continue even if the build graph changed since the run was suspended</td></tr>
+      <tr><td><code>resume --resume-degraded</code></td><td>continue a resume whose record is <a href="/docs/state#degraded">degraded</a> (a state write was permanently lost, so a target that succeeded may still be recorded <code>running</code> — a resume would run it a second time). Also accepted by <code>--check</code>, which otherwise counts a degraded run as failed on every sweep</td></tr>
       <tr><td><code>resume --actor &lt;name&gt;</code>, <code>cancel --actor &lt;name&gt;</code></td><td>attribute the resume/cancellation in the audit trail</td></tr>
     </tbody>
   </table>
@@ -357,6 +373,18 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     <code>Ctrl-C</code> (or <code>SIGTERM</code>) during a run triggers the same
     graceful cancellation in-process; a second signal forces an immediate exit.
   </p>
+  <div class="note">
+    <p>
+      A resume <strong>refuses</strong> a run whose record is
+      <a href="/docs/state#degraded">degraded</a> and names the risk, because it
+      re-runs every target the record does not show as <code>succeeded</code> —
+      which for a deploy or a release would mean doing it twice.
+      <code>--resume-degraded</code> accepts that risk; use it once you know
+      those targets are safe to repeat. <code>zuke cancel</code> faces the same
+      gap from the other side and widens its compensation walk to every target
+      whose success the record cannot rule out.
+    </p>
+  </div>
 
   <h2 id="mcp">MCP & registry</h2>
   <p>
@@ -374,7 +402,7 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     </thead>
     <tbody>
       <tr><td><code>--allow-run[=&lt;globs&gt;]</code></td><td>let agents execute targets, not just inspect them; an optional comma-separated glob allow-list exposes only matching targets as run tools (others stay invisible)</td></tr>
-      <tr><td><code>--protect &lt;globs&gt;</code></td><td>require an operator token (<code>ZUKE_OPERATOR_TOKEN</code>) as a tool-call argument to run the matching targets</td></tr>
+      <tr><td><code>--protect &lt;globs&gt;</code></td><td>require an operator token (<code>ZUKE_OPERATOR_TOKEN</code>) as a tool-call argument for any run whose <strong>plan</strong> touches a matching target — so a protected <code>deploy</code> reached as a dependency of an unprotected <code>release</code> still demands it. Fail-closed: an unresolvable plan is denied, not assumed harmless</td></tr>
       <tr><td><code>--confirm-destructive</code></td><td>make a destructive run tool return its plan until called with <code>confirm:true</code> (a <code>.readOnly()</code> target is exempt)</td></tr>
       <tr><td><code>--registry</code></td><td>serve the <a href="/docs/registry">build registry</a> instead of this one build — expose every registered pipeline's targets, re-read live so a newly-registered build appears with no restart</td></tr>
       <tr><td><code>--max-concurrent-runs &lt;n&gt;</code></td><td>with <code>--registry</code>, cap concurrent run-tool spawns (default 4); a call past the cap gets an immediate busy error, read tools are never counted</td></tr>
@@ -424,6 +452,7 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
       <tr><td><code>ZUKE_REMOTE_CACHE_URL</code> / <code>ZUKE_REMOTE_CACHE_TOKEN</code></td><td>select an <code>HttpCacheStore</code> for the <a href="/docs/caching#remote">remote cache</a></td></tr>
       <tr><td><code>ZUKE_REMOTE_CACHE_DIR</code></td><td>select a <code>FileSystemCacheStore</code> at this directory</td></tr>
       <tr><td><code>ZUKE_ACTOR</code></td><td>default actor for a run when <code>--actor</code> is absent (before the CI actor and <code>"anonymous"</code>)</td></tr>
+      <tr><td><code>ZUKE_LOG_LEVEL</code></td><td>seeds the console threshold — <code>trace</code>, <code>debug</code>, <code>info</code> (the fallback), <code>warn</code>, <code>error</code>, or <code>silent</code>. See <a href="/docs/console#configure">Console output</a>. Colour follows <code>NO_COLOR</code> and TTY detection; GitHub annotation mode follows <code>GITHUB_ACTIONS</code></td></tr>
       <tr><td><code>ZUKE_TOOL_RESOLUTION</code></td><td>ambient override for how tool wrappers locate their binary: <code>path</code> (bare name on <code>$PATH</code>) or <code>node_modules</code> (npx-style <code>node_modules/.bin</code> walk). See <a href="/docs/installing-tools">installing tools</a></td></tr>
     </tbody>
   </table>

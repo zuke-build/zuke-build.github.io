@@ -1,0 +1,226 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "usage", label: "Using the action" },
+  { id: "inputs", label: "Inputs" },
+  { id: "pin", label: "Pin it, as you would any action" },
+  { id: "egress", label: "egress-policy starts at audit" },
+  { id: "ref", label: "ref is refused on secret-bearing events" },
+  { id: "generated", label: "Generated workflows use it too" },
+  { id: "log", label: "Log conventions" },
+];
+
+const usageSnippet = `jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: zuke-build/zuke@v1
+        with:
+          target: ci`;
+
+const pinSnippet = `- uses: zuke-build/zuke@<40-character-sha> # v1.0.2
+  with:
+    target: ci`;
+
+const blockSnippet = `- uses: zuke-build/zuke@<40-character-sha> # v1.0.2
+  with:
+    target: ci
+    egress-policy: block
+    allowed-endpoints: "jsr.io:443 deno.land:443 dl.deno.land:443"`;
+
+const refusalSnippet = `Error: Refusing to check out a custom ref on a pull_request_target event: it
+runs with this repository's secrets and a writable token, so checking out a ref
+a contributor controls hands them both. Use 'pull_request', or drop the 'ref'
+input.`;
+
+const generatedSnippet = `class Ci extends Build {
+  // Every generated job opens with the pinned zuke-build/zuke action.
+  pipeline = cicd({ provider: "github" });
+}
+
+// Opt a job (or the whole pipeline) out of the prelude:
+//   cicd({ provider: "github", pipeline: { bootstrap: false } })
+// …or pin the action yourself:
+//   cicd({ provider: "github", pipeline: { bootstrap: { action: { ref: "…", version: "v1.0.2" } } } })`;
+---
+
+<DocsLayout
+  title="The zuke-build/zuke action"
+  description="The composite GitHub Action that hardens the runner, checks out the repository, and runs a Zuke target — its inputs, why egress-policy defaults to audit, why a custom ref is refused on secret-bearing events, and how cicd() emits it as every generated job's prelude."
+  toc={toc}
+>
+  <p class="lead">
+    The steps every Zuke job starts with — harden the runner, check out, run a
+    target — are published as a <strong>composite action</strong> on the GitHub
+    Marketplace, so a workflow does not repeat them. It is also what
+    <a href="/docs/concepts#cicd"><code>cicd()</code></a> emits as the first step
+    of every generated GitHub job, so Zuke's own workflows exercise the same
+    entry point it ships.
+  </p>
+
+  <h2 id="usage">Using the action</h2>
+  <Code code={usageSnippet} lang="yaml" theme="night-owl" />
+  <p>
+    It is the <strong>first</strong> step, with nothing before it: a remote
+    action is fetched by the runner rather than from your workspace, so it needs
+    no checkout — which is the point, since
+    <a href="https://github.com/step-security/harden-runner">harden-runner</a>
+    only governs what runs <em>after</em> it.
+  </p>
+  <div class="note">
+    <p>
+      Running a target needs a committed <code>./zuke</code> launcher in the
+      repository (which is what <a href="/docs"><code>zuke setup</code></a>
+      writes); the step fails with an annotation saying so if there isn't one. A
+      job that only wants the hardening and the checkout omits
+      <code>target</code> and gets neither requirement.
+    </p>
+  </div>
+
+  <h2 id="inputs">Inputs</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Input</th><th>Default</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>target</code></td><td><code>""</code></td><td>The Zuke target to run. Omit to harden and check out only.</td></tr>
+      <tr><td><code>egress-policy</code></td><td><code>audit</code></td><td><code>audit</code> records outbound traffic; <code>block</code> enforces <code>allowed-endpoints</code>. See <a href="#egress">below</a>.</td></tr>
+      <tr><td><code>allowed-endpoints</code></td><td><code>""</code></td><td>Space-separated <code>host:port</code> list permitted under <code>block</code>.</td></tr>
+      <tr><td><code>persist-credentials</code></td><td><code>false</code></td><td>Leave the token in git config, for a later push.</td></tr>
+      <tr><td><code>fetch-depth</code></td><td><code>1</code></td><td>Commits to fetch. <code>0</code> is the full history, which a secret scan needs.</td></tr>
+      <tr><td><code>ref</code></td><td><code>""</code></td><td>Branch, tag, or SHA to check out. Empty follows the event. Refused on secret-bearing events — see <a href="#ref">below</a>.</td></tr>
+      <tr><td><code>deno-version</code></td><td><code>""</code></td><td>Install this Deno. Usually unnecessary — a committed <code>./zuke</code> launcher bootstraps its own.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="pin">Pin it, as you would any other action</h2>
+  <p>
+    <code>@v1</code> is a tag that <strong>moves</strong>. Whoever can move it
+    can run code in your job — and because you have delegated your hardening to
+    this step, a moved tag could simply not harden. Pin the full commit SHA,
+    with the version beside it:
+  </p>
+  <Code code={pinSnippet} lang="yaml" theme="night-owl" />
+  <p>
+    Dependabot bumps that line for you and writes the new version into the
+    comment. The <code>@v1</code> form above is the shorter thing to read in a
+    snippet; it is not the thing to commit.
+  </p>
+  <div class="note">
+    <p>
+      The <code>v1</code> tag namespace belongs to the action alone. The
+      packages release under component tags (<code>core-v1.9.0</code>,
+      <code>cli-v1.0.0</code>, …), so <code>v1</code> here means
+      <em>this action</em> and never "Zuke 1.0". See
+      <a href="/docs/versioning">Versioning</a>.
+    </p>
+  </div>
+
+  <h2 id="egress"><code>egress-policy</code> starts at <code>audit</code>, not <code>block</code></h2>
+  <p>
+    Note the divergence: harden-runner's own default is <code>block</code>, and
+    this action's is <code>audit</code>. That is deliberate —
+    <code>block</code> with an empty <code>allowed-endpoints</code> fails a
+    build on its first outbound request, which is a poor first run — but it
+    means the default configuration <strong>records</strong> egress rather than
+    enforcing it. To actually enforce, run once on <code>audit</code>, take the
+    endpoint list from the run's insights, then set both:
+  </p>
+  <Code code={blockSnippet} lang="yaml" theme="night-owl" />
+  <div class="note">
+    <p>
+      One caveat worth confirming before you rely on it: harden-runner's
+      blocking support has historically been <strong>Linux-only</strong> on
+      GitHub-hosted runners, degrading to audit on macOS and Windows rather than
+      failing. A matrix job that sets <code>block</code> may therefore be
+      enforcing on one leg and recording on the others — check
+      <a href="https://github.com/step-security/harden-runner">harden-runner's
+      own docs</a> for the version you have pinned.
+    </p>
+  </div>
+
+  <h2 id="ref"><code>ref</code> is refused on every secret-bearing event</h2>
+  <p>
+    <code>ref</code> checks out something other than what the event points at —
+    the head branch of a pull request, say, so a job can push a fix back to it.
+    On <code>pull_request</code> that is ordinary: the token is read-only and
+    secrets are absent.
+  </p>
+  <p>
+    On <strong><code>pull_request_target</code></strong> it is not. That event
+    runs with the base repository's secrets and a writable token, so a
+    <code>ref</code> aimed at a contributor's head puts <em>their</em>
+    <code>zuke.ts</code> in the workspace — and the last step executes it. No
+    configuration makes that safe, so the action refuses it outright:
+  </p>
+  <Code code={refusalSnippet} lang="text" theme="night-owl" />
+  <p>
+    The guard is an <strong>allow-list, not a deny-list for one event</strong>.
+    A custom <code>ref</code> is permitted only on <code>pull_request</code>,
+    <code>push</code>, <code>merge_group</code>,
+    <code>workflow_dispatch</code>, <code>schedule</code>, and
+    <code>release</code>; every other event — <code>issue_comment</code>,
+    <code>workflow_run</code>, and anything GitHub adds later — is refused. A
+    deny-list of what is dangerous today would be silently wrong the moment the
+    list grew.
+  </p>
+  <p>
+    It is also <strong>not keyed on <code>target</code></strong>: a
+    <code>ref</code> checkout with no target is refused just the same, because a
+    caller who omits it and writes <code>run: ./zuke ci</code> in their own next
+    step reaches the identical outcome.
+  </p>
+
+  <h2 id="generated">Generated workflows use it too</h2>
+  <p>
+    <a href="/docs/concepts#cicd"><code>cicd()</code></a> emits this action as
+    every generated GitHub job's <strong>prelude</strong> step, pinned by SHA
+    with its version comment, so the workflow Zuke writes for you starts exactly
+    the way the snippet above does. A job that already pins its own checkout
+    action, or whose steps cover the prelude, keeps what it declares.
+  </p>
+  <Code code={generatedSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Zuke's own workflows all open with
+    <code>uses: zuke-build/zuke@&lt;sha&gt;</code>, so the repository dogfoods
+    the entry point it publishes.
+  </p>
+
+  <h2 id="log">Log conventions</h2>
+  <p>
+    Independently of the action, when Zuke detects it is running under GitHub
+    Actions (<code>GITHUB_ACTIONS=true</code>) it switches to that runner's log
+    conventions automatically — no configuration:
+  </p>
+  <ul>
+    <li>each target becomes a <strong>collapsible log group</strong>, so the workflow log stays tidy and every target is easy to find;</li>
+    <li>a failing target emits an <strong><code>::error::</code> annotation</strong>, surfaced on the run and in the diff;</li>
+    <li>secret values are masked through the runner's own mask directive; and</li>
+    <li>the per-target summary is written to the <strong>job summary</strong> as a table.</li>
+  </ul>
+  <p>
+    See <a href="/docs/console">Console output</a> for the renderer behind it,
+    and <a href="/docs/concepts#cicd">Code-first CI/CD</a> for generating the
+    workflow itself.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

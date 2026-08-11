@@ -314,6 +314,30 @@ build    <span class="ok">Succeeded</span>      2.2s
     threshold and <code>reset()</code> restores the defaults.
   </p>
   <Code code={configureSnippet} lang="ts" theme="night-owl" />
+  <table class="dtable">
+    <thead>
+      <tr><th><code>ConsoleOptions</code> field</th><th>Effect</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>level</code></td><td>The minimum severity to print. Default: seeded from <code>ZUKE_LOG_LEVEL</code>, falling back to <code>info</code> when it is unset or unrecognised.</td></tr>
+      <tr><td><code>sink</code></td><td>Where rendered lines go — an <code>&#123; out(line), err(line) &#125;</code> target (default: stdout/stderr). Handy for capturing output in tests.</td></tr>
+      <tr><td><code>theme</code></td><td>A custom colour palette (a <code>Theme</code>).</td></tr>
+      <tr><td><code>color</code></td><td>Force ANSI colour on or off. Default: auto — a TTY with <code>NO_COLOR</code> unset.</td></tr>
+      <tr><td><code>width</code></td><td>Force the width used for rules, boxes, and wrapping. Default: the terminal width.</td></tr>
+      <tr><td><code>github</code></td><td>Force GitHub Actions output formatting. Default: auto-detected from <code>GITHUB_ACTIONS</code>.</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <p>
+      Left unset, <code>color</code>, <code>width</code>, and
+      <code>github</code> are auto-detected <strong>per call</strong>: colour
+      follows <code>NO_COLOR</code> and TTY detection, width follows the
+      terminal, and GitHub mode follows <code>GITHUB_ACTIONS</code>. So the same
+      build renders correctly in a terminal, a pipe, and a workflow log without
+      configuration — see <a href="/docs/github-action#log">the GitHub Action
+      page</a> for what changes on a runner.
+    </p>
+  </div>
   <p class="io-hint">
     <code>configure</code> prints nothing itself — it changes what later calls
     emit. With <code>level: "debug"</code> the <code>trace</code> line above stays
@@ -366,6 +390,22 @@ build    <span class="ok">Succeeded</span>      2.2s
 </DocsLayout>
 
 <style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+
   /* rendered-output cards under each example */
   /* constant-dark terminal window in both modes; redefine theme vars so the
      bright token colors below never wash out on light "paper" mode. */

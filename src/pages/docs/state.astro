@@ -8,6 +8,7 @@ const toc = [
   { id: "precedence", label: "Store selection precedence" },
   { id: "interfaces", label: "StateStore interface & RunRecord" },
   { id: "backends", label: "FileSystem vs HTTP backends" },
+  { id: "degraded", label: "Degraded records" },
   { id: "cli", label: "zuke runs CLI" },
   { id: "retention", label: "Retention" },
   { id: "http-api", label: "HTTP REST contract" },
@@ -50,6 +51,7 @@ export type TargetRunStatus = "pending" | "running" | "waiting" | "succeeded" | 
 export interface TargetRunState {
   status: TargetRunStatus; meta: Record<string, JsonValue>;
   startedAt?: string; endedAt?: string; error?: string; waitingFor?: WaitState;
+  effects?: Record<string, EffectState>;    // per-effect intent + settlement, for crash re-drive
 }
 export interface RunRecord {
   id: string; build: string; rootTarget: string; status: RunStatus; actor: string;
@@ -58,7 +60,10 @@ export interface RunRecord {
   params: Record<string, string>;           // resolved, NON-secret params only
   targets: Record<string, TargetRunState>;
   signals: Record<string, SignalRecord>;    // { data, receivedAt }
-  events: RunEvent[];                       // append-only MCP audit trail
+  events: RunEvent[];                       // append-only audit trail (MCP calls, reap events)
+  degraded?: boolean;                       // a state write was permanently lost — see below
+  deadlineAt?: string;                      // from Build.deadline(), enforced by the reaping sweep
+  intendedTerminal?: RunStatus;             // set when a run enters "cancelling"; absent means "cancelled"
 }
 export interface RunQuery { status?: RunStatus; target?: string; since?: string; limit?: number; }
 export interface RunSummary { id; build; rootTarget; status; actor; createdAt; updatedAt; }`;
@@ -92,7 +97,7 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
 
 <DocsLayout
   title="Durable run state"
-  description="Zuke's durable run state: ctx.state / TargetStateHandle for writing per-target metadata, the StateStore interface and RunRecord it persists, store selection precedence (execute() option, Build.stateStore(), ZUKE_STATE_URL/DIR, --state), FileSystem vs HTTP backends, zuke runs list/show, the HTTP REST contract, and the secret-exclusion guarantee."
+  description="Zuke's durable run state: ctx.state / TargetStateHandle for writing per-target metadata, the StateStore interface and RunRecord it persists, store selection precedence (execute() option, Build.stateStore(), ZUKE_STATE_URL/DIR, --state), FileSystem vs HTTP backends, degraded records, zuke runs list/show, the HTTP REST contract, and the secret-exclusion guarantee."
   toc={toc}
 >
   <p class="lead">
@@ -197,6 +202,88 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     A <a href="#api-stability">conformance kit</a> verifies a hosted HTTP
     backend against the same contract before you trust it in production.
   </p>
+
+  <h2 id="degraded">Degraded records</h2>
+  <p>
+    Most dropped writes lose nothing. The writer applies its mutation at the top
+    of its retry loop, so a compare-and-swap that conflicts is simply re-applied
+    to the freshly-read record on the next attempt; and when it gives up because
+    the run vanished from the store, or because the store threw, the mutation is
+    still held in memory for any later write to re-persist. Those paths warn and
+    carry on.
+  </p>
+  <p>
+    One path genuinely loses a write. If a <strong>foreign writer</strong> — an
+    MCP audit append, a concurrent <code>zuke cancel</code> — wins the
+    compare-and-swap race often enough to exhaust the writer's retry budget, the
+    last attempt's mutation is discarded along with the base it was applied to.
+    The writer then sets <code>degraded: true</code> on the record, and the next
+    write that <em>does</em> land persists the flag (the failing write, by
+    definition, could not carry it). <code>zuke runs show</code> prints it. So
+    <code>degraded</code> means exactly one thing:
+    <strong>a mutation was permanently lost.</strong>
+  </p>
+  <p>
+    The concrete consequence is a target that <em>succeeded</em> but is still
+    recorded <code>running</code> or <code>pending</code>. That matters in two
+    directions:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Operation</th><th>What a degraded record changes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>zuke resume</code></td>
+        <td>
+          A resume trusts the record as written and re-runs every target it does
+          not show as <code>succeeded</code> — so that target would run a
+          <strong>second time</strong>, which for a deploy or a release means
+          doing it twice. Resume therefore <strong>refuses</strong> a degraded
+          record and names the risk;
+          <code>--resume-degraded</code> accepts it and continues, because the
+          operator — not Zuke — knows whether the target is safe to repeat.
+        </td>
+      </tr>
+      <tr>
+        <td><code>zuke resume --check</code></td>
+        <td>
+          Counts a degraded run as <strong>failed</strong> on every sweep until
+          an operator resolves it, and prints the refusal so the cause is
+          visible: a sweep cannot make that call, and a non-zero result is the
+          only channel a cron watches. Pass <code>--resume-degraded</code> to
+          the sweep to let it through.
+        </td>
+      </tr>
+      <tr>
+        <td><code>zuke cancel</code></td>
+        <td>
+          Normally compensates the targets recorded <code>succeeded</code>; on a
+          degraded record that test would skip a deploy that really happened. So
+          cancel <strong>widens</strong> the walk to every target whose success
+          it cannot rule out — anything not recorded <code>failed</code> or
+          <code>skipped</code> — and its output says the record was incomplete,
+          not that the target had succeeded.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Under-cleanup is the more dangerous direction: a compensation that runs for
+    work which never happened is a no-op for an idempotent rollback (a delete of
+    what was never created), while one that is skipped leaves the side effect in
+    place. The run stays <code>suspended</code> either way, so it remains
+    resumable.
+  </p>
+  <div class="note">
+    <p>
+      If <em>no</em> later write ever lands — a store that stays down for the
+      rest of the run — the flag never reaches the store. That run also never
+      records its transition to <code>suspended</code>, so there is nothing for
+      a resume to continue: it reports the run as missing or not suspended
+      rather than resuming a record it cannot trust.
+    </p>
+  </div>
 
   <h2 id="cli">zuke runs CLI</h2>
   <Code code={cliSnippet} lang="bash" theme="night-owl" />
