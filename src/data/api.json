@@ -3463,6 +3463,22 @@
           ]
         },
         {
+          "name": "ForeignRunError",
+          "kind": "class",
+          "doc": "Thrown when a recovery path is handed a run that a **different** build owns:\nthe run's recorded origin and this process's disagree.\n\nA sweep treats it as \"not mine\" and moves on rather than counting a failure,\nthe same way it treats a run another process has already resumed. A command\nthat named one run reports it, because the operator asked about a run that is\nnot this build's to touch.",
+          "signature": "class ForeignRunError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
           "name": "formatDuration",
           "kind": "function",
           "doc": "Format a duration in milliseconds as `1.2s`.",
@@ -4479,6 +4495,13 @@
           ]
         },
         {
+          "name": "ownsRun",
+          "kind": "function",
+          "doc": "Whether a process whose origin is `buildId` may recover `record`.\n\nTrue unless both origins are known and differ — see the module documentation\nfor why an absent origin abstains rather than refusing.",
+          "signature": "function ownsRun(record: RunRecord, buildId: string | undefined): boolean",
+          "deprecated": false
+        },
+        {
           "name": "pad",
           "kind": "function",
           "doc": "Pad `text` to `width` visible columns, aligning left (default) or right.",
@@ -5063,6 +5086,13 @@
           ]
         },
         {
+          "name": "resolveBuildId",
+          "kind": "function",
+          "doc": "The origin of the build running in this process — `ZUKE_BUILD_ID`, else\n`GITHUB_REPOSITORY`, else `undefined` when neither is set.\n\nRecorded on a run at creation and compared by every recovery path. An empty\nvalue counts as unset, so an exported-but-empty variable does not become an\norigin that matches nothing.",
+          "signature": "function resolveBuildId(readEnv: unknown): string | undefined",
+          "deprecated": false
+        },
+        {
           "name": "resolveBuildRegistry",
           "kind": "function",
           "doc": "Pick the build registry by precedence: an explicit `option` wins (`false`\ndisables the registry entirely), then a `declared` registry (a build's\n`registry()` override), then the {@link envBuildRegistry} environment\nfallback, then — only when {@link ResolveRegistryOptions.enableDefault} — a\nfilesystem registry under `<root>/.zuke/builds`.",
@@ -5487,6 +5517,22 @@
           ]
         },
         {
+          "name": "RunNotSuspendedError",
+          "kind": "class",
+          "doc": "Raised when a run is no longer `suspended` by the time a resume reaches it —\nit has been settled, or a cancellation is in progress.\n\nThe counterpart to {@link AlreadyResumedError}, which covers a run another\nprocess is *currently* driving. This covers one that already finished, and a\nsweep treats it the same way: not its run to advance, and not a failure. Two\nsweeps racing the same run is the normal case — one wins, and the loser\nreading `succeeded` has discovered a success, not a fault. Counting it would\nput a false alarm in the exit code a cron watches.",
+          "signature": "class RunNotSuspendedError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
           "name": "RunOptions",
           "kind": "interface",
           "doc": "Options for {@link run}.",
@@ -5573,6 +5619,13 @@
               "optional": false,
               "signature": "build: string",
               "doc": "The build class name."
+            },
+            {
+              "name": "buildId",
+              "kind": "property",
+              "optional": true,
+              "signature": "buildId?: string",
+              "doc": "Which build **instance** this run belongs to — `ZUKE_BUILD_ID`, else\n`GITHUB_REPOSITORY`, resolved once at creation. Absent when neither was set\n(and on every record written before this field existed).\n\nThe class name above cannot identify a build: a `zuke.ts` templated across\na dozen services shares its name, its target names and its graph shape, so\nevery shape-based check passes and one service's recovery sweep would drive\nanother's runs with its own target bodies. This is what a recovery path\ncompares; see {@link \"../ownership.ts\"}."
             },
             {
               "name": "rootTarget",
