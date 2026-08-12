@@ -157,6 +157,7 @@ const featureGroups = [
     items: [
       { t: "AI in your pipeline", d: "Typed wrappers for Claude Code, Codex, and Gemini CLI run headless in CI, injection-free." },
       { t: "AI code-review gate", d: "A model reads the diff, returns a structured risk score, and breaks the build when it crosses your threshold." },
+      { t: "Findings you can argue with", d: "The reviewer refutes its own weak findings, then adjudicates rebuttals from trusted reviewers on the PR — and remembers what it dismissed." },
       { t: "Self-healing builds", d: "Attach a fixer with .recoverWith(); @zuke/ai diagnoses a failure and can apply, commit, and re-run to verify." },
     ],
   },
@@ -637,19 +638,23 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     <div class="container review-grid">
       <div data-reveal>
         <span class="eyebrow">AI code review <span class="tag-new">New</span></span>
-        <h2>Let a model <span class="gradient-text">gate the build</span>.</h2>
+        <h2>A reviewer that <span class="gradient-text">argues its case</span>.</h2>
         <p class="lead">
           <code>@zuke/ai</code> attaches an AI reviewer to a target as a
           validation. It reads the diff, asks the model for a
           <strong>structured risk assessment</strong>, and breaks the build when
           the score crosses your threshold — a real verdict your pipeline can
-          branch on, not a blob of prose.
+          branch on, not a blob of prose. And because a gate is only worth having
+          if its findings are, the reviewer
+          <strong>refutes what it can't defend</strong> and
+          <strong>talks the rest through with your team</strong>.
         </p>
         <ul class="ticks">
+          <li><strong><code>.verify()</code> attacks its own findings</strong> — a second pass refutes any whose failure path it can't concretely trace.</li>
+          <li><strong><code>.discussion()</code> reads the PR thread</strong> — quote a finding's ID to contest it and the reviewer upholds it or dismisses it on the merits, then remembers the dismissal.</li>
+          <li><code>.fileContext()</code> and <code>.conventionsFile()</code> judge whole files against <em>your</em> rules — not lone hunks against generic taste.</li>
           <li>Security, secrets, correctness, licensing, or code quality — built-in rubrics, tunable with <code>.criteria()</code>.</li>
-          <li>Claude, OpenAI, or Gemini, with the JSON shape enforced server-side.</li>
-          <li><strong><code>.comment()</code> posts the verdict to the PR/MR</strong> — GitHub, GitLab, Azure &amp; Bitbucket.</li>
-          <li><strong><code>aiReviewWorkflow()</code> generates the CI workflow</strong> from your reviewers, for every host.</li>
+          <li><strong><code>.comment()</code> posts the verdict to the PR/MR</strong> — GitHub, GitLab, Azure &amp; Bitbucket — and <code>aiReviewWorkflow()</code> generates the CI workflow for every host.</li>
         </ul>
         <div class="providers">
           <span class="providers__label">Works with</span>
@@ -687,11 +692,38 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           </div>
           <div class="review__meter"><span style="width:80%"></span></div>
           <ul class="review__findings">
-            <li><span class="sevtag sevtag--high">HIGH</span> Hard-coded API token in <code>src/config.ts:42</code></li>
-            <li><span class="sevtag sevtag--med">MED</span> Unvalidated redirect in <code>routes/login.ts</code></li>
-            <li><span class="sevtag sevtag--low">LOW</span> Stack trace leaked in error response</li>
+            <li>
+              <span class="sevtag sevtag--high">HIGH</span>
+              <span class="ftext">Hard-coded API token in <code>src/config.ts:42</code></span>
+              <span class="fmeta"><span class="fid">a1b2c3d4</span></span>
+            </li>
+            <li class="is-out">
+              <span class="sevtag sevtag--med">MED</span>
+              <span class="ftext">Open redirect in <code>routes/login.ts</code></span>
+              <span class="fmeta"><span class="fid">e5f6a7b8</span><span class="fout">dismissed</span></span>
+            </li>
+            <li class="is-out">
+              <span class="sevtag sevtag--low">LOW</span>
+              <span class="ftext">Stack trace leaked in error response</span>
+              <span class="fmeta"><span class="fid">c9d0e1f2</span><span class="fout">refuted</span></span>
+            </li>
           </ul>
-          <p class="review__foot">via @zuke/ai · claude-opus-4-8 · tokens: 1234 in · 567 out · 1801 total</p>
+          <p class="review__pass">
+            <span class="review__passdot"></span>verification refuted 1 candidate — no
+            traceable failure path
+          </p>
+          <div class="review__thread">
+            <p class="review__msg">
+              <span class="review__who">maintainer</span>
+              <code>e5f6a7b8</code> — that target is allow-listed in <code>config.ts</code>.
+            </p>
+            <p class="review__msg review__msg--bot">
+              <span class="review__who">🤖 Zuke AI review</span>
+              Dismissed <code>e5f6a7b8</code> — the allow-list covers every branch
+              into the redirect. Won't be re-raised.
+            </p>
+          </div>
+          <p class="review__foot">via @zuke/ai · claude-opus-4-8 · verify + discussion · tokens: 1234 in · 567 out · 1801 total</p>
         </div>
       </div>
     </div>
@@ -1570,7 +1602,64 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     font-size: 0.86rem;
     color: var(--text-dim);
   }
+  .review__findings li { flex-wrap: wrap; }
   .review__findings code { font-size: 0.82em; color: var(--cyan); }
+  .review__findings .is-out .ftext { color: var(--text-faint); text-decoration: line-through; }
+  .review__findings .is-out code { color: var(--text-faint); }
+  .review__findings .is-out .sevtag { opacity: 0.5; }
+  .ftext { flex: 1 1 24ch; min-width: 0; }
+  .fmeta { flex: none; display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .fid, .fout {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    padding: 1px 6px;
+    border-radius: 999px;
+    text-decoration: none;
+  }
+  .fid { color: var(--text-faint); border: 1px solid var(--border); }
+  .fout {
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .review__pass {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+  .review__passdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    flex: none;
+  }
+  .review__thread { display: grid; gap: 8px; margin-top: 14px; }
+  .review__msg {
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .review__msg--bot { border-color: var(--cyan); margin-left: 16px; }
+  .review__who {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-faint);
+    margin-bottom: 3px;
+  }
+  .review__msg--bot .review__who { color: var(--cyan); }
   .review__foot {
     margin: 16px 0 0;
     padding-top: 14px;

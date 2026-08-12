@@ -263,7 +263,7 @@ Total                  17.8s
     <li><a href="/docs/library">Core library</a> — the built-in helpers: file tasks, globbing, HTTP, compression, tool installs, assertions, and paths.</li>
     <li><a href="/docs/installing-tools">Installing tools</a> — fetch the CLIs a build drives, pinned by SHA-256, verified, and cached (<code>ToolTasks.install()</code>, <code>toolchain()</code>).</li>
     <li><a href="/docs/console">Console output</a> — rich terminal output with <code>@zuke/console</code>: markup, rules, boxes, tables, and a levelled logger.</li>
-    <li><a href="/docs/ai-review">AI code review</a> — gate a build on a model-assessed security review with <code>@zuke/ai</code>.</li>
+    <li><a href="/docs/ai-review">AI code review</a> — gate a build on a model-assessed security review with <code>@zuke/ai</code>: an adversarial <code>.verify()</code> pass that refutes its own weak findings, and a <code>.discussion()</code> mode that argues rebuttals out on the pull request and remembers what it dismissed.</li>
     <li><a href="/docs/self-healing">Self-healing builds</a> — let an AI fixer diagnose, suggest, and auto-fix a failed target, then re-run the real command to verify.</li>
     <li><a href="/docs/mcp">MCP server</a> — expose the build to AI agents as typed tools over the Model Context Protocol with <code>zuke mcp</code>.</li>
     <li><a href="/docs/github-action">GitHub Action</a> — start a job with <code>zuke-build/zuke@v1</code>: harden the runner, check out, and run a target in one pinned step.</li>

@@ -571,7 +571,7 @@ await run(DeployBuild);`,
     id: "ai-review",
     tag: "AI / review",
     title: "AI code-review gate",
-    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff, asks the model for a structured risk score, breaks the build when it crosses your threshold, and upserts the verdict as a PR comment. aiReviewWorkflow() generates the matching CI workflow from the reviewer.",
+    desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff (plus the whole changed files and your conventions doc), asks the model for a structured risk score, refutes its own findings in an adversarial .verify() pass, breaks the build when the score crosses your threshold, and upserts the verdict as a PR comment. With .discussion() it also reads the thread: quote a finding's ID to contest it and the reviewer upholds or dismisses it on the merits, remembering the dismissal on later runs. aiReviewWorkflow() generates the matching CI workflow from the reviewer.",
     code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
 import { aiReviewWorkflow, securityReviewer } from "jsr:@zuke/ai";
@@ -585,9 +585,13 @@ class ReviewBuild extends Build {
       .apiKey(this.key)
       .diff((d) => d.base("origin/main"))   // review the PR diff
       .maxDiffTokens(20_000)                 // keep cost bounded
+      .conventionsFile("AGENTS.md")          // judge against the project's own rules
+      .fileContext()                         // whole changed files, not lone hunks
+      .verify()                              // second pass refutes unprovable findings
       .failWhen((g) => g.scoreAbove(7))      // break the build above 7/10
       .skipIfKeyMissing()                    // no key (forks) → skip + announce
       .comment()                             // upsert the verdict as a PR/MR comment
+      .discussion()                          // adjudicate rebuttals on the PR thread
   );
 
   test = target()
