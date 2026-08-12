@@ -22672,6 +22672,13 @@
               "doc": "The literal diff text supplied via {@link DiffSettings.text}, if any."
             },
             {
+              "name": "base_",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_(): string | undefined",
+              "doc": "The base ref supplied via {@link DiffSettings.base}, if any."
+            },
+            {
               "name": "fetch_",
               "kind": "method",
               "optional": false,
@@ -22684,6 +22691,57 @@
               "optional": false,
               "signature": "argv_(): string[]",
               "doc": "The `git` argv this diff source resolves to."
+            }
+          ]
+        },
+        {
+          "name": "DiscussionSettings",
+          "kind": "class",
+          "doc": "Fluent settings for {@link \"./reviewer.ts\".Reviewer.discussion} — who the\nreviewer listens to on the PR thread, and how much of it the model may see.",
+          "signature": "class DiscussionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "trustAssociations",
+              "kind": "method",
+              "optional": false,
+              "signature": "trustAssociations(...associations: string[]): this",
+              "doc": "Replace the trusted `author_association` set (default `OWNER`, `MEMBER`,\n`COLLABORATOR`). Comments from authors outside it (and outside\n{@link trustAuthors}) are dropped before the model sees them."
+            },
+            {
+              "name": "trustAuthors",
+              "kind": "method",
+              "optional": false,
+              "signature": "trustAuthors(...logins: string[]): this",
+              "doc": "Trust these author logins in addition to the association rule — e.g. an\noutside collaborator whose review the project wants the reviewer to\nengage with."
+            },
+            {
+              "name": "maxCommentTokens",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxCommentTokens(tokens: number): this",
+              "doc": "Cap the total comment text sent to the model at roughly this many tokens\n(default 4000), newest comments kept first — so a wall of text cannot\ncrowd the diff and the rubric out of the context window."
+            },
+            {
+              "name": "associations_",
+              "kind": "method",
+              "optional": false,
+              "signature": "associations_(): string[]",
+              "doc": "INTERNAL: the trusted association set."
+            },
+            {
+              "name": "authors_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authors_(): string[]",
+              "doc": "INTERNAL: the extra trusted author logins."
+            },
+            {
+              "name": "maxTokens_",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxTokens_(): number",
+              "doc": "INTERNAL: the total comment-token cap."
             }
           ]
         },
@@ -23111,8 +23169,8 @@
               "name": "comment",
               "kind": "method",
               "optional": false,
-              "signature": "comment(): this",
-              "doc": "Also post the review to the pull/merge request as a comment. Works on\nevery supported CI host — GitHub Actions, GitLab CI, Azure Pipelines,\nBitbucket Pipelines — dispatched at runtime by {@link detectCiHost}. A\nsingle comment per reviewer is kept up to date across re-runs. A no-op\noutside a PR context (e.g. local runs). On each host the workflow must\ngrant the right scope: GitHub `pull-requests: write`, GitLab a token with\nthe `api` scope, Azure `System.AccessToken`, Bitbucket an app password."
+              "signature": "comment(mode?: update | append): this",
+              "doc": "Also post the review to the pull/merge request as a comment. Works on\nevery supported CI host — GitHub Actions, GitLab CI, Azure Pipelines,\nBitbucket Pipelines — dispatched at runtime by {@link detectCiHost}. A\nno-op outside a PR context (e.g. local runs). On each host the workflow\nmust grant the right scope: GitHub `pull-requests: write`, GitLab a token\nwith the `api` scope, Azure `System.AccessToken`, Bitbucket an app\npassword.\n\n`mode` chooses how re-runs post: `\"update\"` (default) keeps a single\ncomment per reviewer, edited in place; `\"append\"` posts a fresh comment\nevery run, so earlier assessments — and their finding ids — stay on the\nthread as history. The discussion feature works with both: its state block\nrides on every comment, and the newest one is read back."
             },
             {
               "name": "commentToken",
@@ -23176,6 +23234,34 @@
               "optional": false,
               "signature": "suppress(suppressions: Suppressions): this",
               "doc": "Hide findings whose stable ID is in a {@link Suppressions} list — a learned\nset of dismissed false positives. Every finding is fingerprinted and its ID\nsurfaced in the report, so dismissing one is a copy-paste into the list."
+            },
+            {
+              "name": "conventionsFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "conventionsFile(path: string, maxTokens?: number): this",
+              "doc": "Feed the project's conventions document (e.g. `AGENTS.md`) to the model as\nreference material, so the review judges the change against the project's\ndocumented rules instead of generic taste. When the diff has a base ref\n(`.diff((d) => d.base(...))` or a successful `.fetchBase()`), the file is\nread from that **base** via `git show` — never from the head under review,\nso a pull request cannot rewrite the rules it is judged by. Without a base\n(a local working-tree review) it is read from disk. Truncated at roughly\n`maxTokens` (default 8000)."
+            },
+            {
+              "name": "fileContext",
+              "kind": "method",
+              "optional": false,
+              "signature": "fileContext(maxTokens?: number): this",
+              "doc": "Also send the full post-image contents of the changed files (read via\n`git show HEAD:<path>`), bounded at roughly `maxTokens` (default 12000) —\nso the model can check a finding against the surrounding code (an existing\nguard, a validation a few lines away) instead of judging hunks in\nisolation. Skipped silently for a literal `.diff((d) => d.text(...))`\nsource with no repository behind it."
+            },
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(): this",
+              "doc": "Add an adversarial verification pass: after the review produces candidate\nfindings, a second model call re-checks each against the diff (and the\n{@link fileContext}, when enabled) and refutes any whose failure path it\ncannot concretely trace. Refuted candidates are listed in the report but\nneither posted as findings nor gated on. Costs one extra API call per\nreview with findings; if the pass itself errors, the unverified findings\nare kept (fail toward reporting, never toward silence)."
+            },
+            {
+              "name": "discussion",
+              "kind": "method",
+              "optional": false,
+              "signature": "discussion(configure?: Configure<DiscussionSettings>): this",
+              "doc": "Engage with the pull-request discussion instead of repeating findings: the\nreviewer reads the PR's comments, and when a **trusted** commenter (by the\nhost's own author metadata — see {@link DiscussionSettings}) contests a\nfinding by quoting its ID, an adjudication pass weighs the rebuttal on\ntechnical merit and either upholds the finding (with the gap named) or\ndismisses it. Dismissals persist across runs in a state block inside the\nreviewer's own PR comment, so a dismissed finding — or a rewording of it —\ndoes not resurface without new evidence. Requires {@link comment} (the\ncomment is where state lives) and a host that can list comments (GitHub\ncurrently); elsewhere the discussion is skipped with a console note.\n\nUntrusted comments are dropped in code before any prompt is built — the\nmodel never sees them, so a drive-by \"the maintainer approved this\"\ncomment cannot influence the review."
             },
             {
               "name": "validate",
