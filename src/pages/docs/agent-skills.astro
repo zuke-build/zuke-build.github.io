@@ -1,0 +1,112 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "skills", label: "The two skills" },
+  { id: "claude-code", label: "Claude Code" },
+  { id: "codex", label: "OpenAI Codex" },
+  { id: "gemini", label: "Gemini CLI" },
+  { id: "portability", label: "One source, every harness" },
+];
+
+const claudeSnippet = `# in Claude Code
+/plugin marketplace add zuke-build/zuke
+/plugin install zuke@zuke`;
+
+const codexSnippet = `# in a shell
+codex plugin marketplace add zuke-build/zuke
+codex plugin add zuke@zuke`;
+
+const codexSkillInstallerSnippet = `# or pull a single skill with Codex's built-in installer skill
+$skill-installer install https://github.com/zuke-build/zuke/tree/master/skills/zuke-write-build`;
+
+const geminiSnippet = `# in a shell
+gemini extensions install https://github.com/zuke-build/zuke`;
+---
+
+<DocsLayout
+  title="Agent skills"
+  description="Zuke ships two agent skills — zuke-setup and zuke-write-build — so AI coding assistants scaffold Zuke and author builds the right way, using the typed *Tasks wrappers instead of guessing. Authored once as portable SKILL.md folders, they install from the repo's skills marketplace into Claude Code, OpenAI Codex, and the Gemini CLI."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke ships <strong>agent skills</strong> so AI coding assistants set up and
+    author builds the right way — using the typed <code>*Tasks</code> wrappers
+    instead of guessing the API or shelling out. The skills are authored once as
+    portable <a href="https://agentskills.io" target="_blank" rel="noopener noreferrer"><code>SKILL.md</code></a>
+    folders and distributed from the repo's own <strong>skills
+    marketplace</strong>, which installs into <strong>Claude Code</strong>,
+    <strong>OpenAI Codex</strong>, and the <strong>Gemini CLI</strong> alike.
+  </p>
+
+  <h2 id="skills">The two skills</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Skill</th><th>Use it to</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>zuke-setup</code></td><td>Scaffold Zuke into a project (<code>zuke setup</code>, the <code>./zuke</code> launcher, a first build).</td></tr>
+      <tr><td><code>zuke-write-build</code></td><td>Write or edit a <code>zuke.ts</code> — add targets, wire dependencies, call tool wrappers, generate CI.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Both live as <code>SKILL.md</code> folders under
+    <a href="https://github.com/zuke-build/zuke/tree/master/skills" target="_blank" rel="noopener noreferrer"><code>skills/</code></a>
+    in the Zuke repo; each harness below serves that same source.
+  </p>
+
+  <h2 id="claude-code">Claude Code</h2>
+  <p>
+    The skills are packaged as a Claude Code plugin distributed from the repo's
+    marketplace. In Claude Code:
+  </p>
+  <Code code={claudeSnippet} lang="bash" theme="night-owl" />
+  <p>
+    That makes <code>zuke-setup</code> and <code>zuke-write-build</code>
+    available — they trigger automatically when you ask Claude to add Zuke to a
+    project or write a build, and can be invoked explicitly as
+    <code>/zuke:zuke-setup</code> and <code>/zuke:zuke-write-build</code>.
+  </p>
+
+  <h2 id="codex">OpenAI Codex</h2>
+  <p>
+    The same plugin installs into Codex from the same repo — it carries a
+    Codex-native <code>.agents/plugins/marketplace.json</code> and
+    <code>.codex-plugin/plugin.json</code> alongside the Claude manifests:
+  </p>
+  <Code code={codexSnippet} lang="bash" theme="night-owl" />
+  <p>A single skill can also be pulled straight from the repo:</p>
+  <Code code={codexSkillInstallerSnippet} lang="bash" theme="night-owl" />
+
+  <h2 id="gemini">Gemini CLI</h2>
+  <p>
+    The repo doubles as a Gemini CLI extension (the root
+    <code>gemini-extension.json</code>; Gemini auto-discovers the
+    <code>skills/</code> folder next to it):
+  </p>
+  <Code code={geminiSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Gemini installs a GitHub extension from the repo's <strong>latest
+    release</strong> snapshot (offering a git clone as the fallback), so the
+    extension tracks releases rather than <code>master</code>.
+  </p>
+
+  <h2 id="portability">One source, every harness</h2>
+  <p>
+    The <code>SKILL.md</code> content is harness-agnostic — it follows the open
+    <a href="https://agentskills.io" target="_blank" rel="noopener noreferrer">Agent Skills</a>
+    standard. Each manifest above (the Claude marketplace and plugin manifests,
+    the Codex marketplace and plugin manifests, the Gemini extension manifest)
+    is a thin adapter over the shared <code>skills/</code> source, so every
+    harness serves the same two skills, and an improvement to a skill lands
+    everywhere at once.
+  </p>
+  <p>
+    Skills teach an agent to <em>author</em> a build; the
+    <a href="/docs/mcp">MCP server</a> is the complement — it lets an agent
+    <em>operate</em> one through typed tool calls. They work well together:
+    install the skills, register <code>zuke mcp</code>, and an assistant can
+    write a target and then run it.
+  </p>
+</DocsLayout>

@@ -119,9 +119,28 @@ const mcpClients = [
   { name: "Any agent", color: "#9b6bff" },
 ];
 
+const skillsSnippet = `# Claude Code
+/plugin marketplace add zuke-build/zuke
+/plugin install zuke@zuke
+
+# OpenAI Codex
+codex plugin marketplace add zuke-build/zuke
+codex plugin add zuke@zuke
+
+# Gemini CLI
+gemini extensions install https://github.com/zuke-build/zuke`;
+
+// Agent harnesses the skills marketplace installs into, shown as chips.
+const skillHarnesses = [
+  { name: "Claude Code", color: "#d97757" },
+  { name: "OpenAI Codex", color: "#10a37f" },
+  { name: "Gemini CLI", color: "#4f8cff" },
+];
+
 // Capabilities grouped into a printed "manifest" — deliberately varied group
 // sizes for rhythm, not a uniform card grid. Dedicated sections below go deep
-// on CI/CD, caching, console, shell, AI review, self-healing, and MCP.
+// on CI/CD, caching, console, shell, AI review, self-healing, MCP, and
+// agent skills.
 const featureGroups = [
   {
     label: "the model",
@@ -159,6 +178,7 @@ const featureGroups = [
       { t: "AI code-review gate", d: "A model reads the diff, returns a structured risk score, and breaks the build when it crosses your threshold." },
       { t: "Findings you can argue with", d: "The reviewer refutes its own weak findings, then adjudicates rebuttals from trusted reviewers on the PR — and remembers what it dismissed." },
       { t: "Self-healing builds", d: "Attach a fixer with .recoverWith(); @zuke/ai diagnoses a failure and can apply, commit, and re-run to verify." },
+      { t: "Agent skills on every harness", d: "zuke-setup and zuke-write-build install from the repo's skills marketplace into Claude Code, OpenAI Codex, and the Gemini CLI alike." },
     ],
   },
 ];
@@ -926,6 +946,44 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <code>&#123; "name": "run:test", "arguments": &#123; "environment": "dev" &#125; &#125;</code>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ AGENT SKILLS ░░ -->
+  <section class="section" id="agent-skills">
+    <div class="container shell-grid">
+      <div class="codecard panel" data-reveal>
+        <div class="codecard__bar">
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__name">install the skills</span>
+        </div>
+        <Code code={skillsSnippet} lang="bash" theme="night-owl" />
+      </div>
+      <div data-reveal>
+        <span class="eyebrow">Agent skills <span class="tag-new">New</span></span>
+        <h2>Skills your agent installs from a <span class="gradient-text">marketplace</span>.</h2>
+        <p class="lead">
+          Two agent skills — <code>zuke-setup</code> scaffolds Zuke into a
+          project, <code>zuke-write-build</code> writes or edits a
+          <code>zuke.ts</code> — teach an assistant to author builds with the
+          typed API instead of guessing. Authored once as portable
+          <a href="https://agentskills.io" target="_blank" rel="noopener noreferrer"><code>SKILL.md</code></a>
+          folders, they're distributed from the repo's own skills marketplace,
+          which installs into <strong>Claude Code, OpenAI Codex, and the Gemini
+          CLI</strong> alike.
+        </p>
+        <div class="providers">
+          <span class="providers__label">Installs into</span>
+          {skillHarnesses.map((h) => (
+            <span class="provider" style={`--c:${h.color}`}>
+              <span class="host-dot"></span>{h.name}
+            </span>
+          ))}
+        </div>
+        <a class="btn btn-ghost" href="/docs/agent-skills">Read the agent-skills guide →</a>
       </div>
     </div>
   </section>
