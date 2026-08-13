@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -16,8 +17,9 @@ const resolutionSnippet = `import { OxlintTasks } from "jsr:@zuke/oxlint";
 // per call — resolve node_modules/.bin first (or .fromPath() to force PATH)
 await OxlintTasks.lint((s) => s.fromNodeModules());`;
 
-const envSnippet = `ZUKE_TOOL_RESOLUTION=node_modules   # every wrapper resolves node_modules/.bin first, repo-wide
-ZUKE_TOOL_RESOLUTION=path           # every wrapper resolves PATH first, skipping node_modules`;
+const envNodeModulesSnippet = `ZUKE_TOOL_RESOLUTION=node_modules`;
+
+const envPathSnippet = `ZUKE_TOOL_RESOLUTION=path`;
 
 const workspaceSnippet = `import { NpmTasks } from "jsr:@zuke/npm";
 
@@ -38,7 +40,7 @@ const docSnippet = `zuke doc core                      # jsr:@zuke/core
 zuke doc @scope/pkg                # a scoped package
 zuke doc deno --filter DenoTasks   # extra flags pass through to deno doc`;
 
-const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # write the launcher (and its .ps1) under a different name`;
+const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk`;
 ---
 
 <DocsLayout
@@ -85,8 +87,17 @@ const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # wri
       wins over the ambient value.
     </li>
   </ul>
-  <Code code={resolutionSnippet} lang="ts" theme="night-owl" />
-  <Code code={envSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={resolutionSnippet} lang="ts" />
+  <p>
+    Repo-wide, set the ambient default so every wrapper resolves
+    <code>node_modules/.bin</code> first:
+  </p>
+  <CopyCode code={envNodeModulesSnippet} lang="bash" />
+  <p>
+    Or flip it the other way, so every wrapper resolves <code>PATH</code> first,
+    skipping <code>node_modules</code>:
+  </p>
+  <CopyCode code={envPathSnippet} lang="bash" />
   <p>
     An explicit <a href="/docs/installing-tools#using"><code>.toolPath(...)</code></a>
     always wins over resolution — pins from <a href="/docs/installing-tools#toolchain"><code>toolchain()</code></a>
@@ -104,7 +115,7 @@ const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # wri
     every workspace (compose with <code>.ifPresent()</code> to skip those
     missing the script) — the two are mutually exclusive.
   </p>
-  <Code code={workspaceSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={workspaceSnippet} lang="ts" />
 
   <h2 id="managers">Other package managers</h2>
   <p>
@@ -112,7 +123,7 @@ const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # wri
     wrapper — and all of them default to
     <a href="#bin-resolution"><code>node_modules</code>-first resolution</a>:
   </p>
-  <Code code={managersSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={managersSnippet} lang="ts" />
   <table class="dtable">
     <thead>
       <tr><th>Package</th><th>Tasks</th><th>Notes</th></tr>
@@ -165,7 +176,7 @@ const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk   # wri
     it. Pass <code>--launcher-name &lt;name&gt;</code> to write the launcher
     (and its <code>.ps1</code> counterpart) under a different name:
   </p>
-  <Code code={setupSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={setupSnippet} lang="bash" />
 </DocsLayout>
 
 <style>

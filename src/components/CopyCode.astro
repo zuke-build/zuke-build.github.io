@@ -1,0 +1,156 @@
+---
+import { Code } from "astro:components";
+
+/**
+ * A Shiki-highlighted snippet with a copy button, for actionable code the
+ * reader is meant to paste and run. Illustrative blocks (output mockups,
+ * API signatures, reference grammars) keep using <Code> directly.
+ */
+interface Props {
+  code: string;
+  lang?: string;
+  // override what the button copies; defaults to the code itself, minus
+  // full-line `#` comments for shell snippets
+  copy?: string;
+  // shell blocks holding several independent commands: render one copy
+  // button per command (continuation lines ending in `\` stay grouped)
+  // instead of the corner copy-everything button
+  multi?: boolean;
+}
+const { code, lang = "bash", copy, multi = false } = Astro.props;
+const shellLangs = ["bash", "sh", "shell", "zsh", "text"];
+const copyText = copy ??
+  (shellLangs.includes(lang)
+    ? code
+        .split("\n")
+        .filter((l) => l.trim() !== "" && !l.trimStart().startsWith("#"))
+        .join("\n")
+    : code);
+---
+
+<div class="ccode" class:list={[{ "ccode--multi": multi }]} data-copy={multi ? undefined : copyText} data-multi={multi ? "" : undefined}>
+  <Code code={code} lang={lang as Parameters<typeof Code>[0]["lang"]} theme="night-owl" />
+  {!multi && (
+    <button class="ccode__btn" type="button" aria-label="Copy to clipboard" title="Copy to clipboard">
+      <svg class="ccode__icopy" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <svg class="ccode__idone" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+    </button>
+  )}
+</div>
+
+<style>
+  .ccode { position: relative; }
+  /* reserve room so a long first line doesn't sit under the button */
+  .ccode :global(pre.astro-code) { padding-right: 52px; }
+  .ccode__btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: var(--term-bg);
+    border: 1px solid var(--term-border);
+    color: var(--term-dim);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .ccode:hover .ccode__btn,
+  .ccode__btn:focus-visible { opacity: 1; }
+  .ccode__btn:hover { border-color: var(--term-accent); color: var(--term-ink); }
+  .ccode__btn.copied { border-color: var(--term-ok); color: var(--term-ok); opacity: 1; }
+  .ccode__idone { display: none; }
+  .ccode__btn.copied .ccode__icopy { display: none; }
+  .ccode__btn.copied .ccode__idone { display: block; }
+
+  /* per-command buttons (multi mode) are injected client-side, so Astro's
+     style scoping can't reach them: these must be :global to apply. */
+  .ccode--multi :global(pre.astro-code) { padding-right: 22px; }
+  .ccode--multi :global(pre.astro-code .line) { display: inline-flex; align-items: center; min-width: 100%; }
+  :global(.ccode__linebtn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    margin-left: auto;
+    padding: 0 0 0 14px;
+    height: 20px;
+    background: none;
+    border: 0;
+    color: var(--term-dim);
+    opacity: 0.4;
+    cursor: pointer;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+  .ccode--multi :global(pre.astro-code .line:hover .ccode__linebtn),
+  :global(.ccode__linebtn:focus-visible) { opacity: 1; }
+  :global(.ccode__linebtn:hover) { color: var(--term-ink); }
+  :global(.ccode__linebtn.copied) { color: var(--term-ok); opacity: 1; }
+  :global(.ccode__linebtn .ccode__idone) { display: none; }
+  :global(.ccode__linebtn.copied .ccode__icopy) { display: none; }
+  :global(.ccode__linebtn.copied .ccode__idone) { display: inline-flex; }
+</style>
+
+<script>
+  const copySvg =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+  const checkSvg =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+
+  const wireCopy = (btn: Element, text: () => string) => {
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text());
+        btn.classList.add("copied");
+        setTimeout(() => btn.classList.remove("copied"), 1600);
+      } catch {
+        /* clipboard unavailable */
+      }
+    });
+  };
+
+  document.querySelectorAll(".ccode").forEach((node) => {
+    const box = node as HTMLElement;
+
+    if (box.dataset.multi === undefined) {
+      const btn = box.querySelector(".ccode__btn");
+      if (btn) wireCopy(btn, () => box.dataset.copy ?? "");
+      return;
+    }
+
+    // multi mode: one copy button per command. Lines ending in `\` are
+    // continuations of the same command; the button lands on the group's
+    // last line and copies the whole command verbatim.
+    const lines = Array.from(box.querySelectorAll("pre.astro-code code .line"));
+    let group: Element[] = [];
+    for (const line of lines) {
+      const text = line.textContent ?? "";
+      if (group.length === 0 && (text.trim() === "" || text.trimStart().startsWith("#"))) continue;
+      group.push(line);
+      if (text.trimEnd().endsWith("\\")) continue;
+      // copy the bare command: trailing `# annotation` comments stay on
+      // screen but are stripped from what lands in the clipboard
+      const cmd = group
+        .map((l) => (l.textContent ?? "").replace(/\s+#.*$/, "").trimEnd())
+        .join("\n");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "ccode__linebtn";
+      btn.setAttribute("aria-label", "Copy command");
+      btn.title = "Copy command";
+      btn.innerHTML = `<span class="ccode__icopy">${copySvg}</span><span class="ccode__idone">${checkSvg}</span>`;
+      line.appendChild(btn);
+      wireCopy(btn, () => cmd);
+      group = [];
+    }
+  });
+</script>

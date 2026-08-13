@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import { packageCount } from "../../data/tools.ts";
 
@@ -28,7 +29,7 @@ deno info jsr:@zuke/gh
 # Which core version introduced the symbol the import needs?
 #   grep it in packages/core/CHANGELOG.md, or search llms-full.txt`;
 
-const verifySnippet = `./zuke coreFloorCheck   # type-check every package against the core floor it declares`;
+const verifySnippet = `./zuke coreFloorCheck`;
 ---
 
 <DocsLayout
@@ -131,7 +132,7 @@ const verifySnippet = `./zuke coreFloorCheck   # type-check every package agains
     to the floor the wrapper declares and to what your own
     <code>deno.lock</code> actually resolved for <code>@zuke/core</code>.
   </p>
-  <Code code={diagnoseSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={diagnoseSnippet} lang="bash" />
   <p>
     If the lockfile-resolved core predates the version the symbol needs, the
     wrapper's floor is under-declared —
@@ -141,7 +142,7 @@ const verifySnippet = `./zuke coreFloorCheck   # type-check every package agains
   </p>
 
   <h2 id="verify">Verifying the floors</h2>
-  <Code code={verifySnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={verifySnippet} lang="bash" />
   <p>
     It works by writing a throwaway config per package containing that package's
     own imports and <strong>no <code>workspace</code> field</strong>, then
@@ -193,7 +194,7 @@ const verifySnippet = `./zuke coreFloorCheck   # type-check every package agains
       diff.
     </li>
   </ul>
-  <Code code={pinSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={pinSnippet} lang="ts" />
   <div class="note">
     <p>
       Zuke's own gate enforces this on itself: every entrypoint that loads

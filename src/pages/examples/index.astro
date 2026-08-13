@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import Base from "../../layouts/Base.astro";
 
 interface Example {
@@ -767,7 +767,7 @@ await run(CiBuild);`,
                 <span class="codecard__dot"></span>
                 <span class="codecard__name">zuke.ts</span>
               </div>
-              <Code code={ex.code ?? ""} lang="ts" theme="night-owl" />
+              <CopyCode code={ex.code ?? ""} lang="ts" />
             </div>
           )}
         </article>

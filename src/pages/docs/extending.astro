@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -119,7 +120,7 @@ await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] }
     (the subcommand argv) — and the base contributes the shared fluent chainers
     and the execution logic.
   </p>
-  <Code code={wrapperSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={wrapperSnippet} lang="ts" />
   <p>
     Each subcommand is its own settings class, and each task function follows the
     <strong>construct-configure-run</strong> shape:
@@ -137,7 +138,7 @@ await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] }
       surface.
     </p>
   </div>
-  <Code code={argvSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={argvSnippet} lang="ts" />
 
   <h2 id="toolsettings">The ToolSettings contract</h2>
   <p>
@@ -181,7 +182,7 @@ await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] }
     <code>arg</code> / <code>flag</code> / <code>option</code> for argv (applied in
     call order) plus all the shared chainers above.
   </p>
-  <Code code={defineToolSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={defineToolSnippet} lang="ts" />
   <p>
     An optional <code>subcommand</code> (a string or string array) is prepended to
     every invocation. Reach for a full <code>ToolSettings</code> subclass only when
@@ -198,7 +199,7 @@ await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] }
     <strong>observe</strong> — they report, time, or notify — they don't change
     the plan or a target's result.
   </p>
-  <Code code={pluginSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={pluginSnippet} lang="ts" />
   <p>
     Every hook is optional and may be async — the executor awaits each before
     continuing. Because a plugin is strictly an observer, a hook that
@@ -255,7 +256,7 @@ await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] }
     A plugin is just a value, so a package can export a factory that returns one
     — configured however it likes:
   </p>
-  <Code code={factorySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={factorySnippet} lang="ts" />
   <p>
     <a href="/docs/observability">@zuke/otel</a> is the full worked example of this
     pattern: a factory returning a <code>Plugin</code> that turns

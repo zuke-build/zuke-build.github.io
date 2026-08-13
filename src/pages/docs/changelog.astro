@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import { packageCount } from "../../data/tools.ts";
 import api from "../../data/api.json";
@@ -194,7 +195,7 @@ ai-v1.8.1         # @zuke/ai`;
     exact version only when you need a byte-for-byte reproducible import
     specifier.
   </p>
-  <Code code={importSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={importSnippet} lang="ts" />
   <div class="note">
     <p>
       <strong>Always commit <code>deno.lock</code>.</strong> The caret range in

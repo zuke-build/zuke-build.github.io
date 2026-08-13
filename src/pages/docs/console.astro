@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -137,7 +137,7 @@ await run(MyBuild, { renderer });`;
     The package exports a single namespaced object, <code>ConsoleTasks</code>.
     It's conventional to alias it to <code>Log</code>:
   </p>
-  <Code code={importSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={importSnippet} lang="ts" />
 
   <h2 id="logging">Logging &amp; levels</h2>
   <p>
@@ -146,7 +146,7 @@ await run(MyBuild, { renderer });`;
     <strong>stdout</strong>; <code>warn</code> and <code>error</code> write to
     <strong>stderr</strong>. Every message accepts <a href="#markup">markup</a>.
   </p>
-  <Code code={loggingSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={loggingSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output</span></div>
 <pre class="term"><span class="dim">·</span> resolved 42 source files
 <span class="gray">›</span> cache hit for 'check'
@@ -171,7 +171,7 @@ a plain line — no icon, no styling
     space-separated style names, and <code>[/]</code> closes the most recent tag,
     restoring the surrounding style — so tags nest cleanly.
   </p>
-  <Code code={markupSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={markupSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output</span></div>
 <pre class="term"><span class="info">ℹ</span> <span class="b">core</span> is <span class="green">ready</span>
 <span class="info">ℹ</span> <span class="red b">2 errors</span> in <span class="u">mod.ts</span>
@@ -215,7 +215,7 @@ a plain line — no icon, no styling
     <code>char</code> (the glyph to repeat), <code>width</code>, and
     <code>style</code> (an array of style names).
   </p>
-  <Code code={linesSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={linesSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output</span></div>
 <pre class="term"><span class="rule">──────────────────────────────────────────────</span>
 <span class="rule">════════════════════════════════════════</span>
@@ -230,7 +230,7 @@ a plain line — no icon, no styling
     array of lines, plus optional <code>title</code>, <code>padding</code>,
     <code>width</code>, a <code>border</code> style, and a <code>titleStyle</code>.
   </p>
-  <Code code={boxSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={boxSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output</span></div>
 <pre class="term">┌────────────────────────────────────┐
 │ Deployed core@1.2.0 to production. │
@@ -259,7 +259,7 @@ a plain line — no icon, no styling
     (<code>"left"</code> — the default — or <code>"right"</code>); rows are arrays
     of strings. Options control the look:
   </p>
-  <Code code={tableSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={tableSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output</span></div>
 <pre class="term"><span class="b">Package     Version   Size</span>
 <span class="dim">──────────────────────────</span>
@@ -281,7 +281,7 @@ a plain line — no icon, no styling
     table. The <a href="#renderer">default renderer</a> calls both for you — you'd
     only invoke them directly if you're driving the run loop yourself.
   </p>
-  <Code code={bannersSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={bannersSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output</span></div>
 <pre class="term"><span class="banner">══════════════════════════════</span>
 <span class="name">build</span>
@@ -302,7 +302,7 @@ build    <span class="ok">Succeeded</span>      2.2s
     printed as a header; under GitHub Actions the pair becomes a collapsible
     <code>::group::</code> / <code>::endgroup::</code> block.
   </p>
-  <Code code={groupsSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={groupsSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output — plain terminal</span></div>
 <pre class="term"><span class="rule">──────────────────</span> Install <span class="rule">──────────────────</span>
 <span class="info">ℹ</span> added 214 packages in 12.4s</pre></div>
@@ -313,7 +313,7 @@ build    <span class="ok">Succeeded</span>      2.2s
     width, and GitHub-annotation mode. <code>level()</code> reads the active
     threshold and <code>reset()</code> restores the defaults.
   </p>
-  <Code code={configureSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={configureSnippet} lang="ts" />
   <table class="dtable">
     <thead>
       <tr><th><code>ConsoleOptions</code> field</th><th>Effect</th></tr>
@@ -353,7 +353,7 @@ build    <span class="ok">Succeeded</span>      2.2s
     <code>run()</code> to route every banner and summary through it, or build a
     custom-themed one with <code>createConsoleRenderer(theme)</code>.
   </p>
-  <Code code={rendererSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={rendererSnippet} lang="ts" />
   <div class="io"><div class="io__bar"><span>output — a full run through consoleRenderer</span></div>
 <pre class="term"><span class="cmd">$ ./zuke build</span>
 

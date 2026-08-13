@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import { toolGroups, corePackages, packageCount } from "../../data/tools.ts";
 
@@ -62,7 +62,7 @@ await helmUpgrade((s) => s.arg("api", "./chart").flag("install").cwd("infra"));
     construction is <strong>injection-free</strong>. Awaiting a task resolves to the
     same <code>CommandOutput</code> the shell <code>$</code> produces.
   </p>
-  <Code code={introSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={introSnippet} lang="ts" />
   <p>
     Every settings object also supports the shared chainers <code>.env()</code>,
     <code>.cwd()</code>, <code>.noThrow()</code>, <code>.quiet()</code>,
@@ -123,7 +123,7 @@ await helmUpgrade((s) => s.arg("api", "./chart").flag("install").cwd("infra"));
     <li><strong>Per wrapper:</strong> the JS-ecosystem wrappers default to <code>node_modules</code>-first, so in a workspace package whose binaries are hoisted you write no <code>.toolPath()</code> and no <code>.fromNodeModules()</code> at all.</li>
     <li><strong>Repo-wide:</strong> <code>ZUKE_TOOL_RESOLUTION=node_modules</code> (or <code>path</code>) flips every wrapper without touching call sites. A per-call setting still wins over the ambient value.</li>
   </ul>
-  <Code code={resolutionSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={resolutionSnippet} lang="ts" />
   <p>
     An explicit <code>.toolPath(...)</code> always wins over resolution — pins from
     <code>toolchain()</code> stay hermetic. If a binary is missing, Zuke retries
@@ -142,7 +142,7 @@ await helmUpgrade((s) => s.arg("api", "./chart").flag("install").cwd("infra"));
     <code>option</code> (in call order), and the shared chainers all apply. An optional
     <code>subcommand</code> is prepended to every invocation.
   </p>
-  <Code code={defineSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={defineSnippet} lang="ts" />
   <p>
     <code>flag</code>/<code>option</code> add a <code>--</code> prefix unless the name
     already starts with a dash (so <code>flag("-v")</code> stays <code>-v</code>).

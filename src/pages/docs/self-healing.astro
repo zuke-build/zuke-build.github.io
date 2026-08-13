@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -136,7 +136,7 @@ securityReviewer((r) =>
     body fails</strong>. It receives the failure and returns whether the body
     should be re-run.
   </p>
-  <Code code={primitiveSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={primitiveSnippet} lang="ts" />
   <ul>
     <li><code>.recoverWith(...r)</code> attaches one or more remediations; the first to ask for a retry re-runs the body.</li>
     <li><code>.recoverAttempts(n)</code> bounds how many fix-then-rerun cycles are tried (default 1).</li>
@@ -157,7 +157,7 @@ securityReviewer((r) =>
     <strong>every</strong> target at once. Both styles compose — a target's own
     remediations run before the build-level ones:
   </p>
-  <Code code={globalSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={globalSnippet} lang="ts" />
 
   <h2 id="aifixer"><code>aiFixer</code> — safe by default</h2>
   <p>
@@ -168,7 +168,7 @@ securityReviewer((r) =>
     and reports — <strong>without touching any files</strong>. The diagnosis lands
     in the GitHub Actions job summary and on the pull request.
   </p>
-  <Code code={diagnoseSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={diagnoseSnippet} lang="ts" />
   <p>
     <code>.provider("claude" | "openai" | "gemini")</code> and
     <code>.apiKey(...)</code> are the only required calls — the same providers and
@@ -197,7 +197,7 @@ securityReviewer((r) =>
 
   <h2 id="apply">Applying &amp; committing fixes</h2>
   <p>Escalate from diagnosis to action, behind explicit guards:</p>
-  <Code code={applySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={applySnippet} lang="ts" />
   <table class="dtable">
     <thead>
       <tr><th>Setting</th><th>Effect</th></tr>
@@ -228,7 +228,7 @@ securityReviewer((r) =>
     re-runs the target to verify. There's one generic fixer, not one per agent:
     you pick the agent at the call site.
   </p>
-  <Code code={agentSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={agentSnippet} lang="ts" />
   <p>
     Any runner that takes the context and returns works —
     <code>CodexTasks.exec</code>, <code>GeminiTasks.run</code>, or a custom
@@ -253,7 +253,7 @@ securityReviewer((r) =>
     (<code>.fetchBase("main")</code>) to be explicit; if the fetch can't run, the
     fixer falls back to the working-tree diff.
   </p>
-  <Code code={diffSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={diffSnippet} lang="ts" />
 
   <h2 id="cost">Cost controls &amp; learning</h2>
   <p>
@@ -270,7 +270,7 @@ securityReviewer((r) =>
     <strong>skipped (not failed)</strong> with a note, rather than running up the
     bill.
   </p>
-  <Code code={budgetSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={budgetSnippet} lang="ts" />
   <p>
     Token counts come straight from the provider's reported usage, so
     <code>.maxTokens(n)</code> is an <strong>exact</strong> cap that never goes
@@ -278,7 +278,7 @@ securityReviewer((r) =>
     a baked-in table to stay correct. A USD cap is opt-in: give the budget your own
     current rates and it estimates cost from them.
   </p>
-  <Code code={budgetCostSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={budgetCostSnippet} lang="ts" />
   <p>
     A model with no supplied price still counts toward the <strong>token</strong>
     cap — only its cost is left out, and a cost cap is enforced only once a priced
@@ -292,7 +292,7 @@ securityReviewer((r) =>
     paying for another one — handy when the same failure recurs across CI re-runs.
     A cache hit costs nothing and does not draw down the budget.
   </p>
-  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cacheSnippet} lang="ts" />
   <p>
     The TTL defaults to 7 days (<code>0</code> never expires) and the store is
     best-effort — see <a href="/docs/caching#ai-cache">Caching → AI
@@ -308,7 +308,7 @@ securityReviewer((r) =>
     positive is a copy-paste of that ID into the suppress list
     (<code>.zuke/ai-suppress.json</code>, a JSON array of IDs):
   </p>
-  <Code code={suppressSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={suppressSnippet} lang="ts" />
   <p>
     Suppression is <strong>review-only</strong> — a fixer applies a whole fix, not
     individual findings, so <code>.suppress()</code> lives on reviewers such as

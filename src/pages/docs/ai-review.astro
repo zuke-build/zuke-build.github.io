@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -186,7 +186,7 @@ const a11y = genericReviewer((r) =>
     target decides <em>when</em> it runs; the reviewer decides <em>what</em> it
     checks.
   </p>
-  <Code code={plugSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={plugSnippet} lang="ts" />
 
   <h2 id="reviewers">The reviewers</h2>
   <p>
@@ -206,7 +206,7 @@ const a11y = genericReviewer((r) =>
     project-specific notes (say, <em>"strict TypeScript, no <code>any</code>"</em>)
     on top of the built-in rubric — it's no longer required by any reviewer:
   </p>
-  <Code code={genericSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={genericSnippet} lang="ts" />
 
   <h2 id="providers">Providers &amp; credentials</h2>
   <p>
@@ -225,7 +225,7 @@ const a11y = genericReviewer((r) =>
     0–10 risk score exceeds <code>n</code>, and
     <code>g.severityAtLeast("high")</code> fails on a severity floor.
   </p>
-  <Code code={gateSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={gateSnippet} lang="ts" />
   <div class="note">
     <p>
       <code>.onError("fail" | "warn")</code> decides what happens when the review
@@ -260,7 +260,7 @@ const a11y = genericReviewer((r) =>
       than generic taste.
     </li>
   </ul>
-  <Code code={groundingSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={groundingSnippet} lang="ts" />
   <div class="note">
     <p>
       The conventions file is read from the <strong>base</strong> ref via
@@ -281,7 +281,7 @@ const a11y = genericReviewer((r) =>
     concretely trace</strong> — the "unsanitised input" that is sanitised by the
     caller, the "missing check" three lines above the hunk.
   </p>
-  <Code code={verifySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={verifySnippet} lang="ts" />
   <p>
     A refuted candidate is still <em>listed</em> in the report — with the reason
     it was refuted — but it is not posted as a finding and never gates. The pass
@@ -326,7 +326,7 @@ const a11y = genericReviewer((r) =>
     same applies in reverse: an upheld finding keeps gating, and says why the
     rebuttal didn't land.
   </p>
-  <Code code={discussionSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={discussionSnippet} lang="ts" />
   <p>
     <strong>Who the reviewer listens to is decided in code, not by the model.</strong>
     Comments are filtered by the host's own author metadata before any prompt is
@@ -337,7 +337,7 @@ const a11y = genericReviewer((r) =>
     comments first) keeps a wall of text from crowding the diff and the rubric out
     of the context window.
   </p>
-  <Code code={discussionTuningSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={discussionTuningSnippet} lang="ts" />
   <div class="note">
     <p>
       <code>.discussion()</code> requires <a href="#comment"><code>.comment()</code></a>
@@ -366,7 +366,7 @@ const a11y = genericReviewer((r) =>
     attempt bounded by a 60&nbsp;s timeout so a stuck connection can't hang the
     build.
   </p>
-  <Code code={retrySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={retrySnippet} lang="ts" />
   <p>
     Each review prints a start line echoing its settings and a notice on every
     retry, so a slow run reads as progress rather than a hang. If the attempts
@@ -386,7 +386,7 @@ const a11y = genericReviewer((r) =>
     <li><code>.suppress(suppressions(...))</code> hides findings you've dismissed as false positives, matched by the stable ID shown next to each finding. A suppressed finding is still listed (under <em>"Suppressed (not gating)"</em>) so the dismissal stays auditable — it mutes the gate, never silently buries a finding. For a one-off dismissal argued out on a single PR, use <a href="#discussion">discussion</a> instead.</li>
     <li><a href="#grounding"><code>.fileContext()</code></a> and <code>.conventionsFile(...)</code> buy accuracy with tokens, and <a href="#verify"><code>.verify()</code></a> with one extra call per review that found something — each is separately bounded, and all of them draw down the same <code>.budget(...)</code>.</li>
   </ul>
-  <Code code={scopeSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={scopeSnippet} lang="ts" />
 
   <h2 id="schema">Schema enforcement</h2>
   <p>
@@ -436,7 +436,7 @@ const a11y = genericReviewer((r) =>
     Either mode works with <a href="#discussion">discussion</a>, whose state block
     rides along on every comment and is read back from the newest one.
   </p>
-  <Code code={commentSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={commentSnippet} lang="ts" />
   <p>
     Which API gets called is decided at runtime from the detected CI host, so the
     same <code>.comment()</code> works across the four major platforms:
@@ -460,7 +460,7 @@ const a11y = genericReviewer((r) =>
     the summary. On GitHub the <a href="#workflow">workflow generator</a> grants
     the scope automatically; if you hand-write it, add:
   </p>
-  <Code code={permsSnippet} lang="yaml" theme="night-owl" />
+  <CopyCode code={permsSnippet} lang="yaml" />
 
   <h2 id="tokens">Token usage</h2>
   <p>
@@ -484,7 +484,7 @@ const a11y = genericReviewer((r) =>
     <a href="/docs/concepts#cicd">CI file</a> that the standard
     <code>cicd</code> sync keeps current.
   </p>
-  <Code code={workflowSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={workflowSnippet} lang="ts" />
   <p>
     Override what you need — <code>target</code>, <code>baseBranch</code>,
     <code>name</code>, <code>path</code>, <code>timeoutMinutes</code>. A reviewer
@@ -494,7 +494,7 @@ const a11y = genericReviewer((r) =>
     <code>"azure"</code>, or <code>"bitbucket"</code> to generate the equivalent —
     matching the cross-platform PR commenting above.
   </p>
-  <Code code={workflowHostsSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={workflowHostsSnippet} lang="ts" />
   <table class="dtable">
     <thead>
       <tr><th>Host</th><th>Default path</th></tr>
