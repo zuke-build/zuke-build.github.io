@@ -22737,11 +22737,25 @@
               "doc": "INTERNAL: the extra trusted author logins."
             },
             {
+              "name": "threads",
+              "kind": "method",
+              "optional": false,
+              "signature": "threads(): this",
+              "doc": "Also anchor each finding to a file/line **review thread** on the pull\nrequest, so a maintainer contests it by replying in that thread instead of\nquoting its id somewhere on the PR.\n\nThe summary comment is posted either way and stays the one source of\ntruth: it lists every finding — anchored or not — and carries the state\nblock, so a thread that cannot be posted never hides a finding. The\nreviewer replies into the thread with the outcome and resolves it once the\nfinding is fixed or dismissed. GitHub only; on other hosts the reviewer\nnotes that and posts the summary alone."
+            },
+            {
               "name": "maxTokens_",
               "kind": "method",
               "optional": false,
               "signature": "maxTokens_(): number",
               "doc": "INTERNAL: the total comment-token cap."
+            },
+            {
+              "name": "threads_",
+              "kind": "method",
+              "optional": false,
+              "signature": "threads_(): boolean",
+              "doc": "INTERNAL: whether findings are also anchored to review threads."
             }
           ]
         },
