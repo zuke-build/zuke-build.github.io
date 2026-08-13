@@ -19156,6 +19156,215 @@
           ]
         },
         {
+          "name": "GhReleaseAssetApi",
+          "kind": "interface",
+          "doc": "The shape of the release-asset task, mixed into `GhTasks`.",
+          "signature": "interface GhReleaseAssetApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "uploadReleaseAsset",
+              "kind": "method",
+              "optional": false,
+              "signature": "uploadReleaseAsset(configure?: Configure<GhReleaseAssetSettings>): Promise<GhReleaseAssetResult>",
+              "doc": "Attach a file to a GitHub release — the latest release by default, or the\none named by `.tag(...)`. Idempotent: an asset the release already\ncarries under the same name is kept as-is, and a repository with no\nreleases resolves to `state: \"no-release\"` rather than throwing. Needs a\ntoken with `contents: write`."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseAssetResult",
+          "kind": "interface",
+          "doc": "What became of a release-asset upload.",
+          "signature": "interface GhReleaseAssetResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: uploaded | already-exists | no-release",
+              "doc": "`uploaded` when the asset was sent; `already-exists` when the release\ncarries an asset of the same name (nothing was changed); `no-release`\nwhen the repository has no release to attach to."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The asset name the call targeted."
+            },
+            {
+              "name": "releaseTag",
+              "kind": "property",
+              "optional": true,
+              "signature": "releaseTag?: string",
+              "doc": "The tag of the release the asset belongs to, when one was resolved."
+            },
+            {
+              "name": "releaseId",
+              "kind": "property",
+              "optional": true,
+              "signature": "releaseId?: number",
+              "doc": "The id of the release the asset belongs to, when one was resolved."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": true,
+              "signature": "url?: string",
+              "doc": "The asset's download URL, when it was uploaded or already present."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseAssetSettings",
+          "kind": "class",
+          "doc": "Settings for {@link GhReleaseAssetApi.uploadReleaseAsset}.",
+          "signature": "class GhReleaseAssetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "The file to upload (required)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The asset's name on the release. Defaults to the file's base name."
+            },
+            {
+              "name": "contentType",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentType(value: string): this",
+              "doc": "The asset's `content-type`. Defaults by extension (`.tar.gz`/`.tgz`,\n`.zip`, `.json`), then to `application/octet-stream`."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "The `owner/repo` to upload to. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: string): this",
+              "doc": "Attach to the release with this tag instead of the latest release."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with — needs `contents: write`. Defaults to\n`GITHUB_TOKEN` in the environment, so it never has to reach argv."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "Use a different REST base (GitHub Enterprise Server)."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the Actions environment."
+            },
+            {
+              "name": "filePath_",
+              "kind": "method",
+              "optional": false,
+              "signature": "filePath_(): string",
+              "doc": "The file to upload, or a friendly error naming the missing setting."
+            },
+            {
+              "name": "assetName_",
+              "kind": "method",
+              "optional": false,
+              "signature": "assetName_(): string",
+              "doc": "The effective asset name: the setting, or the file's base name."
+            },
+            {
+              "name": "effectiveContentType_",
+              "kind": "method",
+              "optional": false,
+              "signature": "effectiveContentType_(): string",
+              "doc": "The effective `content-type`: the setting, or inferred by extension."
+            },
+            {
+              "name": "file_",
+              "kind": "property",
+              "optional": true,
+              "signature": "file_?: string",
+              "doc": "The file to upload. Set by {@link file}."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The asset name on the release. Set by {@link name}."
+            },
+            {
+              "name": "contentType_",
+              "kind": "property",
+              "optional": true,
+              "signature": "contentType_?: string",
+              "doc": "The asset's `content-type`. Set by {@link contentType}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo` to upload to. Set by {@link repo}."
+            },
+            {
+              "name": "tag_",
+              "kind": "property",
+              "optional": true,
+              "signature": "tag_?: string",
+              "doc": "The release tag to attach to. Set by {@link tag}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token to authenticate with. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "REST base URL. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
           "name": "GhSarifApi",
           "kind": "interface",
           "doc": "The shape of the SARIF task, mixed into `GhTasks`.",
@@ -19671,6 +19880,13 @@
           "kind": "function",
           "doc": "Perform the configured tag.",
           "signature": "async function tagCommit(configure?: unknown): Promise<void>",
+          "deprecated": false
+        },
+        {
+          "name": "uploadReleaseAsset",
+          "kind": "function",
+          "doc": "Upload the release asset the settings describe.",
+          "signature": "async function uploadReleaseAsset(configure?: Configure<GhReleaseAssetSettings>): Promise<GhReleaseAssetResult>",
           "deprecated": false
         },
         {
