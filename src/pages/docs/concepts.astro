@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -111,8 +112,9 @@ class MyBuild extends Build {
   test = target().executes(async () => { await DenoTasks.test(); });
 }`;
 
-const generateSnippet = `zuke generate-ci          # write all declared pipeline files
-zuke generate-ci --check  # CI gate: fail if committed files are stale`;
+const generateCiSnippet = `zuke generate-ci`;
+
+const generateCheckSnippet = `zuke generate-ci --check`;
 
 const fanOutSnippet = `class CI extends Build {
   lint  = target().inputs("src").outputs("dist/lint").executes(/* … */);
@@ -216,7 +218,7 @@ class MyBuild extends Build {
     A <strong>target</strong> is a unit of work — compile, test, publish. You
     define one as a class field with <code>target()</code> and a fluent chain:
   </p>
-  <Code code={targetSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={targetSnippet} lang="ts" />
   <p>
     <code>.description()</code> documents the target, <code>.dependsOn()</code>
     wires prerequisites, and <code>.executes()</code> holds the action — an
@@ -230,7 +232,7 @@ class MyBuild extends Build {
     topological order, executing each one <strong>exactly once</strong> even when
     several targets share a prerequisite.
   </p>
-  <Code code={depSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={depSnippet} lang="ts" />
   <div class="note">
     <p>
       Because dependencies are typed references, renaming a target updates every
@@ -247,7 +249,7 @@ class MyBuild extends Build {
     each still waiting for its own dependencies. Pass the group to another
     target's <code>.dependsOn(...)</code> to depend on every member at once.
   </p>
-  <Code code={groupSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={groupSnippet} lang="ts" />
   <p>
     Here <code>clean</code> runs first, then <code>lint</code>/<code>format</code>/
     <code>typecheck</code> run together, then <code>deploy</code>. Grouping is a
@@ -265,7 +267,7 @@ class MyBuild extends Build {
     successful run and every declared <strong>output</strong> still exists.
     Otherwise it runs and refreshes the fingerprint.
   </p>
-  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cacheSnippet} lang="ts" />
   <div class="note">
     <p>
       Fingerprints live in <code>&lt;repo root&gt;/.zuke/cache.json</code>
@@ -295,7 +297,7 @@ class MyBuild extends Build {
     repeatable — all conditions must hold. Pair it with <code>.timeout(ms)</code>
     and <code>.retry(times, delayMs?)</code> to bound and re-attempt flaky work:
   </p>
-  <Code code={conditionalSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={conditionalSnippet} lang="ts" />
 
   <h2 id="options">More target options</h2>
   <p>The fluent builder carries the rest of a target's behaviour:</p>
@@ -348,7 +350,7 @@ class MyBuild extends Build {
     Terraform, AI coding agents (Claude Code, Codex, Gemini) and
     <a href="/#tools">30+ more</a> — all published to JSR:
   </p>
-  <Code code={toolsSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={toolsSnippet} lang="ts" />
 
   <h2 id="parameters">Parameters</h2>
   <p>
@@ -356,7 +358,7 @@ class MyBuild extends Build {
     Parameters give you typed values with defaults, sourced from flags or
     environment variables:
   </p>
-  <Code code={paramSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={paramSnippet} lang="ts" />
   <p>
     Mark a sensitive value with <code>.secret()</code> and Zuke
     <strong>redacts it from every log, summary, and error</strong>; add
@@ -377,7 +379,7 @@ class MyBuild extends Build {
     <code>./zuke</code> on push/PR to <code>main</code>. Override only what else
     you need:
   </p>
-  <Code code={cicdSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cicdSnippet} lang="ts" />
   <div class="note">
     <p>
       Every generated GitHub job opens with the published
@@ -390,10 +392,12 @@ class MyBuild extends Build {
   </div>
   <p>
     Running any target regenerates the declared files, and on CI Zuke verifies
-    the committed files are still current. You can also write or check them
-    explicitly:
+    the committed files are still current. You can also write all declared
+    pipeline files explicitly:
   </p>
-  <Code code={generateSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={generateCiSnippet} lang="bash" />
+  <p>Or check them as a CI gate — failing if the committed files are stale:</p>
+  <CopyCode code={generateCheckSnippet} lang="bash" />
   <div class="note">
     <p>
       A portable subset keeps providers in sync: <code>run</code> steps map
@@ -410,7 +414,7 @@ class MyBuild extends Build {
     own dependency graph shapes the workflow — something a hand-written YAML can't
     stay in sync with:
   </p>
-  <Code code={fanOutSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={fanOutSnippet} lang="ts" />
   <p>
     Each job runs only its own target (<code>./zuke &lt;target&gt;</code>); its
     dependencies run in their own jobs, so pair fan-out with the
@@ -431,7 +435,7 @@ class MyBuild extends Build {
     settings-lambda shape as the tool wrappers, but runs no subprocess — it
     <code>POST</code>s the platform-native payload over <code>fetch</code>:
   </p>
-  <Code code={announceSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={announceSnippet} lang="ts" />
   <p>
     Set the destination with <code>.webhook(url)</code> and the message with
     <code>.text()</code>, <code>.title()</code>, a level
@@ -464,7 +468,7 @@ class MyBuild extends Build {
     <code>buildArgs()</code>, and you get the same fluent, typed API as the
     built-in wrappers:
   </p>
-  <Code code={extendSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={extendSnippet} lang="ts" />
   <p>
     Keep <code>buildArgs()</code> pure so argv construction stays
     unit-testable; the base class hands you shared chainers like
@@ -480,7 +484,7 @@ class MyBuild extends Build {
     (<code>release.publish</code>), runnable as <code>zuke release.publish</code>
     and shown in the graph. Components compose, nest, and take options:
   </p>
-  <Code code={componentSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={componentSnippet} lang="ts" />
 
   <h3>Lifecycle plugins</h3>
   <p>
@@ -491,7 +495,7 @@ class MyBuild extends Build {
     the build's own methods. Plugins <strong>observe</strong> — they report,
     time, or notify — they don't change the plan or a target's result:
   </p>
-  <Code code={pluginSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={pluginSnippet} lang="ts" />
   <p>
     From here, browse the <a href="/docs/library">Core library</a> for the
     built-in helpers, or the <a href="/examples">examples</a> to see these

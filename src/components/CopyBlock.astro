@@ -5,29 +5,34 @@ interface Props {
   label?: string;
 }
 const { lines, label } = Astro.props;
-const copyText = lines.filter((l) => !l.trimStart().startsWith("#")).join("\n");
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const escAttr = (s: string) => esc(s).replace(/"/g, "&quot;");
+const copyIcon =
+  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+const checkIcon =
+  '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+// every command row carries its own copy button, so each command can be
+// copied, pasted, and run on its own
 const codeHtml = lines
   .map((l) => {
     const isComment = l.trimStart().startsWith("#");
-    const cls = isComment ? "copy__row copy__comment" : "copy__row copy__cmd";
-    const prompt = isComment ? "" : '<span class="copy__prompt">$</span>';
-    return `<span class="${cls}">${prompt}${esc(l)}\n</span>`;
+    if (isComment) return `<span class="copy__row copy__comment">${esc(l)}</span>`;
+    return (
+      `<span class="copy__row copy__cmd">` +
+      `<span class="copy__prompt">$</span>` +
+      `<span class="copy__text">${esc(l)}</span>` +
+      `<button class="copy__rowbtn" type="button" data-cmd="${escAttr(l)}" aria-label="Copy command" title="Copy command">` +
+      `<span class="copy__icopy">${copyIcon}</span><span class="copy__idone">${checkIcon}</span>` +
+      `</button></span>`
+    );
   })
   .join("");
 ---
 
-<div class="copy" data-copy={copyText}>
+<div class="copy">
   {label && <span class="copy__label">{label}</span>}
   <pre class="copy__pre"><code set:html={codeHtml} /></pre>
-  <button class="copy__btn" type="button" aria-label="Copy to clipboard">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-    </svg>
-    <span class="copy__btntext">Copy</span>
-  </button>
 </div>
 
 <style>
@@ -59,44 +64,44 @@ const codeHtml = lines
   /* rows are injected via set:html, so Astro's scoping can't reach them:
      these must be :global to apply. */
   :global(.copy__row) { display: block; }
+  :global(.copy__cmd) { display: flex; align-items: center; color: var(--term-ink); }
   :global(.copy__prompt) { color: var(--term-accent); user-select: none; margin-right: 6px; }
-  :global(.copy__cmd) { color: var(--term-ink); }
+  :global(.copy__text) { white-space: pre; }
   :global(.copy__comment) { color: var(--term-faint); }
-  .copy__btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
+  :global(.copy__rowbtn) {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    background: oklch(1 0 0 / 0.04);
-    border: 1px solid var(--term-border);
+    justify-content: center;
+    flex: none;
+    margin-left: auto;
+    padding-left: 14px;
+    width: auto;
+    height: 22px;
+    background: none;
+    border: 0;
     color: var(--term-dim);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
+    opacity: 0.45;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: opacity 0.15s ease, color 0.15s ease;
   }
-  .copy__btn:hover { border-color: var(--term-accent); color: var(--term-ink); }
-  .copy__btn.copied { border-color: var(--term-ok); color: var(--term-ok); }
+  :global(.copy__cmd:hover .copy__rowbtn),
+  :global(.copy__rowbtn:focus-visible) { opacity: 1; }
+  :global(.copy__rowbtn:hover) { color: var(--term-ink); }
+  :global(.copy__rowbtn.copied) { color: var(--term-ok); opacity: 1; }
+  :global(.copy__icopy) { display: inline-flex; }
+  :global(.copy__idone) { display: none; }
+  :global(.copy__rowbtn.copied .copy__icopy) { display: none; }
+  :global(.copy__rowbtn.copied .copy__idone) { display: inline-flex; }
 </style>
 
 <script>
-  document.querySelectorAll(".copy").forEach((node) => {
-    const box = node as HTMLElement;
-    const btn = box.querySelector(".copy__btn");
-    const txt = box.querySelector(".copy__btntext");
-    btn?.addEventListener("click", async () => {
+  document.querySelectorAll(".copy .copy__rowbtn").forEach((el) => {
+    const btn = el as HTMLElement;
+    btn.addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(box.dataset.copy ?? "");
+        await navigator.clipboard.writeText(btn.dataset.cmd ?? "");
         btn.classList.add("copied");
-        if (txt) txt.textContent = "Copied";
-        setTimeout(() => {
-          btn.classList.remove("copied");
-          if (txt) txt.textContent = "Copy";
-        }, 1600);
+        setTimeout(() => btn.classList.remove("copied"), 1600);
       } catch {
         /* clipboard unavailable */
       }

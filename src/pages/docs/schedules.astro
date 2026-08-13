@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -45,8 +46,9 @@ const errorSnippet = `cicd: unsupported schedule — <reason>. Write the cron in
 cicd: Azure Pipelines schedules are UTC-only and Zuke's daylight-saving guard is
 GitHub-only. Use a fixed-offset timezone, or write the cron in UTC, for the azure provider.`;
 
-const checkSnippet = `zuke generate-ci --check   # fails on drift: "Run zuke generate-ci and commit the result."
-zuke generate-ci          # running the build also auto-regenerates`;
+const checkSnippet = `zuke generate-ci --check`;
+
+const regenerateSnippet = `zuke generate-ci`;
 ---
 
 <DocsLayout
@@ -84,7 +86,7 @@ zuke generate-ci          # running the build also auto-regenerates`;
   </p>
   <Code code={apiSnippet} lang="ts" theme="night-owl" />
   <p>The canonical example — weekday mornings and afternoons, Sofia local time:</p>
-  <Code code={exampleSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={exampleSnippet} lang="ts" />
 
   <h2 id="providers">Per-provider compilation</h2>
   <table class="dtable">
@@ -162,7 +164,9 @@ zuke generate-ci          # running the build also auto-regenerates`;
     collapsed via a <code>Set</code>. Because offsets are sampled from a pinned
     reference year, the output is deterministic:
   </p>
-  <Code code={checkSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={checkSnippet} lang="bash" />
+  <p>Or regenerate the file directly:</p>
+  <CopyCode code={regenerateSnippet} lang="bash" />
   <p>
     <code>zuke generate-ci --check</code> verifies the on-disk file matches
     the rendered output and fails on drift; running the build also

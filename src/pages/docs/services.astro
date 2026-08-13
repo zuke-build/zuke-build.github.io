@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -70,7 +70,7 @@ const healthSnippet = `.readyWhen(async () => {
     server in the background, <code>sleep 5</code> and hope it's up, run the tests,
     and remember to kill it (which never happens when the tests fail).
   </p>
-  <Code code={serviceSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={serviceSnippet} lang="ts" />
   <p>
     Running <code>zuke test</code> starts <code>api</code>, waits for port 8080 to
     accept connections, runs the tests against it, then stops <code>api</code> —
@@ -106,18 +106,18 @@ const healthSnippet = `.readyWhen(async () => {
     period, and reaps it). A <code>SpawnedProcess</code> is a valid handle, so the
     common case needs no explicit stop:
   </p>
-  <Code code={spawnSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={spawnSnippet} lang="ts" />
   <p>
     A handle is anything with a <code>stop()</code> method, so you can start a
     service any way you like — an in-process HTTP server, a library's
     <code>listen()</code> — and return something that shuts it down:
   </p>
-  <Code code={handleSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={handleSnippet} lang="ts" />
   <p>
     When the thing you start isn't self-stopping, provide <code>.stop()</code>
     explicitly; it receives whatever <code>.start()</code> returned:
   </p>
-  <Code code={stopSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={stopSnippet} lang="ts" />
 
   <h2 id="readiness">Readiness: <code>.readyWhen()</code> and <code>tcpReachable</code></h2>
   <p>
@@ -131,12 +131,12 @@ const healthSnippet = `.readyWhen(async () => {
     <code>tcpReachable("host:port")</code> is the built-in for the most common
     check — "is the port accepting connections yet?":
   </p>
-  <Code code={tcpSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={tcpSnippet} lang="ts" />
   <p>
     Any predicate works — probe an HTTP health endpoint, look for a file, query a
     readiness API:
   </p>
-  <Code code={healthSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={healthSnippet} lang="ts" />
   <div class="note">
     <p>
       Without a <code>.readyWhen()</code>, a service is considered ready the moment

@@ -1,8 +1,8 @@
 ---
-import { Code } from "astro:components";
 import Base from "../layouts/Base.astro";
 import DagDiagram from "../components/DagDiagram.astro";
 import CopyBlock from "../components/CopyBlock.astro";
+import CopyCode from "../components/CopyCode.astro";
 import { toolGroups, corePackages, packageCount } from "../data/tools.ts";
 
 const heroSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
@@ -325,7 +325,7 @@ const cdMoreIcons: Record<string, string> = {
         </div>
 
         <div class="hero__pane" id="hero-src" role="tabpanel" aria-labelledby="hero-tab-src" tabindex="0">
-          <Code code={heroSnippet} lang="ts" theme="night-owl" />
+          <CopyCode code={heroSnippet} lang="ts" />
         </div>
 
         <div class="hero__pane" id="hero-run" role="tabpanel" aria-labelledby="hero-tab-run" tabindex="0" hidden>
@@ -523,7 +523,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span>
             <span class="codecard__name">zuke.ts</span>
           </div>
-          <Code code={consoleSnippet} lang="ts" theme="night-owl" />
+          <CopyCode code={consoleSnippet} lang="ts" />
         </div>
         <div class="codecard panel">
           <div class="codecard__bar">
@@ -561,7 +561,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <span class="codecard__dot"></span>
           <span class="codecard__name">shell.ts</span>
         </div>
-        <Code code={shellSnippet} lang="ts" theme="night-owl" />
+        <CopyCode code={shellSnippet} lang="ts" />
       </div>
       <div data-reveal>
         <span class="eyebrow">The $ shell</span>
@@ -616,7 +616,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span>
             <span class="codecard__name">zuke.ts</span>
           </div>
-          <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+          <CopyCode code={cacheSnippet} lang="ts" />
         </div>
 
         <!-- the distributed-cache flow: machine A uploads, a CI job restores -->
@@ -857,7 +857,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <span class="codecard__dot"></span>
           <span class="codecard__name">zuke.ts</span>
         </div>
-        <Code code={healSnippet} lang="ts" theme="night-owl" />
+        <CopyCode code={healSnippet} lang="ts" />
       </div>
       <p class="heal-code__note">
         One primitive powers it: a <code>Remediation</code> runs only after a
@@ -908,7 +908,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span>
             <span class="codecard__name">shell</span>
           </div>
-          <Code code={mcpSnippet} lang="bash" theme="night-owl" />
+          <CopyCode code={mcpSnippet} lang="bash" multi />
         </div>
 
         <!-- the tools an MCP client sees over the build -->
@@ -960,7 +960,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <span class="codecard__dot"></span>
           <span class="codecard__name">install the skills</span>
         </div>
-        <Code code={skillsSnippet} lang="bash" theme="night-owl" />
+        <CopyCode code={skillsSnippet} lang="bash" multi />
       </div>
       <div data-reveal>
         <span class="eyebrow">Agent skills <span class="tag-new">New</span></span>
@@ -1029,7 +1029,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
             <span class="codecard__name">zuke.ts</span>
           </div>
-          <Code code={resumeSnippet} lang="ts" theme="night-owl" />
+          <CopyCode code={resumeSnippet} lang="ts" />
         </div>
         <div class="codecard panel">
           <div class="codecard__bar">
@@ -1055,7 +1055,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
             <span class="codecard__name">zuke.ts</span>
           </div>
-          <Code code={lockSnippet} lang="ts" theme="night-owl" />
+          <CopyCode code={lockSnippet} lang="ts" />
         </div>
         <div class="codecard panel">
           <div class="codecard__bar">
@@ -1119,7 +1119,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
             <span class="codecard__name">zuke.ts</span>
           </div>
-          <Code code={fanOutSnippet} lang="ts" theme="night-owl" />
+          <CopyCode code={fanOutSnippet} lang="ts" />
         </div>
         <div class="codecard panel">
           <div class="codecard__bar">
@@ -1144,7 +1144,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
             <span class="codecard__name">shell</span>
           </div>
-          <Code code={mcpHardSnippet} lang="bash" theme="night-owl" />
+          <CopyCode code={mcpHardSnippet} lang="bash" multi />
         </div>
         <div class="codecard panel">
           <div class="codecard__bar">

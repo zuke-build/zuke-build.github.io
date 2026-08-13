@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -115,7 +116,7 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
     from start to finish, useful for correlating logs. <code>target</code> is
     the dotted name of the target currently executing.
   </p>
-  <Code code={exampleSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={exampleSnippet} lang="ts" />
 
   <h2 id="state">ctx.state</h2>
   <p>
@@ -148,7 +149,7 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
     target whose body ran and one served from the incremental cache both read
     <code>succeeded</code>, which is the distinction the record keeps.
   </p>
-  <Code code={outcomesSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={outcomesSnippet} lang="ts" />
   <p>
     This is what makes an aggregate target — a required status check over a set
     of checks, some of which are allowed to fail — expressible:
@@ -184,7 +185,7 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
     runs, so a process killed anywhere inside it leaves evidence that the effect
     was owed, and a resume drives it again.
   </p>
-  <Code code={effectSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={effectSnippet} lang="ts" />
   <ul>
     <li>
       <strong>At-least-once, not exactly-once.</strong> A process that dies
@@ -241,7 +242,7 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
     signal is delivered with <code>zuke resume --signal</code> and how a
     target waits on one.
   </p>
-  <Code code={signalsSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={signalsSnippet} lang="ts" />
 
   <h2 id="cancel">Ambient cancellation</h2>
   <p>
@@ -254,7 +255,7 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
     on one command — or compose it with <code>.killAfter()</code> for a grace
     period before <code>SIGKILL</code>:
   </p>
-  <Code code={cancelSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cancelSnippet} lang="ts" />
   <p>
     Zuke never forcibly interrupts arbitrary JavaScript, though: a body that
     ignores <code>signal</code> and never touches the shell runs to

@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -70,17 +70,17 @@ class CI extends Build {
   build = target().inputs("src").outputs("dist").executes(/* … */);
 }`;
 
-const remoteEnvSnippet = `# HTTP backend — any object store or cache server behind a URL
-ZUKE_REMOTE_CACHE_URL=https://cache.example.com ZUKE_REMOTE_CACHE_TOKEN=… ./zuke ci
+const remoteEnvHttpSnippet = `ZUKE_REMOTE_CACHE_URL=https://cache.example.com ZUKE_REMOTE_CACHE_TOKEN=… ./zuke ci`;
 
-# Filesystem backend — a shared / mounted directory
-ZUKE_REMOTE_CACHE_DIR=/mnt/zuke-cache ./zuke ci
+const remoteEnvFsSnippet = `ZUKE_REMOTE_CACHE_DIR=/mnt/zuke-cache ./zuke ci`;
 
-./zuke ci --no-remote-cache   # use the local cache only for this run`;
+const noRemoteCacheSnippet = `./zuke ci --no-remote-cache`;
 
-const affectedSnippet = `zuke ci --affected                 # vs HEAD (uncommitted changes)
-zuke ci --affected=origin/main     # vs a base branch — the usual CI form
-zuke ci --affected=main...         # merge-base comparison`;
+const affectedSnippet = `zuke ci --affected`;
+
+const affectedBranchSnippet = `zuke ci --affected=origin/main`;
+
+const affectedMergeBaseSnippet = `zuke ci --affected=main...`;
 
 const customStoreSnippet = `import { type CacheEntry, type CacheStore } from "jsr:@zuke/ai";
 
@@ -147,7 +147,7 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     still exists, the target is <strong>skipped</strong> and reported
     <code>cached</code>. Otherwise it runs and its fingerprint is refreshed.
   </p>
-  <Code code={incrementalSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={incrementalSnippet} lang="ts" />
 
   <h2 id="fingerprint">What "unchanged" means</h2>
   <p>
@@ -189,7 +189,7 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     also rebuilds when that value changes. The function may be async and is
     repeatable.
   </p>
-  <Code code={cacheKeySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cacheKeySnippet} lang="ts" />
   <div class="note">
     <p>
       A <code>.cacheKey()</code> <strong>on its own makes a target cacheable</strong>
@@ -261,7 +261,7 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     <code>cached</code> in the summary, just like a local hit. A store outage is
     never fatal: Zuke logs a warning and falls back to a local rebuild.
   </p>
-  <Code code={remoteOverrideSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={remoteOverrideSnippet} lang="ts" />
 
   <h3 id="remote-backends">Backends &amp; configuration</h3>
   <p>
@@ -288,9 +288,14 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
   <p>
     Declare a store in code with a typed <code>remoteCache()</code> override (as
     above), or configure it from the environment with no build-file change —
-    handy for CI:
+    handy for CI. The HTTP backend — any object store or cache server behind a
+    URL:
   </p>
-  <Code code={remoteEnvSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={remoteEnvHttpSnippet} lang="bash" />
+  <p>The filesystem backend — a shared / mounted directory:</p>
+  <CopyCode code={remoteEnvFsSnippet} lang="bash" />
+  <p>Or use the local cache only for a single run:</p>
+  <CopyCode code={noRemoteCacheSnippet} lang="bash" />
   <p>
     Precedence is: an explicit <code>execute(&#123; remoteCache &#125;)</code>
     option, then the build's <code>remoteCache()</code> override, then the
@@ -324,9 +329,13 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     incremental cache. Zuke asks git for the files changed since a base revision
     and keeps only the <strong>affected</strong> targets; the rest are skipped
     (their prior outputs are assumed current, so a skipped dependency still unblocks
-    its dependents).
+    its dependents). Against <code>HEAD</code> — uncommitted changes:
   </p>
-  <Code code={affectedSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={affectedSnippet} lang="bash" />
+  <p>Against a base branch — the usual CI form:</p>
+  <CopyCode code={affectedBranchSnippet} lang="bash" />
+  <p>Or a merge-base comparison:</p>
+  <CopyCode code={affectedMergeBaseSnippet} lang="bash" />
   <p>
     A target is affected when a changed file falls inside one of its declared
     <code>.inputs()</code>, <strong>or</strong> when any of its dependencies is
@@ -358,9 +367,9 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     <strong>identical</strong> call reuses the stored answer instead of paying for
     the model again.
   </p>
-  <Code code={aiReviewCacheSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={aiReviewCacheSnippet} lang="ts" />
   <p>The same cache attaches to a <a href="/docs/self-healing">fixer</a> with <code>.cache(...)</code>:</p>
-  <Code code={aiFixerCacheSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={aiFixerCacheSnippet} lang="ts" />
 
   <h2 id="ai-keying">How a call is keyed</h2>
   <p>
@@ -406,7 +415,7 @@ securityReviewer((r) => r.provider("openai").cache(aiCache((c) => c.store(inMemo
     <code>.store(...)</code>, which is how tests inject an in-memory store for a
     single run:
   </p>
-  <Code code={customStoreSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={customStoreSnippet} lang="ts" />
   <p>
     Caching pairs naturally with the other AI
     <a href="/docs/ai-review">cost controls</a> (<code>budget</code>,

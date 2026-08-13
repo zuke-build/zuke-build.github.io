@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -38,9 +39,11 @@ const httpRegistrySnippet = `class CD extends Build {
   }
 }`;
 
-const registerCliSnippet = `deno run -A zuke.ts register            # writes .zuke/builds/<id>.json by default
-deno run -A zuke.ts register --json
-zuke mcp --registry --allow-run`;
+const registerSnippet = `deno run -A zuke.ts register`;
+
+const registerJsonSnippet = `deno run -A zuke.ts register --json`;
+
+const registryMcpSnippet = `zuke mcp --registry --allow-run`;
 ---
 
 <DocsLayout
@@ -110,7 +113,7 @@ zuke mcp --registry --allow-run`;
     <code>.zuke/runs</code>; over HTTP it rides a <code>/builds</code> REST
     contract beside <code>/runs</code>):
   </p>
-  <Code code={httpRegistrySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={httpRegistrySnippet} lang="ts" />
 
   <h2 id="resolution">Resolution & env vars</h2>
   <p>Which registry a build uses is resolved in order:</p>
@@ -141,9 +144,14 @@ zuke mcp --registry --allow-run`;
   <h2 id="register">Registering a build</h2>
   <p>
     <code>zuke register</code> writes (or idempotently updates) this build's
-    descriptor into the resolved registry, excluding secrets:
+    descriptor into the resolved registry — <code>.zuke/builds/&lt;id&gt;.json</code>
+    by default — excluding secrets:
   </p>
-  <Code code={registerCliSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={registerSnippet} lang="bash" />
+  <p>Add <code>--json</code> to also print the written descriptor:</p>
+  <CopyCode code={registerJsonSnippet} lang="bash" />
+  <p>Then serve the registered catalog over MCP:</p>
+  <CopyCode code={registryMcpSnippet} lang="bash" />
 
   <h2 id="discovery">Dynamic MCP discovery</h2>
   <p>

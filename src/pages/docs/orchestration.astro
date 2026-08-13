@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -185,7 +186,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     returning a target to run instead (a rollback). The canonical shape —
     deploy, wait for an external approval, then promote:
   </p>
-  <Code code={deploySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={deploySnippet} lang="ts" />
   <p>Resuming it once QA signs off:</p>
   <Code code={resumeCliSnippet} lang="bash" theme="night-owl" />
   <div class="note">
@@ -220,7 +221,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     third-party trigger built on the exported <code>WaitTrigger</code> /
     <code>WaitContext</code> seam, so you can write your own the same way.
   </p>
-  <Code code={ghWaitSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={ghWaitSnippet} lang="ts" />
   <ul>
     <li>
       <strong>Dispatch-once, then poll.</strong> On first reach it records a
@@ -268,7 +269,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     <strong>target</strong> workflow are load-bearing — each is a deterministic
     dispatch <code>422</code> or a gate that hangs until timeout:
   </p>
-  <Code code={ghContractSnippet} lang="yaml" theme="night-owl" />
+  <CopyCode code={ghContractSnippet} lang="yaml" />
   <ul>
     <li>
       <strong>Marker input name.</strong> GitHub <code>422</code>s a dispatch
@@ -363,7 +364,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
 
   <h2 id="deadline"><code>Build.deadline()</code></h2>
   <p>A wall-clock budget for a whole run. It bounds <strong>running</strong>, not existing:</p>
-  <Code code={deadlineSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={deadlineSnippet} lang="ts" />
   <p>
     A run parked at a <code>.waitsFor(...)</code> gate is <strong>not</strong>
     spending it: the deadline is pushed forward on resume by however long the
@@ -400,7 +401,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
   </p>
   <Code code={forEachApiSnippet} lang="ts" theme="night-owl" />
   <p>The canonical batch deploy — one three-stage pipeline per repo:</p>
-  <Code code={batchDeploySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={batchDeploySnippet} lang="ts" />
   <p>
     <code>concurrency</code> clamps to at least 1 and defaults to the host's
     CPU count. <code>continueOnItemFailure()</code> decides whether a
@@ -499,7 +500,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
   <Code code={cancelApiSnippet} lang="ts" theme="night-owl" />
   <p>Trigger a cancel from any of three places:</p>
   <Code code={cancelCliSnippet} lang="bash" theme="night-owl" />
-  <Code code={compensationSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={compensationSnippet} lang="ts" />
   <p>
     The compensation body gets a normal <a href="/docs/run-context">ctx</a>,
     but its <code>ctx.state</code> exposes the <strong>original target's</strong>
@@ -535,7 +536,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     resolved only when a run plans — neither shows in the static
     <code>graph</code> / <code>--list</code> views nor in generated CI.
   </p>
-  <Code code={orderWithSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={orderWithSnippet} lang="ts" />
 
   <h2 id="params">Parameters for fan-out</h2>
   <p>
@@ -545,7 +546,7 @@ TAGS=latest,canary ./zuke deploy            # from env`;
     <code>.options()</code> already declared, so every element is validated
     before any target runs:
   </p>
-  <Code code={arrayParamSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={arrayParamSnippet} lang="ts" />
   <Code code={arrayCliSnippet} lang="bash" theme="night-owl" />
   <p>
     Blank entries are dropped and an unsupplied list defaults to

@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -103,7 +103,7 @@ awaitApproval = target()
     target can declare — each method, its exact signature, and where the deeper
     features are documented in full.
   </p>
-  <Code code={introSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={introSnippet} lang="ts" />
   <p>
     Dependencies are passed as sibling <em>references</em>
     (<code>this.lint</code>), never as strings: the framework maps each builder
@@ -151,7 +151,7 @@ awaitApproval = target()
       <tr><td><code>.partOf(group)</code></td><td><code>(group: Group) =&gt; this</code></td><td>Join a parallel batch created by <code>group()</code>.</td></tr>
     </tbody>
   </table>
-  <Code code={groupSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={groupSnippet} lang="ts" />
   <div class="note">
     <p>
       <code>.dryRunnable()</code> is opt-in because Zuke can only intercept
@@ -183,7 +183,7 @@ awaitApproval = target()
       <tr><td><code>.requires(...params)</code></td><td><code>(...p: Parameter[]) =&gt; this</code></td><td>Fail the target (naming the parameter) unless each listed <a href="/docs/concepts#parameters">parameter</a> resolved to a value. For a parameter that is optional build-wide but mandatory here.</td></tr>
     </tbody>
   </table>
-  <Code code={depsSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={depsSnippet} lang="ts" />
   <div class="note">
     <p>
       <strong>External ordering lives on the <code>Build</code>, not the
@@ -226,7 +226,7 @@ awaitApproval = target()
       <tr><td><code>.consumes(...targets)</code></td><td><code>(...t: Array&lt;Target | Group&gt;) =&gt; this</code></td><td>Depend on the producers and use their <code>produces</code> artifacts — an alias of <code>dependsOn</code> that reads as artifact use.</td></tr>
     </tbody>
   </table>
-  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cacheSnippet} lang="ts" />
   <p>
     A target with no inputs and no cache keys always runs. Fingerprints live in
     <code>.zuke/cache.json</code>; a cached/skipped target counts as satisfied,
@@ -258,8 +258,8 @@ awaitApproval = target()
       <tr><td><code>.proceedAfterFailure()</code></td><td><code>() =&gt; this</code></td><td>Keep running the rest of the build if this target fails. The build still reports failure, and this target's own dependents are skipped.</td></tr>
     </tbody>
   </table>
-  <Code code={validationSnippet} lang="ts" theme="night-owl" />
-  <Code code={lifecycleSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={validationSnippet} lang="ts" />
+  <CopyCode code={lifecycleSnippet} lang="ts" />
   <div class="note">
     <p>
       <a href="https://jsr.io/@zuke/ai">@zuke/ai</a> ships AI reviewers
@@ -320,7 +320,7 @@ awaitApproval = target()
       <tr><td><code>.recoverAttempts(n)</code></td><td><code>(n: number) =&gt; this</code></td><td>Bound how many fix-then-rerun cycles are tried (default 1, clamped to at least 1).</td></tr>
     </tbody>
   </table>
-  <Code code={resilienceSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={resilienceSnippet} lang="ts" />
   <div class="note">
     <p>
       A <strong><code>Remediation</code></strong> is any object with a

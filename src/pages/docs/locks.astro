@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -62,7 +63,7 @@ export type LockResult = { ok: true; token: string } | { ok: false; holder: Lock
     <code>this.&lt;param&gt;.value</code>:
   </p>
   <Code code={authoringSnippet} lang="ts" theme="night-owl" />
-  <Code code={exampleSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={exampleSnippet} lang="ts" />
 
   <h2 id="lockkey">lockKey()</h2>
   <p>

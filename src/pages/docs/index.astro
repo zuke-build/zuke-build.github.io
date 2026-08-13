@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -22,18 +23,17 @@ source <(./zuke completions print bash)
 source <(./zuke completions print zsh)
 ./zuke completions print fish | source`;
 
-const graphSnippet = `./zuke graph                 # print the dependency graph as text
-./zuke graph --output=html   # render an interactive HTML page and open it
-./zuke graph --output=html --no-open   # write .zuke/graph.html without opening`;
+const graphTextSnippet = `./zuke graph`;
 
-const installSnippet = `# Install the CLI globally with Deno
-deno install -A -g -n zuke jsr:@zuke/cli
+const graphHtmlSnippet = `./zuke graph --output=html`;
 
-# Scaffold zuke.ts, launchers, and config in your project
-zuke setup
+const graphNoOpenSnippet = `./zuke graph --output=html --no-open`;
 
-# Run it — the ./zuke launcher bootstraps Deno if needed
-./zuke`;
+const installCliSnippet = `deno install -A -g -n zuke jsr:@zuke/cli`;
+
+const setupSnippet = `zuke setup`;
+
+const firstRunSnippet = `./zuke`;
 
 const buildSnippet = `import { Build, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
@@ -99,10 +99,16 @@ Total                  17.8s
   <h2 id="install">Install</h2>
   <p>
     Zuke runs on <a href="https://deno.com" target="_blank" rel="noopener noreferrer">Deno</a> and ships on
-    <a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>. Install the CLI globally, then let it
-    scaffold a project:
+    <a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>. Install the CLI globally with Deno:
   </p>
-  <Code code={installSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={installCliSnippet} lang="bash" />
+  <p>
+    Then scaffold <code>zuke.ts</code>, the launchers, and config in your
+    project:
+  </p>
+  <CopyCode code={setupSnippet} lang="bash" />
+  <p>And run it — the <code>./zuke</code> launcher bootstraps Deno if needed:</p>
+  <CopyCode code={firstRunSnippet} lang="bash" />
   <div class="note">
     <p>
       The launcher <code>zuke setup</code> scaffolds runs <code>zuke.ts</code>
@@ -147,7 +153,7 @@ Total                  17.8s
     <code>this.*</code> references, and provide the work in
     <code>executes</code>:
   </p>
-  <Code code={buildSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={buildSnippet} lang="ts" />
   <p>
     Because <code>compile</code> depends on <code>this.clean</code>, Zuke runs
     <code>clean</code> first — automatically and exactly once. Rename
@@ -163,7 +169,7 @@ Total                  17.8s
 
   <h2 id="run">Running targets</h2>
   <p>Invoke any target through the launcher:</p>
-  <Code code={runSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={runSnippet} lang="bash" multi />
   <p>
     Each target is framed with a ruled banner and closes with a pass/fail line
     and its duration. The run ends with an aligned <strong>Build Summary</strong>
@@ -206,13 +212,16 @@ Total                  17.8s
 
   <h2 id="graph">Visualizing the graph</h2>
   <p>
-    <code>zuke graph</code> prints the dependency graph as a terminal listing.
+    <code>zuke graph</code> prints the dependency graph as a terminal listing:
+  </p>
+  <CopyCode code={graphTextSnippet} lang="bash" />
+  <p>
     Add <code>--output=html</code> to render it instead as a self-contained,
     interactive <a href="https://js.cytoscape.org/" target="_blank" rel="noopener noreferrer">Cytoscape</a> page written to
     <code>&lt;repo root&gt;/.zuke/graph.html</code> — which Zuke then opens in your
     browser:
   </p>
-  <Code code={graphSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={graphHtmlSnippet} lang="bash" />
   <p>
     Nodes are colour-coded by dependency depth (roots through leaves) on a dark
     canvas. Pan and zoom freely, <strong>click a target</strong> to highlight
@@ -220,8 +229,12 @@ Total                  17.8s
     switch the layout direction or export a PNG from the header. Targets in a
     <a href="/docs/concepts#groups"><code>group()</code></a> are drawn inside a
     labelled box. Pass <code>--no-open</code> to write the file without launching
-    a browser (handy in CI). See
-    <a href="/examples#graph">Zuke's own build graph</a> for a rendered example.
+    a browser (handy in CI):
+  </p>
+  <CopyCode code={graphNoOpenSnippet} lang="bash" />
+  <p>
+    See <a href="/examples#graph">Zuke's own build graph</a> for a rendered
+    example.
   </p>
   <div class="note">
     <p>
@@ -237,7 +250,7 @@ Total                  17.8s
     and wires it into your shell in one step; <code>print</code> emits it to
     stdout if you'd rather source it yourself:
   </p>
-  <Code code={completionsSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={completionsSnippet} lang="bash" multi />
   <p>
     Completions cover your <strong>target names</strong>, the reserved commands
     (<code>graph</code>, <code>generate-ci</code>, <code>completions</code>), the

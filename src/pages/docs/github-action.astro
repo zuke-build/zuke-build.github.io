@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -61,7 +62,7 @@ const generatedSnippet = `class Ci extends Build {
   </p>
 
   <h2 id="usage">Using the action</h2>
-  <Code code={usageSnippet} lang="yaml" theme="night-owl" />
+  <CopyCode code={usageSnippet} lang="yaml" />
   <p>
     It is the <strong>first</strong> step, with nothing before it: a remote
     action is fetched by the runner rather than from your workspace, so it needs
@@ -102,7 +103,7 @@ const generatedSnippet = `class Ci extends Build {
     this step, a moved tag could simply not harden. Pin the full commit SHA,
     with the version beside it:
   </p>
-  <Code code={pinSnippet} lang="yaml" theme="night-owl" />
+  <CopyCode code={pinSnippet} lang="yaml" />
   <p>
     Dependabot bumps that line for you and writes the new version into the
     comment. The <code>@v1</code> form above is the shorter thing to read in a
@@ -128,7 +129,7 @@ const generatedSnippet = `class Ci extends Build {
     enforcing it. To actually enforce, run once on <code>audit</code>, take the
     endpoint list from the run's insights, then set both:
   </p>
-  <Code code={blockSnippet} lang="yaml" theme="night-owl" />
+  <CopyCode code={blockSnippet} lang="yaml" />
   <div class="note">
     <p>
       One caveat worth confirming before you rely on it: harden-runner's
@@ -181,7 +182,7 @@ const generatedSnippet = `class Ci extends Build {
     the way the snippet above does. A job that already pins its own checkout
     action, or whose steps cover the prelude, keeps what it declares.
   </p>
-  <Code code={generatedSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={generatedSnippet} lang="ts" />
   <p>
     Zuke's own workflows all open with
     <code>uses: zuke-build/zuke@&lt;sha&gt;</code>, so the repository dogfoods

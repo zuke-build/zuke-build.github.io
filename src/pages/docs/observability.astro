@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -137,8 +138,8 @@ await run(MyBuild, { plugins: [otel()] });`;
   </div>
 
   <h2 id="examples">Setup examples</h2>
-  <Code code={explicitSnippet} lang="ts" theme="night-owl" />
-  <Code code={envOnlySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={explicitSnippet} lang="ts" />
+  <CopyCode code={envOnlySnippet} lang="ts" />
   <div class="note">
     <p>
       Export is best-effort: a down or slow collector never fails the build

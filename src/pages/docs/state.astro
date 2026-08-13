@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -86,11 +87,9 @@ zuke runs list --counts --json                                   # { total, bySt
 zuke runs show 6f1c…                                             # header, params, per-target, signals, events
 zuke runs show 6f1c… --json                                      # raw record`;
 
-const pruneSnippet = `# Delete terminal runs older than 90 days, but always keep the newest 50.
-zuke runs prune --keep 90d --keep-last 50
+const pruneSnippet = `zuke runs prune --keep 90d --keep-last 50`;
 
-# Preview what would go, without deleting.
-zuke runs prune --keep 30d --dry-run`;
+const pruneDryRunSnippet = `zuke runs prune --keep 30d --dry-run`;
 
 const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://localhost:8080 [--token …]`;
 ---
@@ -113,7 +112,7 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     Inside a target body, <code>ctx.state</code> is a
     <code>TargetStateHandle</code> scoped to the executing target:
   </p>
-  <Code code={ctxStateSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={ctxStateSnippet} lang="ts" />
   <Code code={stateHandleSnippet} lang="ts" theme="night-owl" />
   <p>
     <code>set(patch)</code> merges a JSON patch into the target's metadata and
@@ -149,7 +148,7 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     <li><code>--state</code> CLI flag, with nothing above set → a <code>FileSystemStateStore</code> at <code>.zuke/runs</code>.</li>
   </ol>
   <p>None applying means no store and no record — a run stays in-memory.</p>
-  <Code code={httpOverrideSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={httpOverrideSnippet} lang="ts" />
 
   <h2 id="interfaces">StateStore interface &amp; RunRecord</h2>
   <p>Every backend implements the same <code>StateStore</code> contract:</p>
@@ -301,8 +300,13 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
   </p>
 
   <h2 id="retention">Retention</h2>
-  <p>Records accumulate, so old ones can be pruned:</p>
-  <Code code={pruneSnippet} lang="bash" theme="night-owl" />
+  <p>
+    Records accumulate, so old ones can be pruned — say, delete terminal runs
+    older than 90 days, but always keep the newest 50:
+  </p>
+  <CopyCode code={pruneSnippet} lang="bash" />
+  <p>Preview what would go, without deleting:</p>
+  <CopyCode code={pruneDryRunSnippet} lang="bash" />
   <p>
     A run is removed only when it is <strong>terminal</strong>
     (<code>succeeded</code>, <code>failed</code>, <code>cancelled</code>)

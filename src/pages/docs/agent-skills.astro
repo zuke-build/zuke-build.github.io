@@ -1,5 +1,5 @@
 ---
-import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -10,19 +10,15 @@ const toc = [
   { id: "portability", label: "One source, every harness" },
 ];
 
-const claudeSnippet = `# in Claude Code
-/plugin marketplace add zuke-build/zuke
-/plugin install zuke@zuke`;
+const claudeMarketplaceSnippet = `/plugin marketplace add zuke-build/zuke`;
+const claudeInstallSnippet = `/plugin install zuke@zuke`;
 
-const codexSnippet = `# in a shell
-codex plugin marketplace add zuke-build/zuke
-codex plugin add zuke@zuke`;
+const codexMarketplaceSnippet = `codex plugin marketplace add zuke-build/zuke`;
+const codexInstallSnippet = `codex plugin add zuke@zuke`;
 
-const codexSkillInstallerSnippet = `# or pull a single skill with Codex's built-in installer skill
-$skill-installer install https://github.com/zuke-build/zuke/tree/master/skills/zuke-write-build`;
+const codexSkillInstallerSnippet = `$skill-installer install https://github.com/zuke-build/zuke/tree/master/skills/zuke-write-build`;
 
-const geminiSnippet = `# in a shell
-gemini extensions install https://github.com/zuke-build/zuke`;
+const geminiSnippet = `gemini extensions install https://github.com/zuke-build/zuke`;
 ---
 
 <DocsLayout
@@ -59,9 +55,11 @@ gemini extensions install https://github.com/zuke-build/zuke`;
   <h2 id="claude-code">Claude Code</h2>
   <p>
     The skills are packaged as a Claude Code plugin distributed from the repo's
-    marketplace. In Claude Code:
+    marketplace. In Claude Code, add the marketplace:
   </p>
-  <Code code={claudeSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={claudeMarketplaceSnippet} lang="bash" />
+  <p>Then install the plugin from it:</p>
+  <CopyCode code={claudeInstallSnippet} lang="bash" />
   <p>
     That makes <code>zuke-setup</code> and <code>zuke-write-build</code>
     available — they trigger automatically when you ask Claude to add Zuke to a
@@ -73,11 +71,17 @@ gemini extensions install https://github.com/zuke-build/zuke`;
   <p>
     The same plugin installs into Codex from the same repo — it carries a
     Codex-native <code>.agents/plugins/marketplace.json</code> and
-    <code>.codex-plugin/plugin.json</code> alongside the Claude manifests:
+    <code>.codex-plugin/plugin.json</code> alongside the Claude manifests. Add
+    the marketplace:
   </p>
-  <Code code={codexSnippet} lang="bash" theme="night-owl" />
-  <p>A single skill can also be pulled straight from the repo:</p>
-  <Code code={codexSkillInstallerSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={codexMarketplaceSnippet} lang="bash" />
+  <p>Then install the plugin from it:</p>
+  <CopyCode code={codexInstallSnippet} lang="bash" />
+  <p>
+    A single skill can also be pulled straight from the repo with Codex's
+    built-in installer skill:
+  </p>
+  <CopyCode code={codexSkillInstallerSnippet} lang="bash" />
 
   <h2 id="gemini">Gemini CLI</h2>
   <p>
@@ -85,7 +89,7 @@ gemini extensions install https://github.com/zuke-build/zuke`;
     <code>gemini-extension.json</code>; Gemini auto-discovers the
     <code>skills/</code> folder next to it):
   </p>
-  <Code code={geminiSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={geminiSnippet} lang="bash" />
   <p>
     Gemini installs a GitHub extension from the repo's <strong>latest
     release</strong> snapshot (offering a git clone as the fallback), so the

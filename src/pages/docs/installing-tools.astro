@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -206,7 +207,7 @@ class Test extends Build {
     through a <code>ToolInstallSettings</code> lambda, and resolves to the
     installed binary's path.
   </p>
-  <Code code={installOneSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={installOneSnippet} lang="ts" />
   <table class="dtable">
     <thead>
       <tr><th>Method</th><th>Purpose</th></tr>
@@ -267,7 +268,7 @@ class Test extends Build {
       like <code>.url(...)</code>, when a build runs on more than one platform:
     </p>
   </div>
-  <Code code={checksumResolverSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={checksumResolverSnippet} lang="ts" />
 
   <h2 id="toolchain"><code>toolchain()</code> — many tools</h2>
   <p>
@@ -277,7 +278,7 @@ class Test extends Build {
     <strong>concurrently</strong> — pinned, verified, and cached — and returns a
     <code>Map&lt;name, AbsolutePath&gt;</code>.
   </p>
-  <Code code={toolchainSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={toolchainSnippet} lang="ts" />
   <ul>
     <li><strong>Install directory.</strong> Tools default to <code>.zuke/tools</code> (<code>DEFAULT_TOOLS_DIR</code>). Override for all with <code>install(&#123; destDir &#125;)</code>, or per tool with <code>.destDir(...)</code>.</li>
     <li><strong>Custom downloader.</strong> <code>install(&#123; download &#125;)</code> swaps the downloader for every tool — a test seam.</li>
@@ -298,7 +299,7 @@ class Test extends Build {
     <code>.archive(...)</code> defaults to <code>"tar.gz"</code> and
     <code>"raw"</code> is rejected.
   </p>
-  <Code code={treeSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={treeSnippet} lang="ts" />
   <p>
     Because <code>AbsolutePath</code> is callable, the returned root doubles as an
     accessor: <code>root("bin", "node")</code> is the node binary and
@@ -324,7 +325,7 @@ class Test extends Build {
     <code>.tree((s) =&gt; …)</code> — its <code>install()</code> map entry is the
     tree's root:
   </p>
-  <Code code={treeChainSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={treeChainSnippet} lang="ts" />
 
   <h2 id="npm-package-tools">npm-package tools</h2>
   <p>
@@ -333,7 +334,7 @@ class Test extends Build {
     <strong>npm registry</strong>. <code>Toolchain.npm(...)</code> provisions
     one as a version-pinned, cached tool without an ambient <code>npm ci</code>:
   </p>
-  <Code code={npmToolSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={npmToolSnippet} lang="ts" />
   <p>
     Each package installs under <code>&lt;destDir&gt;/npm/&lt;name&gt;@&lt;version&gt;</code>
     via <code>npm install --prefix &lt;dir&gt; --no-save &lt;name&gt;@&lt;version&gt;</code>,
@@ -357,7 +358,7 @@ class Test extends Build {
     <code>AbsolutePath</code> stringifies to the path, so <code>String(bin)</code>
     (or <code>bin.path</code>) works anywhere a string is expected:
   </p>
-  <Code code={usingSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={usingSnippet} lang="ts" />
 
   <h2 id="platform">Cross-platform URL resolution</h2>
   <p>
@@ -385,7 +386,7 @@ class Test extends Build {
     its tools on demand inside the target that needs them — so a CI job needs no
     "set up tool X" step:
   </p>
-  <Code code={ciSnippet} lang="yaml" theme="night-owl" />
+  <CopyCode code={ciSnippet} lang="yaml" />
   <ul>
     <li><strong>Egress.</strong> If the runner restricts network egress, allow the tools' download hosts (e.g. <code>get.helm.sh</code>, <code>dl.k8s.io</code>) alongside Deno's.</li>
     <li><strong>Re-downloads.</strong> An ephemeral runner starts with an empty <code>.zuke/</code>, so tools are fetched each run — safe and verified thanks to the checksum. To skip the download, persist the install directory between runs (e.g. <code>actions/cache</code> keyed on the tool versions/checksums), or share it through the <a href="/docs/caching#remote">remote cache</a>.</li>

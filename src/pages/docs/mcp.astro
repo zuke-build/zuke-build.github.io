@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -16,24 +17,22 @@ const toc = [
   { id: "protocol", label: "Protocol notes" },
 ];
 
-const runSnippet = `zuke mcp              # read-only: inspect the build, never execute
-zuke mcp --allow-run  # also expose run:<target> tools that execute targets`;
+const runSnippet = `zuke mcp`;
 
-const registerSnippet = `# Claude Code — any client that speaks stdio MCP works the same way
-claude mcp add zuke -- deno run -A zuke.ts mcp
+const runAllowRunSnippet = `zuke mcp --allow-run`;
 
-# add --allow-run when you want the agent to execute targets
-claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
+const registerSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp`;
+
+const registerAllowRunSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
 
 const callSnippet = `// tools/call
 { "name": "run:test", "arguments": { "environment": "dev", "coverage": true } }`;
 
-const httpSnippet = `deno run -A zuke.ts mcp --http 7777              # loopback only: 127.0.0.1, ::1, localhost
-ZUKE_MCP_TOKEN=… deno run -A zuke.ts mcp --http 0.0.0.0:7777 --allow-run
-# non-loopback --http REQUIRES ZUKE_MCP_TOKEN, else the server refuses to start`;
+const httpSnippet = `deno run -A zuke.ts mcp --http 7777`;
 
-const originSnippet = `# loopback bind: browser Origins must be loopback; permit an extra one (repeatable):
-deno run -A zuke.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
+const httpTokenSnippet = `ZUKE_MCP_TOKEN=… deno run -A zuke.ts mcp --http 0.0.0.0:7777 --allow-run`;
+
+const originSnippet = `deno run -A zuke.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
 
 const authorizationSnippet = `# expose everything to run, gate promoteToProd behind an operator token, confirm destructive, authenticated HTTP:
 ZUKE_OPERATOR_TOKEN=… ZUKE_MCP_TOKEN=… zuke mcp --http 0.0.0.0:7777 --allow-run --protect promoteToProd --confirm-destructive`;
@@ -88,7 +87,13 @@ const identitySnippet = `class ControlPlane extends Build {
   </p>
 
   <h2 id="running">Running it</h2>
-  <Code code={runSnippet} lang="bash" theme="night-owl" />
+  <p>Read-only — the agent can inspect the build, never execute it:</p>
+  <CopyCode code={runSnippet} lang="bash" />
+  <p>
+    <code>--allow-run</code> also exposes <code>run:&lt;target&gt;</code> tools
+    that execute targets:
+  </p>
+  <CopyCode code={runAllowRunSnippet} lang="bash" />
   <p>
     The process reads JSON-RPC from stdin and writes responses to stdout; its one
     startup line goes to stderr so it never corrupts the protocol stream. It runs
@@ -98,11 +103,13 @@ const identitySnippet = `class ControlPlane extends Build {
 
   <h2 id="register">Registering with a client</h2>
   <p>
-    Most clients take a command to launch the server. Give it
-    <code>deno run -A zuke.ts mcp</code> (add <code>--allow-run</code> when you want
-    the agent to execute targets):
+    Most clients take a command to launch the server — any client that speaks
+    stdio MCP works the same way. In Claude Code, give it
+    <code>deno run -A zuke.ts mcp</code>:
   </p>
-  <Code code={registerSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={registerSnippet} lang="bash" />
+  <p>Add <code>--allow-run</code> when you want the agent to execute targets:</p>
+  <CopyCode code={registerAllowRunSnippet} lang="bash" />
 
   <h2 id="http">HTTP transport</h2>
   <p>
@@ -113,7 +120,9 @@ const identitySnippet = `class ControlPlane extends Build {
     <code>405</code> — there's no SSE stream, just spec-compliant POST-only
     JSON-RPC.
   </p>
-  <Code code={httpSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={httpSnippet} lang="bash" />
+  <p>With a bearer token set, the server can bind a non-loopback host:</p>
+  <CopyCode code={httpTokenSnippet} lang="bash" />
   <p>
     A bare port (<code>--http 7777</code>) binds loopback only —
     <code>127.0.0.1</code>, <code>::1</code>, <code>localhost</code>. Binding
@@ -135,7 +144,7 @@ const identitySnippet = `class ControlPlane extends Build {
     present <code>Origin</code> must match one exactly. A non-loopback bind
     runs no default Origin check — front it with your own edge policy.
   </p>
-  <Code code={originSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={originSnippet} lang="bash" />
   <p>
     For the single-build server, messages are processed <strong>one at a
     time</strong>, mirroring stdio, so two concurrent runs of the one build
@@ -227,7 +236,7 @@ const identitySnippet = `class ControlPlane extends Build {
       <code>dryRun</code> always skips the gate.
     </li>
   </ul>
-  <Code code={authorizationSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={authorizationSnippet} lang="bash" />
 
   <h2 id="audit">Audit log</h2>
   <p>
@@ -263,7 +272,7 @@ export interface RunEvent {
     client input, and resolve it with a per-request <strong>identity
     hook</strong> — <code>override mcpIdentity()</code> on the build:
   </p>
-  <Code code={identitySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={identitySnippet} lang="ts" />
   <p>
     The hook runs <strong>once per request, before any dispatch</strong>. Its
     <code>actor</code> overrides <code>--actor</code>, the environment, and

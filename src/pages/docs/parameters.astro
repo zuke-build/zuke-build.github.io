@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -35,8 +36,9 @@ class Deploy extends Build {
 
 await run(Deploy);`;
 
-const invokeSnippet = `./zuke deploy --environment production --workers 8 --dry-run
-ENVIRONMENT=staging ./zuke deploy        # value from the environment`;
+const invokeFlagsSnippet = `./zuke deploy --environment production --workers 8 --dry-run`;
+
+const invokeEnvSnippet = `ENVIRONMENT=staging ./zuke deploy`;
 
 const namingSnippet = `retries    = parameter().number();    // --retries      / RETRIES
 targetEnv  = parameter();             // --target-env    / TARGET_ENV
@@ -57,9 +59,11 @@ level = parameter("Log level").options("debug", "info", "warn");`;
 const arraySnippet = `tags = parameter("Image tags").array();   // string[]
 // deploy = target().executes(() => console.log(this.tags.value));`;
 
-const arrayCliSnippet = `./zuke deploy --tags latest,canary          # ["latest", "canary"]
-./zuke deploy --tags latest --tags canary   # same result
-TAGS=latest,canary ./zuke deploy            # from the environment`;
+const arrayCommaSnippet = `./zuke deploy --tags latest,canary`;
+
+const arrayRepeatSnippet = `./zuke deploy --tags latest --tags canary`;
+
+const arrayEnvSnippet = `TAGS=latest,canary ./zuke deploy`;
 
 const arrayComposeSnippet = `// number[]: each entry parsed as a number; "1,x" is rejected.
 workers = parameter("Worker ids").number().array();
@@ -116,8 +120,11 @@ const readingSnippet = `deploy = target().executes(() => {
     <a href="/docs/concepts#parameters">Concepts</a> page introduces them in brief;
     this is the full reference.
   </p>
-  <Code code={introSnippet} lang="ts" theme="night-owl" />
-  <Code code={invokeSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={introSnippet} lang="ts" />
+  <p>Invoke it with flags:</p>
+  <CopyCode code={invokeFlagsSnippet} lang="bash" />
+  <p>Or supply a value from the environment:</p>
+  <CopyCode code={invokeEnvSnippet} lang="bash" />
   <p>
     Each fluent method returns a <strong>new</strong> parameter whose
     <code>value</code> type reflects the configuration — the builder narrows the
@@ -176,7 +183,7 @@ const readingSnippet = `deploy = target().executes(() => {
     <code>--target-env</code> and <code>TARGET_ENV</code>. Override just the
     environment variable with <code>.env("NAME")</code> — the flag is unaffected.
   </p>
-  <Code code={namingSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={namingSnippet} lang="ts" />
   <p>
     A flag accepts both <code>--environment production</code> and
     <code>--environment=production</code>. A boolean is set simply by naming the
@@ -189,7 +196,7 @@ const readingSnippet = `deploy = target().executes(() => {
     <code>.boolean()</code> change the kind; <code>.options()</code> keeps it a
     string but restricts the accepted values.
   </p>
-  <Code code={typingSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={typingSnippet} lang="ts" />
   <ul>
     <li><strong><code>.number()</code></strong> parses with <code>Number()</code>; an empty string or a non-finite result (<code>"eight"</code>, <code>""</code>) is rejected with a parse error.</li>
     <li><strong><code>.boolean()</code></strong> accepts <code>true</code>/<code>1</code>/<code>yes</code> and <code>false</code>/<code>0</code>/<code>no</code> (any casing) from a flag value or env var; anything else is rejected. As a flag with no value it is <code>true</code>, and it defaults to <code>false</code> when absent.</li>
@@ -206,21 +213,26 @@ const readingSnippet = `deploy = target().executes(() => {
     silently yielding an empty list — the required flag carries through
     <code>.array()</code>.
   </p>
-  <Code code={arraySnippet} lang="ts" theme="night-owl" />
-  <Code code={arrayCliSnippet} lang="bash" theme="night-owl" />
+  <CopyCode code={arraySnippet} lang="ts" />
+  <p>Comma-separated:</p>
+  <CopyCode code={arrayCommaSnippet} lang="bash" />
+  <p>Repeated — the same result:</p>
+  <CopyCode code={arrayRepeatSnippet} lang="bash" />
+  <p>From the environment:</p>
+  <CopyCode code={arrayEnvSnippet} lang="bash" />
   <p>
     Because <code>.array()</code> reuses the element parser of the parameter it is
     applied to, it composes with the kind and choices declared before it —
     <strong>every element</strong> is validated, not just the raw string:
   </p>
-  <Code code={arrayComposeSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={arrayComposeSnippet} lang="ts" />
 
   <h2 id="optionality">.required() and .default()</h2>
   <p>
     By default a parameter is optional and its <code>value</code> is
     <code>T | undefined</code>. Two methods make it non-optional:
   </p>
-  <Code code={optionalitySnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={optionalitySnippet} lang="ts" />
   <ul>
     <li><strong><code>.required()</code></strong> demands a value. If none is supplied — and no default exists and no interactive prompt answers it — the build fails before any target runs, with a message naming the flag and env var.</li>
     <li><strong><code>.default(v)</code></strong> supplies a fallback, so <code>value</code> is always the declared type. A boolean is implicitly defaulted to <code>false</code>.</li>
@@ -247,7 +259,7 @@ const readingSnippet = `deploy = target().executes(() => {
     a <strong>fallback provider, not an override</strong>, and is typically paired
     with <code>.secret()</code> so the fetched value is redacted.
   </p>
-  <Code code={secretSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={secretSnippet} lang="ts" />
   <p>
     The <a href="/docs/secrets">Secrets guide</a> covers sources
     (<code>execSecret</code>, <code>fileSecret</code>), the exact redaction
@@ -300,7 +312,7 @@ const readingSnippet = `deploy = target().executes(() => {
     <code>.default()</code> parameter is non-optional, while a plain optional
     parameter is <code>T | undefined</code>.
   </p>
-  <Code code={readingSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={readingSnippet} lang="ts" />
   <p>
     Resolution lives in the execution engine, not the CLI, so a
     <a href="/docs/programmatic-api">programmatic <code>execute</code></a> call

@@ -1,5 +1,6 @@
 ---
 import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
 import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
@@ -133,7 +134,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     Underneath it, <code>execute</code> runs a resolved plan, and a family of
     pure functions inspect the dependency graph:
   </p>
-  <Code code={blocksSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={blocksSnippet} lang="ts" />
 
   <h2 id="run">
     <code>run</code> — the entry point
@@ -146,7 +147,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     it's the <em>launcher</em>, not the seam you drive a build through in code —
     for that, reach for <a href="#execute"><code>execute</code></a>.
   </p>
-  <Code code={runSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={runSnippet} lang="ts" />
   <div class="note">
     <p>
       <code>run</code> acts only when its module is the program's entry point;
@@ -173,7 +174,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     <code>TargetBuilder</code>, which you get from
     <a href="#discover"><code>discoverTargets</code></a>.
   </p>
-  <Code code={executeSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={executeSnippet} lang="ts" />
   <p>The result carries everything the caller needs to react to the run:</p>
   <Code code={resultSnippet} lang="ts" theme="night-owl" />
   <p>
@@ -241,7 +242,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     the <code>rootTarget</code> that <a href="#execute"><code>execute</code></a>
     needs.
   </p>
-  <Code code={discoverSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={discoverSnippet} lang="ts" />
 
   <h2 id="describe">
     <code>describeCli</code> — inspect the surface
@@ -254,7 +255,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     <code>zuke --list --json</code>. Use it to build tooling around a build in
     code, with no <code>--help</code> text to parse.
   </p>
-  <Code code={describeSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={describeSnippet} lang="ts" />
   <p>
     Each <code>CliTargetInfo</code> carries <code>name</code>,
     <code>description</code>, <code>dependsOn</code>, <code>default</code>, and
@@ -278,7 +279,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     about, or inject <a href="/docs/console"><code>consoleRenderer</code></a> from
     <code>@zuke/console</code> for an alternative look.
   </p>
-  <Code code={rendererSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={rendererSnippet} lang="ts" />
   <table class="dtable">
     <thead>
       <tr><th><code>Renderer</code> method</th><th>Produces</th></tr>
@@ -306,7 +307,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     a pre-seeded or isolated <a href="/docs/caching">cache</a> so a run's cache
     behaviour is deterministic without touching <code>.zuke/cache.json</code>.
   </p>
-  <Code code={cacheSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={cacheSnippet} lang="ts" />
   <p>
     The interface is three methods —
     <code>upToDate(target)</code> (is a target's fingerprint unchanged and its
@@ -331,7 +332,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
       <tr><td><code>validateGraph(targets)</code></td><td><code>void</code> — throws <code>GraphError</code> on a missing reference or a cycle</td></tr>
     </tbody>
   </table>
-  <Code code={graphSnippet} lang="ts" theme="night-owl" />
+  <CopyCode code={graphSnippet} lang="ts" />
   <p>
     See <a href="/docs/library">Using Zuke as a library</a> for the file, HTTP,
     and install helpers a build shares with these, and
