@@ -80,6 +80,12 @@ const identitySnippet = `class ControlPlane extends Build {
     (Zuke ships no MCP SDK): it speaks newline-delimited JSON-RPC 2.0 on stdio, the
     standard MCP local transport.
   </p>
+  <p>
+    MCP lets an agent <em>operate</em> a build; the
+    <a href="/docs/agent-skills">agent skills</a> are the complement — they
+    teach it to <em>author</em> one, and install from the repo's skills
+    marketplace into Claude Code, OpenAI Codex, and the Gemini CLI.
+  </p>
 
   <h2 id="running">Running it</h2>
   <Code code={runSnippet} lang="bash" theme="night-owl" />
