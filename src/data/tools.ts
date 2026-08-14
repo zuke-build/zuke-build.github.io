@@ -31,6 +31,7 @@ export const toolGroups: ToolGroup[] = [
     blurb: "Bundle apps and orchestrate monorepos from a typed pipeline.",
     tools: [
       { name: "Vite", pkg: "@zuke/vite", desc: "dev, build, preview" },
+      { name: "Storybook", pkg: "@zuke/storybook", desc: "dev server, static build" },
       { name: "tsup", pkg: "@zuke/tsup", desc: "zero-config bundling" },
       { name: "tsdown", pkg: "@zuke/tsdown", desc: "fast TS bundling on Rolldown" },
       { name: "Turbo", pkg: "@zuke/turbo", desc: "run, prune" },
@@ -53,6 +54,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Nest", pkg: "@zuke/nest", desc: "NestJS: build, start, generate" },
       { name: "openapi-ts", pkg: "@zuke/openapi-ts", desc: "OpenAPI → typed TS client" },
       { name: "Orval", pkg: "@zuke/orval", desc: "generate API clients & mocks" },
+      { name: "Redocly", pkg: "@zuke/redocly", desc: "lint, bundle & split OpenAPI" },
       { name: "docs", pkg: "@zuke/docs", desc: "generate API documentation" },
     ],
   },
@@ -76,6 +78,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Biome", pkg: "@zuke/biome", desc: "check, format, lint, ci" },
       { name: "dprint", pkg: "@zuke/dprint", desc: "fmt, check" },
       { name: "cspell", pkg: "@zuke/cspell", desc: "spell-check your sources" },
+      { name: "lint-staged", pkg: "@zuke/lint-staged", desc: "lint the staged files, or a diff" },
       { name: "Knip", pkg: "@zuke/knip", desc: "find unused files & exports" },
       { name: "dpdm", pkg: "@zuke/dpdm", desc: "detect circular deps & dependency trees" },
     ],

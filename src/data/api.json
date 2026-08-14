@@ -13690,6 +13690,20 @@
               "doc": "Honour `.gitignore` files (`--gitignore`)."
             },
             {
+              "name": "gitignoreRoot",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitignoreRoot(path: PathLike): this",
+              "doc": "Stop the `.gitignore` search at this directory (`--gitignore-root`).\n\nWithout it cspell keeps walking up past the repository root and can pick up\nan unrelated `.gitignore` from a parent directory — so a run inside a git\nworktree, whose checkout lives outside the main working tree, sees ignore\nrules that do not belong to it. Point this at the repository root to bound\nthe search."
+            },
+            {
+              "name": "noMustFindFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "noMustFindFiles(): this",
+              "doc": "Exit successfully when a glob matches nothing (`--no-must-find-files`).\n\ncspell fails by default if any file argument matched no files. A run scoped\nto a computed file list — the staged files, the files a diff touched — can\nlegitimately be empty, so a file-scoped run wants this."
+            },
+            {
               "name": "unique",
               "kind": "method",
               "optional": false,
@@ -15178,6 +15192,13 @@
               "doc": "Serve on a specific port (`--port`)."
             },
             {
+              "name": "strictPort",
+              "kind": "method",
+              "optional": false,
+              "signature": "strictPort(): this",
+              "doc": "Fail instead of trying the next free port when {@link port} is taken\n(`--strictPort`).\n\nA build that hands the port to something else — an e2e runner, a health\ncheck — needs the server to be on the port it asked for or not at all;\nwithout this Vite silently moves on and the other side connects to nothing."
+            },
+            {
               "name": "open",
               "kind": "method",
               "optional": false,
@@ -15206,6 +15227,13 @@
               "optional": false,
               "signature": "port(value: number): this",
               "doc": "Serve on a specific port (`--port`)."
+            },
+            {
+              "name": "strictPort",
+              "kind": "method",
+              "optional": false,
+              "signature": "strictPort(): this",
+              "doc": "Fail instead of trying the next free port when {@link port} is taken\n(`--strictPort`). See {@link ViteDevSettings.strictPort}."
             },
             {
               "name": "open",
@@ -15273,6 +15301,364 @@
               "optional": false,
               "signature": "preview(configure?: Configure<VitePreviewSettings>): Promise<CommandOutput>",
               "doc": "Preview a production build: `vite preview`."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@zuke/storybook",
+      "dir": "storybook",
+      "summary": "`@zuke/storybook` — typed [Storybook](https://storybook.js.org) CLI task",
+      "symbols": [
+        {
+          "name": "StorybookBuildSettings",
+          "kind": "class",
+          "doc": "Settings for `storybook build` (the static build).",
+          "signature": "class StorybookBuildSettings extends StorybookSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "outputDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "outputDir(path: PathLike): this",
+              "doc": "Write the static build to this directory (`--output-dir`)."
+            },
+            {
+              "name": "quietOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietOutput(): this",
+              "doc": "Suppress the progress output, leaving warnings and errors (`--quiet`).\n\nNamed `quietOutput` because `ToolSettings.quiet()` already means \"do not\nstream the process output to the terminal\", which is a different thing."
+            }
+          ]
+        },
+        {
+          "name": "StorybookDevSettings",
+          "kind": "class",
+          "doc": "Settings for `storybook dev` (the development server).",
+          "signature": "class StorybookDevSettings extends StorybookSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(value: number): this",
+              "doc": "Serve on a specific port (`--port`)."
+            },
+            {
+              "name": "host",
+              "kind": "method",
+              "optional": false,
+              "signature": "host(value: string): this",
+              "doc": "Bind to a host/IP (`--host`)."
+            },
+            {
+              "name": "noOpen",
+              "kind": "method",
+              "optional": false,
+              "signature": "noOpen(): this",
+              "doc": "Do not open the browser on start (`--no-open`)."
+            },
+            {
+              "name": "ci",
+              "kind": "method",
+              "optional": false,
+              "signature": "ci(): this",
+              "doc": "Never prompt and never open a browser (`--ci`).\n\nA build step is not a terminal someone is watching: without this Storybook\ncan stop on an interactive question and hang the run."
+            }
+          ]
+        },
+        {
+          "name": "StorybookSettings",
+          "kind": "class",
+          "doc": "Base for all `storybook` subcommand settings: the binary is `storybook`,\nwith the `--config-dir` option every subcommand accepts.",
+          "signature": "class StorybookSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "configDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "configDir(path: PathLike): this",
+              "doc": "Read the configuration from this directory instead of `.storybook` (`--config-dir`)."
+            }
+          ]
+        },
+        {
+          "name": "StorybookTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the `storybook` CLI.",
+          "signature": "const StorybookTasks: StorybookTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "StorybookTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link StorybookTasks}.",
+          "signature": "interface StorybookTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dev",
+              "kind": "method",
+              "optional": false,
+              "signature": "dev(configure?: Configure<StorybookDevSettings>): Promise<CommandOutput>",
+              "doc": "Start the development server: `storybook dev`."
+            },
+            {
+              "name": "build",
+              "kind": "method",
+              "optional": false,
+              "signature": "build(configure?: Configure<StorybookBuildSettings>): Promise<CommandOutput>",
+              "doc": "Build the static Storybook: `storybook build`."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@zuke/redocly",
+      "dir": "redocly",
+      "summary": "`@zuke/redocly` — typed [Redocly CLI](https://redocly.com/docs/cli) task",
+      "symbols": [
+        {
+          "name": "RedoclyBundleSettings",
+          "kind": "class",
+          "doc": "Settings for `redocly bundle`.",
+          "signature": "class RedoclyBundleSettings extends RedoclySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "The API descriptions to bundle — paths or aliases from the config (positional); repeatable."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write the bundle to this file or directory (`--output`)."
+            },
+            {
+              "name": "dereferenced",
+              "kind": "method",
+              "optional": false,
+              "signature": "dereferenced(): this",
+              "doc": "Inline every `$ref` instead of keeping the components (`--dereferenced`)."
+            },
+            {
+              "name": "ext",
+              "kind": "method",
+              "optional": false,
+              "signature": "ext(value: json | yaml | yml): this",
+              "doc": "The output file extension, `json`, `yaml`, or `yml` (`--ext`)."
+            }
+          ]
+        },
+        {
+          "name": "RedoclyLintFormat",
+          "kind": "typeAlias",
+          "doc": "The output format of a `redocly lint` run (`--format`).",
+          "signature": "type RedoclyLintFormat = codeframe | stylish | json | checkstyle | markdown | summary",
+          "deprecated": false
+        },
+        {
+          "name": "RedoclyLintSettings",
+          "kind": "class",
+          "doc": "Settings for `redocly lint`.",
+          "signature": "class RedoclyLintSettings extends RedoclySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "The API descriptions to lint — paths or aliases from the config (positional); repeatable."
+            },
+            {
+              "name": "skipRule",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipRule(...rules: string[]): this",
+              "doc": "Skip a rule for this run (`--skip-rule`); repeatable.\n\nUse it for a rule the description cannot satisfy yet, so the rest of the\nruleset still gates the build instead of the whole lint being turned off."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(value: RedoclyLintFormat): this",
+              "doc": "Select the output format (`--format`)."
+            }
+          ]
+        },
+        {
+          "name": "RedoclySettings",
+          "kind": "class",
+          "doc": "Base for all `redocly` subcommand settings: the binary is `redocly`, with\nthe `--config` option every subcommand accepts.",
+          "signature": "class RedoclySettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`) instead of the discovered `redocly.yaml`."
+            }
+          ]
+        },
+        {
+          "name": "RedoclySplitSettings",
+          "kind": "class",
+          "doc": "Settings for `redocly split`.",
+          "signature": "class RedoclySplitSettings extends RedoclySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "api",
+              "kind": "method",
+              "optional": false,
+              "signature": "api(path: PathLike): this",
+              "doc": "The API description to split into a multi-file structure (positional; required)."
+            },
+            {
+              "name": "outDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "outDir(path: PathLike): this",
+              "doc": "The directory the split files are written to (`--outDir`; required)."
+            },
+            {
+              "name": "separator",
+              "kind": "method",
+              "optional": false,
+              "signature": "separator(value: string): this",
+              "doc": "The separator used in the generated path item file names (`--separator`)."
+            }
+          ]
+        },
+        {
+          "name": "RedoclyTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the `redocly` CLI.",
+          "signature": "const RedoclyTasks: RedoclyTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "RedoclyTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link RedoclyTasks}.",
+          "signature": "interface RedoclyTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "lint",
+              "kind": "method",
+              "optional": false,
+              "signature": "lint(configure?: Configure<RedoclyLintSettings>): Promise<CommandOutput>",
+              "doc": "Lint API descriptions: `redocly lint`."
+            },
+            {
+              "name": "bundle",
+              "kind": "method",
+              "optional": false,
+              "signature": "bundle(configure?: Configure<RedoclyBundleSettings>): Promise<CommandOutput>",
+              "doc": "Bundle an API description into one file: `redocly bundle`."
+            },
+            {
+              "name": "split",
+              "kind": "method",
+              "optional": false,
+              "signature": "split(configure?: Configure<RedoclySplitSettings>): Promise<CommandOutput>",
+              "doc": "Split an API description into a multi-file structure: `redocly split`."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@zuke/lint-staged",
+      "dir": "lint-staged",
+      "summary": "`@zuke/lint-staged` — typed `lint-staged` task wrappers for Zuke builds.",
+      "symbols": [
+        {
+          "name": "LintStagedSettings",
+          "kind": "class",
+          "doc": "Settings for a `lint-staged` run.",
+          "signature": "class LintStagedSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "relative",
+              "kind": "method",
+              "optional": false,
+              "signature": "relative(): this",
+              "doc": "Pass file paths relative to the working directory rather than absolute\n(`--relative`).\n\nTools configured with root-relative globs — the usual case for an ESLint or\nPrettier config committed at the repo root — only match when the paths\nhanded to them are relative too."
+            },
+            {
+              "name": "concurrent",
+              "kind": "method",
+              "optional": false,
+              "signature": "concurrent(tasks: number): this",
+              "doc": "Run at most `tasks` linter tasks at once (`--concurrent <n>`). Use `1` to\nserialise them — what a tool that writes shared state (a cache, a lockfile)\nneeds."
+            },
+            {
+              "name": "allowEmpty",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowEmpty(): this",
+              "doc": "Exit successfully when the tasks left nothing staged (`--allow-empty`).\n\nWithout it a formatter that reverts the only staged change fails the run,\nbecause the resulting commit would be empty."
+            },
+            {
+              "name": "diff",
+              "kind": "method",
+              "optional": false,
+              "signature": "diff(ref: string): this",
+              "doc": "Take the file list from a diff instead of the staged files\n(`--diff <ref>`), e.g. `main...HEAD` to lint everything a branch touched."
+            },
+            {
+              "name": "shell",
+              "kind": "method",
+              "optional": false,
+              "signature": "shell(): this",
+              "doc": "Run the configured commands through a shell instead of parsing them (`--shell`)."
+            }
+          ]
+        },
+        {
+          "name": "LintStagedTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for `lint-staged`.",
+          "signature": "const LintStagedTasks: LintStagedTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "LintStagedTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link LintStagedTasks}.",
+          "signature": "interface LintStagedTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<LintStagedSettings>): Promise<CommandOutput>",
+              "doc": "Run the configured linters over the staged files: `lint-staged`."
             }
           ]
         }
@@ -17016,6 +17402,36 @@
           ]
         },
         {
+          "name": "NodeEvaluateSettings",
+          "kind": "class",
+          "doc": "Settings for {@link \"./node.ts\".NodeTasks.evaluate} — which export of the\nmodule to take, and what to call it with.",
+          "signature": "class NodeEvaluateSettings extends NodeSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "export",
+              "kind": "method",
+              "optional": false,
+              "signature": "export(name: string): this",
+              "doc": "The named export to take, instead of the default one.\n\nThe export is awaited; when it is a function it is called first, with\n{@link callWith}'s arguments."
+            },
+            {
+              "name": "callWith",
+              "kind": "method",
+              "optional": false,
+              "signature": "callWith(...values: JsonValue[]): this",
+              "doc": "Arguments for the exported function, in order. Each must be\nJSON-serialisable — they cross a process boundary as JSON.\n\nNamed `callWith` rather than `args` because `ToolSettings.args` already\nmeans \"append raw arguments to the `node` command line\", which is a\ndifferent thing."
+            },
+            {
+              "name": "module",
+              "kind": "method",
+              "optional": false,
+              "signature": "module(): string",
+              "doc": "The module being evaluated, for error messages."
+            }
+          ]
+        },
+        {
           "name": "NodeRunSettings",
           "kind": "class",
           "doc": "Settings for `node [options] <script> [args]`.",
@@ -17150,6 +17566,13 @@
               "optional": false,
               "signature": "test(configure?: Configure<NodeTestSettings>): Promise<CommandOutput>",
               "doc": "Run the built-in test runner: `node --test`."
+            },
+            {
+              "name": "evaluate",
+              "kind": "method",
+              "optional": false,
+              "signature": "evaluate(module: PathLike, configure?: Configure<NodeEvaluateSettings>): Promise<JsonValue>",
+              "doc": "Import a Node module and resolve to one of its exports' JSON value — the\nway a target reads something *out* of the Node side of a project (an\nOpenAPI document, a resolved config) instead of shelling out to a script\nthat has to write it somewhere first.\n\n`module` is a path, resolved against the working directory. The export\n(`default` unless {@link NodeEvaluateSettings.export} names another) is\nawaited; when it is a function it is called with\n{@link NodeEvaluateSettings.callWith}'s arguments first.\n\n```ts\n// tools/openapi.mjs: export default async () => document\nconst spec = await NodeTasks.evaluate(\"tools/openapi.mjs\");\n```\n\nThe module runs as a real Node process with the build's own permissions —\nthe same trust level as a script handed to {@link NodeTasks.run}, and the\nreason this is a build-authoring API rather than an input-processing one.\n`module` is code: build it from a literal or from the project's own layout,\nnever from an untrusted source (a pull request title, a webhook payload),\nexactly as for every other command a build spawns. Values passed through\n{@link NodeEvaluateSettings.callWith} cannot inject into the driver — they\nare embedded as JSON literals — but they do reach the module, so whatever\nthe module does with them is the module's contract to uphold."
             }
           ]
         },
