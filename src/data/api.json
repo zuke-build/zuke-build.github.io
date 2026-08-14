@@ -22789,6 +22789,13 @@
               "optional": true,
               "signature": "detail?: string",
               "doc": "A longer explanation, if provided."
+            },
+            {
+              "name": "verification",
+              "kind": "property",
+              "optional": true,
+              "signature": "verification?: confirmed | uncertain",
+              "doc": "The verify pass's verdict on this finding, when `.verify()` ran and the\nverifier answered for it: `\"confirmed\"` means the concrete failure path\nwas traced, `\"uncertain\"` means the evidence neither confirmed nor refuted\nit. Both stay reported and gate — only a refutation (which removes the\nfinding and lists it in the report's refuted table) mutes a candidate.\nAbsent when verify did not run or returned no verdict for the finding."
             }
           ]
         },
