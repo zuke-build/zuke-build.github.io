@@ -19167,7 +19167,7 @@
               "kind": "method",
               "optional": false,
               "signature": "uploadReleaseAsset(configure?: Configure<GhReleaseAssetSettings>): Promise<GhReleaseAssetResult>",
-              "doc": "Attach a file to a GitHub release — the latest release by default, or the\none named by `.tag(...)`. Idempotent: an asset the release already\ncarries under the same name is kept as-is, and a repository with no\nreleases resolves to `state: \"no-release\"` rather than throwing. Needs a\ntoken with `contents: write`."
+              "doc": "Attach a file to a GitHub release — the latest release by default, or the\none named by `.tag(...)`. Idempotent: an asset the release already\ncarries under the same name is kept as-is (unless `.refresh()` asks for\none with different bytes to be replaced), and a repository with no\nreleases resolves to `state: \"no-release\"` rather than throwing. Needs a\ntoken with `contents: write`."
             }
           ]
         },
@@ -19182,8 +19182,8 @@
               "name": "state",
               "kind": "property",
               "optional": false,
-              "signature": "state: uploaded | already-exists | no-release",
-              "doc": "`uploaded` when the asset was sent; `already-exists` when the release\ncarries an asset of the same name (nothing was changed); `no-release`\nwhen the repository has no release to attach to."
+              "signature": "state: uploaded | refreshed | already-exists | no-release",
+              "doc": "`uploaded` when the asset was sent; `refreshed` when `.refresh()` found\nthe release carrying different bytes under the name and replaced them;\n`already-exists` when the release carries an asset of the same name that\nwas kept (nothing was changed); `no-release` when the repository has no\nrelease to attach to."
             },
             {
               "name": "name",
@@ -19256,6 +19256,13 @@
               "optional": false,
               "signature": "tag(value: string): this",
               "doc": "Attach to the release with this tag instead of the latest release."
+            },
+            {
+              "name": "refresh",
+              "kind": "method",
+              "optional": false,
+              "signature": "refresh(): this",
+              "doc": "Replace an asset the release already carries when its bytes differ from\nthe file's — compared by the sha256 digest the API reports — instead of\nkeeping it. An asset whose digest matches, or whose digest the API does\nnot report, is still kept: without a comparison to trust, replacement\nwould churn a published release's assets on every run, which is exactly\nwhat the default protects. For an asset that must track its source\nacross runs (an extension archive, a docs bundle) on a long-lived\nrelease."
             },
             {
               "name": "token",
@@ -19342,6 +19349,13 @@
               "doc": "The release tag to attach to. Set by {@link tag}."
             },
             {
+              "name": "refresh_",
+              "kind": "property",
+              "optional": false,
+              "signature": "refresh_: boolean",
+              "doc": "Replace an existing asset whose bytes differ. Set by {@link refresh}."
+            },
+            {
               "name": "token_",
               "kind": "property",
               "optional": true,
@@ -19354,6 +19368,145 @@
               "optional": false,
               "signature": "baseUrl_: string",
               "doc": "REST base URL. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseLatestApi",
+          "kind": "interface",
+          "doc": "The mark-latest operation {@link GhTasks} exposes.",
+          "signature": "interface GhReleaseLatestApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "markReleaseLatest",
+              "kind": "method",
+              "optional": false,
+              "signature": "markReleaseLatest(configure?: Configure<GhReleaseLatestSettings>): Promise<GhReleaseLatestResult>",
+              "doc": "Point the repository's \"Latest release\" at the release for `.tag(...)`.\n\nIdempotent, and quiet about it: a pointer already on the tag's release is\nleft untouched rather than re-written, so an unattended pipeline can run\nthis unconditionally without churning the release's audit history. A tag\nwith no release resolves to `state: \"no-release\"` rather than throwing —\nthe release may be cut by a later, human step — while a tag that does not\nexist at all is an error, because the caller named it. Needs a token with\n`contents: write`."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseLatestResult",
+          "kind": "interface",
+          "doc": "What became of a {@link GhReleaseLatestApi.markReleaseLatest} call.",
+          "signature": "interface GhReleaseLatestResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: marked | already-latest | no-release",
+              "doc": "`marked` when the pointer was moved onto the tag's release;\n`already-latest` when it was there before the call (nothing was written);\n`no-release` when the tag has no release to point at — an ordinary\noutcome for a tag whose release is created by a later, human step."
+            },
+            {
+              "name": "tag",
+              "kind": "property",
+              "optional": false,
+              "signature": "tag: string",
+              "doc": "The tag the call targeted."
+            },
+            {
+              "name": "releaseId",
+              "kind": "property",
+              "optional": true,
+              "signature": "releaseId?: number",
+              "doc": "The id of the tag's release, when one was resolved."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseLatestSettings",
+          "kind": "class",
+          "doc": "Settings for marking a release as latest.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them needs to name only the tag.",
+          "signature": "class GhReleaseLatestSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: string): this",
+              "doc": "The tag whose release the pointer should name (required)."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with — needs `contents: write`. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "tag_",
+              "kind": "property",
+              "optional": true,
+              "signature": "tag_?: string",
+              "doc": "The tag whose release becomes latest. Set by {@link tag}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
             },
             {
               "name": "fetch_",
@@ -19846,6 +19999,13 @@
               "doc": "Poll interval hint (ms) for `zuke resume --check`."
             }
           ]
+        },
+        {
+          "name": "markReleaseLatest",
+          "kind": "function",
+          "doc": "Perform the configured mark-latest call.",
+          "signature": "async function markReleaseLatest(configure?: Configure<GhReleaseLatestSettings>): Promise<GhReleaseLatestResult>",
+          "deprecated": false
         },
         {
           "name": "mintAppToken",
