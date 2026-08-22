@@ -10304,8 +10304,8 @@
         {
           "name": "main",
           "kind": "function",
-          "doc": "The CLI entry point. Returns a process exit code; `host`/`prompter`/`docRunner`\nare injectable for testing.",
-          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner): Promise<number>",
+          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, and `starActions` are injectable for testing.",
+          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions): Promise<number>",
           "deprecated": false
         },
         {
@@ -10451,6 +10451,36 @@
               "optional": false,
               "signature": "log(message: string): void",
               "doc": "Emit a line of progress output."
+            }
+          ]
+        },
+        {
+          "name": "StarActions",
+          "kind": "interface",
+          "doc": "The side effects behind {@link promptStar}, injectable so tests never spawn\n`gh` or a browser.",
+          "signature": "interface StarActions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ghAuthenticated",
+              "kind": "method",
+              "optional": false,
+              "signature": "ghAuthenticated(): Promise<boolean>",
+              "doc": "Whether the `gh` CLI is installed and holds a login."
+            },
+            {
+              "name": "starWithGh",
+              "kind": "method",
+              "optional": false,
+              "signature": "starWithGh(): Promise<void>",
+              "doc": "Star the Zuke repository through `gh api`."
+            },
+            {
+              "name": "openBrowser",
+              "kind": "method",
+              "optional": false,
+              "signature": "openBrowser(url: string): Promise<boolean>",
+              "doc": "Open `url` in the default browser; `false` when it could not launch."
             }
           ]
         }
