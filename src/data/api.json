@@ -676,6 +676,45 @@
           ]
         },
         {
+          "name": "BrowserOpenSettings",
+          "kind": "class",
+          "doc": "Settings for {@link BrowserTasksApi.open | BrowserTasks.open}. The binary and\nargv are derived from the platform ({@link ToolSettings.os_}); the shared\nchainers (`quiet`, `noThrow`, `toolPath`, …) apply as on any tool.",
+          "signature": "class BrowserOpenSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "The validated URL this invocation opens."
+            }
+          ]
+        },
+        {
+          "name": "BrowserTasks",
+          "kind": "variable",
+          "doc": "Task functions for the user's browser.",
+          "signature": "const BrowserTasks: BrowserTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "BrowserTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link BrowserTasks}.",
+          "signature": "interface BrowserTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "open",
+              "kind": "method",
+              "optional": false,
+              "signature": "open(url: string, configure?: Configure<BrowserOpenSettings>): Promise<CommandOutput>",
+              "doc": "Open `url` in the default browser. Resolves when the opener process exits\n(browsers detach, so this is launch, not page load).\n\n```ts\nawait BrowserTasks.open(\"https://github.com/zuke-build/zuke\");\n```"
+            }
+          ]
+        },
+        {
           "name": "Build",
           "kind": "class",
           "doc": "Base class for user-defined builds. Provides no targets of its own; subclasses\ndeclare targets as properties. Optionally override the lifecycle hooks.",
@@ -9998,6 +10037,13 @@
               "doc": "Print the ruled banner Zuke opens a target's section with."
             },
             {
+              "name": "logo",
+              "kind": "method",
+              "optional": false,
+              "signature": "logo(options?: LogoOptions): void",
+              "doc": "Print the Zuke ASCII logo, two-tone when colour is on."
+            },
+            {
               "name": "summary",
               "kind": "method",
               "optional": false,
@@ -10077,6 +10123,43 @@
           "doc": "A severity threshold. Messages below the active level are suppressed.",
           "signature": "type LogLevel = trace | debug | info | warn | error | silent",
           "deprecated": false
+        },
+        {
+          "name": "logoLines",
+          "kind": "function",
+          "doc": "The logo as printable lines: the {@link ZUKE_LOGO} art painted two-tone when\n`color` is on (letters bright, shadow dimmed), plus the optional tagline.\nPure — no I/O and no environment reads — so callers that manage their own\noutput (like the `zuke` CLI) can route the lines through any sink.",
+          "signature": "function logoLines(color: boolean, options?: LogoOptions): string[]",
+          "deprecated": false
+        },
+        {
+          "name": "LogoOptions",
+          "kind": "interface",
+          "doc": "Options for {@link logoLines} and `ConsoleTasks.logo`.",
+          "signature": "interface LogoOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tagline",
+              "kind": "property",
+              "optional": true,
+              "signature": "tagline?: string",
+              "doc": "A line printed dimmed under the art (e.g. a version or strapline)."
+            },
+            {
+              "name": "letterStyle",
+              "kind": "property",
+              "optional": true,
+              "signature": "letterStyle?: unknown",
+              "doc": "Styles for the solid letter blocks. Defaults to `[\"cyan\", \"bold\"]`."
+            },
+            {
+              "name": "shadowStyle",
+              "kind": "property",
+              "optional": true,
+              "signature": "shadowStyle?: unknown",
+              "doc": "Styles for the shadow characters. Defaults to `[\"dim\"]`."
+            }
+          ]
         },
         {
           "name": "RuleOptions",
@@ -10166,6 +10249,13 @@
               "doc": "De-emphasised, secondary text."
             }
           ]
+        },
+        {
+          "name": "ZUKE_LOGO",
+          "kind": "variable",
+          "doc": "The Zuke wordmark in FIGlet's ANSI-shadow style. Solid `█` blocks form the\nletters; box-drawing characters draw the shadow.",
+          "signature": "const ZUKE_LOGO: ███████╗██╗   ██╗██╗  ██╗███████╗\n╚══███╔╝██║   ██║██║ ██╔╝██╔════╝\n  ███╔╝ ██║   ██║█████╔╝ █████╗\n ███╔╝  ██║   ██║██╔═██╗ ██╔══╝\n███████╗╚██████╔╝██║  ██╗███████╗\n╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝",
+          "deprecated": false
         }
       ]
     },
@@ -18771,6 +18861,57 @@
           ]
         },
         {
+          "name": "GhApiSettings",
+          "kind": "class",
+          "doc": "Settings for {@link \"./gh.ts\".GhTasksApi.api | GhTasks.api}, mirroring the\nreal `gh api` flags: `--method`, `--field`, `--raw-field`, `--header`,\n`--jq`, and `--silent`.",
+          "signature": "class GhApiSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "method",
+              "kind": "method",
+              "optional": false,
+              "signature": "method(verb: string): this",
+              "doc": "The HTTP method (`--method`, e.g. `\"PUT\"`; `gh` defaults to GET)."
+            },
+            {
+              "name": "field",
+              "kind": "method",
+              "optional": false,
+              "signature": "field(key: string, value: string | number | boolean): this",
+              "doc": "Add a typed body parameter (`--field key=value`). Repeatable."
+            },
+            {
+              "name": "rawField",
+              "kind": "method",
+              "optional": false,
+              "signature": "rawField(key: string, value: string): this",
+              "doc": "Add a string body parameter (`--raw-field key=value`). Repeatable."
+            },
+            {
+              "name": "header",
+              "kind": "method",
+              "optional": false,
+              "signature": "header(name: string, value: string): this",
+              "doc": "Add a request header (`--header key:value`). Repeatable."
+            },
+            {
+              "name": "jq",
+              "kind": "method",
+              "optional": false,
+              "signature": "jq(expression: string): this",
+              "doc": "Filter the response through a jq expression (`--jq`)."
+            },
+            {
+              "name": "silent",
+              "kind": "method",
+              "optional": false,
+              "signature": "silent(): this",
+              "doc": "Do not print the response body (`--silent`)."
+            }
+          ]
+        },
+        {
           "name": "GhAppTokenApi",
           "kind": "interface",
           "doc": "The shape of the app-token task, mixed into `GhTasks`.",
@@ -20285,6 +20426,13 @@
               "optional": false,
               "signature": "run(configure?: Configure<GhSettings>): Promise<CommandOutput>",
               "doc": "Run a `gh` command."
+            },
+            {
+              "name": "api",
+              "kind": "method",
+              "optional": false,
+              "signature": "api(endpoint: string, configure?: Configure<GhApiSettings>): Promise<CommandOutput>",
+              "doc": "Call a REST endpoint through `gh api`, with the user's `gh` credentials —\nfor operations that have no CLI verb, e.g. starring a repository:\n`GhTasks.api(\"user/starred/zuke-build/zuke\", (s) => s.method(\"PUT\"))`."
             }
           ]
         },
