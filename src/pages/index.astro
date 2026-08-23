@@ -286,7 +286,8 @@ const cdMoreIcons: Record<string, string> = {
           not just run.
         </h1>
         <p class="lead">
-          Zuke is a code-first, strongly-typed build system. Define targets as
+          Zuke <span class="hero__ipa" title="pronounced “zook”">/zuːk/</span>
+          is a code-first, strongly-typed build system. Define targets as
           TypeScript class fields, wire dependencies with a fluent API, and let
           Zuke resolve and run them in topological order — with zero runtime
           dependencies.
@@ -362,6 +363,8 @@ build    <span class="t-ok">Succeeded</span>      2.2s
       <span>Published on JSR</span>
       <span class="dotsep">•</span>
       <span>Inspired by NUKE for .NET</span>
+      <span class="dotsep">•</span>
+      <span>The <b>Z</b> stands for Zero YAML</span>
     </div>
   </section>
 
@@ -1293,6 +1296,12 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     font-size: clamp(2.3rem, 5vw, 3.6rem);
     font-weight: 800;
     margin-bottom: 20px;
+  }
+  .hero__ipa {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    color: var(--text-faint);
+    white-space: nowrap;
   }
   .hero__cta {
     display: flex;
