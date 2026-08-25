@@ -18831,11 +18831,148 @@
               "doc": "Download objects and refs: `git fetch`."
             },
             {
+              "name": "worktree",
+              "kind": "method",
+              "optional": false,
+              "signature": "worktree(configure?: Configure<GitWorktreeSettings>): Promise<CommandOutput>",
+              "doc": "Manage worktrees: `git worktree add|list|remove|prune`. Pick the\nsubcommand in the lambda — `s.add(path)`, `s.list()`, `s.remove(path)`, or\n`s.prune()`. For a listing to read rather than print, use\n{@link GitTasksApi.worktreeList}."
+            },
+            {
+              "name": "worktreeList",
+              "kind": "method",
+              "optional": false,
+              "signature": "worktreeList(configure?: Configure<GitWorktreeSettings>): Promise<GitWorktree[]>",
+              "doc": "List the repository's worktrees as parsed {@link GitWorktree} entries,\nfrom `git worktree list --porcelain`.\n\nThe lambda configures the global options (`.dir()`, `.config()`); the\nsubcommand itself is fixed, since the parse depends on it."
+            },
+            {
               "name": "run",
               "kind": "method",
               "optional": false,
               "signature": "run(configure?: Configure<GitRunSettings>): Promise<CommandOutput>",
               "doc": "Run any other git command via `.command(...)`."
+            }
+          ]
+        },
+        {
+          "name": "GitWorktree",
+          "kind": "interface",
+          "doc": "One entry of `git worktree list --porcelain`.",
+          "signature": "interface GitWorktree",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The worktree's absolute path, as git reports it."
+            },
+            {
+              "name": "head",
+              "kind": "property",
+              "optional": true,
+              "signature": "head?: string",
+              "doc": "The commit checked out there, or `undefined` for a bare repository."
+            },
+            {
+              "name": "branch",
+              "kind": "property",
+              "optional": true,
+              "signature": "branch?: string",
+              "doc": "The checked-out branch, without its `refs/heads/` prefix; absent when detached."
+            },
+            {
+              "name": "bare",
+              "kind": "property",
+              "optional": false,
+              "signature": "bare: boolean",
+              "doc": "Whether this entry is the bare repository rather than a working tree."
+            },
+            {
+              "name": "detached",
+              "kind": "property",
+              "optional": false,
+              "signature": "detached: boolean",
+              "doc": "Whether `HEAD` is detached there."
+            },
+            {
+              "name": "locked",
+              "kind": "property",
+              "optional": false,
+              "signature": "locked: boolean",
+              "doc": "Whether the worktree is locked (`git worktree lock`)."
+            }
+          ]
+        },
+        {
+          "name": "GitWorktreeSettings",
+          "kind": "class",
+          "doc": "Settings for `git worktree`. Pick the subcommand with {@link add},\n{@link list}, {@link remove}, or {@link prune}; the remaining methods apply\nto the one picked, mirroring the flags git accepts for it.",
+          "signature": "class GitWorktreeSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(path: PathLike): this",
+              "doc": "Check a new worktree out at `path` (`git worktree add <path>`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List the repository's worktrees (`git worktree list`)."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(path: PathLike): this",
+              "doc": "Remove the worktree at `path` (`git worktree remove <path>`)."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(): this",
+              "doc": "Discard records of worktrees whose directories are gone (`git worktree prune`)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "The branch to check out in the new worktree — or, with\n{@link createBranch}, the name of the branch to create there."
+            },
+            {
+              "name": "createBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "createBranch(): this",
+              "doc": "Create {@link branch} rather than checking out an existing one (`-b`)."
+            },
+            {
+              "name": "detach",
+              "kind": "method",
+              "optional": false,
+              "signature": "detach(): this",
+              "doc": "Check out with a detached `HEAD` (`--detach`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Force the operation (`--force`): check out a branch already checked out\nelsewhere, or remove a worktree with modifications. Without it git refuses\nboth."
+            },
+            {
+              "name": "porcelain",
+              "kind": "method",
+              "optional": false,
+              "signature": "porcelain(): this",
+              "doc": "Emit the stable machine-readable listing (`--porcelain`)."
             }
           ]
         }
