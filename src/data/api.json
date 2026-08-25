@@ -3541,7 +3541,7 @@
         {
           "name": "glob",
           "kind": "function",
-          "doc": "Expand a glob pattern to the matching paths, relative to `cwd`, sorted for\ndeterminism. The walk starts at the pattern's static prefix, so anchor\npatterns (e.g. `src/**\\/*.ts`) to avoid scanning the whole tree. Symlinked\ndirectories are not followed.",
+          "doc": "Expand a glob pattern to the matching paths, sorted for determinism. The walk\nstarts at the pattern's static prefix, so anchor patterns (e.g.\n`src/**\\/*.ts`) to avoid scanning the whole tree. Symlinked directories are\nnot followed.\n\nA relative pattern is resolved against `cwd` and its matches are returned\nrelative to it. An **absolute** pattern (a leading `/`, or a `C:`-style drive)\nnames its own root: `cwd` plays no part and the matches come back absolute.",
           "signature": "async function glob(pattern: string, options?: GlobOptions): Promise<string[]>",
           "deprecated": false
         },
@@ -3557,7 +3557,7 @@
               "kind": "property",
               "optional": true,
               "signature": "cwd?: string",
-              "doc": "Directory to resolve the pattern against (default: `Deno.cwd()`)."
+              "doc": "Directory to resolve the pattern against (default: `Deno.cwd()`). Ignored\nfor an absolute pattern, which names its own root."
             }
           ]
         },
