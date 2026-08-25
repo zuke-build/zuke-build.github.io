@@ -4319,6 +4319,20 @@
               "doc": "How long the lock survives a killed holder — a duration string like `\"4h\"`\n/ `\"30m\"` (see the duration parser) or raw milliseconds. A live holder\nrenews it while it runs, so it never expires under it."
             },
             {
+              "name": "waitUpTo",
+              "kind": "method",
+              "optional": false,
+              "signature": "waitUpTo(duration: string | number): this",
+              "doc": "Wait up to this long for a held lock instead of failing at once — a\nduration string like `\"30m\"` or raw milliseconds. The target queues, and\ntakes the lock when the run holding it finishes; it fails with a\n{@link \"./state/lock.ts\".LockConflictError} only once the wait is spent.\n\nSet this for a shared resource a developer wants to *use* — one dev\nenvironment, one database, one port — where failing fast just makes them\nrun the command again. Leave it off for a resource where a second run is a\nmistake worth reporting immediately, which stays the default.\n\nWaiting runs retry independently, so a queue of them is not served in\narrival order: a run that has waited longer has no claim over one that\narrived a moment ago."
+            },
+            {
+              "name": "pollEvery",
+              "kind": "method",
+              "optional": false,
+              "signature": "pollEvery(duration: string | number): this",
+              "doc": "How often to retry while {@link waitUpTo} waits (default `\"5s\"`). Alone it\ndoes nothing — without a wait there is no retry to pace."
+            },
+            {
               "name": "onConflict",
               "kind": "method",
               "optional": false,
@@ -4345,6 +4359,20 @@
               "optional": true,
               "signature": "onConflict_?: unknown",
               "doc": "The conflict-guidance renderer; set by {@link onConflict}."
+            },
+            {
+              "name": "waitUpTo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "waitUpTo_?: string | number",
+              "doc": "How long to wait for a held lock; set by {@link waitUpTo}."
+            },
+            {
+              "name": "pollEvery_",
+              "kind": "property",
+              "optional": true,
+              "signature": "pollEvery_?: string | number",
+              "doc": "How often to retry while waiting; set by {@link pollEvery}."
             }
           ]
         },
