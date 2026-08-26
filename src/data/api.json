@@ -3315,6 +3315,13 @@
               "optional": false,
               "signature": "releaseLock(key: string, token: string): Promise<void>",
               "doc": "Release the lock `key` if still held under `token`; a no-op otherwise."
+            },
+            {
+              "name": "listLocks",
+              "kind": "method",
+              "optional": false,
+              "signature": "listLocks(): Promise<HeldLockEntry[]>",
+              "doc": "Every live lock in the `locks/` directory, ordered by key. `<key>.acq`\nmutex markers and anything else in there are skipped; a record that fails\nto parse is skipped too, since one corrupt file must not hide every other\nlock from someone trying to see who holds what."
             }
           ]
         },
@@ -3659,6 +3666,36 @@
           ]
         },
         {
+          "name": "HeldLockEntry",
+          "kind": "interface",
+          "doc": "One live lock, as reported by {@link \"./store.ts\".StateStore.listLocks} — the\nkey, who holds it, and when it lapses if the holder disappears.\n\nDeliberately not the stored record: the acquisition token is the holder's\nproof of ownership, and a read-only listing has no business handing it out.",
+          "signature": "interface HeldLockEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "property",
+              "optional": false,
+              "signature": "key: string",
+              "doc": "The lock key, as it was acquired."
+            },
+            {
+              "name": "holder",
+              "kind": "property",
+              "optional": false,
+              "signature": "holder: LockHolder",
+              "doc": "Who holds it."
+            },
+            {
+              "name": "expiresAt",
+              "kind": "property",
+              "optional": false,
+              "signature": "expiresAt: number",
+              "doc": "Epoch-millisecond expiry: when it frees itself if the holder is gone."
+            }
+          ]
+        },
+        {
           "name": "hostPlatform",
           "kind": "function",
           "doc": "The current host's {@link Platform} (from `Deno.build`, with the OS\nnormalised) — the analogue of {@link \"./host.ts\".isCI} for \"what machine am I\nrunning on\". Its `os` is a Zuke {@link OperatingSystem} (`macos`, not\n`darwin`); use the `osLabel`/`archLabel` helpers to name it for a download URL.\n\n```ts\nconst p = hostPlatform();\np.os;                                          // \"linux\" | \"macos\" | \"windows\"\nconst cpu = p.archLabel({ x86_64: \"amd64\", aarch64: \"arm64\" });\n```",
@@ -3900,6 +3937,13 @@
               "optional": false,
               "signature": "renewLock(key: string, token: string, ttlMs: number): Promise<boolean>",
               "doc": "`PUT /locks/:key` renews; a `409`/`404` means the token lost the lock."
+            },
+            {
+              "name": "listLocks",
+              "kind": "method",
+              "optional": false,
+              "signature": "listLocks(): Promise<HeldLockEntry[]>",
+              "doc": "`GET /locks` → the live locks the server holds. A server that has not\nimplemented the endpoint (`404`/`501`) is told apart from one that holds\nnothing: an empty listing is an answer, and a missing endpoint is not."
             },
             {
               "name": "releaseLock",
@@ -4222,6 +4266,13 @@
               "doc": "Styles applied to the whole rule. Defaults to `[\"dim\"]`."
             }
           ]
+        },
+        {
+          "name": "listStoreLocks",
+          "kind": "function",
+          "doc": "The locks `store` holds, or a friendly failure when the backend cannot\nenumerate them.\n\nAn empty array reads as \"nobody holds anything\", which is the worst possible\nanswer to give someone looking at a wedged resource, so a store with no\n{@link StateStore.listLocks} says so rather than answering.\n",
+          "signature": "function listStoreLocks(store: StateStore): Promise<HeldLockEntry[]>",
+          "deprecated": false
         },
         {
           "name": "LockConflictError",
@@ -6275,6 +6326,13 @@
               "optional": false,
               "signature": "releaseLock(key: string, token: string): Promise<void>",
               "doc": "Release the lock `key` if still held under `token`; a no-op otherwise."
+            },
+            {
+              "name": "listLocks",
+              "kind": "method",
+              "optional": true,
+              "signature": "listLocks?(): Promise<HeldLockEntry[]>",
+              "doc": "Every lock currently held, keyed and ordered by key — the read-only answer\nto \"who holds this, and until when?\". Expired records are not held locks\nand are left out: reporting one as held is the failure this exists to\nprevent.\n\nOptional, so a store implemented outside this repository does not break by\nnot having one. A caller that needs the listing rather than an empty result\nshould go through {@link listStoreLocks}, which fails with a message naming\nthe backend instead of pretending the store holds nothing."
             }
           ]
         },
