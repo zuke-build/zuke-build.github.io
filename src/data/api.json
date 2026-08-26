@@ -11878,6 +11878,13 @@
               "doc": "Stop all containers if any container stops (`--abort-on-container-exit`)."
             },
             {
+              "name": "noDeps",
+              "kind": "method",
+              "optional": false,
+              "signature": "noDeps(): this",
+              "doc": "Start only the named services, leaving their dependencies alone\n(`--no-deps`).\n\nWithout it compose starts or recreates a dependency that is stopped or\nwhose configuration changed. With an already-healthy stack the two agree,\nso the difference shows up only on the runs where a dependency was not\nready — which is where a target that meant \"just this service\" wants to be\nexplicit."
+            },
+            {
               "name": "exitCodeFrom",
               "kind": "method",
               "optional": false,
