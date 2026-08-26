@@ -11440,6 +11440,13 @@
           ]
         },
         {
+          "name": "DockerComposePullPolicy",
+          "kind": "typeAlias",
+          "doc": "When `compose up` fetches images before starting: `always` on every start,\n`missing` only when the image is absent locally, `never` at all.",
+          "signature": "type DockerComposePullPolicy = always | missing | never",
+          "deprecated": false
+        },
+        {
           "name": "DockerComposePullSettings",
           "kind": "class",
           "doc": "Settings for `compose pull`.",
@@ -11883,6 +11890,13 @@
               "optional": false,
               "signature": "noDeps(): this",
               "doc": "Start only the named services, leaving their dependencies alone\n(`--no-deps`).\n\nWithout it compose starts or recreates a dependency that is stopped or\nwhose configuration changed. With an already-healthy stack the two agree,\nso the difference shows up only on the runs where a dependency was not\nready — which is where a target that meant \"just this service\" wants to be\nexplicit."
+            },
+            {
+              "name": "pull",
+              "kind": "method",
+              "optional": false,
+              "signature": "pull(policy: DockerComposePullPolicy): this",
+              "doc": "When to fetch images before starting (`--pull`). `always` keeps a stack on\nthe current published images rather than whatever was pulled last;\n`missing` fetches only what is absent locally; `never` uses what is there.\n\nDistinct from `DockerComposeBuildSettings.pull`, which is `build --pull`,\nand from the `pull` task, which is the subcommand — each mirrors its own\ncommand."
             },
             {
               "name": "exitCodeFrom",
