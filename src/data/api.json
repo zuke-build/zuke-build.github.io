@@ -18405,6 +18405,36 @@
           ]
         },
         {
+          "name": "GitDefaultBranchSettings",
+          "kind": "class",
+          "doc": "Settings for {@link \"./git.ts\".GitTasks.defaultBranch}: which remote to ask,\nplus the global options every git task shares.",
+          "signature": "class GitDefaultBranchSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(name: string): this",
+              "doc": "The remote whose default branch is wanted (default `origin`)."
+            },
+            {
+              "name": "remoteName",
+              "kind": "method",
+              "optional": false,
+              "signature": "remoteName(): string",
+              "doc": "The remote being asked — the prefix the local ref reports it under."
+            },
+            {
+              "name": "askRemote_",
+              "kind": "property",
+              "optional": false,
+              "signature": "askRemote_: boolean",
+              "doc": "Ask the remote itself rather than reading the local ref. Set by the task\nfor its fallback attempt; a caller has no reason to set it, since the task\nalready tries both in the order that avoids the network when it can."
+            }
+          ]
+        },
+        {
           "name": "GitFetchSettings",
           "kind": "class",
           "doc": "Settings for `git fetch`.",
@@ -18871,6 +18901,13 @@
               "optional": false,
               "signature": "worktreeList(configure?: Configure<GitWorktreeSettings>): Promise<GitWorktree[]>",
               "doc": "List the repository's worktrees as parsed {@link GitWorktree} entries,\nfrom `git worktree list --porcelain`.\n\nThe lambda configures the global options (`.dir()`, `.config()`); the\nsubcommand itself is fixed, since the parse depends on it."
+            },
+            {
+              "name": "defaultBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "defaultBranch(configure?: Configure<GitDefaultBranchSettings>): Promise<string>",
+              "doc": "The name of a remote's default branch — `main`, `master`, or whatever it\nchose — so a build does not have to hardcode one.\n\nReads the local `refs/remotes/<remote>/HEAD` first, which costs no network,\nand asks the remote itself when that ref was never populated. Fails when\nneither names a branch, rather than guessing."
             },
             {
               "name": "run",
