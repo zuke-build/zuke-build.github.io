@@ -18982,6 +18982,13 @@
               "doc": "Create {@link branch} rather than checking out an existing one (`-b`)."
             },
             {
+              "name": "startPoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "startPoint(ref: string): this",
+              "doc": "The commit the new branch forks from — git's trailing `<commit-ish>`, e.g.\n`origin/main`. Only meaningful with {@link createBranch}: without a start\npoint git branches from the *parent* checkout's `HEAD`, which is whatever\nthe developer happened to have open.\n\nSetting this and {@link branch} without {@link createBranch} is refused:\nboth want the same trailing position, and there is no reading of the\ncommand where git would take them both."
+            },
+            {
               "name": "detach",
               "kind": "method",
               "optional": false,
