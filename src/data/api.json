@@ -18325,6 +18325,143 @@
               "optional": false,
               "signature": "update(): this",
               "doc": "Stage modifications and deletions, but not new files (`-u`/`--update`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Stage files git would otherwise ignore (`-f`/`--force`)."
+            },
+            {
+              "name": "intentToAdd",
+              "kind": "method",
+              "optional": false,
+              "signature": "intentToAdd(): this",
+              "doc": "Record the paths' existence but not their contents (`-N`/`--intent-to-add`),\nwhich is what makes an untracked file show up in `git diff`."
+            }
+          ]
+        },
+        {
+          "name": "GitApplySettings",
+          "kind": "class",
+          "doc": "Settings for `git apply`.",
+          "signature": "class GitApplySettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "patches",
+              "kind": "method",
+              "optional": false,
+              "signature": "patches(...values: PathLike[]): this",
+              "doc": "The patch files to apply (positional); repeatable. Reads stdin when empty."
+            },
+            {
+              "name": "check",
+              "kind": "method",
+              "optional": false,
+              "signature": "check(): this",
+              "doc": "Report whether the patch would apply, changing nothing (`--check`)."
+            },
+            {
+              "name": "reverse",
+              "kind": "method",
+              "optional": false,
+              "signature": "reverse(): this",
+              "doc": "Apply the patch backwards (`--reverse`)."
+            },
+            {
+              "name": "threeWay",
+              "kind": "method",
+              "optional": false,
+              "signature": "threeWay(): this",
+              "doc": "Fall back to a three-way merge when the patch does not apply cleanly\n(`--3way`), leaving conflict markers instead of refusing outright."
+            },
+            {
+              "name": "index",
+              "kind": "method",
+              "optional": false,
+              "signature": "index(): this",
+              "doc": "Apply to the index as well as the working tree (`--index`)."
+            },
+            {
+              "name": "cached",
+              "kind": "method",
+              "optional": false,
+              "signature": "cached(): this",
+              "doc": "Apply to the index only, leaving the working tree alone (`--cached`)."
+            },
+            {
+              "name": "strip",
+              "kind": "method",
+              "optional": false,
+              "signature": "strip(components: number): this",
+              "doc": "Strip this many leading path components (`-p<n>`); git's default is 1."
+            },
+            {
+              "name": "whitespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "whitespace(action: nowarn | warn | fix | error | error-all): this",
+              "doc": "What to do about whitespace errors (`--whitespace=<action>`): `nowarn`,\n`warn`, `fix`, `error`, or `error-all`."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(...patterns: string[]): this",
+              "doc": "Skip files matching this pattern (`--exclude=<pattern>`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GitArchiveSettings",
+          "kind": "class",
+          "doc": "Settings for `git archive`.",
+          "signature": "class GitArchiveSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "treeish",
+              "kind": "method",
+              "optional": false,
+              "signature": "treeish(rev: string): this",
+              "doc": "The tree, commit, or tag to archive (positional, required)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(name: string): this",
+              "doc": "The archive format (`--format=<fmt>`), e.g. `tar`, `tar.gz`, or `zip`."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write to this file (`--output=<file>`) instead of stdout."
+            },
+            {
+              "name": "prefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "prefix(value: string): this",
+              "doc": "Prepend this path to every entry (`--prefix=<prefix>/`)."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(nameOrUrl: string): this",
+              "doc": "Ask a remote repository for the archive (`--remote=<repo>`)."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Archive only these pathspecs (positional); repeatable."
             }
           ]
         },
@@ -18343,6 +18480,13 @@
               "doc": "The branch name to create or operate on."
             },
             {
+              "name": "startPoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "startPoint(rev: string): this",
+              "doc": "The commit a created branch forks from (git's trailing `<start-point>`),\ne.g. `origin/main`."
+            },
+            {
               "name": "deleteBranch",
               "kind": "method",
               "optional": false,
@@ -18350,11 +18494,60 @@
               "doc": "Delete the branch (`-d`, or `-D` when forced)."
             },
             {
+              "name": "rename",
+              "kind": "method",
+              "optional": false,
+              "signature": "rename(newName: string, force?: boolean): this",
+              "doc": "Rename {@link name} to `newName` (`-m`, or `-M` when forced)."
+            },
+            {
+              "name": "setUpstreamTo",
+              "kind": "method",
+              "optional": false,
+              "signature": "setUpstreamTo(ref: string): this",
+              "doc": "Point the branch's upstream at this ref (`--set-upstream-to=<ref>`)."
+            },
+            {
               "name": "all",
               "kind": "method",
               "optional": false,
               "signature": "all(): this",
               "doc": "List both local and remote-tracking branches (`-a`/`--all`)."
+            },
+            {
+              "name": "remotes",
+              "kind": "method",
+              "optional": false,
+              "signature": "remotes(): this",
+              "doc": "List remote-tracking branches only (`-r`/`--remotes`)."
+            },
+            {
+              "name": "contains",
+              "kind": "method",
+              "optional": false,
+              "signature": "contains(rev: string): this",
+              "doc": "List only branches containing this commit (`--contains <commit>`)."
+            },
+            {
+              "name": "merged",
+              "kind": "method",
+              "optional": false,
+              "signature": "merged(ref: string): this",
+              "doc": "List only branches already merged into this ref (`--merged <ref>`) — the\nlisting a cleanup target filters stale branches from."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(spec: string): this",
+              "doc": "Render a listing through a format string (`--format=<fmt>`), e.g.\n`%(refname:short)` for bare branch names with no `*` marker or padding."
+            },
+            {
+              "name": "sort",
+              "kind": "method",
+              "optional": false,
+              "signature": "sort(key: string): this",
+              "doc": "Order a listing (`--sort=<key>`), e.g. `-committerdate` for most recent first."
             }
           ]
         },
@@ -18387,11 +18580,99 @@
               "doc": "Create a new branch (`-b`)."
             },
             {
+              "name": "detach",
+              "kind": "method",
+              "optional": false,
+              "signature": "detach(): this",
+              "doc": "Check the ref out with a detached `HEAD` (`--detach`)."
+            },
+            {
               "name": "force",
               "kind": "method",
               "optional": false,
               "signature": "force(): this",
               "doc": "Force checkout, discarding local changes (`-f`/`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GitCherryPickSettings",
+          "kind": "class",
+          "doc": "Settings for `git cherry-pick`.",
+          "signature": "class GitCherryPickSettings extends GitReplaySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "allowEmpty",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowEmpty(): this",
+              "doc": "Keep a commit that produces no changes (`--allow-empty`)."
+            },
+            {
+              "name": "ff",
+              "kind": "method",
+              "optional": false,
+              "signature": "ff(): this",
+              "doc": "Fast-forward instead of rewriting when the parent matches `HEAD` (`--ff`)."
+            }
+          ]
+        },
+        {
+          "name": "GitCleanSettings",
+          "kind": "class",
+          "doc": "Settings for `git clean`.",
+          "signature": "class GitCleanSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Limit the clean to these pathspecs (positional); repeatable."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Actually delete the files (`-f`/`--force`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "List what would be deleted without deleting it (`-n`/`--dry-run`)."
+            },
+            {
+              "name": "directories",
+              "kind": "method",
+              "optional": false,
+              "signature": "directories(): this",
+              "doc": "Also remove untracked directories (`-d`)."
+            },
+            {
+              "name": "includeIgnored",
+              "kind": "method",
+              "optional": false,
+              "signature": "includeIgnored(): this",
+              "doc": "Remove ignored files too (`-x`) — the switch that turns a clean into a\nfrom-scratch build, since `node_modules` and `target/` are ignored."
+            },
+            {
+              "name": "onlyIgnored",
+              "kind": "method",
+              "optional": false,
+              "signature": "onlyIgnored(): this",
+              "doc": "Remove *only* ignored files (`-X`), keeping other untracked ones."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(...patterns: string[]): this",
+              "doc": "Spare paths matching this pattern (`--exclude=<pattern>`); repeatable."
             }
           ]
         },
@@ -18436,6 +18717,99 @@
               "optional": false,
               "signature": "bare(): this",
               "doc": "Clone a bare repository (`--bare`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(spec: string): this",
+              "doc": "Partial-clone filter (`--filter=<spec>`), e.g. `blob:none` for a treeless\nclone that fetches blobs on demand — the cheap way to get full history in\nCI without the file contents of every revision."
+            },
+            {
+              "name": "singleBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "singleBranch(): this",
+              "doc": "Clone only the history of the checked-out branch (`--single-branch`)."
+            },
+            {
+              "name": "recurseSubmodules",
+              "kind": "method",
+              "optional": false,
+              "signature": "recurseSubmodules(): this",
+              "doc": "Also clone submodules (`--recurse-submodules`)."
+            }
+          ]
+        },
+        {
+          "name": "GitCommitEntry",
+          "kind": "interface",
+          "doc": "One commit of {@link \"./git.ts\".GitTasks.logEntries}.",
+          "signature": "interface GitCommitEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "commit",
+              "kind": "property",
+              "optional": false,
+              "signature": "commit: string",
+              "doc": "The full commit SHA (`%H`)."
+            },
+            {
+              "name": "shortCommit",
+              "kind": "property",
+              "optional": false,
+              "signature": "shortCommit: string",
+              "doc": "The abbreviated commit SHA (`%h`)."
+            },
+            {
+              "name": "parents",
+              "kind": "property",
+              "optional": false,
+              "signature": "parents: string[]",
+              "doc": "The parent SHAs (`%P`); two or more mean a merge, none the root commit."
+            },
+            {
+              "name": "authorName",
+              "kind": "property",
+              "optional": false,
+              "signature": "authorName: string",
+              "doc": "The author's name (`%an`)."
+            },
+            {
+              "name": "authorEmail",
+              "kind": "property",
+              "optional": false,
+              "signature": "authorEmail: string",
+              "doc": "The author's email (`%ae`)."
+            },
+            {
+              "name": "authoredAt",
+              "kind": "property",
+              "optional": false,
+              "signature": "authoredAt: string",
+              "doc": "When the commit was authored, ISO 8601 (`%aI`)."
+            },
+            {
+              "name": "committedAt",
+              "kind": "property",
+              "optional": false,
+              "signature": "committedAt: string",
+              "doc": "When the commit was committed, ISO 8601 (`%cI`)."
+            },
+            {
+              "name": "subject",
+              "kind": "property",
+              "optional": false,
+              "signature": "subject: string",
+              "doc": "The first line of the message (`%s`)."
+            },
+            {
+              "name": "body",
+              "kind": "property",
+              "optional": false,
+              "signature": "body: string",
+              "doc": "The rest of the message (`%B` after the subject), trailing newlines trimmed."
             }
           ]
         },
@@ -18480,6 +18854,120 @@
               "optional": false,
               "signature": "allowEmpty(): this",
               "doc": "Allow a commit with no changes (`--allow-empty`)."
+            },
+            {
+              "name": "noVerify",
+              "kind": "method",
+              "optional": false,
+              "signature": "noVerify(): this",
+              "doc": "Skip the `pre-commit` and `commit-msg` hooks (`--no-verify`) — what a bot\ncommit wants when the hooks are meant for humans at a terminal."
+            },
+            {
+              "name": "author",
+              "kind": "method",
+              "optional": false,
+              "signature": "author(value: string): this",
+              "doc": "Attribute the commit to someone else (`--author=\"Name <email>\"`)."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Commit only these pathspecs (positional); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GitConfigSettings",
+          "kind": "class",
+          "doc": "Settings for `git config`. Pick the operation with {@link get},\n{@link getAll}, {@link set}, {@link add}, {@link unset}, or {@link list},\nand the file with {@link global}, {@link local}, {@link system},\n{@link worktree}, or {@link file}.",
+          "signature": "class GitConfigSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "get",
+              "kind": "method",
+              "optional": false,
+              "signature": "get(key: string): this",
+              "doc": "Read a key's value (`--get <key>`)."
+            },
+            {
+              "name": "getAll",
+              "kind": "method",
+              "optional": false,
+              "signature": "getAll(key: string): this",
+              "doc": "Read every value of a multi-valued key (`--get-all <key>`)."
+            },
+            {
+              "name": "set",
+              "kind": "method",
+              "optional": false,
+              "signature": "set(key: string, value: string): this",
+              "doc": "Set a key, replacing any existing value (`git config <key> <value>`)."
+            },
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(key: string, value: string): this",
+              "doc": "Add another value to a multi-valued key (`--add <key> <value>`)."
+            },
+            {
+              "name": "unset",
+              "kind": "method",
+              "optional": false,
+              "signature": "unset(key: string): this",
+              "doc": "Remove a key (`--unset <key>`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List every configured key (`--list`)."
+            },
+            {
+              "name": "global",
+              "kind": "method",
+              "optional": false,
+              "signature": "global(): this",
+              "doc": "Use the user's configuration (`--global`)."
+            },
+            {
+              "name": "local",
+              "kind": "method",
+              "optional": false,
+              "signature": "local(): this",
+              "doc": "Use the repository's configuration (`--local`)."
+            },
+            {
+              "name": "system",
+              "kind": "method",
+              "optional": false,
+              "signature": "system(): this",
+              "doc": "Use the machine's configuration (`--system`)."
+            },
+            {
+              "name": "worktree",
+              "kind": "method",
+              "optional": false,
+              "signature": "worktree(): this",
+              "doc": "Use the worktree's configuration (`--worktree`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "Use a specific file (`--file <path>`), rather than one of the scopes."
+            },
+            {
+              "name": "defaultValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "defaultValue(value: string): this",
+              "doc": "What to report when the key is unset (`--default <value>`), which also\nmakes `--get` exit 0 instead of 1."
             }
           ]
         },
@@ -18514,6 +19002,171 @@
           ]
         },
         {
+          "name": "GitDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `git describe`.",
+          "signature": "class GitDescribeSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "commitish",
+              "kind": "method",
+              "optional": false,
+              "signature": "commitish(rev: string): this",
+              "doc": "The commit to describe (positional); defaults to `HEAD`."
+            },
+            {
+              "name": "tags",
+              "kind": "method",
+              "optional": false,
+              "signature": "tags(): this",
+              "doc": "Consider lightweight tags too, not only annotated ones (`--tags`)."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Consider every ref, not only tags (`--all`)."
+            },
+            {
+              "name": "always",
+              "kind": "method",
+              "optional": false,
+              "signature": "always(): this",
+              "doc": "Fall back to an abbreviated SHA when no tag matches (`--always`)."
+            },
+            {
+              "name": "exactMatch",
+              "kind": "method",
+              "optional": false,
+              "signature": "exactMatch(): this",
+              "doc": "Fail unless the commit is exactly at a tag (`--exact-match`)."
+            },
+            {
+              "name": "abbrev",
+              "kind": "method",
+              "optional": false,
+              "signature": "abbrev(length: number): this",
+              "doc": "How many SHA characters to append (`--abbrev=<n>`). `0` suppresses the\nsuffix entirely, which is how a build reads the nearest tag's bare name."
+            },
+            {
+              "name": "dirty",
+              "kind": "method",
+              "optional": false,
+              "signature": "dirty(suffix?: string): this",
+              "doc": "Append a marker when the working tree is dirty (`--dirty[=<suffix>]`)."
+            },
+            {
+              "name": "match",
+              "kind": "method",
+              "optional": false,
+              "signature": "match(...patterns: string[]): this",
+              "doc": "Only consider tags matching this glob (`--match <pattern>`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GitDiffSettings",
+          "kind": "class",
+          "doc": "Settings for `git diff`.",
+          "signature": "class GitDiffSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "commits",
+              "kind": "method",
+              "optional": false,
+              "signature": "commits(...revs: string[]): this",
+              "doc": "The commits to compare (positional); repeatable. One rev diffs the working\ntree against it; two diff them against each other."
+            },
+            {
+              "name": "mergeBase",
+              "kind": "method",
+              "optional": false,
+              "signature": "mergeBase(from: string, to?: string): this",
+              "doc": "Compare the two ends of a range — `from...to` with three dots, which diffs\n`to` against the point the two branches last shared. That is the diff a\npull request shows, and the one a review or an \"affected\" check wants,\nsince it excludes whatever landed on the base branch meanwhile."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Limit the diff to these pathspecs (positional, after `--`); repeatable."
+            },
+            {
+              "name": "staged",
+              "kind": "method",
+              "optional": false,
+              "signature": "staged(): this",
+              "doc": "Diff the index against `HEAD` rather than the working tree (`--staged`)."
+            },
+            {
+              "name": "nameOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "nameOnly(): this",
+              "doc": "List the changed paths instead of the patch (`--name-only`)."
+            },
+            {
+              "name": "nameStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "nameStatus(): this",
+              "doc": "List the changed paths with their status letters (`--name-status`)."
+            },
+            {
+              "name": "stat",
+              "kind": "method",
+              "optional": false,
+              "signature": "stat(): this",
+              "doc": "Summarise the changes per file (`--stat`)."
+            },
+            {
+              "name": "shortstat",
+              "kind": "method",
+              "optional": false,
+              "signature": "shortstat(): this",
+              "doc": "One summary line for the whole diff (`--shortstat`)."
+            },
+            {
+              "name": "unified",
+              "kind": "method",
+              "optional": false,
+              "signature": "unified(lines: number): this",
+              "doc": "Lines of context around each hunk (`--unified=<n>`)."
+            },
+            {
+              "name": "ignoreAllSpace",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreAllSpace(): this",
+              "doc": "Ignore whitespace entirely when comparing (`--ignore-all-space`)."
+            },
+            {
+              "name": "exitCode",
+              "kind": "method",
+              "optional": false,
+              "signature": "exitCode(): this",
+              "doc": "Report differences through the exit code (`--exit-code`): 1 when there are\nany, 0 when there are none. Pair it with `.noThrow()` to branch on\n`output.code` instead of catching."
+            },
+            {
+              "name": "diffFilter",
+              "kind": "method",
+              "optional": false,
+              "signature": "diffFilter(letters: string): this",
+              "doc": "Keep only files whose change matches these status letters\n(`--diff-filter=<letters>`), e.g. `ACM` for added, copied, and modified —\nhow a lint target skips paths the diff only deleted."
+            },
+            {
+              "name": "nulTerminated",
+              "kind": "method",
+              "optional": false,
+              "signature": "nulTerminated(): this",
+              "doc": "Terminate output records with a NUL rather than a newline (`-z`)."
+            }
+          ]
+        },
+        {
           "name": "GitFetchSettings",
           "kind": "class",
           "doc": "Settings for `git fetch`.",
@@ -18532,7 +19185,7 @@
               "kind": "method",
               "optional": false,
               "signature": "refspec(...specs: string[]): this",
-              "doc": "Add a refspec to fetch, after the remote — `master`, or\n`master:refs/remotes/origin/master` to also update the remote-tracking ref\n(which is what makes `origin/master` resolvable in a shallow CI checkout\nthat never fetched it). Repeatable.\n\nPrefix the source with `+` to force the update. Pair it with\n{@link depth}: a shallow fetch is not a fast-forward of the history already\npresent, and git rejects such an update unless it is forced."
+              "doc": "Add a refspec to fetch, after the remote — `master`, or\n`master:refs/remotes/origin/master` to also update the remote-tracking ref\n(which is what makes `origin/master` resolvable in a shallow CI checkout\nthat never fetched it). Repeatable.\n\nPrefix the source with `+` to force the update. Pair it with\n{@link depth}: a shallow fetch is not a fast-forward of the history\nalready present, and git rejects such an update unless it is forced."
             },
             {
               "name": "noTags",
@@ -18547,6 +19200,13 @@
               "optional": false,
               "signature": "depth(commits: number): this",
               "doc": "Limit history to this many commits (`--depth`). `1` is enough to diff\nagainst a base branch and avoids pulling a whole history into a CI job."
+            },
+            {
+              "name": "unshallow",
+              "kind": "method",
+              "optional": false,
+              "signature": "unshallow(): this",
+              "doc": "Deepen a shallow clone into the full history (`--unshallow`) — what a\nrelease target needs before `git describe` or a changelog can see past the\none commit CI checked out."
             },
             {
               "name": "all",
@@ -18568,6 +19228,13 @@
               "optional": false,
               "signature": "prune(): this",
               "doc": "Prune deleted remote refs (`--prune`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Update refs even when the update is not a fast-forward (`--force`)."
             }
           ]
         },
@@ -18676,6 +19343,366 @@
           ]
         },
         {
+          "name": "GitLogSettings",
+          "kind": "class",
+          "doc": "Settings for `git log`.",
+          "signature": "class GitLogSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "revisions",
+              "kind": "method",
+              "optional": false,
+              "signature": "revisions(...revs: string[]): this",
+              "doc": "Revisions to walk (positional), e.g. `HEAD` or `origin/main`; repeatable."
+            },
+            {
+              "name": "range",
+              "kind": "method",
+              "optional": false,
+              "signature": "range(from: string, to?: string): this",
+              "doc": "Walk the commits in `from..to` — what is on `to` and not on `from`, the\nrange a changelog since the last tag is built from. `to` defaults to\n`HEAD`."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Limit the walk to these pathspecs (positional, after `--`); repeatable."
+            },
+            {
+              "name": "maxCount",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxCount(count: number): this",
+              "doc": "Stop after this many commits (`--max-count=<n>`)."
+            },
+            {
+              "name": "skip",
+              "kind": "method",
+              "optional": false,
+              "signature": "skip(count: number): this",
+              "doc": "Skip this many commits before reporting any (`--skip=<n>`)."
+            },
+            {
+              "name": "oneline",
+              "kind": "method",
+              "optional": false,
+              "signature": "oneline(): this",
+              "doc": "One abbreviated line per commit (`--oneline`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(spec: string): this",
+              "doc": "Render each commit through a format string (`--format=<fmt>`), e.g.\n`%H %s`. Given after {@link oneline}, so it wins when both are set."
+            },
+            {
+              "name": "since",
+              "kind": "method",
+              "optional": false,
+              "signature": "since(date: string): this",
+              "doc": "Only commits more recent than this date (`--since=<date>`)."
+            },
+            {
+              "name": "until",
+              "kind": "method",
+              "optional": false,
+              "signature": "until(date: string): this",
+              "doc": "Only commits older than this date (`--until=<date>`)."
+            },
+            {
+              "name": "author",
+              "kind": "method",
+              "optional": false,
+              "signature": "author(...patterns: string[]): this",
+              "doc": "Only commits whose author matches this pattern (`--author=`); repeatable."
+            },
+            {
+              "name": "grep",
+              "kind": "method",
+              "optional": false,
+              "signature": "grep(...patterns: string[]): this",
+              "doc": "Only commits whose message matches this pattern (`--grep=`); repeatable."
+            },
+            {
+              "name": "noMerges",
+              "kind": "method",
+              "optional": false,
+              "signature": "noMerges(): this",
+              "doc": "Skip merge commits (`--no-merges`)."
+            },
+            {
+              "name": "firstParent",
+              "kind": "method",
+              "optional": false,
+              "signature": "firstParent(): this",
+              "doc": "Follow only the first parent of a merge (`--first-parent`)."
+            },
+            {
+              "name": "reverse",
+              "kind": "method",
+              "optional": false,
+              "signature": "reverse(): this",
+              "doc": "Report oldest first (`--reverse`)."
+            },
+            {
+              "name": "follow",
+              "kind": "method",
+              "optional": false,
+              "signature": "follow(): this",
+              "doc": "Keep following a single file across renames (`--follow`)."
+            }
+          ]
+        },
+        {
+          "name": "GitLsFilesSettings",
+          "kind": "class",
+          "doc": "Settings for `git ls-files`.",
+          "signature": "class GitLsFilesSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Limit the listing to these pathspecs (positional); repeatable."
+            },
+            {
+              "name": "cached",
+              "kind": "method",
+              "optional": false,
+              "signature": "cached(): this",
+              "doc": "List files in the index (`--cached`), git's default."
+            },
+            {
+              "name": "modified",
+              "kind": "method",
+              "optional": false,
+              "signature": "modified(): this",
+              "doc": "List files modified in the working tree (`--modified`)."
+            },
+            {
+              "name": "deleted",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleted(): this",
+              "doc": "List files deleted from the working tree (`--deleted`)."
+            },
+            {
+              "name": "others",
+              "kind": "method",
+              "optional": false,
+              "signature": "others(): this",
+              "doc": "List untracked files (`--others`). Pair it with {@link excludeStandard},\nor the listing includes everything `.gitignore` covers."
+            },
+            {
+              "name": "ignored",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignored(): this",
+              "doc": "List ignored files (`--ignored`); only meaningful with {@link others}."
+            },
+            {
+              "name": "stage",
+              "kind": "method",
+              "optional": false,
+              "signature": "stage(): this",
+              "doc": "Show the mode, object name, and stage of each entry (`--stage`)."
+            },
+            {
+              "name": "excludeStandard",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeStandard(): this",
+              "doc": "Apply the standard ignore rules (`--exclude-standard`)."
+            },
+            {
+              "name": "directory",
+              "kind": "method",
+              "optional": false,
+              "signature": "directory(): this",
+              "doc": "Report an untracked directory once rather than every file in it (`--directory`)."
+            },
+            {
+              "name": "nulTerminated",
+              "kind": "method",
+              "optional": false,
+              "signature": "nulTerminated(): this",
+              "doc": "Terminate each entry with a NUL rather than a newline (`-z`)."
+            }
+          ]
+        },
+        {
+          "name": "GitLsRemoteSettings",
+          "kind": "class",
+          "doc": "Settings for `git ls-remote`.",
+          "signature": "class GitLsRemoteSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(nameOrUrl: string): this",
+              "doc": "The remote (or URL) to ask; defaults to the branch's upstream."
+            },
+            {
+              "name": "patterns",
+              "kind": "method",
+              "optional": false,
+              "signature": "patterns(...values: string[]): this",
+              "doc": "Limit the listing to refs matching these patterns (positional); repeatable."
+            },
+            {
+              "name": "heads",
+              "kind": "method",
+              "optional": false,
+              "signature": "heads(): this",
+              "doc": "List branch refs only (`--heads`)."
+            },
+            {
+              "name": "tags",
+              "kind": "method",
+              "optional": false,
+              "signature": "tags(): this",
+              "doc": "List tag refs only (`--tags`)."
+            },
+            {
+              "name": "refs",
+              "kind": "method",
+              "optional": false,
+              "signature": "refs(): this",
+              "doc": "Hide peeled tags and pseudo-refs (`--refs`)."
+            },
+            {
+              "name": "symref",
+              "kind": "method",
+              "optional": false,
+              "signature": "symref(): this",
+              "doc": "Also report what the remote's `HEAD` points at (`--symref`)."
+            },
+            {
+              "name": "exitCode",
+              "kind": "method",
+              "optional": false,
+              "signature": "exitCode(): this",
+              "doc": "Exit 2 when nothing matched (`--exit-code`)."
+            }
+          ]
+        },
+        {
+          "name": "GitMergeSettings",
+          "kind": "class",
+          "doc": "Settings for `git merge`.",
+          "signature": "class GitMergeSettings extends GitSequencerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "refs",
+              "kind": "method",
+              "optional": false,
+              "signature": "refs(...values: string[]): this",
+              "doc": "The commits to merge into the current branch (positional); repeatable."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "The merge commit's message (`-m`)."
+            },
+            {
+              "name": "noFf",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFf(): this",
+              "doc": "Always create a merge commit (`--no-ff`), even when a fast-forward would do."
+            },
+            {
+              "name": "ffOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "ffOnly(): this",
+              "doc": "Refuse anything but a fast-forward (`--ff-only`)."
+            },
+            {
+              "name": "squash",
+              "kind": "method",
+              "optional": false,
+              "signature": "squash(): this",
+              "doc": "Stage the merged result without recording a merge (`--squash`)."
+            },
+            {
+              "name": "noCommit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCommit(): this",
+              "doc": "Merge but leave the commit to the caller (`--no-commit`)."
+            },
+            {
+              "name": "strategy",
+              "kind": "method",
+              "optional": false,
+              "signature": "strategy(name: string): this",
+              "doc": "The merge strategy (`--strategy=<name>`), e.g. `ours`."
+            },
+            {
+              "name": "strategyOption",
+              "kind": "method",
+              "optional": false,
+              "signature": "strategyOption(...options: string[]): this",
+              "doc": "An option for the strategy (`--strategy-option=<option>`), e.g.\n`theirs` to resolve conflicting hunks in favour of the merged branch;\nrepeatable."
+            },
+            {
+              "name": "allowUnrelatedHistories",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowUnrelatedHistories(): this",
+              "doc": "Merge histories that share no commit (`--allow-unrelated-histories`)."
+            }
+          ]
+        },
+        {
+          "name": "GitMvSettings",
+          "kind": "class",
+          "doc": "Settings for `git mv`.",
+          "signature": "class GitMvSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "sources",
+              "kind": "method",
+              "optional": false,
+              "signature": "sources(...values: PathLike[]): this",
+              "doc": "The path(s) to move (positional, required); repeatable."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(path: PathLike): this",
+              "doc": "Where they move to (required): a file name for a single source, a\ndirectory when there is more than one."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Overwrite an existing destination (`-f`/`--force`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would move without moving it (`-n`/`--dry-run`)."
+            }
+          ]
+        },
+        {
           "name": "GitPullSettings",
           "kind": "class",
           "doc": "Settings for `git pull`.",
@@ -18704,11 +19731,39 @@
               "doc": "Rebase instead of merge (`--rebase`)."
             },
             {
+              "name": "noRebase",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRebase(): this",
+              "doc": "Merge rather than rebase (`--no-rebase`), whatever `pull.rebase` is set to\nin the ambient config — the flag a build reaches for when it must not\ndepend on the machine it runs on."
+            },
+            {
               "name": "ffOnly",
               "kind": "method",
               "optional": false,
               "signature": "ffOnly(): this",
               "doc": "Only fast-forward (`--ff-only`)."
+            },
+            {
+              "name": "depth",
+              "kind": "method",
+              "optional": false,
+              "signature": "depth(commits: number): this",
+              "doc": "Limit the fetched history to this many commits (`--depth`)."
+            },
+            {
+              "name": "tags",
+              "kind": "method",
+              "optional": false,
+              "signature": "tags(): this",
+              "doc": "Also fetch tags (`--tags`)."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(): this",
+              "doc": "Prune deleted remote refs while fetching (`--prune`)."
             }
           ]
         },
@@ -18748,6 +19803,13 @@
               "doc": "Also push tags (`--tags`)."
             },
             {
+              "name": "followTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "followTags(): this",
+              "doc": "Push the annotated tags reachable from the refs being pushed\n(`--follow-tags`) — a release target's tag rides along with its commit\ninstead of needing a second push."
+            },
+            {
               "name": "forceWithLease",
               "kind": "method",
               "optional": false,
@@ -18760,6 +19822,500 @@
               "optional": false,
               "signature": "deleteRef(): this",
               "doc": "Delete the remote ref (`--delete`)."
+            },
+            {
+              "name": "atomic",
+              "kind": "method",
+              "optional": false,
+              "signature": "atomic(): this",
+              "doc": "Update every ref or none (`--atomic`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be pushed without pushing it (`--dry-run`)."
+            },
+            {
+              "name": "pushOption",
+              "kind": "method",
+              "optional": false,
+              "signature": "pushOption(...values: string[]): this",
+              "doc": "Send a server-side option (`--push-option=<value>`); repeatable. GitLab\nreads these for `ci.skip` and merge-request creation."
+            }
+          ]
+        },
+        {
+          "name": "GitRebaseSettings",
+          "kind": "class",
+          "doc": "Settings for `git rebase`.",
+          "signature": "class GitRebaseSettings extends GitSequencerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "upstream",
+              "kind": "method",
+              "optional": false,
+              "signature": "upstream(rev: string): this",
+              "doc": "The commit the current branch is replayed onto (positional)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "Rebase this branch rather than the checked-out one (git's `<branch>`)."
+            },
+            {
+              "name": "onto",
+              "kind": "method",
+              "optional": false,
+              "signature": "onto(rev: string): this",
+              "doc": "Replay onto a different base than the upstream (`--onto <newbase>`)."
+            },
+            {
+              "name": "autosquash",
+              "kind": "method",
+              "optional": false,
+              "signature": "autosquash(): this",
+              "doc": "Fold `fixup!`/`squash!` commits into their targets (`--autosquash`)."
+            },
+            {
+              "name": "autostash",
+              "kind": "method",
+              "optional": false,
+              "signature": "autostash(): this",
+              "doc": "Stash local changes and restore them afterwards (`--autostash`), instead\nof refusing to start on a dirty tree."
+            },
+            {
+              "name": "keepEmpty",
+              "kind": "method",
+              "optional": false,
+              "signature": "keepEmpty(): this",
+              "doc": "Keep commits that produce no changes (`--keep-empty`)."
+            },
+            {
+              "name": "rebaseMerges",
+              "kind": "method",
+              "optional": false,
+              "signature": "rebaseMerges(): this",
+              "doc": "Recreate merge commits rather than flattening them (`--rebase-merges`)."
+            },
+            {
+              "name": "strategy",
+              "kind": "method",
+              "optional": false,
+              "signature": "strategy(name: string): this",
+              "doc": "The merge strategy used to replay each commit (`--strategy=<name>`)."
+            },
+            {
+              "name": "strategyOption",
+              "kind": "method",
+              "optional": false,
+              "signature": "strategyOption(...options: string[]): this",
+              "doc": "An option for that strategy (`--strategy-option=<option>`); repeatable."
+            },
+            {
+              "name": "skip",
+              "kind": "method",
+              "optional": false,
+              "signature": "skip(): this",
+              "doc": "Drop the current commit and carry on (`--skip`)."
+            }
+          ]
+        },
+        {
+          "name": "GitRemote",
+          "kind": "interface",
+          "doc": "One remote of `git remote --verbose`, with both of its URLs folded in.",
+          "signature": "interface GitRemote",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The remote's name, e.g. `origin`."
+            },
+            {
+              "name": "fetchUrl",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetchUrl?: string",
+              "doc": "Where fetches read from, when the listing reported one."
+            },
+            {
+              "name": "pushUrl",
+              "kind": "property",
+              "optional": true,
+              "signature": "pushUrl?: string",
+              "doc": "Where pushes write to, when the listing reported one."
+            }
+          ]
+        },
+        {
+          "name": "GitRemoteSettings",
+          "kind": "class",
+          "doc": "Settings for `git remote`. Pick the subcommand with {@link list},\n{@link add}, {@link remove}, {@link rename}, {@link setUrl},\n{@link getUrl}, {@link show}, or {@link prune}.",
+          "signature": "class GitRemoteSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List the configured remotes (`git remote`), the default."
+            },
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(name: string, url: string): this",
+              "doc": "Add a remote (`git remote add <name> <url>`)."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(name: string): this",
+              "doc": "Remove a remote and its tracking refs (`git remote remove <name>`)."
+            },
+            {
+              "name": "rename",
+              "kind": "method",
+              "optional": false,
+              "signature": "rename(oldName: string, newName: string): this",
+              "doc": "Rename a remote (`git remote rename <old> <new>`)."
+            },
+            {
+              "name": "setUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "setUrl(name: string, url: string): this",
+              "doc": "Change a remote's URL (`git remote set-url <name> <url>`). Add\n{@link pushUrl} to change only the push URL."
+            },
+            {
+              "name": "getUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "getUrl(name: string): this",
+              "doc": "Print a remote's URL (`git remote get-url <name>`)."
+            },
+            {
+              "name": "show",
+              "kind": "method",
+              "optional": false,
+              "signature": "show(name: string): this",
+              "doc": "Describe a remote and its branches (`git remote show <name>`)."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(name: string): this",
+              "doc": "Delete tracking refs the remote no longer has (`git remote prune <name>`)."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Show each remote's URLs when listing (`-v`/`--verbose`)."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(): this",
+              "doc": "Fetch from the remote right after adding it (`-f`, `add` only)."
+            },
+            {
+              "name": "track",
+              "kind": "method",
+              "optional": false,
+              "signature": "track(branch: string): this",
+              "doc": "Track only this branch (`-t <branch>`, `add` only)."
+            },
+            {
+              "name": "pushUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "pushUrl(): this",
+              "doc": "Operate on the push URL (`--push`), for {@link setUrl} and {@link getUrl}."
+            }
+          ]
+        },
+        {
+          "name": "GitReplaySettings",
+          "kind": "class",
+          "doc": "Shared base for `cherry-pick` and `revert`: the same commit list, the same\n`--no-commit`/`--mainline`, and the same four control flags. Only the\nsubcommand's name and the extra flags differ, which is why they are one\nimplementation rather than two that drift.",
+          "signature": "class GitReplaySettings extends GitSequencerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "commits",
+              "kind": "method",
+              "optional": false,
+              "signature": "commits(...revs: string[]): this",
+              "doc": "The commits to replay (positional, required); repeatable."
+            },
+            {
+              "name": "noCommit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCommit(): this",
+              "doc": "Apply the change without committing it (`-n`/`--no-commit`)."
+            },
+            {
+              "name": "mainline",
+              "kind": "method",
+              "optional": false,
+              "signature": "mainline(parent: number): this",
+              "doc": "Which parent of a merge commit to treat as the mainline\n(`-m <parent-number>`), counting from 1. Replaying a merge needs it: git\ncannot otherwise tell which side of the merge the change is."
+            },
+            {
+              "name": "signoff",
+              "kind": "method",
+              "optional": false,
+              "signature": "signoff(): this",
+              "doc": "Add a `Signed-off-by` trailer (`--signoff`)."
+            },
+            {
+              "name": "skip",
+              "kind": "method",
+              "optional": false,
+              "signature": "skip(): this",
+              "doc": "Drop the current commit and carry on (`--skip`)."
+            }
+          ]
+        },
+        {
+          "name": "GitResetSettings",
+          "kind": "class",
+          "doc": "Settings for `git reset`.",
+          "signature": "class GitResetSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(rev: string): this",
+              "doc": "The commit to reset to (positional); defaults to `HEAD`."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Reset only these pathspecs — unstaging them (positional); repeatable."
+            },
+            {
+              "name": "soft",
+              "kind": "method",
+              "optional": false,
+              "signature": "soft(): this",
+              "doc": "Move the branch only, keeping the index and working tree (`--soft`)."
+            },
+            {
+              "name": "mixed",
+              "kind": "method",
+              "optional": false,
+              "signature": "mixed(): this",
+              "doc": "Reset the index but not the working tree (`--mixed`), git's default."
+            },
+            {
+              "name": "hard",
+              "kind": "method",
+              "optional": false,
+              "signature": "hard(): this",
+              "doc": "Reset the index *and* the working tree (`--hard`), discarding changes."
+            },
+            {
+              "name": "merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "merge(): this",
+              "doc": "Reset, keeping changes to files that differ between the commits (`--merge`)."
+            },
+            {
+              "name": "keep",
+              "kind": "method",
+              "optional": false,
+              "signature": "keep(): this",
+              "doc": "Like {@link merge}, but refuse when a changed file differs (`--keep`)."
+            }
+          ]
+        },
+        {
+          "name": "GitRestoreSettings",
+          "kind": "class",
+          "doc": "Settings for `git restore`.",
+          "signature": "class GitRestoreSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "The pathspecs to restore (positional, required); repeatable."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(treeish: string): this",
+              "doc": "Restore the contents from this commit or tree (`--source=<tree-ish>`)\nrather than from the index."
+            },
+            {
+              "name": "staged",
+              "kind": "method",
+              "optional": false,
+              "signature": "staged(): this",
+              "doc": "Restore the index (`--staged`) — unstaging the paths. Combine with\n{@link worktree} to reset both, which is what `git restore -SW` does."
+            },
+            {
+              "name": "worktree",
+              "kind": "method",
+              "optional": false,
+              "signature": "worktree(): this",
+              "doc": "Restore the working tree (`--worktree`), git's default when neither is given."
+            }
+          ]
+        },
+        {
+          "name": "GitRevertSettings",
+          "kind": "class",
+          "doc": "Settings for `git revert`.",
+          "signature": "class GitRevertSettings extends GitReplaySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noEdit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noEdit(): this",
+              "doc": "Take the generated message without opening an editor (`--no-edit`)."
+            }
+          ]
+        },
+        {
+          "name": "GitRevParseSettings",
+          "kind": "class",
+          "doc": "Settings for `git rev-parse`.",
+          "signature": "class GitRevParseSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "rev",
+              "kind": "method",
+              "optional": false,
+              "signature": "rev(...values: string[]): this",
+              "doc": "The revisions or arguments to resolve (positional); repeatable."
+            },
+            {
+              "name": "short",
+              "kind": "method",
+              "optional": false,
+              "signature": "short(length?: number): this",
+              "doc": "Abbreviate the SHA (`--short`, or `--short=<n>` with a length). git picks\na length long enough to stay unambiguous when none is given."
+            },
+            {
+              "name": "abbrevRef",
+              "kind": "method",
+              "optional": false,
+              "signature": "abbrevRef(): this",
+              "doc": "Print the ref's short name (`--abbrev-ref`), e.g. `main` for `HEAD`."
+            },
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(): this",
+              "doc": "Fail rather than echo the argument when it names no object (`--verify`)."
+            },
+            {
+              "name": "gitDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitDir(): this",
+              "doc": "Print the path of the `.git` directory (`--git-dir`)."
+            },
+            {
+              "name": "showToplevel",
+              "kind": "method",
+              "optional": false,
+              "signature": "showToplevel(): this",
+              "doc": "Print the absolute path of the working tree's root (`--show-toplevel`)."
+            },
+            {
+              "name": "showPrefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "showPrefix(): this",
+              "doc": "Print the current directory's path relative to that root (`--show-prefix`)."
+            },
+            {
+              "name": "isInsideWorkTree",
+              "kind": "method",
+              "optional": false,
+              "signature": "isInsideWorkTree(): this",
+              "doc": "Print whether this is inside a working tree (`--is-inside-work-tree`)."
+            }
+          ]
+        },
+        {
+          "name": "GitRmSettings",
+          "kind": "class",
+          "doc": "Settings for `git rm`.",
+          "signature": "class GitRmSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Paths/pathspecs to remove (positional, required); repeatable."
+            },
+            {
+              "name": "cached",
+              "kind": "method",
+              "optional": false,
+              "signature": "cached(): this",
+              "doc": "Remove from the index only, leaving the file on disk (`--cached`) — how a\nfile committed by mistake stops being tracked without being deleted."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Recurse into directories (`-r`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Remove even when the file has staged or local changes (`-f`/`--force`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be removed without removing it (`-n`/`--dry-run`)."
+            },
+            {
+              "name": "ignoreUnmatch",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreUnmatch(): this",
+              "doc": "Exit 0 when no path matches (`--ignore-unmatch`)."
             }
           ]
         },
@@ -18782,7 +20338,37 @@
               "kind": "method",
               "optional": false,
               "signature": "command(...parts: Array<string | number>): this",
-              "doc": "The subcommand and its arguments, e.g. `command(\"rev-parse\", \"HEAD\")`."
+              "doc": "The subcommand and its arguments, e.g. `command(\"bisect\", \"start\")`."
+            }
+          ]
+        },
+        {
+          "name": "GitSequencerSettings",
+          "kind": "class",
+          "doc": "Base for the commands that can be left in progress by a conflict. Subclasses\nexpose only the actions their command accepts — `merge` has no `--skip` —\nand call {@link GitSequencerSettings.sequencer_} to record one.",
+          "signature": "class GitSequencerSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "continue",
+              "kind": "method",
+              "optional": false,
+              "signature": "continue(): this",
+              "doc": "Resume the operation once the conflict is resolved (`--continue`)."
+            },
+            {
+              "name": "abort",
+              "kind": "method",
+              "optional": false,
+              "signature": "abort(): this",
+              "doc": "Undo it and restore the pre-operation state (`--abort`)."
+            },
+            {
+              "name": "quit",
+              "kind": "method",
+              "optional": false,
+              "signature": "quit(): this",
+              "doc": "Forget the operation, leaving the tree as it is (`--quit`)."
             }
           ]
         },
@@ -18806,6 +20392,201 @@
               "optional": false,
               "signature": "config(key: string, value: string): this",
               "doc": "Set a one-off config value (`-c key=value`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GitShowSettings",
+          "kind": "class",
+          "doc": "Settings for `git show`.",
+          "signature": "class GitShowSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "object",
+              "kind": "method",
+              "optional": false,
+              "signature": "object(...names: string[]): this",
+              "doc": "The objects to show (positional); repeatable. A commit, a tag, or a blob\nat a revision such as `HEAD:deno.json` — the way a build reads a file as\nit was, without checking anything out."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Limit the output to these pathspecs (positional, after `--`); repeatable."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(spec: string): this",
+              "doc": "Render the commit header through a format string (`--format=<fmt>`)."
+            },
+            {
+              "name": "noPatch",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPatch(): this",
+              "doc": "Suppress the diff (`--no-patch`), leaving only the header."
+            },
+            {
+              "name": "nameOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "nameOnly(): this",
+              "doc": "List the changed paths instead of the diff (`--name-only`)."
+            },
+            {
+              "name": "nameStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "nameStatus(): this",
+              "doc": "List the changed paths with their status letters (`--name-status`)."
+            },
+            {
+              "name": "stat",
+              "kind": "method",
+              "optional": false,
+              "signature": "stat(): this",
+              "doc": "Summarise the changes (`--stat`)."
+            }
+          ]
+        },
+        {
+          "name": "GitStashSettings",
+          "kind": "class",
+          "doc": "Settings for `git stash`. Pick the subcommand with {@link push},\n{@link pop}, {@link apply}, {@link list}, {@link show}, {@link drop}, or\n{@link clear}; the remaining methods apply to the one picked.",
+          "signature": "class GitStashSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "push",
+              "kind": "method",
+              "optional": false,
+              "signature": "push(): this",
+              "doc": "Stash the working tree and index (`git stash push`)."
+            },
+            {
+              "name": "pop",
+              "kind": "method",
+              "optional": false,
+              "signature": "pop(): this",
+              "doc": "Restore a stash and drop it (`git stash pop`)."
+            },
+            {
+              "name": "apply",
+              "kind": "method",
+              "optional": false,
+              "signature": "apply(): this",
+              "doc": "Restore a stash and keep it (`git stash apply`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List the stashes (`git stash list`)."
+            },
+            {
+              "name": "show",
+              "kind": "method",
+              "optional": false,
+              "signature": "show(): this",
+              "doc": "Show a stash's diff (`git stash show`)."
+            },
+            {
+              "name": "drop",
+              "kind": "method",
+              "optional": false,
+              "signature": "drop(): this",
+              "doc": "Discard a stash (`git stash drop`)."
+            },
+            {
+              "name": "clear",
+              "kind": "method",
+              "optional": false,
+              "signature": "clear(): this",
+              "doc": "Discard every stash (`git stash clear`)."
+            },
+            {
+              "name": "stash",
+              "kind": "method",
+              "optional": false,
+              "signature": "stash(ref: string): this",
+              "doc": "Which stash to act on, e.g. `stash@{1}` (positional); defaults to the most\nrecent. Only meaningful for {@link pop}, {@link apply}, {@link show}, and\n{@link drop}."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "Label the stash being pushed (`-m`)."
+            },
+            {
+              "name": "includeUntracked",
+              "kind": "method",
+              "optional": false,
+              "signature": "includeUntracked(): this",
+              "doc": "Stash untracked files too (`--include-untracked`)."
+            },
+            {
+              "name": "keepIndex",
+              "kind": "method",
+              "optional": false,
+              "signature": "keepIndex(): this",
+              "doc": "Leave what is already staged in the index (`--keep-index`)."
+            },
+            {
+              "name": "staged",
+              "kind": "method",
+              "optional": false,
+              "signature": "staged(): this",
+              "doc": "Stash only what is staged (`--staged`)."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Stash only these pathspecs (positional, after `--`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GitStatusEntry",
+          "kind": "interface",
+          "doc": "One record of `git status --porcelain -z`: a path and how it changed.",
+          "signature": "interface GitStatusEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "index",
+              "kind": "property",
+              "optional": false,
+              "signature": "index: string",
+              "doc": "The index (staged) status code — git's `X` column: `M` modified, `A`\nadded, `D` deleted, `R` renamed, `C` copied, `?` untracked, `!` ignored,\nor a space when the index matches `HEAD`."
+            },
+            {
+              "name": "workingTree",
+              "kind": "property",
+              "optional": false,
+              "signature": "workingTree: string",
+              "doc": "The working-tree status code — git's `Y` column, with the same letters,\nor a space when the working tree matches the index."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The path, relative to the repository root; for a rename, the new one."
+            },
+            {
+              "name": "originalPath",
+              "kind": "property",
+              "optional": true,
+              "signature": "originalPath?: string",
+              "doc": "Where a renamed or copied entry came from; absent otherwise."
             }
           ]
         },
@@ -18836,6 +20617,206 @@
               "optional": false,
               "signature": "branch(): this",
               "doc": "Show branch information (`-b`/`--branch`)."
+            },
+            {
+              "name": "nulTerminated",
+              "kind": "method",
+              "optional": false,
+              "signature": "nulTerminated(): this",
+              "doc": "Terminate each record with a NUL rather than a newline (`-z`), which also\nturns on `--porcelain` and stops git quoting unusual paths."
+            },
+            {
+              "name": "untrackedFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "untrackedFiles(mode: no | normal | all): this",
+              "doc": "How much of an untracked directory to report (`--untracked-files=<mode>`):\n`no`, `normal` (the default — the directory), or `all` (every file in it)."
+            },
+            {
+              "name": "ignored",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignored(): this",
+              "doc": "Also report ignored files (`--ignored`)."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: string[]): this",
+              "doc": "Limit the report to these pathspecs (positional); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GitSubmoduleSettings",
+          "kind": "class",
+          "doc": "Settings for `git submodule`. Pick the subcommand with {@link add},\n{@link init}, {@link deinit}, {@link update}, {@link sync}, {@link status},\nor {@link foreach}.",
+          "signature": "class GitSubmoduleSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(url: string, path?: PathLike): this",
+              "doc": "Add a submodule (`git submodule add <url> [<path>]`)."
+            },
+            {
+              "name": "init",
+              "kind": "method",
+              "optional": false,
+              "signature": "init(): this",
+              "doc": "Register the submodules in `.gitmodules` (`git submodule init`)."
+            },
+            {
+              "name": "deinit",
+              "kind": "method",
+              "optional": false,
+              "signature": "deinit(): this",
+              "doc": "Unregister submodules (`git submodule deinit`)."
+            },
+            {
+              "name": "update",
+              "kind": "method",
+              "optional": false,
+              "signature": "update(): this",
+              "doc": "Check the submodules out at their recorded commits (`git submodule update`)."
+            },
+            {
+              "name": "sync",
+              "kind": "method",
+              "optional": false,
+              "signature": "sync(): this",
+              "doc": "Copy the configured URLs into `.git/config` (`git submodule sync`)."
+            },
+            {
+              "name": "status",
+              "kind": "method",
+              "optional": false,
+              "signature": "status(): this",
+              "doc": "Report each submodule's checked-out commit (`git submodule status`)."
+            },
+            {
+              "name": "foreach",
+              "kind": "method",
+              "optional": false,
+              "signature": "foreach(...command: string[]): this",
+              "doc": "Run a command in each submodule (`git submodule foreach <command>`)."
+            },
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Limit the operation to these paths (positional); repeatable."
+            },
+            {
+              "name": "withInit",
+              "kind": "method",
+              "optional": false,
+              "signature": "withInit(): this",
+              "doc": "Initialise uninitialised submodules first (`--init`), the flag\n{@link update} needs on a fresh clone. Named for the flag rather than the\n`init` subcommand, which is what {@link init} runs."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Recurse into nested submodules (`--recursive`)."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(): this",
+              "doc": "Use the upstream branch's latest commit rather than the recorded one (`--remote`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Discard local changes in the submodule (`--force`)."
+            },
+            {
+              "name": "depth",
+              "kind": "method",
+              "optional": false,
+              "signature": "depth(commits: number): this",
+              "doc": "Clone the submodules shallowly (`--depth <n>`)."
+            },
+            {
+              "name": "jobs",
+              "kind": "method",
+              "optional": false,
+              "signature": "jobs(count: number): this",
+              "doc": "Clone this many submodules in parallel (`--jobs <n>`)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "Track this branch when adding or updating (`-b <branch>`)."
+            }
+          ]
+        },
+        {
+          "name": "GitSwitchSettings",
+          "kind": "class",
+          "doc": "Settings for `git switch`.",
+          "signature": "class GitSwitchSettings extends GitSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "The branch to switch to — or, with {@link create}, the one to create."
+            },
+            {
+              "name": "startPoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "startPoint(rev: string): this",
+              "doc": "The commit the new branch forks from (git's trailing `<start-point>`),\ne.g. `origin/main`. Without it a created branch forks from the current\n`HEAD`, which is whatever the checkout happened to be on."
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(): this",
+              "doc": "Create the branch (`-c`); fails if it already exists."
+            },
+            {
+              "name": "forceCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "forceCreate(): this",
+              "doc": "Create the branch, resetting it if it exists (`-C`)."
+            },
+            {
+              "name": "track",
+              "kind": "method",
+              "optional": false,
+              "signature": "track(mode: direct | inherit): this",
+              "doc": "Set up upstream tracking (`--track=<mode>`), `direct` or `inherit`."
+            },
+            {
+              "name": "detach",
+              "kind": "method",
+              "optional": false,
+              "signature": "detach(): this",
+              "doc": "Switch with a detached `HEAD` (`--detach`) — checking out a commit rather\nthan a branch, which `switch` otherwise refuses."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Throw away local changes rather than refusing to switch (`--force`)."
             }
           ]
         },
@@ -18852,6 +20833,13 @@
               "optional": false,
               "signature": "name(value: string): this",
               "doc": "The tag name."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(rev: string): this",
+              "doc": "The commit to tag (git's trailing `<commit>`), rather than `HEAD`. Only\nmeaningful when creating a tag."
             },
             {
               "name": "message",
@@ -18873,13 +20861,27 @@
               "optional": false,
               "signature": "deleteTag(): this",
               "doc": "Delete the tag (`-d`/`--delete`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(pattern?: string): this",
+              "doc": "List tags (`-l`), optionally matching a shell pattern such as `v1.*`.\nWith no pattern, lists them all."
+            },
+            {
+              "name": "sort",
+              "kind": "method",
+              "optional": false,
+              "signature": "sort(key: string): this",
+              "doc": "Order a listing (`--sort=<key>`), e.g. `-v:refname` for newest-version\nfirst — the ordering a release target wants, since the default is\nlexicographic and puts `v1.10.0` before `v1.9.0`."
             }
           ]
         },
         {
           "name": "GitTasks",
           "kind": "variable",
-          "doc": "Typed task functions for the common `git` commands.",
+          "doc": "Typed task functions for the `git` commands.",
           "signature": "const GitTasks: GitTasksApi",
           "deprecated": false
         },
@@ -18912,6 +20914,34 @@
               "doc": "Stage changes: `git add`."
             },
             {
+              "name": "rm",
+              "kind": "method",
+              "optional": false,
+              "signature": "rm(configure?: Configure<GitRmSettings>): Promise<CommandOutput>",
+              "doc": "Remove tracked files: `git rm`."
+            },
+            {
+              "name": "mv",
+              "kind": "method",
+              "optional": false,
+              "signature": "mv(configure?: Configure<GitMvSettings>): Promise<CommandOutput>",
+              "doc": "Move or rename a tracked file: `git mv`."
+            },
+            {
+              "name": "restore",
+              "kind": "method",
+              "optional": false,
+              "signature": "restore(configure?: Configure<GitRestoreSettings>): Promise<CommandOutput>",
+              "doc": "Restore working-tree or index contents: `git restore`."
+            },
+            {
+              "name": "clean",
+              "kind": "method",
+              "optional": false,
+              "signature": "clean(configure?: Configure<GitCleanSettings>): Promise<CommandOutput>",
+              "doc": "Delete untracked files: `git clean`."
+            },
+            {
               "name": "commit",
               "kind": "method",
               "optional": false,
@@ -18926,11 +20956,25 @@
               "doc": "Show working-tree status: `git status`."
             },
             {
+              "name": "statusEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "statusEntries(configure?: Configure<GitStatusSettings>): Promise<GitStatusEntry[]>",
+              "doc": "The working tree's changes as parsed {@link GitStatusEntry} values, from\n`git status --porcelain -z` — the form no path can corrupt. An empty array\nmeans a clean tree.\n\nThe lambda configures the rest (`.dir()`, `.untrackedFiles()`, `.paths()`);\nthe output format is fixed, since the parse depends on it."
+            },
+            {
               "name": "checkout",
               "kind": "method",
               "optional": false,
               "signature": "checkout(configure?: Configure<GitCheckoutSettings>): Promise<CommandOutput>",
               "doc": "Switch branches or restore files: `git checkout`."
+            },
+            {
+              "name": "switch",
+              "kind": "method",
+              "optional": false,
+              "signature": "switch(configure?: Configure<GitSwitchSettings>): Promise<CommandOutput>",
+              "doc": "Switch branches: `git switch`, `checkout`'s modern half."
             },
             {
               "name": "branch",
@@ -18966,6 +21010,174 @@
               "optional": false,
               "signature": "fetch(configure?: Configure<GitFetchSettings>): Promise<CommandOutput>",
               "doc": "Download objects and refs: `git fetch`."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(configure?: Configure<GitRemoteSettings>): Promise<CommandOutput>",
+              "doc": "Manage remotes: `git remote add|remove|rename|set-url|get-url|show|prune`."
+            },
+            {
+              "name": "remoteList",
+              "kind": "method",
+              "optional": false,
+              "signature": "remoteList(configure?: Configure<GitRemoteSettings>): Promise<GitRemote[]>",
+              "doc": "The configured remotes as parsed {@link GitRemote} entries, each with the\nfetch and push URL folded together, from `git remote --verbose`."
+            },
+            {
+              "name": "lsRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "lsRemote(configure?: Configure<GitLsRemoteSettings>): Promise<CommandOutput>",
+              "doc": "List a remote's refs without fetching them: `git ls-remote`."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(configure?: Configure<GitLogSettings>): Promise<CommandOutput>",
+              "doc": "Show history: `git log`."
+            },
+            {
+              "name": "logEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "logEntries(configure?: Configure<GitLogSettings>): Promise<GitCommitEntry[]>",
+              "doc": "History as parsed {@link GitCommitEntry} values — SHA, parents, author,\ndates, subject, and body — for building a changelog or deciding what a\nrange contains.\n\nThe lambda configures the walk (`.range()`, `.maxCount()`, `.paths()`);\nthe `--format` is fixed, since the parse depends on it."
+            },
+            {
+              "name": "show",
+              "kind": "method",
+              "optional": false,
+              "signature": "show(configure?: Configure<GitShowSettings>): Promise<CommandOutput>",
+              "doc": "Show an object: `git show`."
+            },
+            {
+              "name": "diff",
+              "kind": "method",
+              "optional": false,
+              "signature": "diff(configure?: Configure<GitDiffSettings>): Promise<CommandOutput>",
+              "doc": "Show changes: `git diff`."
+            },
+            {
+              "name": "diffNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "diffNames(configure?: Configure<GitDiffSettings>): Promise<string[]>",
+              "doc": "The changed paths of a diff, from `git diff --name-only -z`. What a target\nneeds to decide whether the work it guards has to run at all."
+            },
+            {
+              "name": "lsFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "lsFiles(configure?: Configure<GitLsFilesSettings>): Promise<CommandOutput>",
+              "doc": "List index and working-tree files: `git ls-files`."
+            },
+            {
+              "name": "lsFileNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "lsFileNames(configure?: Configure<GitLsFilesSettings>): Promise<string[]>",
+              "doc": "The paths of a `git ls-files -z` listing — git's own file list, ignore\nrules already applied."
+            },
+            {
+              "name": "revParse",
+              "kind": "method",
+              "optional": false,
+              "signature": "revParse(configure?: Configure<GitRevParseSettings>): Promise<CommandOutput>",
+              "doc": "Resolve revisions and repository paths: `git rev-parse`."
+            },
+            {
+              "name": "revision",
+              "kind": "method",
+              "optional": false,
+              "signature": "revision(configure?: Configure<GitRevParseSettings>): Promise<string>",
+              "doc": "A `git rev-parse` result as a trimmed string — the commit SHA, ref name,\nor path a version stamp or cache key is built from."
+            },
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(configure?: Configure<GitDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Name a commit after the nearest tag: `git describe`."
+            },
+            {
+              "name": "merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "merge(configure?: Configure<GitMergeSettings>): Promise<CommandOutput>",
+              "doc": "Join two histories: `git merge`."
+            },
+            {
+              "name": "rebase",
+              "kind": "method",
+              "optional": false,
+              "signature": "rebase(configure?: Configure<GitRebaseSettings>): Promise<CommandOutput>",
+              "doc": "Replay commits onto another base: `git rebase`."
+            },
+            {
+              "name": "cherryPick",
+              "kind": "method",
+              "optional": false,
+              "signature": "cherryPick(configure?: Configure<GitCherryPickSettings>): Promise<CommandOutput>",
+              "doc": "Apply existing commits here: `git cherry-pick`."
+            },
+            {
+              "name": "revert",
+              "kind": "method",
+              "optional": false,
+              "signature": "revert(configure?: Configure<GitRevertSettings>): Promise<CommandOutput>",
+              "doc": "Undo commits with new ones: `git revert`."
+            },
+            {
+              "name": "reset",
+              "kind": "method",
+              "optional": false,
+              "signature": "reset(configure?: Configure<GitResetSettings>): Promise<CommandOutput>",
+              "doc": "Move the branch, index, and optionally the working tree: `git reset`."
+            },
+            {
+              "name": "stash",
+              "kind": "method",
+              "optional": false,
+              "signature": "stash(configure?: Configure<GitStashSettings>): Promise<CommandOutput>",
+              "doc": "Park and restore uncommitted work: `git stash`."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(configure?: Configure<GitConfigSettings>): Promise<CommandOutput>",
+              "doc": "Read or write configuration: `git config`."
+            },
+            {
+              "name": "configGet",
+              "kind": "method",
+              "optional": false,
+              "signature": "configGet(configure?: Configure<GitConfigSettings>): Promise<string | undefined>",
+              "doc": "One configuration value, or `undefined` when the key is unset — which\n`git config --get` reports as a non-zero exit rather than as empty output.\nThe lambda must pick the key with `.get(...)` or `.getAll(...)`."
+            },
+            {
+              "name": "submodule",
+              "kind": "method",
+              "optional": false,
+              "signature": "submodule(configure?: Configure<GitSubmoduleSettings>): Promise<CommandOutput>",
+              "doc": "Manage submodules: `git submodule add|init|update|sync|status|foreach`."
+            },
+            {
+              "name": "archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "archive(configure?: Configure<GitArchiveSettings>): Promise<CommandOutput>",
+              "doc": "Package a tree as a tarball or zip: `git archive`."
+            },
+            {
+              "name": "apply",
+              "kind": "method",
+              "optional": false,
+              "signature": "apply(configure?: Configure<GitApplySettings>): Promise<CommandOutput>",
+              "doc": "Apply a patch file: `git apply`."
             },
             {
               "name": "worktree",
@@ -19126,6 +21338,20 @@
               "doc": "Emit the stable machine-readable listing (`--porcelain`)."
             }
           ]
+        },
+        {
+          "name": "LOG_ENTRY_FORMAT",
+          "kind": "variable",
+          "doc": "The `--format` {@link readLogEntries} pins. Fields in {@link GitCommitEntry}\norder, separated by `%x1f`, each commit terminated by `%x1e` — separators no\ncommit message can contain, unlike the newlines a line-oriented format would\nrely on.",
+          "signature": "const LOG_ENTRY_FORMAT: string",
+          "deprecated": false
+        },
+        {
+          "name": "SequencerAction",
+          "kind": "typeAlias",
+          "doc": "What to do with an operation git left in progress.",
+          "signature": "type SequencerAction = continue | abort | skip | quit",
+          "deprecated": false
         }
       ]
     },
