@@ -8880,18 +8880,428 @@
           "deprecated": false
         },
         {
-          "name": "NpmCiSettings",
+          "name": "NpmAccessSettings",
           "kind": "class",
-          "doc": "Settings for `npm ci`.",
-          "signature": "class NpmCiSettings extends NpmSettings",
+          "doc": "Settings for `npm access`.",
+          "signature": "class NpmAccessSettings extends NpmSettings",
           "deprecated": false,
           "members": [
+            {
+              "name": "listPackages",
+              "kind": "method",
+              "optional": false,
+              "signature": "listPackages(owner?: string, pkg?: string): this",
+              "doc": "List the packages a user, scope, or team can reach (`access list packages`)."
+            },
+            {
+              "name": "listCollaborators",
+              "kind": "method",
+              "optional": false,
+              "signature": "listCollaborators(pkg?: string, user?: string): this",
+              "doc": "List a package's collaborators (`access list collaborators`)."
+            },
+            {
+              "name": "getStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "getStatus(pkg?: string): this",
+              "doc": "Read whether a package is public or private (`access get status`), the default."
+            },
+            {
+              "name": "setStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "setStatus(level: public | private, pkg?: string): this",
+              "doc": "Set a package public or private (`access set status=<level>`)."
+            },
+            {
+              "name": "setMfa",
+              "kind": "method",
+              "optional": false,
+              "signature": "setMfa(mode: none | publish | automation, pkg?: string): this",
+              "doc": "Require two-factor auth for publishing (`access set mfa=<mode>`)."
+            },
+            {
+              "name": "grant",
+              "kind": "method",
+              "optional": false,
+              "signature": "grant(permission: read-only | read-write, team: string, pkg?: string): this",
+              "doc": "Give a team access (`access grant <permission> <scope:team>`)."
+            },
+            {
+              "name": "revoke",
+              "kind": "method",
+              "optional": false,
+              "signature": "revoke(team: string, pkg?: string): this",
+              "doc": "Take a team's access away (`access revoke <scope:team>`)."
+            },
+            {
+              "name": "otp",
+              "kind": "method",
+              "optional": false,
+              "signature": "otp(code: string): this",
+              "doc": "Provide a one-time password (`--otp=`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmAuditSettings",
+          "kind": "class",
+          "doc": "Settings for `npm audit`.",
+          "signature": "class NpmAuditSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "fix",
+              "kind": "method",
+              "optional": false,
+              "signature": "fix(): this",
+              "doc": "Install compatible updates for what it finds (`npm audit fix`)."
+            },
+            {
+              "name": "signatures",
+              "kind": "method",
+              "optional": false,
+              "signature": "signatures(): this",
+              "doc": "Verify the registry signatures of what is installed (`npm audit signatures`)."
+            },
+            {
+              "name": "auditLevel",
+              "kind": "method",
+              "optional": false,
+              "signature": "auditLevel(level: info | low | moderate | high | critical | none): this",
+              "doc": "The severity at which the command fails\n(`--audit-level=<info|low|moderate|high|critical|none>`)."
+            },
             {
               "name": "omit",
               "kind": "method",
               "optional": false,
-              "signature": "omit(type: NpmOmitType): this",
-              "doc": "Skip a dependency group (`--omit=dev` etc.); repeatable."
+              "signature": "omit(...types: NpmOmitType[]): this",
+              "doc": "Skip a dependency group (`--omit=<group>`); repeatable."
+            },
+            {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(...types: NpmIncludeType[]): this",
+              "doc": "Keep a dependency group npm would otherwise omit (`--include=<group>`); repeatable."
+            },
+            {
+              "name": "packageLockOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageLockOnly(): this",
+              "doc": "Audit the lockfile without touching `node_modules` (`--package-lock-only`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what a fix would change without changing it (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmAuditSummary",
+          "kind": "interface",
+          "doc": "How many vulnerabilities `npm audit` found, by severity.",
+          "signature": "interface NpmAuditSummary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "info",
+              "kind": "property",
+              "optional": false,
+              "signature": "info: number",
+              "doc": "Informational findings."
+            },
+            {
+              "name": "low",
+              "kind": "property",
+              "optional": false,
+              "signature": "low: number",
+              "doc": "Low-severity findings."
+            },
+            {
+              "name": "moderate",
+              "kind": "property",
+              "optional": false,
+              "signature": "moderate: number",
+              "doc": "Moderate-severity findings."
+            },
+            {
+              "name": "high",
+              "kind": "property",
+              "optional": false,
+              "signature": "high: number",
+              "doc": "High-severity findings."
+            },
+            {
+              "name": "critical",
+              "kind": "property",
+              "optional": false,
+              "signature": "critical: number",
+              "doc": "Critical-severity findings."
+            },
+            {
+              "name": "total",
+              "kind": "property",
+              "optional": false,
+              "signature": "total: number",
+              "doc": "Every finding, whatever its severity."
+            }
+          ]
+        },
+        {
+          "name": "NpmCacheSettings",
+          "kind": "class",
+          "doc": "Settings for `npm cache`. Pick the operation with {@link add},\n{@link clean}, {@link ls}, or {@link verify}.",
+          "signature": "class NpmCacheSettings extends NpmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(...specs: string[]): this",
+              "doc": "Add a package to the cache (`cache add <spec>`)."
+            },
+            {
+              "name": "clean",
+              "kind": "method",
+              "optional": false,
+              "signature": "clean(key?: string): this",
+              "doc": "Empty the cache (`cache clean`). npm refuses this without `--force`, so\npair it with {@link force} — see the error this reports otherwise."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(...specs: string[]): this",
+              "doc": "List what the cache holds (`cache ls`)."
+            },
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(): this",
+              "doc": "Check and compact the cache (`cache verify`), the default."
+            },
+            {
+              "name": "cache",
+              "kind": "method",
+              "optional": false,
+              "signature": "cache(path: PathLike): this",
+              "doc": "Use a specific cache directory (`--cache=<path>`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Confirm a clean npm would otherwise refuse (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmCiSettings",
+          "kind": "class",
+          "doc": "Settings for `npm ci`.",
+          "signature": "class NpmCiSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noAudit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noAudit(): this",
+              "doc": "Skip the audit npm runs after installing (`--no-audit`)."
+            },
+            {
+              "name": "noFund",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFund(): this",
+              "doc": "Skip the funding message (`--no-fund`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmConfigSettings",
+          "kind": "class",
+          "doc": "Settings for `npm config`. Pick the operation with {@link get}, {@link set},\n{@link deleteKeys}, {@link list}, or {@link fix}.",
+          "signature": "class NpmConfigSettings extends NpmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "get",
+              "kind": "method",
+              "optional": false,
+              "signature": "get(...keys: string[]): this",
+              "doc": "Read config keys (`config get <key>...`)."
+            },
+            {
+              "name": "set",
+              "kind": "method",
+              "optional": false,
+              "signature": "set(...assignments: string[]): this",
+              "doc": "Write config keys (`config set <key>=<value>...`)."
+            },
+            {
+              "name": "deleteKeys",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteKeys(...keys: string[]): this",
+              "doc": "Remove config keys (`config delete <key>...`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List the effective configuration (`config list`)."
+            },
+            {
+              "name": "fix",
+              "kind": "method",
+              "optional": false,
+              "signature": "fix(): this",
+              "doc": "Repair invalid config entries (`config fix`)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(where: global | user | project): this",
+              "doc": "Which file to read or write (`--location=<global|user|project>`)."
+            },
+            {
+              "name": "long",
+              "kind": "method",
+              "optional": false,
+              "signature": "long(): this",
+              "doc": "Include defaults in a listing (`--long`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmDedupeSettings",
+          "kind": "class",
+          "doc": "Settings for `npm dedupe`.",
+          "signature": "class NpmDedupeSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would move without changing the tree (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmDependencySettings",
+          "kind": "class",
+          "doc": "Shared base for the install-shaped commands: the `--omit`/`--include`\ndependency-group selectors npm accepts on all of them, plus the package\nspecs most of them take.",
+          "signature": "class NpmDependencySettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...specs: string[]): this",
+              "doc": "Package specs the command operates on (positional); repeatable."
+            },
+            {
+              "name": "omit",
+              "kind": "method",
+              "optional": false,
+              "signature": "omit(...types: NpmOmitType[]): this",
+              "doc": "Skip a dependency group (`--omit=<group>`); repeatable."
+            },
+            {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(...types: NpmIncludeType[]): this",
+              "doc": "Keep a dependency group npm would otherwise omit (`--include=<group>`); repeatable."
+            },
+            {
+              "name": "ignoreScripts",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreScripts(): this",
+              "doc": "Do not run lifecycle scripts (`--ignore-scripts`)."
+            },
+            {
+              "name": "foregroundScripts",
+              "kind": "method",
+              "optional": false,
+              "signature": "foregroundScripts(): this",
+              "doc": "Show lifecycle-script output as it runs (`--foreground-scripts`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmDeprecateSettings",
+          "kind": "class",
+          "doc": "Settings for `npm deprecate`.",
+          "signature": "class NpmDeprecateSettings extends NpmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "spec",
+              "kind": "method",
+              "optional": false,
+              "signature": "spec(value: string): this",
+              "doc": "The package spec to deprecate, e.g. `app@<2` (required)."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "The warning installers will see (required). An empty message is how npm\n*un*-deprecates a version, so it must be given deliberately rather than\nby omission."
+            },
+            {
+              "name": "otp",
+              "kind": "method",
+              "optional": false,
+              "signature": "otp(code: string): this",
+              "doc": "Provide a one-time password (`--otp=`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmDistTagSettings",
+          "kind": "class",
+          "doc": "Settings for `npm dist-tag`. Pick the subcommand with {@link add},\n{@link rm}, or {@link ls}.",
+          "signature": "class NpmDistTagSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(spec: string, tag?: string): this",
+              "doc": "Point a tag at a published version (`dist-tag add <pkg@version> [<tag>]`).\nThe spec must carry the version; a tag cannot point at a range. With no\ntag npm uses `latest`, as it does on the command line."
+            },
+            {
+              "name": "rm",
+              "kind": "method",
+              "optional": false,
+              "signature": "rm(spec: string, tag: string): this",
+              "doc": "Remove a tag (`dist-tag rm <pkg> <tag>`)."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(spec?: string): this",
+              "doc": "List a package's tags (`dist-tag ls [<pkg>]`), the default."
             }
           ]
         },
@@ -8899,7 +9309,7 @@
           "name": "NpmExecSettings",
           "kind": "class",
           "doc": "Settings for `npm exec`.",
-          "signature": "class NpmExecSettings extends NpmSettings",
+          "signature": "class NpmExecSettings extends NpmWorkspaceSettings",
           "deprecated": false,
           "members": [
             {
@@ -8924,6 +9334,13 @@
               "doc": "Skip the install prompt (`--yes`)."
             },
             {
+              "name": "no",
+              "kind": "method",
+              "optional": false,
+              "signature": "no(): this",
+              "doc": "Refuse to install anything (`--no`), so the command runs only if it is\nalready present — what a hermetic CI step wants instead of a silent fetch."
+            },
+            {
               "name": "execArgs",
               "kind": "method",
               "optional": false,
@@ -8933,19 +9350,56 @@
           ]
         },
         {
-          "name": "NpmInstallSettings",
+          "name": "NpmIncludeType",
+          "kind": "typeAlias",
+          "doc": "A dependency group accepted by npm's `--include` flag.",
+          "signature": "type NpmIncludeType = prod | dev | optional | peer",
+          "deprecated": false
+        },
+        {
+          "name": "NpmInitSettings",
           "kind": "class",
-          "doc": "Settings for `npm install`.",
-          "signature": "class NpmInstallSettings extends NpmSettings",
+          "doc": "Settings for `npm init`.",
+          "signature": "class NpmInitSettings extends NpmWorkspaceSettings",
           "deprecated": false,
           "members": [
             {
-              "name": "packages",
+              "name": "initializer",
               "kind": "method",
               "optional": false,
-              "signature": "packages(...specs: string[]): this",
-              "doc": "Package specs to install; omit to install from package.json."
+              "signature": "initializer(spec: string): this",
+              "doc": "The initializer package to run, e.g. `vite` for `npm init vite`\n(positional). With none, npm writes a `package.json` itself."
             },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Accept the defaults instead of prompting (`--yes`)."
+            },
+            {
+              "name": "scope",
+              "kind": "method",
+              "optional": false,
+              "signature": "scope(name: string): this",
+              "doc": "Scope the created package (`--scope=<@scope>`)."
+            },
+            {
+              "name": "initArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "initArgs(...args: Array<string | number>): this",
+              "doc": "Arguments forwarded to the initializer (after `--`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmInstallSettings",
+          "kind": "class",
+          "doc": "Settings for `npm install`.",
+          "signature": "class NpmInstallSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
             {
               "name": "saveDev",
               "kind": "method",
@@ -8954,11 +9408,127 @@
               "doc": "Save to devDependencies (`--save-dev`)."
             },
             {
+              "name": "saveOptional",
+              "kind": "method",
+              "optional": false,
+              "signature": "saveOptional(): this",
+              "doc": "Save to optionalDependencies (`--save-optional`)."
+            },
+            {
+              "name": "savePeer",
+              "kind": "method",
+              "optional": false,
+              "signature": "savePeer(): this",
+              "doc": "Save to peerDependencies (`--save-peer`)."
+            },
+            {
               "name": "saveExact",
               "kind": "method",
               "optional": false,
               "signature": "saveExact(): this",
               "doc": "Pin exact versions (`--save-exact`)."
+            },
+            {
+              "name": "noSave",
+              "kind": "method",
+              "optional": false,
+              "signature": "noSave(): this",
+              "doc": "Install without recording the dependency (`--no-save`)."
+            },
+            {
+              "name": "installStrategy",
+              "kind": "method",
+              "optional": false,
+              "signature": "installStrategy(strategy: hoisted | nested | shallow | linked): this",
+              "doc": "How npm lays out the tree (`--install-strategy=<strategy>`)."
+            },
+            {
+              "name": "noAudit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noAudit(): this",
+              "doc": "Skip the audit npm runs after installing (`--no-audit`)."
+            },
+            {
+              "name": "noFund",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFund(): this",
+              "doc": "Skip the funding message (`--no-fund`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmLinkSettings",
+          "kind": "class",
+          "doc": "Settings for `npm link`.",
+          "signature": "class NpmLinkSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "saveDev",
+              "kind": "method",
+              "optional": false,
+              "signature": "saveDev(): this",
+              "doc": "Record the linked package in devDependencies (`--save-dev`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmLogLevel",
+          "kind": "typeAlias",
+          "doc": "How verbose npm should be (`--loglevel`).",
+          "signature": "type NpmLogLevel = silent | error | warn | notice | http | info | verbose | silly",
+          "deprecated": false
+        },
+        {
+          "name": "NpmLsSettings",
+          "kind": "class",
+          "doc": "Settings for `npm ls`.",
+          "signature": "class NpmLsSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "spec",
+              "kind": "method",
+              "optional": false,
+              "signature": "spec(value: string): this",
+              "doc": "Limit the listing to one package spec (positional)."
+            },
+            {
+              "name": "depth",
+              "kind": "method",
+              "optional": false,
+              "signature": "depth(levels: number): this",
+              "doc": "How deep to walk the tree (`--depth=<n>`); `0` lists direct dependencies."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Show every dependency, not just the top level (`--all`)."
+            },
+            {
+              "name": "long",
+              "kind": "method",
+              "optional": false,
+              "signature": "long(): this",
+              "doc": "Include extended information (`--long`)."
+            },
+            {
+              "name": "parseable",
+              "kind": "method",
+              "optional": false,
+              "signature": "parseable(): this",
+              "doc": "Emit one line per package, tab-separated (`--parseable`)."
+            },
+            {
+              "name": "omit",
+              "kind": "method",
+              "optional": false,
+              "signature": "omit(...types: NpmOmitType[]): this",
+              "doc": "Skip a dependency group (`--omit=<group>`); repeatable."
             }
           ]
         },
@@ -8970,10 +9540,226 @@
           "deprecated": false
         },
         {
+          "name": "NpmOutdatedEntry",
+          "kind": "interface",
+          "doc": "One dependency `npm outdated` reports as behind.",
+          "signature": "interface NpmOutdatedEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The package name."
+            },
+            {
+              "name": "current",
+              "kind": "property",
+              "optional": true,
+              "signature": "current?: string",
+              "doc": "The version installed now, absent when the package is missing entirely."
+            },
+            {
+              "name": "wanted",
+              "kind": "property",
+              "optional": true,
+              "signature": "wanted?: string",
+              "doc": "The newest version the range in `package.json` allows."
+            },
+            {
+              "name": "latest",
+              "kind": "property",
+              "optional": true,
+              "signature": "latest?: string",
+              "doc": "The newest version published."
+            },
+            {
+              "name": "location",
+              "kind": "property",
+              "optional": true,
+              "signature": "location?: string",
+              "doc": "Where in the tree it is installed."
+            },
+            {
+              "name": "dependent",
+              "kind": "property",
+              "optional": true,
+              "signature": "dependent?: string",
+              "doc": "The package that depends on it."
+            }
+          ]
+        },
+        {
+          "name": "NpmOutdatedSettings",
+          "kind": "class",
+          "doc": "Settings for `npm outdated`.",
+          "signature": "class NpmOutdatedSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...specs: string[]): this",
+              "doc": "Limit the report to these package specs (positional); repeatable."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Report transitive dependencies too (`--all`)."
+            },
+            {
+              "name": "long",
+              "kind": "method",
+              "optional": false,
+              "signature": "long(): this",
+              "doc": "Include the package type and homepage (`--long`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmOwnerSettings",
+          "kind": "class",
+          "doc": "Settings for `npm owner`.",
+          "signature": "class NpmOwnerSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(user: string, pkg: string): this",
+              "doc": "Add a maintainer (`owner add <user> <pkg>`)."
+            },
+            {
+              "name": "rm",
+              "kind": "method",
+              "optional": false,
+              "signature": "rm(user: string, pkg: string): this",
+              "doc": "Remove a maintainer (`owner rm <user> <pkg>`)."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(pkg: string): this",
+              "doc": "List a package's maintainers (`owner ls <pkg>`)."
+            },
+            {
+              "name": "otp",
+              "kind": "method",
+              "optional": false,
+              "signature": "otp(code: string): this",
+              "doc": "Provide a one-time password (`--otp=`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmPackSettings",
+          "kind": "class",
+          "doc": "Settings for `npm pack`.",
+          "signature": "class NpmPackSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...specs: string[]): this",
+              "doc": "Package specs to pack (positional); defaults to the current project."
+            },
+            {
+              "name": "packDestination",
+              "kind": "method",
+              "optional": false,
+              "signature": "packDestination(dir: PathLike): this",
+              "doc": "Where to write the tarball (`--pack-destination=<dir>`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be packed without writing a tarball (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmPingSettings",
+          "kind": "class",
+          "doc": "Settings for `npm ping`.",
+          "signature": "class NpmPingSettings extends NpmSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "NpmPkgSettings",
+          "kind": "class",
+          "doc": "Settings for `npm pkg`. Pick the operation with {@link get}, {@link set},\n{@link deleteKeys}, or {@link fix}.",
+          "signature": "class NpmPkgSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "get",
+              "kind": "method",
+              "optional": false,
+              "signature": "get(...keys: string[]): this",
+              "doc": "Read one or more `package.json` fields (`pkg get <key>...`)."
+            },
+            {
+              "name": "set",
+              "kind": "method",
+              "optional": false,
+              "signature": "set(...assignments: string[]): this",
+              "doc": "Write fields (`pkg set <key>=<value>...`). Each argument is npm's own\n`key=value` form, which is also how it addresses arrays and nested keys."
+            },
+            {
+              "name": "deleteKeys",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteKeys(...keys: string[]): this",
+              "doc": "Remove fields (`pkg delete <key>...`)."
+            },
+            {
+              "name": "fix",
+              "kind": "method",
+              "optional": false,
+              "signature": "fix(): this",
+              "doc": "Repair what npm can correct automatically (`pkg fix`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Skip npm's confirmation for a destructive edit (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmPruneSettings",
+          "kind": "class",
+          "doc": "Settings for `npm prune`.",
+          "signature": "class NpmPruneSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be removed without removing it (`--dry-run`)."
+            }
+          ]
+        },
+        {
           "name": "NpmPublishSettings",
           "kind": "class",
           "doc": "Settings for `npm publish`.",
-          "signature": "class NpmPublishSettings extends NpmSettings",
+          "signature": "class NpmPublishSettings extends NpmWorkspaceSettings",
           "deprecated": false,
           "members": [
             {
@@ -9003,6 +9789,29 @@
               "optional": false,
               "signature": "otp(code: string): this",
               "doc": "Provide a one-time password (`--otp=`)."
+            },
+            {
+              "name": "provenance",
+              "kind": "method",
+              "optional": false,
+              "signature": "provenance(): this",
+              "doc": "Publish with a provenance attestation (`--provenance`), which npm can\ngenerate from a trusted CI run — the supply-chain signal a consumer can\nverify against the workflow that built the tarball."
+            }
+          ]
+        },
+        {
+          "name": "NpmRebuildSettings",
+          "kind": "class",
+          "doc": "Settings for `npm rebuild`.",
+          "signature": "class NpmRebuildSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noBinLinks",
+              "kind": "method",
+              "optional": false,
+              "signature": "noBinLinks(): this",
+              "doc": "Do not create the `.bin` symlinks (`--no-bin-links`)."
             }
           ]
         },
@@ -9010,7 +9819,7 @@
           "name": "NpmRunSettings",
           "kind": "class",
           "doc": "Settings for `npm run`.",
-          "signature": "class NpmRunSettings extends NpmSettings",
+          "signature": "class NpmRunSettings extends NpmWorkspaceSettings",
           "deprecated": false,
           "members": [
             {
@@ -9019,20 +9828,6 @@
               "optional": false,
               "signature": "script(name: string): this",
               "doc": "The package.json script to run (required)."
-            },
-            {
-              "name": "workspace",
-              "kind": "method",
-              "optional": false,
-              "signature": "workspace(name: string): this",
-              "doc": "Run in a specific workspace (`--workspace=`)."
-            },
-            {
-              "name": "workspaces",
-              "kind": "method",
-              "optional": false,
-              "signature": "workspaces(): this",
-              "doc": "Run the script in **every** workspace (`--workspaces`). Pair with\n{@link ifPresent} to skip workspaces that lack the script. Mutually\nexclusive with {@link workspace} — setting both is a build error."
             },
             {
               "name": "ifPresent",
@@ -9051,12 +9846,92 @@
           ]
         },
         {
+          "name": "NpmSbomSettings",
+          "kind": "class",
+          "doc": "Settings for `npm sbom`.",
+          "signature": "class NpmSbomSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "sbomFormat",
+              "kind": "method",
+              "optional": false,
+              "signature": "sbomFormat(format: cyclonedx | spdx): this",
+              "doc": "Which document to emit (`--sbom-format=<cyclonedx|spdx>`), required by npm."
+            },
+            {
+              "name": "sbomType",
+              "kind": "method",
+              "optional": false,
+              "signature": "sbomType(type: library | application | framework): this",
+              "doc": "What the project is (`--sbom-type=<library|application|framework>`)."
+            },
+            {
+              "name": "omit",
+              "kind": "method",
+              "optional": false,
+              "signature": "omit(...types: NpmOmitType[]): this",
+              "doc": "Skip a dependency group (`--omit=<group>`); repeatable."
+            },
+            {
+              "name": "packageLockOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageLockOnly(): this",
+              "doc": "Build the document from the lockfile alone (`--package-lock-only`)."
+            }
+          ]
+        },
+        {
           "name": "NpmSettings",
           "kind": "class",
-          "doc": "Base for all `npm` subcommand settings: binary is `npm` from PATH.",
+          "doc": "Shared base for every `npm` subcommand: the binary, and the flags npm treats\nas configuration rather than as a command's own — it accepts these on any\ncommand, which is why they live here instead of being repeated.",
           "signature": "class NpmSettings extends ToolSettings",
           "deprecated": false,
-          "members": []
+          "members": [
+            {
+              "name": "registry",
+              "kind": "method",
+              "optional": false,
+              "signature": "registry(url: string): this",
+              "doc": "Use a specific registry (`--registry=<url>`)."
+            },
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Emit JSON (`--json`). The value-returning tasks set this themselves; a\ncaller reaches for it to parse output the wrapper does not yet model."
+            },
+            {
+              "name": "logLevel",
+              "kind": "method",
+              "optional": false,
+              "signature": "logLevel(level: NpmLogLevel): this",
+              "doc": "How much npm prints (`--loglevel=<level>`)."
+            },
+            {
+              "name": "global",
+              "kind": "method",
+              "optional": false,
+              "signature": "global(): this",
+              "doc": "Operate on the global install rather than the project (`--global`)."
+            },
+            {
+              "name": "prefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "prefix(path: PathLike): this",
+              "doc": "Run as if npm were started in this directory (`--prefix=<path>`)."
+            },
+            {
+              "name": "userconfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "userconfig(path: PathLike): this",
+              "doc": "Read this user config file rather than `~/.npmrc` (`--userconfig=<path>`)."
+            }
+          ]
         },
         {
           "name": "NpmTasks",
@@ -9087,11 +9962,60 @@
               "doc": "Clean install from the lockfile: `npm ci`."
             },
             {
+              "name": "uninstall",
+              "kind": "method",
+              "optional": false,
+              "signature": "uninstall(configure?: Configure<NpmUninstallSettings>): Promise<CommandOutput>",
+              "doc": "Remove dependencies: `npm uninstall`."
+            },
+            {
+              "name": "update",
+              "kind": "method",
+              "optional": false,
+              "signature": "update(configure?: Configure<NpmUpdateSettings>): Promise<CommandOutput>",
+              "doc": "Update dependencies within their ranges: `npm update`."
+            },
+            {
+              "name": "dedupe",
+              "kind": "method",
+              "optional": false,
+              "signature": "dedupe(configure?: Configure<NpmDedupeSettings>): Promise<CommandOutput>",
+              "doc": "Flatten duplicated packages: `npm dedupe`."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(configure?: Configure<NpmPruneSettings>): Promise<CommandOutput>",
+              "doc": "Remove packages nothing depends on: `npm prune`."
+            },
+            {
+              "name": "rebuild",
+              "kind": "method",
+              "optional": false,
+              "signature": "rebuild(configure?: Configure<NpmRebuildSettings>): Promise<CommandOutput>",
+              "doc": "Rebuild native packages: `npm rebuild`."
+            },
+            {
+              "name": "link",
+              "kind": "method",
+              "optional": false,
+              "signature": "link(configure?: Configure<NpmLinkSettings>): Promise<CommandOutput>",
+              "doc": "Symlink a package for local development: `npm link`."
+            },
+            {
               "name": "run",
               "kind": "method",
               "optional": false,
               "signature": "run(configure?: Configure<NpmRunSettings>): Promise<CommandOutput>",
               "doc": "Run a package.json script: `npm run`."
+            },
+            {
+              "name": "test",
+              "kind": "method",
+              "optional": false,
+              "signature": "test(configure?: Configure<NpmTestSettings>): Promise<CommandOutput>",
+              "doc": "Run the project's test script: `npm test`."
             },
             {
               "name": "exec",
@@ -9108,11 +10032,294 @@
               "doc": "Publish the package: `npm publish`."
             },
             {
+              "name": "pack",
+              "kind": "method",
+              "optional": false,
+              "signature": "pack(configure?: Configure<NpmPackSettings>): Promise<CommandOutput>",
+              "doc": "Build a tarball without publishing it: `npm pack`."
+            },
+            {
               "name": "version",
               "kind": "method",
               "optional": false,
               "signature": "version(configure?: Configure<NpmVersionSettings>): Promise<CommandOutput>",
               "doc": "Bump the package version: `npm version`."
+            },
+            {
+              "name": "unpublish",
+              "kind": "method",
+              "optional": false,
+              "signature": "unpublish(configure?: Configure<NpmUnpublishSettings>): Promise<CommandOutput>",
+              "doc": "Remove a published version: `npm unpublish`."
+            },
+            {
+              "name": "deprecate",
+              "kind": "method",
+              "optional": false,
+              "signature": "deprecate(configure?: Configure<NpmDeprecateSettings>): Promise<CommandOutput>",
+              "doc": "Warn installers off a version: `npm deprecate`."
+            },
+            {
+              "name": "distTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "distTag(configure?: Configure<NpmDistTagSettings>): Promise<CommandOutput>",
+              "doc": "Manage dist-tags: `npm dist-tag add|rm|ls`."
+            },
+            {
+              "name": "view",
+              "kind": "method",
+              "optional": false,
+              "signature": "view(configure?: Configure<NpmViewSettings>): Promise<CommandOutput>",
+              "doc": "Read registry metadata: `npm view`."
+            },
+            {
+              "name": "ping",
+              "kind": "method",
+              "optional": false,
+              "signature": "ping(configure?: Configure<NpmPingSettings>): Promise<CommandOutput>",
+              "doc": "Check the registry is reachable: `npm ping`."
+            },
+            {
+              "name": "whoami",
+              "kind": "method",
+              "optional": false,
+              "signature": "whoami(configure?: Configure<NpmWhoamiSettings>): Promise<CommandOutput>",
+              "doc": "Print the authenticated user: `npm whoami`."
+            },
+            {
+              "name": "whoamiName",
+              "kind": "method",
+              "optional": false,
+              "signature": "whoamiName(configure?: Configure<NpmWhoamiSettings>): Promise<string | undefined>",
+              "doc": "The authenticated user's name, or `undefined` when this machine is not\nlogged in — an answer a release target can act on, rather than the\nnon-zero exit npm reports."
+            },
+            {
+              "name": "access",
+              "kind": "method",
+              "optional": false,
+              "signature": "access(configure?: Configure<NpmAccessSettings>): Promise<CommandOutput>",
+              "doc": "Manage package access: `npm access`."
+            },
+            {
+              "name": "owner",
+              "kind": "method",
+              "optional": false,
+              "signature": "owner(configure?: Configure<NpmOwnerSettings>): Promise<CommandOutput>",
+              "doc": "Manage package maintainers: `npm owner add|rm|ls`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(configure?: Configure<NpmTokenSettings>): Promise<CommandOutput>",
+              "doc": "Manage registry tokens: `npm token list|create|revoke`."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(configure?: Configure<NpmLsSettings>): Promise<CommandOutput>",
+              "doc": "List the installed tree: `npm ls`."
+            },
+            {
+              "name": "outdated",
+              "kind": "method",
+              "optional": false,
+              "signature": "outdated(configure?: Configure<NpmOutdatedSettings>): Promise<CommandOutput>",
+              "doc": "Report dependencies behind their latest: `npm outdated`."
+            },
+            {
+              "name": "outdatedEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "outdatedEntries(configure?: Configure<NpmOutdatedSettings>): Promise<NpmOutdatedEntry[]>",
+              "doc": "The outdated dependencies as parsed {@link NpmOutdatedEntry} values. npm\nexits non-zero *because* something is outdated, so this reads that as the\nanswer rather than as a failure; an empty array means everything is\ncurrent."
+            },
+            {
+              "name": "audit",
+              "kind": "method",
+              "optional": false,
+              "signature": "audit(configure?: Configure<NpmAuditSettings>): Promise<CommandOutput>",
+              "doc": "Audit dependencies for vulnerabilities: `npm audit`."
+            },
+            {
+              "name": "auditSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "auditSummary(configure?: Configure<NpmAuditSettings>): Promise<NpmAuditSummary>",
+              "doc": "The audit's vulnerability counts by severity, so a target decides for\nitself what is worth failing on. npm's non-zero exit is the finding, not\nan error."
+            },
+            {
+              "name": "sbom",
+              "kind": "method",
+              "optional": false,
+              "signature": "sbom(configure?: Configure<NpmSbomSettings>): Promise<CommandOutput>",
+              "doc": "Emit a software bill of materials: `npm sbom`."
+            },
+            {
+              "name": "init",
+              "kind": "method",
+              "optional": false,
+              "signature": "init(configure?: Configure<NpmInitSettings>): Promise<CommandOutput>",
+              "doc": "Create a package or run an initializer: `npm init`."
+            },
+            {
+              "name": "pkg",
+              "kind": "method",
+              "optional": false,
+              "signature": "pkg(configure?: Configure<NpmPkgSettings>): Promise<CommandOutput>",
+              "doc": "Read or write package.json fields: `npm pkg get|set|delete|fix`."
+            },
+            {
+              "name": "pkgGet",
+              "kind": "method",
+              "optional": false,
+              "signature": "pkgGet(key: string, configure?: Configure<NpmPkgSettings>): Promise<string | undefined>",
+              "doc": "One `package.json` field as a string, or `undefined` when it is unset or\nis not a scalar — how a build reads its own version without parsing the\nmanifest or guessing where it lives."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(configure?: Configure<NpmConfigSettings>): Promise<CommandOutput>",
+              "doc": "Read or write npm configuration: `npm config get|set|delete|list|fix`."
+            },
+            {
+              "name": "cache",
+              "kind": "method",
+              "optional": false,
+              "signature": "cache(configure?: Configure<NpmCacheSettings>): Promise<CommandOutput>",
+              "doc": "Maintain the package cache: `npm cache add|clean|ls|verify`."
+            }
+          ]
+        },
+        {
+          "name": "NpmTestSettings",
+          "kind": "class",
+          "doc": "Settings for `npm test`.",
+          "signature": "class NpmTestSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "testArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "testArgs(...args: Array<string | number>): this",
+              "doc": "Arguments forwarded to the test script (after `--`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmTokenSettings",
+          "kind": "class",
+          "doc": "Settings for `npm token`. Pick the subcommand with {@link list},\n{@link create}, or {@link revoke}.",
+          "signature": "class NpmTokenSettings extends NpmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List this account's tokens (`token list`), the default."
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(): this",
+              "doc": "Create a token (`token create`)."
+            },
+            {
+              "name": "revoke",
+              "kind": "method",
+              "optional": false,
+              "signature": "revoke(idOrToken: string): this",
+              "doc": "Revoke a token by id or value (`token revoke <id|token>`)."
+            },
+            {
+              "name": "readOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "readOnly(): this",
+              "doc": "Create a token that cannot publish (`--read-only`)."
+            },
+            {
+              "name": "cidr",
+              "kind": "method",
+              "optional": false,
+              "signature": "cidr(...ranges: string[]): this",
+              "doc": "Restrict a created token to these ranges (`--cidr=<range>`); repeatable."
+            },
+            {
+              "name": "otp",
+              "kind": "method",
+              "optional": false,
+              "signature": "otp(code: string): this",
+              "doc": "Provide a one-time password (`--otp=`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmUninstallSettings",
+          "kind": "class",
+          "doc": "Settings for `npm uninstall`.",
+          "signature": "class NpmUninstallSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noSave",
+              "kind": "method",
+              "optional": false,
+              "signature": "noSave(): this",
+              "doc": "Remove the package without updating `package.json` (`--no-save`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmUnpublishSettings",
+          "kind": "class",
+          "doc": "Settings for `npm unpublish`.",
+          "signature": "class NpmUnpublishSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "spec",
+              "kind": "method",
+              "optional": false,
+              "signature": "spec(value: string): this",
+              "doc": "The package spec to remove, e.g. `app@1.2.3` (positional)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Confirm an unpublish npm would otherwise refuse (`--force`) — removing a\nwhole package, or a version outside the 72-hour window."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be removed without removing it (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "NpmUpdateSettings",
+          "kind": "class",
+          "doc": "Settings for `npm update`.",
+          "signature": "class NpmUpdateSettings extends NpmDependencySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "save",
+              "kind": "method",
+              "optional": false,
+              "signature": "save(): this",
+              "doc": "Write the updated ranges back to `package.json` (`--save`)."
             }
           ]
         },
@@ -9120,7 +10327,7 @@
           "name": "NpmVersionSettings",
           "kind": "class",
           "doc": "Settings for `npm version`.",
-          "signature": "class NpmVersionSettings extends NpmSettings",
+          "signature": "class NpmVersionSettings extends NpmWorkspaceSettings",
           "deprecated": false,
           "members": [
             {
@@ -9143,8 +10350,104 @@
               "optional": false,
               "signature": "noGitTagVersion(): this",
               "doc": "Do not create a git commit and tag (`--no-git-tag-version`)."
+            },
+            {
+              "name": "preid",
+              "kind": "method",
+              "optional": false,
+              "signature": "preid(id: string): this",
+              "doc": "The prerelease identifier for a `pre*` bump (`--preid=<id>`), e.g. `rc`."
+            },
+            {
+              "name": "allowSameVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowSameVersion(): this",
+              "doc": "Accept a bump to the version already set (`--allow-same-version`)."
             }
           ]
+        },
+        {
+          "name": "NpmViewSettings",
+          "kind": "class",
+          "doc": "Settings for `npm view`.",
+          "signature": "class NpmViewSettings extends NpmWorkspaceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "spec",
+              "kind": "method",
+              "optional": false,
+              "signature": "spec(value: string): this",
+              "doc": "The package spec to read, e.g. `react@18` (positional)."
+            },
+            {
+              "name": "field",
+              "kind": "method",
+              "optional": false,
+              "signature": "field(...names: string[]): this",
+              "doc": "A field of the registry metadata to print, e.g. `version` or\n`dist-tags.latest` (positional); repeatable. With none, npm prints the\nwhole record."
+            }
+          ]
+        },
+        {
+          "name": "NpmWhoamiSettings",
+          "kind": "class",
+          "doc": "Settings for `npm whoami`.",
+          "signature": "class NpmWhoamiSettings extends NpmSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "NpmWorkspaceSettings",
+          "kind": "class",
+          "doc": "Base for the npm commands that accept workspace selection. `--workspace`\nnames one (repeatable) and `--workspaces` means all of them; npm takes one\nor the other, and this refuses the combination rather than passing on a\ncommand whose meaning is ambiguous.",
+          "signature": "class NpmWorkspaceSettings extends NpmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "workspace",
+              "kind": "method",
+              "optional": false,
+              "signature": "workspace(...names: string[]): this",
+              "doc": "Run in this workspace (`--workspace=<name>`); repeatable."
+            },
+            {
+              "name": "workspaces",
+              "kind": "method",
+              "optional": false,
+              "signature": "workspaces(): this",
+              "doc": "Run in **every** workspace (`--workspaces`). Mutually exclusive with\n{@link workspace} — setting both is a build error."
+            },
+            {
+              "name": "includeWorkspaceRoot",
+              "kind": "method",
+              "optional": false,
+              "signature": "includeWorkspaceRoot(): this",
+              "doc": "Include the root project alongside the workspaces (`--include-workspace-root`)."
+            }
+          ]
+        },
+        {
+          "name": "parsePkgField",
+          "kind": "function",
+          "doc": "The scalar `npm pkg get <key>` reported, or `undefined` when the field is\nunset or is not a scalar.\n\nnpm answers with JSON, so a string field arrives quoted, a missing one\narrives as `{}`, and asking within a workspace (or for several keys) yields\nan object keyed by what was asked for — this reads all three. An object or\narray field yields `undefined`, because there is no single string to hand\nback.\n\nNot part of the package's public surface — exported for its unit test.",
+          "signature": "function parsePkgField(stdout: string, key: string): string | undefined",
+          "deprecated": false
+        },
+        {
+          "name": "readPkgField",
+          "kind": "function",
+          "doc": "Run `npm pkg get <key> --json` and read the field out of it. Backs\n{@link \"./npm.ts\".NpmTasks.pkgGet}.",
+          "signature": "async function readPkgField(key: string, configure?: Configure<NpmPkgSettings>): Promise<string | undefined>",
+          "deprecated": false
+        },
+        {
+          "name": "readWhoami",
+          "kind": "function",
+          "doc": "Read the authenticated user's name, or `undefined` when the registry does\nnot recognise this machine. Backs {@link \"./npm.ts\".NpmTasks.whoamiName}.\n\nBeing logged out is an answer, not a failure — a release target asks so it\ncan report the missing credential itself, rather than dying on npm's exit\ncode partway through.",
+          "signature": "async function readWhoami(configure?: Configure<NpmWhoamiSettings>): Promise<string | undefined>",
+          "deprecated": false
         }
       ]
     },
