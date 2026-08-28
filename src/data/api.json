@@ -11878,7 +11878,7 @@
     {
       "name": "@zuke/docker",
       "dir": "docker",
-      "summary": "`@zuke/docker` — typed `docker` CLI task wrappers for Zuke builds.",
+      "summary": "`@zuke/docker` — typed `DockerTasks` wrappers for the `docker` CLI.",
       "symbols": [
         {
           "name": "DockerBuildSettings",
@@ -11953,10 +11953,10 @@
           ]
         },
         {
-          "name": "DockerExecSettings",
+          "name": "DockerCommitSettings",
           "kind": "class",
-          "doc": "Settings for `docker exec`.",
-          "signature": "class DockerExecSettings extends DockerSettings",
+          "doc": "Settings for `docker commit`.",
+          "signature": "class DockerCommitSettings extends DockerSettings",
           "deprecated": false,
           "members": [
             {
@@ -11964,42 +11964,534 @@
               "kind": "method",
               "optional": false,
               "signature": "container(name: string): this",
-              "doc": "The target container (required)."
+              "doc": "The container to snapshot (required)."
             },
             {
-              "name": "interactive",
+              "name": "reference",
               "kind": "method",
               "optional": false,
-              "signature": "interactive(): this",
-              "doc": "Keep STDIN open (`-i`)."
+              "signature": "reference(name: string): this",
+              "doc": "The image name to give the snapshot (positional)."
             },
             {
-              "name": "tty",
+              "name": "message",
               "kind": "method",
               "optional": false,
-              "signature": "tty(): this",
-              "doc": "Allocate a pseudo-TTY (`-t`)."
+              "signature": "message(text: string): this",
+              "doc": "A commit message (`-m`/`--message`)."
             },
             {
-              "name": "envVar",
+              "name": "author",
               "kind": "method",
               "optional": false,
-              "signature": "envVar(key: string, value: string): this",
-              "doc": "Set an environment variable for the command (`-e KEY=value`)."
+              "signature": "author(value: string): this",
+              "doc": "The author to record (`-a`/`--author`)."
             },
             {
-              "name": "workdir",
+              "name": "change",
               "kind": "method",
               "optional": false,
-              "signature": "workdir(path: PathLike): this",
-              "doc": "Working directory inside the container (`-w`)."
+              "signature": "change(...instructions: string[]): this",
+              "doc": "Apply a Dockerfile instruction to the result (`-c`/`--change`); repeatable."
             },
             {
-              "name": "commandArgs",
+              "name": "noPause",
               "kind": "method",
               "optional": false,
-              "signature": "commandArgs(...args: Array<string | number>): this",
-              "doc": "The command and arguments to execute."
+              "signature": "noPause(): this",
+              "doc": "Leave the container running while it is committed (`--pause=false`).\ndocker pauses it by default, which is what makes the snapshot consistent."
+            }
+          ]
+        },
+        {
+          "name": "DockerContainerEntry",
+          "kind": "interface",
+          "doc": "One container of `docker ps --format '{{json .}}'`.",
+          "signature": "interface DockerContainerEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": true,
+              "signature": "id?: string",
+              "doc": "The container id, as docker abbreviates it in a listing."
+            },
+            {
+              "name": "image",
+              "kind": "property",
+              "optional": true,
+              "signature": "image?: string",
+              "doc": "The image it was created from."
+            },
+            {
+              "name": "names",
+              "kind": "property",
+              "optional": true,
+              "signature": "names?: string",
+              "doc": "Its names, comma-separated as docker reports them."
+            },
+            {
+              "name": "command",
+              "kind": "property",
+              "optional": true,
+              "signature": "command?: string",
+              "doc": "The command it runs."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": true,
+              "signature": "status?: string",
+              "doc": "A human description of its state, e.g. `Up 3 minutes`."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": true,
+              "signature": "state?: string",
+              "doc": "The bare state, e.g. `running` or `exited`."
+            },
+            {
+              "name": "ports",
+              "kind": "property",
+              "optional": true,
+              "signature": "ports?: string",
+              "doc": "The published ports, as docker formats them."
+            }
+          ]
+        },
+        {
+          "name": "DockerContainerListSettings",
+          "kind": "class",
+          "doc": "Base for the commands that act on one or more existing containers. The\nempty-list check is here so every one of them reports the same thing rather\nthan letting docker print its usage.",
+          "signature": "class DockerContainerListSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "containers",
+              "kind": "method",
+              "optional": false,
+              "signature": "containers(...names: string[]): this",
+              "doc": "Container names or ids to act on (required); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "DockerContainerSettings",
+          "kind": "class",
+          "doc": "Base for `run` and `create`, which configure a *new* container identically —\ndocker's own `run` is `create` followed by `start`.",
+          "signature": "class DockerContainerSettings extends DockerProcessSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The image to run (required)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "Name the container (`--name`)."
+            },
+            {
+              "name": "rm",
+              "kind": "method",
+              "optional": false,
+              "signature": "rm(): this",
+              "doc": "Remove the container when it exits (`--rm`)."
+            },
+            {
+              "name": "detach",
+              "kind": "method",
+              "optional": false,
+              "signature": "detach(): this",
+              "doc": "Run in the background (`-d`)."
+            },
+            {
+              "name": "publish",
+              "kind": "method",
+              "optional": false,
+              "signature": "publish(host: string | number, container: string | number): this",
+              "doc": "Publish a container port to the host (`-p`); repeatable."
+            },
+            {
+              "name": "volume",
+              "kind": "method",
+              "optional": false,
+              "signature": "volume(source: PathLike, target: PathLike): this",
+              "doc": "Mount a host path into the container (`-v`); repeatable."
+            },
+            {
+              "name": "network",
+              "kind": "method",
+              "optional": false,
+              "signature": "network(value: string): this",
+              "doc": "Attach the container to a network (`--network`)."
+            },
+            {
+              "name": "entrypoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "entrypoint(command: string): this",
+              "doc": "Override the image's entrypoint (`--entrypoint`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: string): this",
+              "doc": "Run the image for a specific platform (`--platform`)."
+            },
+            {
+              "name": "pull",
+              "kind": "method",
+              "optional": false,
+              "signature": "pull(policy: always | missing | never): this",
+              "doc": "When to pull the image (`--pull=<always|missing|never>`)."
+            },
+            {
+              "name": "restart",
+              "kind": "method",
+              "optional": false,
+              "signature": "restart(policy: string): this",
+              "doc": "The restart policy (`--restart`), e.g. `unless-stopped`."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(key: string, value: string): this",
+              "doc": "Attach metadata to the container (`--label`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "DockerContextSettings",
+          "kind": "class",
+          "doc": "Settings for `docker context`. Pick the subcommand with {@link create},\n{@link ls}, {@link use}, {@link inspect}, {@link remove}, or {@link show}.",
+          "signature": "class DockerContextSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(name: string): this",
+              "doc": "Create a context (`context create <name>`)."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(): this",
+              "doc": "List contexts (`context ls`), the default."
+            },
+            {
+              "name": "use",
+              "kind": "method",
+              "optional": false,
+              "signature": "use(name: string): this",
+              "doc": "Make a context the default for later commands (`context use <name>`)."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(...names: string[]): this",
+              "doc": "Describe contexts (`context inspect [<name>...]`)."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(...names: string[]): this",
+              "doc": "Remove contexts (`context rm <name>...`)."
+            },
+            {
+              "name": "show",
+              "kind": "method",
+              "optional": false,
+              "signature": "show(): this",
+              "doc": "Print the context in use (`context show`)."
+            },
+            {
+              "name": "dockerHost",
+              "kind": "method",
+              "optional": false,
+              "signature": "dockerHost(address: string): this",
+              "doc": "The daemon a created context points at (`--docker host=<address>`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "A human description for a created context (`--description`)."
+            },
+            {
+              "name": "from",
+              "kind": "method",
+              "optional": false,
+              "signature": "from(name: string): this",
+              "doc": "Copy an existing context (`--from <name>`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each context through a Go template (`--format`)."
+            },
+            {
+              "name": "quietOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietOutput(): this",
+              "doc": "Only print context names (`-q`/`--quiet`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Remove even the context in use (`-f`/`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerCpSettings",
+          "kind": "class",
+          "doc": "Settings for `docker cp`. Either end may be a container path\n(`<container>:<path>`) — which is what makes this the way a build gets an\nartifact out of a container that has already stopped.",
+          "signature": "class DockerCpSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "from",
+              "kind": "method",
+              "optional": false,
+              "signature": "from(path: PathLike): this",
+              "doc": "The source, `<container>:<path>` or a host path (required)."
+            },
+            {
+              "name": "to",
+              "kind": "method",
+              "optional": false,
+              "signature": "to(path: PathLike): this",
+              "doc": "The destination, `<container>:<path>` or a host path (required)."
+            },
+            {
+              "name": "archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "archive(): this",
+              "doc": "Keep uid/gid rather than mapping to the current user (`-a`/`--archive`)."
+            },
+            {
+              "name": "followLink",
+              "kind": "method",
+              "optional": false,
+              "signature": "followLink(): this",
+              "doc": "Follow a symlink in the source (`-L`/`--follow-link`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `docker create`.",
+          "signature": "class DockerCreateSettings extends DockerContainerSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "DockerDiffSettings",
+          "kind": "class",
+          "doc": "Settings for `docker diff`.",
+          "signature": "class DockerDiffSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container whose filesystem changes to show (required)."
+            }
+          ]
+        },
+        {
+          "name": "DockerExecSettings",
+          "kind": "class",
+          "doc": "Settings for `docker exec`.",
+          "signature": "class DockerExecSettings extends DockerProcessSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container to run the command in (required)."
+            },
+            {
+              "name": "detach",
+              "kind": "method",
+              "optional": false,
+              "signature": "detach(): this",
+              "doc": "Run the command in the background (`-d`)."
+            },
+            {
+              "name": "privileged",
+              "kind": "method",
+              "optional": false,
+              "signature": "privileged(): this",
+              "doc": "Give the command extended privileges (`--privileged`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerExportSettings",
+          "kind": "class",
+          "doc": "Settings for `docker export`.",
+          "signature": "class DockerExportSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container whose filesystem to export (required)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write to a file rather than stdout (`-o`/`--output`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerHistorySettings",
+          "kind": "class",
+          "doc": "Settings for `docker history`.",
+          "signature": "class DockerHistorySettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The image whose layers to show (required)."
+            },
+            {
+              "name": "noTrunc",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTrunc(): this",
+              "doc": "Print the full commands rather than eliding them (`--no-trunc`)."
+            },
+            {
+              "name": "quietOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietOutput(): this",
+              "doc": "Only show layer ids (`-q`/`--quiet`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each layer through a Go template (`--format`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerImageEntry",
+          "kind": "interface",
+          "doc": "One image of `docker images --format '{{json .}}'`.",
+          "signature": "interface DockerImageEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": true,
+              "signature": "id?: string",
+              "doc": "The image id, as docker abbreviates it in a listing."
+            },
+            {
+              "name": "repository",
+              "kind": "property",
+              "optional": true,
+              "signature": "repository?: string",
+              "doc": "The repository, or `<none>` for an untagged image."
+            },
+            {
+              "name": "tag",
+              "kind": "property",
+              "optional": true,
+              "signature": "tag?: string",
+              "doc": "The tag, or `<none>` when the image carries none."
+            },
+            {
+              "name": "createdSince",
+              "kind": "property",
+              "optional": true,
+              "signature": "createdSince?: string",
+              "doc": "How docker describes the image's age, e.g. `2 days ago`."
+            },
+            {
+              "name": "size",
+              "kind": "property",
+              "optional": true,
+              "signature": "size?: string",
+              "doc": "The on-disk size, as docker formats it."
+            },
+            {
+              "name": "digest",
+              "kind": "property",
+              "optional": true,
+              "signature": "digest?: string",
+              "doc": "The digest, when the listing was asked for one."
+            }
+          ]
+        },
+        {
+          "name": "DockerImagePruneSettings",
+          "kind": "class",
+          "doc": "Settings for `docker image prune`.",
+          "signature": "class DockerImagePruneSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Remove every unused image, not only the dangling ones (`--all`). This is\nthe difference between reclaiming a little space and reclaiming a lot."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Do not prompt for confirmation (`--force`), which a build always needs."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(...expressions: string[]): this",
+              "doc": "Limit what is pruned (`--filter`), e.g. `until=24h`; repeatable."
             }
           ]
         },
@@ -12037,6 +12529,133 @@
               "optional": false,
               "signature": "repository(name: string): this",
               "doc": "Restrict to a repository (positional argument)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each image through a Go template (`--format`), e.g.\n`{{json .}}` for one JSON object per line.\n{@link \"./docker.ts\".DockerTasks.imageEntries} pins that form."
+            },
+            {
+              "name": "digests",
+              "kind": "method",
+              "optional": false,
+              "signature": "digests(): this",
+              "doc": "Also show each image's digest (`--digests`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerImportSettings",
+          "kind": "class",
+          "doc": "Settings for `docker import`.",
+          "signature": "class DockerImportSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: PathLike): this",
+              "doc": "The tarball to import (required); `-` reads it from stdin, as docker's own\n`import` does."
+            },
+            {
+              "name": "reference",
+              "kind": "method",
+              "optional": false,
+              "signature": "reference(name: string): this",
+              "doc": "The image name to give the result (positional)."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "A commit message for the imported image (`-m`/`--message`)."
+            },
+            {
+              "name": "change",
+              "kind": "method",
+              "optional": false,
+              "signature": "change(...instructions: string[]): this",
+              "doc": "Apply a Dockerfile instruction to the result (`-c`/`--change`); repeatable."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: string): this",
+              "doc": "The platform to import for (`--platform`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerInfoSettings",
+          "kind": "class",
+          "doc": "Settings for `docker info`.",
+          "signature": "class DockerInfoSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render through a Go template (`--format`), e.g. `{{json .}}`."
+            }
+          ]
+        },
+        {
+          "name": "DockerInspectSettings",
+          "kind": "class",
+          "doc": "Settings for `docker inspect`.",
+          "signature": "class DockerInspectSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "targets",
+              "kind": "method",
+              "optional": false,
+              "signature": "targets(...names: string[]): this",
+              "doc": "The objects to inspect — containers, images, volumes (required)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render through a Go template (`--format`), e.g. `{{.State.Status}}` for\none field, or `{{json .}}` for the whole record as JSON."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(kind: string): this",
+              "doc": "Only look for this kind of object (`--type`), e.g. `container`."
+            },
+            {
+              "name": "size",
+              "kind": "method",
+              "optional": false,
+              "signature": "size(): this",
+              "doc": "Include the disk usage of a container (`-s`/`--size`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerKillSettings",
+          "kind": "class",
+          "doc": "Settings for `docker kill`.",
+          "signature": "class DockerKillSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "signal",
+              "kind": "method",
+              "optional": false,
+              "signature": "signal(name: string): this",
+              "doc": "The signal to send (`-s`/`--signal`); docker defaults to `SIGKILL`."
             }
           ]
         },
@@ -12101,6 +12720,297 @@
           ]
         },
         {
+          "name": "DockerLogLevel",
+          "kind": "typeAlias",
+          "doc": "How verbose the docker client is (`--log-level`).",
+          "signature": "type DockerLogLevel = debug | info | warn | error | fatal",
+          "deprecated": false
+        },
+        {
+          "name": "DockerLogoutSettings",
+          "kind": "class",
+          "doc": "Settings for `docker logout`.",
+          "signature": "class DockerLogoutSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "registry",
+              "kind": "method",
+              "optional": false,
+              "signature": "registry(server: string): this",
+              "doc": "The registry to forget (positional); defaults to Docker Hub."
+            }
+          ]
+        },
+        {
+          "name": "DockerLogsSettings",
+          "kind": "class",
+          "doc": "Settings for `docker logs`.",
+          "signature": "class DockerLogsSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container whose logs to read (required)."
+            },
+            {
+              "name": "follow",
+              "kind": "method",
+              "optional": false,
+              "signature": "follow(): this",
+              "doc": "Keep streaming (`-f`/`--follow`). A target that follows logs never\nreturns on its own — pair it with `.killAfter(...)` from the tooling base,\nor with a container that exits."
+            },
+            {
+              "name": "tail",
+              "kind": "method",
+              "optional": false,
+              "signature": "tail(lines: number | all): this",
+              "doc": "Show only the last N lines (`--tail`), or `all`."
+            },
+            {
+              "name": "since",
+              "kind": "method",
+              "optional": false,
+              "signature": "since(when: string): this",
+              "doc": "Only logs since this timestamp or relative time (`--since`), e.g. `10m`."
+            },
+            {
+              "name": "until",
+              "kind": "method",
+              "optional": false,
+              "signature": "until(when: string): this",
+              "doc": "Only logs before this timestamp or relative time (`--until`)."
+            },
+            {
+              "name": "timestamps",
+              "kind": "method",
+              "optional": false,
+              "signature": "timestamps(): this",
+              "doc": "Prefix each line with its timestamp (`-t`/`--timestamps`)."
+            },
+            {
+              "name": "details",
+              "kind": "method",
+              "optional": false,
+              "signature": "details(): this",
+              "doc": "Include the extra attributes docker records (`--details`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerNetworkSettings",
+          "kind": "class",
+          "doc": "Settings for `docker network`. Pick the subcommand with {@link create},\n{@link ls}, {@link remove}, {@link inspect}, {@link connect},\n{@link disconnect}, or {@link prune}.",
+          "signature": "class DockerNetworkSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(name: string): this",
+              "doc": "Create a network (`network create <name>`)."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(): this",
+              "doc": "List networks (`network ls`), the default."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(...names: string[]): this",
+              "doc": "Remove networks (`network rm <name>...`)."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(...names: string[]): this",
+              "doc": "Describe networks (`network inspect <name>...`)."
+            },
+            {
+              "name": "connect",
+              "kind": "method",
+              "optional": false,
+              "signature": "connect(network: string, container: string): this",
+              "doc": "Attach a container to a network (`network connect <net> <container>`)."
+            },
+            {
+              "name": "disconnect",
+              "kind": "method",
+              "optional": false,
+              "signature": "disconnect(network: string, container: string): this",
+              "doc": "Detach a container (`network disconnect <net> <container>`)."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(): this",
+              "doc": "Remove the networks nothing uses (`network prune`)."
+            },
+            {
+              "name": "driver",
+              "kind": "method",
+              "optional": false,
+              "signature": "driver(name: string): this",
+              "doc": "The network driver (`--driver`), e.g. `bridge`."
+            },
+            {
+              "name": "subnet",
+              "kind": "method",
+              "optional": false,
+              "signature": "subnet(cidr: string): this",
+              "doc": "The subnet in CIDR form (`--subnet`)."
+            },
+            {
+              "name": "gateway",
+              "kind": "method",
+              "optional": false,
+              "signature": "gateway(address: string): this",
+              "doc": "The gateway address (`--gateway`)."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(key: string, value: string): this",
+              "doc": "Attach metadata (`--label`); repeatable."
+            },
+            {
+              "name": "alias",
+              "kind": "method",
+              "optional": false,
+              "signature": "alias(name: string): this",
+              "doc": "An extra name the container answers to on this network (`--alias`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(...expressions: string[]): this",
+              "doc": "Filter a listing or a prune (`--filter`); repeatable."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each network through a Go template (`--format`).\n{@link \"./docker.ts\".DockerTasks.networkNames} pins `{{.Name}}`."
+            },
+            {
+              "name": "quietOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietOutput(): this",
+              "doc": "Only print network ids (`-q`/`--quiet`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Do not prompt for confirmation (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerPauseSettings",
+          "kind": "class",
+          "doc": "Settings for `docker pause`.",
+          "signature": "class DockerPauseSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "DockerPortSettings",
+          "kind": "class",
+          "doc": "Settings for `docker port`.",
+          "signature": "class DockerPortSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container whose port mappings to show (required)."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(value: string | number): this",
+              "doc": "A single private port to resolve, e.g. `8080/tcp`."
+            }
+          ]
+        },
+        {
+          "name": "DockerProcessSettings",
+          "kind": "class",
+          "doc": "Base for the commands that run a process — `run`, `create`, and `exec` —\ncarrying the flags all three accept.",
+          "signature": "class DockerProcessSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "interactive",
+              "kind": "method",
+              "optional": false,
+              "signature": "interactive(): this",
+              "doc": "Keep stdin open (`-i`)."
+            },
+            {
+              "name": "tty",
+              "kind": "method",
+              "optional": false,
+              "signature": "tty(): this",
+              "doc": "Allocate a pseudo-TTY (`-t`)."
+            },
+            {
+              "name": "envVar",
+              "kind": "method",
+              "optional": false,
+              "signature": "envVar(key: string, value: string): this",
+              "doc": "Set an environment variable (`-e`); repeatable."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(...paths: PathLike[]): this",
+              "doc": "Read environment variables from a file (`--env-file`); repeatable."
+            },
+            {
+              "name": "workdir",
+              "kind": "method",
+              "optional": false,
+              "signature": "workdir(path: PathLike): this",
+              "doc": "Set the working directory inside the container (`-w`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user(value: string): this",
+              "doc": "Run as this user or `uid:gid` (`-u`/`--user`)."
+            },
+            {
+              "name": "commandArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "commandArgs(...args: Array<string | number>): this",
+              "doc": "The command and arguments to run inside the container."
+            }
+          ]
+        },
+        {
           "name": "DockerPsSettings",
           "kind": "class",
           "doc": "Settings for `docker ps`.",
@@ -12127,6 +13037,34 @@
               "optional": false,
               "signature": "filter(expression: string): this",
               "doc": "Filter the listing (`--filter`); repeatable."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each container through a Go template (`--format`), e.g.\n`{{json .}}` for one JSON object per line.\n{@link \"./docker.ts\".DockerTasks.psEntries} pins that form."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest(): this",
+              "doc": "Show only the most recently created container (`-l`/`--latest`)."
+            },
+            {
+              "name": "noTrunc",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTrunc(): this",
+              "doc": "Print ids and commands in full (`--no-trunc`)."
+            },
+            {
+              "name": "size",
+              "kind": "method",
+              "optional": false,
+              "signature": "size(): this",
+              "doc": "Include each container's disk usage (`-s`/`--size`)."
             }
           ]
         },
@@ -12184,6 +13122,52 @@
           ]
         },
         {
+          "name": "DockerRenameSettings",
+          "kind": "class",
+          "doc": "Settings for `docker rename`.",
+          "signature": "class DockerRenameSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container to rename (required)."
+            },
+            {
+              "name": "newName",
+              "kind": "method",
+              "optional": false,
+              "signature": "newName(name: string): this",
+              "doc": "Its new name (required)."
+            }
+          ]
+        },
+        {
+          "name": "DockerRestartSettings",
+          "kind": "class",
+          "doc": "Settings for `docker restart`.",
+          "signature": "class DockerRestartSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(seconds: number): this",
+              "doc": "Seconds to wait before killing the container (`-t`/`--time`)."
+            },
+            {
+              "name": "signal",
+              "kind": "method",
+              "optional": false,
+              "signature": "signal(name: string): this",
+              "doc": "The signal to send first (`-s`/`--signal`)."
+            }
+          ]
+        },
+        {
           "name": "DockerRmiSettings",
           "kind": "class",
           "doc": "Settings for `docker rmi`.",
@@ -12210,16 +13194,9 @@
           "name": "DockerRmSettings",
           "kind": "class",
           "doc": "Settings for `docker rm`.",
-          "signature": "class DockerRmSettings extends DockerSettings",
+          "signature": "class DockerRmSettings extends DockerContainerListSettings",
           "deprecated": false,
           "members": [
-            {
-              "name": "containers",
-              "kind": "method",
-              "optional": false,
-              "signature": "containers(...names: string[]): this",
-              "doc": "The containers to remove (at least one is required)."
-            },
             {
               "name": "force",
               "kind": "method",
@@ -12240,87 +13217,9 @@
           "name": "DockerRunSettings",
           "kind": "class",
           "doc": "Settings for `docker run`.",
-          "signature": "class DockerRunSettings extends DockerSettings",
+          "signature": "class DockerRunSettings extends DockerContainerSettings",
           "deprecated": false,
-          "members": [
-            {
-              "name": "image",
-              "kind": "method",
-              "optional": false,
-              "signature": "image(reference: string): this",
-              "doc": "The image to run (required)."
-            },
-            {
-              "name": "name",
-              "kind": "method",
-              "optional": false,
-              "signature": "name(value: string): this",
-              "doc": "Assign a container name (`--name`)."
-            },
-            {
-              "name": "rm",
-              "kind": "method",
-              "optional": false,
-              "signature": "rm(): this",
-              "doc": "Remove the container when it exits (`--rm`)."
-            },
-            {
-              "name": "detach",
-              "kind": "method",
-              "optional": false,
-              "signature": "detach(): this",
-              "doc": "Run the container in the background (`-d`)."
-            },
-            {
-              "name": "interactive",
-              "kind": "method",
-              "optional": false,
-              "signature": "interactive(): this",
-              "doc": "Keep STDIN open (`-i`)."
-            },
-            {
-              "name": "tty",
-              "kind": "method",
-              "optional": false,
-              "signature": "tty(): this",
-              "doc": "Allocate a pseudo-TTY (`-t`)."
-            },
-            {
-              "name": "envVar",
-              "kind": "method",
-              "optional": false,
-              "signature": "envVar(key: string, value: string): this",
-              "doc": "Set a container environment variable (`-e KEY=value`); repeatable."
-            },
-            {
-              "name": "publish",
-              "kind": "method",
-              "optional": false,
-              "signature": "publish(host: string | number, container: string | number): this",
-              "doc": "Publish a container port to the host (`-p host:container`)."
-            },
-            {
-              "name": "volume",
-              "kind": "method",
-              "optional": false,
-              "signature": "volume(source: PathLike, target: PathLike): this",
-              "doc": "Bind-mount or attach a volume (`-v source:target`)."
-            },
-            {
-              "name": "network",
-              "kind": "method",
-              "optional": false,
-              "signature": "network(value: string): this",
-              "doc": "Connect the container to a network (`--network`)."
-            },
-            {
-              "name": "commandArgs",
-              "kind": "method",
-              "optional": false,
-              "signature": "commandArgs(...args: Array<string | number>): this",
-              "doc": "The command and arguments to run inside the container."
-            }
-          ]
+          "members": []
         },
         {
           "name": "DockerSaveSettings",
@@ -12346,27 +13245,100 @@
           ]
         },
         {
+          "name": "DockerSearchSettings",
+          "kind": "class",
+          "doc": "Settings for `docker search`.",
+          "signature": "class DockerSearchSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "term",
+              "kind": "method",
+              "optional": false,
+              "signature": "term(value: string): this",
+              "doc": "What to search Docker Hub for (required)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap the number of results (`--limit`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(...expressions: string[]): this",
+              "doc": "Filter the results (`--filter`), e.g. `is-official=true`; repeatable."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each result through a Go template (`--format`)."
+            },
+            {
+              "name": "noTrunc",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTrunc(): this",
+              "doc": "Print descriptions in full (`--no-trunc`)."
+            }
+          ]
+        },
+        {
           "name": "DockerSettings",
           "kind": "class",
-          "doc": "Base for all `docker` subcommand settings: the binary is `docker`.",
+          "doc": "Shared base for every `docker` subcommand: the binary and global options.",
           "signature": "class DockerSettings extends ToolSettings",
           "deprecated": false,
-          "members": []
+          "members": [
+            {
+              "name": "dockerContext",
+              "kind": "method",
+              "optional": false,
+              "signature": "dockerContext(name: string): this",
+              "doc": "Use a named docker context (`--context`), which is how a build talks to a\nremote daemon or a second local one without exporting `DOCKER_HOST`.\n\nNamed `dockerContext` rather than `context` because `docker build`'s\ntrailing `PATH` is *also* called a context, and\n{@link \"./build.ts\".DockerBuildSettings.context} already means that one."
+            },
+            {
+              "name": "host",
+              "kind": "method",
+              "optional": false,
+              "signature": "host(address: string): this",
+              "doc": "The daemon socket to connect to (`--host`), e.g. `ssh://build@host`."
+            },
+            {
+              "name": "logLevel",
+              "kind": "method",
+              "optional": false,
+              "signature": "logLevel(level: DockerLogLevel): this",
+              "doc": "How much the client logs (`--log-level`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Where the client config lives (`--config`)."
+            },
+            {
+              "name": "debug",
+              "kind": "method",
+              "optional": false,
+              "signature": "debug(): this",
+              "doc": "Enable client debug output (`--debug`)."
+            }
+          ]
         },
         {
           "name": "DockerStartSettings",
           "kind": "class",
           "doc": "Settings for `docker start`.",
-          "signature": "class DockerStartSettings extends DockerSettings",
+          "signature": "class DockerStartSettings extends DockerContainerListSettings",
           "deprecated": false,
           "members": [
-            {
-              "name": "containers",
-              "kind": "method",
-              "optional": false,
-              "signature": "containers(...names: string[]): this",
-              "doc": "The containers to start (at least one is required)."
-            },
             {
               "name": "attach",
               "kind": "method",
@@ -12377,10 +13349,10 @@
           ]
         },
         {
-          "name": "DockerStopSettings",
+          "name": "DockerStatsSettings",
           "kind": "class",
-          "doc": "Settings for `docker stop`.",
-          "signature": "class DockerStopSettings extends DockerSettings",
+          "doc": "Settings for `docker stats`.",
+          "signature": "class DockerStatsSettings extends DockerSettings",
           "deprecated": false,
           "members": [
             {
@@ -12388,14 +13360,109 @@
               "kind": "method",
               "optional": false,
               "signature": "containers(...names: string[]): this",
-              "doc": "The containers to stop (at least one is required)."
+              "doc": "Limit the report to these containers; omit for all running ones."
             },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Include stopped containers (`-a`/`--all`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render through a Go template (`--format`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerStopSettings",
+          "kind": "class",
+          "doc": "Settings for `docker stop`.",
+          "signature": "class DockerStopSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": [
             {
               "name": "time",
               "kind": "method",
               "optional": false,
               "signature": "time(seconds: number): this",
               "doc": "Seconds to wait before killing (`-t`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerSystemSettings",
+          "kind": "class",
+          "doc": "Settings for `docker system`. Pick the subcommand with {@link prune},\n{@link df}, or {@link info}.",
+          "signature": "class DockerSystemSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(): this",
+              "doc": "Reclaim space (`system prune`)."
+            },
+            {
+              "name": "df",
+              "kind": "method",
+              "optional": false,
+              "signature": "df(): this",
+              "doc": "Report what is using disk (`system df`)."
+            },
+            {
+              "name": "info",
+              "kind": "method",
+              "optional": false,
+              "signature": "info(): this",
+              "doc": "Describe the daemon (`system info`)."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Prune every unused image, not only the dangling ones (`--all`) — the\ndifference between reclaiming a little space and reclaiming a lot."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Do not prompt for confirmation (`--force`), which a build always needs."
+            },
+            {
+              "name": "volumes",
+              "kind": "method",
+              "optional": false,
+              "signature": "volumes(): this",
+              "doc": "Also remove unused volumes (`--volumes`), which a prune otherwise keeps."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(...expressions: string[]): this",
+              "doc": "Limit what is pruned (`--filter`), e.g. `until=24h`; repeatable."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Break the `df` report down per object (`-v`/`--verbose`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render through a Go template (`--format`)."
             }
           ]
         },
@@ -12451,60 +13518,18 @@
               "doc": "Run a container: `docker run`."
             },
             {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(configure?: Configure<DockerCreateSettings>): Promise<CommandOutput>",
+              "doc": "Create a container without starting it: `docker create`."
+            },
+            {
               "name": "exec",
               "kind": "method",
               "optional": false,
               "signature": "exec(configure?: Configure<DockerExecSettings>): Promise<CommandOutput>",
               "doc": "Run a command in a container: `docker exec`."
-            },
-            {
-              "name": "push",
-              "kind": "method",
-              "optional": false,
-              "signature": "push(configure?: Configure<DockerPushSettings>): Promise<CommandOutput>",
-              "doc": "Push an image: `docker push`."
-            },
-            {
-              "name": "pull",
-              "kind": "method",
-              "optional": false,
-              "signature": "pull(configure?: Configure<DockerPullSettings>): Promise<CommandOutput>",
-              "doc": "Pull an image: `docker pull`."
-            },
-            {
-              "name": "tag",
-              "kind": "method",
-              "optional": false,
-              "signature": "tag(configure?: Configure<DockerTagSettings>): Promise<CommandOutput>",
-              "doc": "Tag an image: `docker tag`."
-            },
-            {
-              "name": "login",
-              "kind": "method",
-              "optional": false,
-              "signature": "login(configure?: Configure<DockerLoginSettings>): Promise<CommandOutput>",
-              "doc": "Authenticate to a registry: `docker login`."
-            },
-            {
-              "name": "images",
-              "kind": "method",
-              "optional": false,
-              "signature": "images(configure?: Configure<DockerImagesSettings>): Promise<CommandOutput>",
-              "doc": "List images: `docker images`."
-            },
-            {
-              "name": "ps",
-              "kind": "method",
-              "optional": false,
-              "signature": "ps(configure?: Configure<DockerPsSettings>): Promise<CommandOutput>",
-              "doc": "List containers: `docker ps`."
-            },
-            {
-              "name": "stop",
-              "kind": "method",
-              "optional": false,
-              "signature": "stop(configure?: Configure<DockerStopSettings>): Promise<CommandOutput>",
-              "doc": "Stop containers: `docker stop`."
             },
             {
               "name": "start",
@@ -12514,11 +13539,179 @@
               "doc": "Start containers: `docker start`."
             },
             {
+              "name": "stop",
+              "kind": "method",
+              "optional": false,
+              "signature": "stop(configure?: Configure<DockerStopSettings>): Promise<CommandOutput>",
+              "doc": "Stop containers: `docker stop`."
+            },
+            {
+              "name": "restart",
+              "kind": "method",
+              "optional": false,
+              "signature": "restart(configure?: Configure<DockerRestartSettings>): Promise<CommandOutput>",
+              "doc": "Restart containers: `docker restart`."
+            },
+            {
+              "name": "kill",
+              "kind": "method",
+              "optional": false,
+              "signature": "kill(configure?: Configure<DockerKillSettings>): Promise<CommandOutput>",
+              "doc": "Signal containers: `docker kill`."
+            },
+            {
+              "name": "pause",
+              "kind": "method",
+              "optional": false,
+              "signature": "pause(configure?: Configure<DockerPauseSettings>): Promise<CommandOutput>",
+              "doc": "Suspend a container's processes: `docker pause`."
+            },
+            {
+              "name": "unpause",
+              "kind": "method",
+              "optional": false,
+              "signature": "unpause(configure?: Configure<DockerUnpauseSettings>): Promise<CommandOutput>",
+              "doc": "Resume them: `docker unpause`."
+            },
+            {
               "name": "rm",
               "kind": "method",
               "optional": false,
               "signature": "rm(configure?: Configure<DockerRmSettings>): Promise<CommandOutput>",
               "doc": "Remove containers: `docker rm`."
+            },
+            {
+              "name": "wait",
+              "kind": "method",
+              "optional": false,
+              "signature": "wait(configure?: Configure<DockerWaitSettings>): Promise<CommandOutput>",
+              "doc": "Block until containers stop, then print their exit codes: `docker wait` —\nhow a build gets a test container's result rather than the runner's."
+            },
+            {
+              "name": "rename",
+              "kind": "method",
+              "optional": false,
+              "signature": "rename(configure?: Configure<DockerRenameSettings>): Promise<CommandOutput>",
+              "doc": "Rename a container: `docker rename`."
+            },
+            {
+              "name": "update",
+              "kind": "method",
+              "optional": false,
+              "signature": "update(configure?: Configure<DockerUpdateSettings>): Promise<CommandOutput>",
+              "doc": "Change a container's resource limits: `docker update`."
+            },
+            {
+              "name": "ps",
+              "kind": "method",
+              "optional": false,
+              "signature": "ps(configure?: Configure<DockerPsSettings>): Promise<CommandOutput>",
+              "doc": "List containers: `docker ps`."
+            },
+            {
+              "name": "psEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "psEntries(configure?: Configure<DockerPsSettings>): Promise<DockerContainerEntry[]>",
+              "doc": "The containers as parsed {@link DockerContainerEntry} values, from\n`docker ps --format '{{json .}}'`."
+            },
+            {
+              "name": "logs",
+              "kind": "method",
+              "optional": false,
+              "signature": "logs(configure?: Configure<DockerLogsSettings>): Promise<CommandOutput>",
+              "doc": "Read a container's logs: `docker logs`."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(configure?: Configure<DockerInspectSettings>): Promise<CommandOutput>",
+              "doc": "Describe docker objects: `docker inspect`."
+            },
+            {
+              "name": "top",
+              "kind": "method",
+              "optional": false,
+              "signature": "top(configure?: Configure<DockerTopSettings>): Promise<CommandOutput>",
+              "doc": "List a container's processes: `docker top`."
+            },
+            {
+              "name": "stats",
+              "kind": "method",
+              "optional": false,
+              "signature": "stats(configure?: Configure<DockerStatsSettings>): Promise<CommandOutput>",
+              "doc": "Sample resource usage once: `docker stats --no-stream`."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(configure?: Configure<DockerPortSettings>): Promise<CommandOutput>",
+              "doc": "Show a container's port mappings: `docker port`."
+            },
+            {
+              "name": "diff",
+              "kind": "method",
+              "optional": false,
+              "signature": "diff(configure?: Configure<DockerDiffSettings>): Promise<CommandOutput>",
+              "doc": "Show a container's filesystem changes: `docker diff`."
+            },
+            {
+              "name": "cp",
+              "kind": "method",
+              "optional": false,
+              "signature": "cp(configure?: Configure<DockerCpSettings>): Promise<CommandOutput>",
+              "doc": "Copy files between a container and the host: `docker cp`."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(configure?: Configure<DockerCommitSettings>): Promise<CommandOutput>",
+              "doc": "Turn a container into an image: `docker commit`."
+            },
+            {
+              "name": "export",
+              "kind": "method",
+              "optional": false,
+              "signature": "export(configure?: Configure<DockerExportSettings>): Promise<CommandOutput>",
+              "doc": "Export a container's filesystem: `docker export`."
+            },
+            {
+              "name": "images",
+              "kind": "method",
+              "optional": false,
+              "signature": "images(configure?: Configure<DockerImagesSettings>): Promise<CommandOutput>",
+              "doc": "List images: `docker images`."
+            },
+            {
+              "name": "imageEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageEntries(configure?: Configure<DockerImagesSettings>): Promise<DockerImageEntry[]>",
+              "doc": "The images as parsed {@link DockerImageEntry} values, from\n`docker images --format '{{json .}}'`."
+            },
+            {
+              "name": "pull",
+              "kind": "method",
+              "optional": false,
+              "signature": "pull(configure?: Configure<DockerPullSettings>): Promise<CommandOutput>",
+              "doc": "Pull an image: `docker pull`."
+            },
+            {
+              "name": "push",
+              "kind": "method",
+              "optional": false,
+              "signature": "push(configure?: Configure<DockerPushSettings>): Promise<CommandOutput>",
+              "doc": "Push an image: `docker push`."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(configure?: Configure<DockerTagSettings>): Promise<CommandOutput>",
+              "doc": "Tag an image: `docker tag`."
             },
             {
               "name": "rmi",
@@ -12540,8 +13733,291 @@
               "optional": false,
               "signature": "load(configure?: Configure<DockerLoadSettings>): Promise<CommandOutput>",
               "doc": "Load images from a tar archive: `docker load`."
+            },
+            {
+              "name": "history",
+              "kind": "method",
+              "optional": false,
+              "signature": "history(configure?: Configure<DockerHistorySettings>): Promise<CommandOutput>",
+              "doc": "Show an image's layers: `docker history`."
+            },
+            {
+              "name": "import",
+              "kind": "method",
+              "optional": false,
+              "signature": "import(configure?: Configure<DockerImportSettings>): Promise<CommandOutput>",
+              "doc": "Create an image from a tarball: `docker import`."
+            },
+            {
+              "name": "imagePrune",
+              "kind": "method",
+              "optional": false,
+              "signature": "imagePrune(configure?: Configure<DockerImagePruneSettings>): Promise<CommandOutput>",
+              "doc": "Remove unused images: `docker image prune`."
+            },
+            {
+              "name": "login",
+              "kind": "method",
+              "optional": false,
+              "signature": "login(configure?: Configure<DockerLoginSettings>): Promise<CommandOutput>",
+              "doc": "Authenticate to a registry: `docker login`."
+            },
+            {
+              "name": "logout",
+              "kind": "method",
+              "optional": false,
+              "signature": "logout(configure?: Configure<DockerLogoutSettings>): Promise<CommandOutput>",
+              "doc": "Forget a registry's credentials: `docker logout`."
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(configure?: Configure<DockerSearchSettings>): Promise<CommandOutput>",
+              "doc": "Search Docker Hub: `docker search`."
+            },
+            {
+              "name": "info",
+              "kind": "method",
+              "optional": false,
+              "signature": "info(configure?: Configure<DockerInfoSettings>): Promise<CommandOutput>",
+              "doc": "Describe the daemon: `docker info`."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(configure?: Configure<DockerVersionSettings>): Promise<CommandOutput>",
+              "doc": "Report client and daemon versions: `docker version`."
+            },
+            {
+              "name": "system",
+              "kind": "method",
+              "optional": false,
+              "signature": "system(configure?: Configure<DockerSystemSettings>): Promise<CommandOutput>",
+              "doc": "Reclaim space or report usage: `docker system prune|df|info`."
+            },
+            {
+              "name": "volume",
+              "kind": "method",
+              "optional": false,
+              "signature": "volume(configure?: Configure<DockerVolumeSettings>): Promise<CommandOutput>",
+              "doc": "Manage volumes: `docker volume create|ls|rm|inspect|prune`."
+            },
+            {
+              "name": "volumeNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "volumeNames(configure?: Configure<DockerVolumeSettings>): Promise<string[]>",
+              "doc": "The volume names, from `docker volume ls --format '{{.Name}}'`."
+            },
+            {
+              "name": "network",
+              "kind": "method",
+              "optional": false,
+              "signature": "network(configure?: Configure<DockerNetworkSettings>): Promise<CommandOutput>",
+              "doc": "Manage networks: `docker network create|ls|rm|inspect|connect|…`."
+            },
+            {
+              "name": "networkNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "networkNames(configure?: Configure<DockerNetworkSettings>): Promise<string[]>",
+              "doc": "The network names, from `docker network ls --format '{{.Name}}'`."
+            },
+            {
+              "name": "context",
+              "kind": "method",
+              "optional": false,
+              "signature": "context(configure?: Configure<DockerContextSettings>): Promise<CommandOutput>",
+              "doc": "Manage the daemons to talk to: `docker context create|ls|use|…`."
             }
           ]
+        },
+        {
+          "name": "DockerTopSettings",
+          "kind": "class",
+          "doc": "Settings for `docker top`.",
+          "signature": "class DockerTopSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "The container whose processes to list (required)."
+            },
+            {
+              "name": "psArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "psArgs(...args: string[]): this",
+              "doc": "Arguments passed through to `ps` inside the container."
+            }
+          ]
+        },
+        {
+          "name": "DockerUnpauseSettings",
+          "kind": "class",
+          "doc": "Settings for `docker unpause`.",
+          "signature": "class DockerUnpauseSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "DockerUpdateSettings",
+          "kind": "class",
+          "doc": "Settings for `docker update`.",
+          "signature": "class DockerUpdateSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "memory",
+              "kind": "method",
+              "optional": false,
+              "signature": "memory(limit: string): this",
+              "doc": "The memory limit (`--memory`), e.g. `512m`."
+            },
+            {
+              "name": "cpus",
+              "kind": "method",
+              "optional": false,
+              "signature": "cpus(count: string): this",
+              "doc": "How many CPUs the container may use (`--cpus`)."
+            },
+            {
+              "name": "restart",
+              "kind": "method",
+              "optional": false,
+              "signature": "restart(policy: string): this",
+              "doc": "The restart policy (`--restart`)."
+            }
+          ]
+        },
+        {
+          "name": "DockerVersionSettings",
+          "kind": "class",
+          "doc": "Settings for `docker version`.",
+          "signature": "class DockerVersionSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render through a Go template (`--format`), e.g. `{{.Server.Version}}` to\nread just the daemon's version."
+            }
+          ]
+        },
+        {
+          "name": "DockerVolumeSettings",
+          "kind": "class",
+          "doc": "Settings for `docker volume`. Pick the subcommand with {@link create},\n{@link ls}, {@link remove}, {@link inspect}, or {@link prune}.",
+          "signature": "class DockerVolumeSettings extends DockerSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(name?: string): this",
+              "doc": "Create a volume (`volume create [<name>]`)."
+            },
+            {
+              "name": "ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "ls(): this",
+              "doc": "List volumes (`volume ls`), the default."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(...names: string[]): this",
+              "doc": "Remove volumes (`volume rm <name>...`)."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(...names: string[]): this",
+              "doc": "Describe volumes (`volume inspect <name>...`)."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(): this",
+              "doc": "Remove the volumes nothing uses (`volume prune`)."
+            },
+            {
+              "name": "driver",
+              "kind": "method",
+              "optional": false,
+              "signature": "driver(name: string): this",
+              "doc": "The volume driver (`--driver`), for a created volume."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(key: string, value: string): this",
+              "doc": "Attach metadata (`--label`); repeatable."
+            },
+            {
+              "name": "opt",
+              "kind": "method",
+              "optional": false,
+              "signature": "opt(key: string, value: string): this",
+              "doc": "A driver-specific option (`--opt`); repeatable."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(...expressions: string[]): this",
+              "doc": "Filter a listing or a prune (`--filter`); repeatable."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(template: string): this",
+              "doc": "Render each volume through a Go template (`--format`).\n{@link \"./docker.ts\".DockerTasks.volumeNames} pins `{{.Name}}`."
+            },
+            {
+              "name": "quietOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietOutput(): this",
+              "doc": "Only print volume names (`-q`/`--quiet`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Do not prompt, and remove even a volume in use where docker allows it (`--force`)."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Prune anonymous *and* named volumes (`--all`), not only anonymous ones."
+            }
+          ]
+        },
+        {
+          "name": "DockerWaitSettings",
+          "kind": "class",
+          "doc": "Settings for `docker wait` — blocking until the containers stop, then\nprinting their exit codes, which is how a build gets a test container's\nresult rather than the runner's.",
+          "signature": "class DockerWaitSettings extends DockerContainerListSettings",
+          "deprecated": false,
+          "members": []
         }
       ]
     },
