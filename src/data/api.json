@@ -24147,6 +24147,13 @@
           "deprecated": false
         },
         {
+          "name": "CACHE_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readCaches} asks for; gh requires the list by\nname, so the reader pins the set {@link GhCacheEntry} describes.",
+          "signature": "const CACHE_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
           "name": "commitFiles",
           "kind": "function",
           "doc": "Perform the configured commit.",
@@ -24451,6 +24458,175 @@
               "doc": "Read the message from a file (`--body-file`); `-` reads standard input."
             }
           ]
+        },
+        {
+          "name": "GhCacheApi",
+          "kind": "interface",
+          "doc": "The `gh cache` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhCacheApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cacheList",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheList(configure?: Configure<GhCacheListSettings>): Promise<CommandOutput>",
+              "doc": "List the Actions caches: `gh cache list`."
+            },
+            {
+              "name": "cacheListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheListEntries(configure?: Configure<GhCacheListSettings>): Promise<GhCacheEntry[]>",
+              "doc": "The caches as parsed {@link GhCacheEntry} values — what a build reads to\ndecide which ones to reclaim."
+            },
+            {
+              "name": "cacheDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheDelete(configure?: Configure<GhCacheDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Reclaim caches: `gh cache delete`."
+            }
+          ]
+        },
+        {
+          "name": "GhCacheDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh cache delete`.",
+          "signature": "class GhCacheDeleteSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(idOrKey: string | number): this",
+              "doc": "The cache to delete, by its id or its key."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Delete every cache (`--all`), narrowed by {@link ref} when one is set."
+            },
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: string): this",
+              "doc": "Restrict the deletion to one ref (`--ref`)."
+            },
+            {
+              "name": "succeedOnNoCaches",
+              "kind": "method",
+              "optional": false,
+              "signature": "succeedOnNoCaches(): this",
+              "doc": "Exit zero when there was nothing to delete (`--succeed-on-no-caches`)."
+            }
+          ]
+        },
+        {
+          "name": "GhCacheEntry",
+          "kind": "interface",
+          "doc": "One cache of {@link \"./gh.ts\".GhTasks.cacheListEntries}.",
+          "signature": "interface GhCacheEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": true,
+              "signature": "id?: number",
+              "doc": "The cache's numeric id — what {@link GhCacheDeleteSettings} takes."
+            },
+            {
+              "name": "key",
+              "kind": "property",
+              "optional": true,
+              "signature": "key?: string",
+              "doc": "Its key, as the workflow that saved it chose."
+            },
+            {
+              "name": "ref",
+              "kind": "property",
+              "optional": true,
+              "signature": "ref?: string",
+              "doc": "The ref it belongs to."
+            },
+            {
+              "name": "sizeInBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "sizeInBytes?: number",
+              "doc": "How much space it occupies, in bytes."
+            },
+            {
+              "name": "createdAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "createdAt?: string",
+              "doc": "When it was created, ISO 8601."
+            },
+            {
+              "name": "lastAccessedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastAccessedAt?: string",
+              "doc": "When it was last read, ISO 8601 — what eviction goes by."
+            }
+          ]
+        },
+        {
+          "name": "GhCacheListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh cache list`.",
+          "signature": "class GhCacheListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "method",
+              "optional": false,
+              "signature": "key(prefix: string): this",
+              "doc": "Only caches whose key starts with this (`--key`)."
+            },
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: string): this",
+              "doc": "Only caches for this ref (`--ref`), e.g. `refs/heads/master`."
+            },
+            {
+              "name": "sort",
+              "kind": "method",
+              "optional": false,
+              "signature": "sort(field: GhCacheSort): this",
+              "doc": "What to order by (`--sort`); gh's default is `last_accessed_at`."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(direction: asc | desc): this",
+              "doc": "The direction (`--order`): `asc` or `desc`."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            }
+          ]
+        },
+        {
+          "name": "GhCacheSort",
+          "kind": "typeAlias",
+          "doc": "What `gh cache list --sort` orders the caches by.",
+          "signature": "type GhCacheSort = created_at | last_accessed_at | size_in_bytes",
+          "deprecated": false
         },
         {
           "name": "GhCheckConclusion",
@@ -25234,6 +25410,251 @@
               "doc": "Include the comments (`--comments`)."
             }
           ]
+        },
+        {
+          "name": "GhLabelApi",
+          "kind": "interface",
+          "doc": "The `gh label` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhLabelApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "labelList",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelList(configure?: Configure<GhLabelListSettings>): Promise<CommandOutput>",
+              "doc": "List labels: `gh label list`."
+            },
+            {
+              "name": "labelListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelListEntries(configure?: Configure<GhLabelListSettings>): Promise<GhLabelEntry[]>",
+              "doc": "The labels as parsed {@link GhLabelEntry} values. The `--json` field set\nis pinned, since gh requires one by name."
+            },
+            {
+              "name": "labelCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelCreate(configure?: Configure<GhLabelCreateSettings>): Promise<CommandOutput>",
+              "doc": "Add a label: `gh label create`."
+            },
+            {
+              "name": "labelEdit",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelEdit(configure?: Configure<GhLabelEditSettings>): Promise<CommandOutput>",
+              "doc": "Change a label: `gh label edit`."
+            },
+            {
+              "name": "labelDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelDelete(configure?: Configure<GhLabelDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Remove a label: `gh label delete`."
+            },
+            {
+              "name": "labelClone",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelClone(configure?: Configure<GhLabelCloneSettings>): Promise<CommandOutput>",
+              "doc": "Copy another repository's labels: `gh label clone`."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelCloneSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label clone`.",
+          "signature": "class GhLabelCloneSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(slug: string): this",
+              "doc": "The repository to copy the labels from, as `owner/name` (required)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Overwrite labels of the same name in the destination (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label create`.",
+          "signature": "class GhLabelCreateSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The label's name (required)."
+            },
+            {
+              "name": "color",
+              "kind": "method",
+              "optional": false,
+              "signature": "color(hex: string): this",
+              "doc": "Its colour (`--color`), as a hex triplet; gh accepts it with or without `#`."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "Its description (`--description`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Update the label when it already exists rather than failing (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label delete`.",
+          "signature": "class GhLabelDeleteSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The label to delete (required)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label edit`.",
+          "signature": "class GhLabelEditSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The label to edit, by its current name (required)."
+            },
+            {
+              "name": "newName",
+              "kind": "method",
+              "optional": false,
+              "signature": "newName(value: string): this",
+              "doc": "Rename it (`--name`)."
+            },
+            {
+              "name": "color",
+              "kind": "method",
+              "optional": false,
+              "signature": "color(hex: string): this",
+              "doc": "Set its colour (`--color`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "Set its description (`--description`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelEntry",
+          "kind": "interface",
+          "doc": "One label of {@link \"./gh.ts\".GhTasks.labelListEntries}.",
+          "signature": "interface GhLabelEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The label's name."
+            },
+            {
+              "name": "color",
+              "kind": "property",
+              "optional": true,
+              "signature": "color?: string",
+              "doc": "Its colour, as a hex triplet without the `#`."
+            },
+            {
+              "name": "description",
+              "kind": "property",
+              "optional": true,
+              "signature": "description?: string",
+              "doc": "Its description."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label list`.",
+          "signature": "class GhLabelListSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(query: string): this",
+              "doc": "Search names and descriptions (`--search`)."
+            },
+            {
+              "name": "sort",
+              "kind": "method",
+              "optional": false,
+              "signature": "sort(field: GhLabelSort): this",
+              "doc": "What to order by (`--sort`); gh's default is `created`."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(direction: asc | desc): this",
+              "doc": "The direction (`--order`): `asc` or `desc`."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelSort",
+          "kind": "typeAlias",
+          "doc": "What `gh label list --sort` orders the labels by.",
+          "signature": "type GhLabelSort = created | name",
+          "deprecated": false
         },
         {
           "name": "GhMergeMethod",
@@ -26971,6 +27392,1214 @@
           ]
         },
         {
+          "name": "GhRepoApi",
+          "kind": "interface",
+          "doc": "The `gh repo` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhRepoApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repoClone",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoClone(configure?: Configure<GhRepoCloneSettings>): Promise<CommandOutput>",
+              "doc": "Clone a repository: `gh repo clone`."
+            },
+            {
+              "name": "repoCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoCreate(configure?: Configure<GhRepoCreateSettings>): Promise<CommandOutput>",
+              "doc": "Create a repository: `gh repo create`."
+            },
+            {
+              "name": "repoView",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoView(configure?: Configure<GhRepoViewSettings>): Promise<CommandOutput>",
+              "doc": "Show a repository: `gh repo view`."
+            },
+            {
+              "name": "repoList",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoList(configure?: Configure<GhRepoListSettings>): Promise<CommandOutput>",
+              "doc": "List repositories: `gh repo list`."
+            },
+            {
+              "name": "repoListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoListEntries(configure?: Configure<GhRepoListSettings>): Promise<GhRepositoryEntry[]>",
+              "doc": "The repositories as parsed {@link GhRepositoryEntry} values. The `--json`\nfield set is pinned, since gh requires one by name."
+            },
+            {
+              "name": "repoFork",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoFork(configure?: Configure<GhRepoForkSettings>): Promise<CommandOutput>",
+              "doc": "Fork a repository: `gh repo fork`."
+            },
+            {
+              "name": "repoSync",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSync(configure?: Configure<GhRepoSyncSettings>): Promise<CommandOutput>",
+              "doc": "Bring a fork up to date: `gh repo sync`."
+            },
+            {
+              "name": "repoEdit",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoEdit(configure?: Configure<GhRepoEditSettings>): Promise<CommandOutput>",
+              "doc": "Change a repository's settings: `gh repo edit`."
+            },
+            {
+              "name": "repoRename",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoRename(configure?: Configure<GhRepoRenameSettings>): Promise<CommandOutput>",
+              "doc": "Rename a repository: `gh repo rename`."
+            },
+            {
+              "name": "repoArchive",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoArchive(configure?: Configure<GhRepoArchiveSettings>): Promise<CommandOutput>",
+              "doc": "Archive or unarchive a repository: `gh repo archive`/`unarchive`."
+            },
+            {
+              "name": "repoDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoDelete(configure?: Configure<GhRepoDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Delete a repository: `gh repo delete`. Needs the `delete_repo` scope."
+            },
+            {
+              "name": "repoSetDefault",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSetDefault(configure?: Configure<GhRepoSetDefaultSettings>): Promise<CommandOutput>",
+              "doc": "Choose the repository gh acts on by default: `gh repo set-default`."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoArchiveSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo archive` and `gh repo unarchive`.",
+          "signature": "class GhRepoArchiveSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository; gh acts on the current one otherwise."
+            },
+            {
+              "name": "unarchive",
+              "kind": "method",
+              "optional": false,
+              "signature": "unarchive(): this",
+              "doc": "Restore an archived repository instead — `gh repo unarchive`."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation gh otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoCloneSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo clone`.",
+          "signature": "class GhRepoCloneSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository, as `owner/name` or a URL (required)."
+            },
+            {
+              "name": "directory",
+              "kind": "method",
+              "optional": false,
+              "signature": "directory(path: PathLike): this",
+              "doc": "The directory to clone into; gh names it after the repository otherwise."
+            },
+            {
+              "name": "upstreamRemoteName",
+              "kind": "method",
+              "optional": false,
+              "signature": "upstreamRemoteName(name: string): this",
+              "doc": "The remote name for a fork's parent (`--upstream-remote-name`)."
+            },
+            {
+              "name": "noUpstream",
+              "kind": "method",
+              "optional": false,
+              "signature": "noUpstream(): this",
+              "doc": "Do not add the upstream remote when cloning a fork (`--no-upstream`)."
+            },
+            {
+              "name": "gitArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitArgs(...args: string[]): this",
+              "doc": "Flags for the underlying `git clone`, which gh takes after a `--`\nseparator — `.gitArgs(\"--depth=1\")` for a shallow clone."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoCommandSettings",
+          "kind": "class",
+          "doc": "Base for the `gh repo` commands that neither print JSON nor take `--repo`.\n{@link GhRepoListSettings} and {@link GhRepoViewSettings} do print JSON, so\nthey extend the read bases and call {@link refuseRepoFlag} themselves.",
+          "signature": "class GhRepoCommandSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GhRepoCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo create`.",
+          "signature": "class GhRepoCreateSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The repository's name, or `owner/name` to create it elsewhere (required)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: GhRepoVisibility): this",
+              "doc": "How visible it is: `--public`, `--private`, or `--internal` (required)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "Its description (`--description`)."
+            },
+            {
+              "name": "homepage",
+              "kind": "method",
+              "optional": false,
+              "signature": "homepage(url: string): this",
+              "doc": "Its homepage (`--homepage`)."
+            },
+            {
+              "name": "team",
+              "kind": "method",
+              "optional": false,
+              "signature": "team(name: string): this",
+              "doc": "Grant an organization team access (`--team`)."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(slug: string): this",
+              "doc": "Base it on a template repository (`--template`)."
+            },
+            {
+              "name": "gitignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitignore(name: string): this",
+              "doc": "Start from a gitignore template (`--gitignore`)."
+            },
+            {
+              "name": "license",
+              "kind": "method",
+              "optional": false,
+              "signature": "license(name: string): this",
+              "doc": "Add an open-source license (`--license`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: PathLike): this",
+              "doc": "Create it from a local repository (`--source`)."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(name: string): this",
+              "doc": "The remote name for the new repository (`--remote`)."
+            },
+            {
+              "name": "clone",
+              "kind": "method",
+              "optional": false,
+              "signature": "clone(): this",
+              "doc": "Clone it after creating it (`--clone`)."
+            },
+            {
+              "name": "push",
+              "kind": "method",
+              "optional": false,
+              "signature": "push(): this",
+              "doc": "Push the local commits to it (`--push`)."
+            },
+            {
+              "name": "addReadme",
+              "kind": "method",
+              "optional": false,
+              "signature": "addReadme(): this",
+              "doc": "Add a README (`--add-readme`)."
+            },
+            {
+              "name": "includeAllBranches",
+              "kind": "method",
+              "optional": false,
+              "signature": "includeAllBranches(): this",
+              "doc": "Copy every branch of the template, not just its default (`--include-all-branches`)."
+            },
+            {
+              "name": "disableIssues",
+              "kind": "method",
+              "optional": false,
+              "signature": "disableIssues(): this",
+              "doc": "Turn issues off (`--disable-issues`)."
+            },
+            {
+              "name": "disableWiki",
+              "kind": "method",
+              "optional": false,
+              "signature": "disableWiki(): this",
+              "doc": "Turn the wiki off (`--disable-wiki`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo delete`.",
+          "signature": "class GhRepoDeleteSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository to delete, as `owner/name` (required — see below)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo edit`.",
+          "signature": "class GhRepoEditSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository to edit; gh edits the current one otherwise."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "Set the description (`--description`)."
+            },
+            {
+              "name": "homepage",
+              "kind": "method",
+              "optional": false,
+              "signature": "homepage(url: string): this",
+              "doc": "Set the homepage (`--homepage`)."
+            },
+            {
+              "name": "defaultBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "defaultBranch(name: string): this",
+              "doc": "Set the default branch (`--default-branch`)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: GhRepoVisibility): this",
+              "doc": "Change the visibility (`--visibility`), which needs {@link acceptVisibilityChangeConsequences}."
+            },
+            {
+              "name": "acceptVisibilityChangeConsequences",
+              "kind": "method",
+              "optional": false,
+              "signature": "acceptVisibilityChangeConsequences(): this",
+              "doc": "Acknowledge what a visibility change does (`--accept-visibility-change-consequences`)."
+            },
+            {
+              "name": "addTopic",
+              "kind": "method",
+              "optional": false,
+              "signature": "addTopic(...names: string[]): this",
+              "doc": "Add a topic (`--add-topic`); repeatable."
+            },
+            {
+              "name": "removeTopic",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeTopic(...names: string[]): this",
+              "doc": "Remove a topic (`--remove-topic`); repeatable."
+            },
+            {
+              "name": "enableIssues",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableIssues(enabled?: boolean): this",
+              "doc": "Turn issues on or off (`--enable-issues`)."
+            },
+            {
+              "name": "enableWiki",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableWiki(enabled?: boolean): this",
+              "doc": "Turn the wiki on or off (`--enable-wiki`)."
+            },
+            {
+              "name": "enableProjects",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableProjects(enabled?: boolean): this",
+              "doc": "Turn projects on or off (`--enable-projects`)."
+            },
+            {
+              "name": "enableDiscussions",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableDiscussions(enabled?: boolean): this",
+              "doc": "Turn discussions on or off (`--enable-discussions`)."
+            },
+            {
+              "name": "enableAutoMerge",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableAutoMerge(enabled?: boolean): this",
+              "doc": "Turn auto-merge on or off (`--enable-auto-merge`)."
+            },
+            {
+              "name": "enableMergeCommit",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableMergeCommit(enabled?: boolean): this",
+              "doc": "Allow or forbid merge commits (`--enable-merge-commit`)."
+            },
+            {
+              "name": "enableSquashMerge",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableSquashMerge(enabled?: boolean): this",
+              "doc": "Allow or forbid squash merges (`--enable-squash-merge`)."
+            },
+            {
+              "name": "enableRebaseMerge",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableRebaseMerge(enabled?: boolean): this",
+              "doc": "Allow or forbid rebase merges (`--enable-rebase-merge`)."
+            },
+            {
+              "name": "deleteBranchOnMerge",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteBranchOnMerge(enabled?: boolean): this",
+              "doc": "Delete the head branch after a merge, or stop (`--delete-branch-on-merge`)."
+            },
+            {
+              "name": "allowForking",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowForking(enabled?: boolean): this",
+              "doc": "Allow or forbid forking (`--allow-forking`)."
+            },
+            {
+              "name": "allowUpdateBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowUpdateBranch(enabled?: boolean): this",
+              "doc": "Allow or forbid updating a pull request branch (`--allow-update-branch`)."
+            },
+            {
+              "name": "enableSecretScanning",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableSecretScanning(enabled?: boolean): this",
+              "doc": "Turn secret scanning on or off (`--enable-secret-scanning`)."
+            },
+            {
+              "name": "enableSecretScanningPushProtection",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableSecretScanningPushProtection(enabled?: boolean): this",
+              "doc": "Turn push protection on or off (`--enable-secret-scanning-push-protection`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoForkSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo fork`.",
+          "signature": "class GhRepoForkSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository to fork; gh forks the current one otherwise."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "Create the fork in an organization (`--org`)."
+            },
+            {
+              "name": "forkName",
+              "kind": "method",
+              "optional": false,
+              "signature": "forkName(value: string): this",
+              "doc": "Name the fork something else (`--fork-name`)."
+            },
+            {
+              "name": "remoteName",
+              "kind": "method",
+              "optional": false,
+              "signature": "remoteName(value: string): this",
+              "doc": "The remote name to add for the fork (`--remote-name`)."
+            },
+            {
+              "name": "clone",
+              "kind": "method",
+              "optional": false,
+              "signature": "clone(): this",
+              "doc": "Clone the fork after creating it (`--clone`)."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(): this",
+              "doc": "Add a git remote for the fork (`--remote`)."
+            },
+            {
+              "name": "defaultBranchOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "defaultBranchOnly(): this",
+              "doc": "Fork only the default branch (`--default-branch-only`)."
+            },
+            {
+              "name": "gitArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitArgs(...args: string[]): this",
+              "doc": "Flags for the underlying `git clone`, passed after a `--` separator."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo list`.",
+          "signature": "class GhRepoListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "owner",
+              "kind": "method",
+              "optional": false,
+              "signature": "owner(login: string): this",
+              "doc": "Whose repositories to list; gh lists your own when it is omitted."
+            },
+            {
+              "name": "language",
+              "kind": "method",
+              "optional": false,
+              "signature": "language(name: string): this",
+              "doc": "Filter by primary language (`--language`)."
+            },
+            {
+              "name": "topic",
+              "kind": "method",
+              "optional": false,
+              "signature": "topic(...names: string[]): this",
+              "doc": "Filter by topic (`--topic`); repeatable."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: GhRepoVisibility): this",
+              "doc": "Filter by visibility (`--visibility`)."
+            },
+            {
+              "name": "archived",
+              "kind": "method",
+              "optional": false,
+              "signature": "archived(): this",
+              "doc": "Only archived repositories (`--archived`)."
+            },
+            {
+              "name": "noArchived",
+              "kind": "method",
+              "optional": false,
+              "signature": "noArchived(): this",
+              "doc": "Leave archived repositories out (`--no-archived`)."
+            },
+            {
+              "name": "fork",
+              "kind": "method",
+              "optional": false,
+              "signature": "fork(): this",
+              "doc": "Only forks (`--fork`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(): this",
+              "doc": "Only repositories that are not forks (`--source`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoRenameSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo rename`.",
+          "signature": "class GhRepoRenameSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "newName",
+              "kind": "method",
+              "optional": false,
+              "signature": "newName(value: string): this",
+              "doc": "The repository's new name, without the owner (required)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation a rename otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoSetDefaultSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo set-default`.",
+          "signature": "class GhRepoSetDefaultSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slugOrRemote: string): this",
+              "doc": "The repository to make the default, as `owner/name` or a remote name."
+            },
+            {
+              "name": "unset",
+              "kind": "method",
+              "optional": false,
+              "signature": "unset(): this",
+              "doc": "Forget the current default instead (`--unset`)."
+            },
+            {
+              "name": "view",
+              "kind": "method",
+              "optional": false,
+              "signature": "view(): this",
+              "doc": "Report the current default instead (`--view`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepositoryEntry",
+          "kind": "interface",
+          "doc": "One repository of {@link \"./gh.ts\".GhTasks.repoListEntries}.",
+          "signature": "interface GhRepositoryEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The repository's name, without the owner."
+            },
+            {
+              "name": "nameWithOwner",
+              "kind": "property",
+              "optional": true,
+              "signature": "nameWithOwner?: string",
+              "doc": "Its full `owner/name`."
+            },
+            {
+              "name": "description",
+              "kind": "property",
+              "optional": true,
+              "signature": "description?: string",
+              "doc": "Its description."
+            },
+            {
+              "name": "isPrivate",
+              "kind": "property",
+              "optional": true,
+              "signature": "isPrivate?: boolean",
+              "doc": "Whether it is private."
+            },
+            {
+              "name": "isFork",
+              "kind": "property",
+              "optional": true,
+              "signature": "isFork?: boolean",
+              "doc": "Whether it is a fork."
+            },
+            {
+              "name": "isArchived",
+              "kind": "property",
+              "optional": true,
+              "signature": "isArchived?: boolean",
+              "doc": "Whether it is archived."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": true,
+              "signature": "url?: string",
+              "doc": "Its web URL."
+            },
+            {
+              "name": "updatedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "updatedAt?: string",
+              "doc": "When it was last updated, ISO 8601."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoSyncSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo sync`.",
+          "signature": "class GhRepoSyncSettings extends GhRepoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(slug: string): this",
+              "doc": "The repository to update; gh syncs the local one otherwise."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(slug: string): this",
+              "doc": "Where to sync from (`--source`); gh uses the fork's parent otherwise."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "The branch to sync (`--branch`); gh uses the default branch otherwise."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Hard-reset the destination branch onto the source (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo view`.",
+          "signature": "class GhRepoViewSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository, as `owner/name`; gh uses the current one otherwise."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "View a particular branch (`--branch`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoVisibility",
+          "kind": "typeAlias",
+          "doc": "How visible a repository is (`--visibility`).",
+          "signature": "type GhRepoVisibility = public | private | internal",
+          "deprecated": false
+        },
+        {
+          "name": "GhRunApi",
+          "kind": "interface",
+          "doc": "The `gh run` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhRunApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "runList",
+              "kind": "method",
+              "optional": false,
+              "signature": "runList(configure?: Configure<GhRunListSettings>): Promise<CommandOutput>",
+              "doc": "List workflow runs: `gh run list`."
+            },
+            {
+              "name": "runListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "runListEntries(configure?: Configure<GhRunListSettings>): Promise<GhRunEntry[]>",
+              "doc": "The runs as parsed {@link GhRunEntry} values — the reader a build branches\non. The `--json` field set is pinned, since gh requires one by name."
+            },
+            {
+              "name": "runView",
+              "kind": "method",
+              "optional": false,
+              "signature": "runView(configure?: Configure<GhRunViewSettings>): Promise<CommandOutput>",
+              "doc": "Show a run: `gh run view`."
+            },
+            {
+              "name": "runRerun",
+              "kind": "method",
+              "optional": false,
+              "signature": "runRerun(configure?: Configure<GhRunRerunSettings>): Promise<CommandOutput>",
+              "doc": "Rerun a run, or its failed jobs: `gh run rerun`."
+            },
+            {
+              "name": "runCancel",
+              "kind": "method",
+              "optional": false,
+              "signature": "runCancel(configure?: Configure<GhRunCancelSettings>): Promise<CommandOutput>",
+              "doc": "Stop a run: `gh run cancel`."
+            },
+            {
+              "name": "runDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "runDelete(configure?: Configure<GhRunDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Remove a run: `gh run delete`."
+            },
+            {
+              "name": "runDownload",
+              "kind": "method",
+              "optional": false,
+              "signature": "runDownload(configure?: Configure<GhRunDownloadSettings>): Promise<CommandOutput>",
+              "doc": "Fetch a run's artifacts: `gh run download`."
+            },
+            {
+              "name": "runWatch",
+              "kind": "method",
+              "optional": false,
+              "signature": "runWatch(configure?: Configure<GhRunWatchSettings>): Promise<CommandOutput>",
+              "doc": "Follow a run until it finishes: `gh run watch`. A target that watches\nblocks until Actions is done, so pair it with `.killAfter(...)` unless\nthe wait is the point."
+            }
+          ]
+        },
+        {
+          "name": "GhRunCancelSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run cancel`.",
+          "signature": "class GhRunCancelSettings extends GhRunTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Cancel a run the ordinary request will not stop (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run delete`.",
+          "signature": "class GhRunDeleteSettings extends GhRunTargetSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GhRunDownloadSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run download`.",
+          "signature": "class GhRunDownloadSettings extends GhRunTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(...names: string[]): this",
+              "doc": "Only artifacts with this exact name (`--name`); repeatable."
+            },
+            {
+              "name": "pattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "pattern(...globs: string[]): this",
+              "doc": "Only artifacts matching this glob (`--pattern`); repeatable."
+            },
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The directory to download into (`--dir`); gh's default is the cwd."
+            }
+          ]
+        },
+        {
+          "name": "GhRunEntry",
+          "kind": "interface",
+          "doc": "One workflow run of {@link \"./gh.ts\".GhTasks.runListEntries}.",
+          "signature": "interface GhRunEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "databaseId",
+              "kind": "property",
+              "optional": true,
+              "signature": "databaseId?: number",
+              "doc": "The run's numeric id — what every other `run` command takes."
+            },
+            {
+              "name": "number",
+              "kind": "property",
+              "optional": true,
+              "signature": "number?: number",
+              "doc": "Its number within its workflow."
+            },
+            {
+              "name": "displayTitle",
+              "kind": "property",
+              "optional": true,
+              "signature": "displayTitle?: string",
+              "doc": "The title GitHub displays, usually the head commit's subject."
+            },
+            {
+              "name": "workflowName",
+              "kind": "property",
+              "optional": true,
+              "signature": "workflowName?: string",
+              "doc": "The name of the workflow it ran."
+            },
+            {
+              "name": "headBranch",
+              "kind": "property",
+              "optional": true,
+              "signature": "headBranch?: string",
+              "doc": "The branch it ran on."
+            },
+            {
+              "name": "event",
+              "kind": "property",
+              "optional": true,
+              "signature": "event?: string",
+              "doc": "The event that triggered it."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": true,
+              "signature": "status?: string",
+              "doc": "Its status, as gh reports it: `completed`, `in_progress`, …"
+            },
+            {
+              "name": "conclusion",
+              "kind": "property",
+              "optional": true,
+              "signature": "conclusion?: string",
+              "doc": "Its conclusion once complete: `success`, `failure`, …"
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": true,
+              "signature": "url?: string",
+              "doc": "Its web URL."
+            },
+            {
+              "name": "createdAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "createdAt?: string",
+              "doc": "When it was created, ISO 8601."
+            }
+          ]
+        },
+        {
+          "name": "GhRunListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run list`.",
+          "signature": "class GhRunListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Include runs of disabled workflows (`--all`)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "Filter by branch (`--branch`)."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(sha: string): this",
+              "doc": "Filter by the commit that triggered them (`--commit`)."
+            },
+            {
+              "name": "created",
+              "kind": "method",
+              "optional": false,
+              "signature": "created(query: string): this",
+              "doc": "Filter by creation date (`--created`), in GitHub's date-query syntax."
+            },
+            {
+              "name": "event",
+              "kind": "method",
+              "optional": false,
+              "signature": "event(name: string): this",
+              "doc": "Filter by the event that triggered them (`--event`)."
+            },
+            {
+              "name": "status",
+              "kind": "method",
+              "optional": false,
+              "signature": "status(value: GhRunStatus): this",
+              "doc": "Filter by status or conclusion (`--status`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user(login: string): this",
+              "doc": "Filter by the user who triggered them (`--user`)."
+            },
+            {
+              "name": "workflow",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflow(nameOrId: string): this",
+              "doc": "Filter by workflow, by name, id, or file name (`--workflow`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 20."
+            }
+          ]
+        },
+        {
+          "name": "GhRunRerunSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run rerun`.",
+          "signature": "class GhRunRerunSettings extends GhRunTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "failed",
+              "kind": "method",
+              "optional": false,
+              "signature": "failed(): this",
+              "doc": "Rerun only the failed jobs and their dependencies (`--failed`)."
+            },
+            {
+              "name": "job",
+              "kind": "method",
+              "optional": false,
+              "signature": "job(jobId: string | number): this",
+              "doc": "Rerun one job and its dependencies (`--job`), by job id."
+            },
+            {
+              "name": "debug",
+              "kind": "method",
+              "optional": false,
+              "signature": "debug(): this",
+              "doc": "Rerun with debug logging enabled (`--debug`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunStatus",
+          "kind": "typeAlias",
+          "doc": "The status `gh run list --status` filters by: the run's state while it is\ngoing, then the conclusion it settles on.",
+          "signature": "type GhRunStatus = queued | completed | in_progress | requested | waiting | pending | action_required | cancelled | failure | neutral | skipped | stale | startup_failure | success | timed_out",
+          "deprecated": false
+        },
+        {
+          "name": "GhRunTargetSettings",
+          "kind": "class",
+          "doc": "Base for the `run` commands that name one run. gh prompts for a run when the\noperand is omitted, so unlike a pull request there is no useful default.",
+          "signature": "class GhRunTargetSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(runId: string | number): this",
+              "doc": "The run — its id (required)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run view`.",
+          "signature": "class GhRunViewSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(runId: string | number): this",
+              "doc": "The run — its id; gh shows a picker without one."
+            },
+            {
+              "name": "attempt",
+              "kind": "method",
+              "optional": false,
+              "signature": "attempt(number: number): this",
+              "doc": "View an earlier attempt (`--attempt`)."
+            },
+            {
+              "name": "job",
+              "kind": "method",
+              "optional": false,
+              "signature": "job(jobId: string | number): this",
+              "doc": "View one job of the run (`--job`), by job id."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(): this",
+              "doc": "Print the full log (`--log`)."
+            },
+            {
+              "name": "logFailed",
+              "kind": "method",
+              "optional": false,
+              "signature": "logFailed(): this",
+              "doc": "Print only the failed steps' log (`--log-failed`)."
+            },
+            {
+              "name": "exitStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "exitStatus(): this",
+              "doc": "Exit non-zero when the run failed (`--exit-status`)."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Include the individual job steps (`--verbose`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunWatchSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run watch`.",
+          "signature": "class GhRunWatchSettings extends GhRunTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "compact",
+              "kind": "method",
+              "optional": false,
+              "signature": "compact(): this",
+              "doc": "Report only the relevant and failed steps (`--compact`)."
+            },
+            {
+              "name": "exitStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "exitStatus(): this",
+              "doc": "Exit non-zero when the run fails (`--exit-status`)."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(seconds: number): this",
+              "doc": "Seconds between refreshes (`--interval`); gh's default is 3."
+            }
+          ]
+        },
+        {
           "name": "GhSarifApi",
           "kind": "interface",
           "doc": "The shape of the SARIF task, mixed into `GhTasks`.",
@@ -27141,6 +28770,235 @@
               "optional": false,
               "signature": "url: string",
               "doc": "The URL that reports whether GitHub finished processing the report."
+            }
+          ]
+        },
+        {
+          "name": "GhScopeVisibility",
+          "kind": "typeAlias",
+          "doc": "Who an organization value is visible to (`--visibility`).",
+          "signature": "type GhScopeVisibility = all | private | selected",
+          "deprecated": false
+        },
+        {
+          "name": "GhSecretApi",
+          "kind": "interface",
+          "doc": "The `gh secret` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhSecretApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "secretSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretSet(configure?: Configure<GhSecretSetSettings>): Promise<CommandOutput>",
+              "doc": "Store a secret: `gh secret set`. A value passed as `.body(...)` becomes an\nargv entry and is readable in a process listing — see the module docs of\n{@link \"./secret.ts\".GhSecretSetSettings} for the alternatives."
+            },
+            {
+              "name": "secretList",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretList(configure?: Configure<GhSecretListSettings>): Promise<CommandOutput>",
+              "doc": "List the secrets' names: `gh secret list`."
+            },
+            {
+              "name": "secretListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretListEntries(configure?: Configure<GhSecretListSettings>): Promise<GhSecretEntry[]>",
+              "doc": "The secrets as parsed {@link GhSecretEntry} values — names and metadata;\nGitHub never returns a secret's value."
+            },
+            {
+              "name": "secretDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretDelete(configure?: Configure<GhSecretDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Remove a secret: `gh secret delete`."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretApp",
+          "kind": "typeAlias",
+          "doc": "Which application reads the secret (`--app`).",
+          "signature": "type GhSecretApp = actions | agents | codespaces | dependabot",
+          "deprecated": false
+        },
+        {
+          "name": "GhSecretDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh secret delete`.",
+          "signature": "class GhSecretDeleteSettings extends GhSecretScopeSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The secret's name (required)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretEntry",
+          "kind": "interface",
+          "doc": "One secret of {@link \"./gh.ts\".GhTasks.secretListEntries}. GitHub never\nreturns a secret's value, so an entry is its name and its metadata.",
+          "signature": "interface GhSecretEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The secret's name."
+            },
+            {
+              "name": "updatedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "updatedAt?: string",
+              "doc": "When it was last updated, ISO 8601."
+            },
+            {
+              "name": "visibility",
+              "kind": "property",
+              "optional": true,
+              "signature": "visibility?: string",
+              "doc": "The visibility of an organization secret."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh secret list`.",
+          "signature": "class GhSecretListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: GhSecretApp): this",
+              "doc": "Which application's secrets to list (`--app`)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "List an organization's secrets (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "List an environment's secrets (`--env`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user(): this",
+              "doc": "List your own secrets (`--user`)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretScopeSettings",
+          "kind": "class",
+          "doc": "Base for the `secret` commands that name one scope: the application, and\nwhether the secret belongs to a repository, an organization, an\nenvironment, or the authenticated user.",
+          "signature": "class GhSecretScopeSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: GhSecretApp): this",
+              "doc": "Which application reads it (`--app`); gh's default is `actions`."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "Scope it to an organization (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "Scope it to a deployment environment (`--env`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user(): this",
+              "doc": "Scope it to the authenticated user (`--user`)."
+            },
+            {
+              "name": "repositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositories(...names: string[]): this",
+              "doc": "Share an organization secret with these repositories (`--repos`)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: GhScopeVisibility): this",
+              "doc": "The visibility of an organization secret (`--visibility`)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretSetSettings",
+          "kind": "class",
+          "doc": "Settings for `gh secret set`.",
+          "signature": "class GhSecretSetSettings extends GhSecretScopeSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The secret's name (required)."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(value: string): this",
+              "doc": "The secret's value (`--body`). Omit it and gh reads standard input, which\nkeeps the value out of the process's arguments — see the module docs."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Read names and values from a dotenv file (`--env-file`)."
+            },
+            {
+              "name": "noStore",
+              "kind": "method",
+              "optional": false,
+              "signature": "noStore(): this",
+              "doc": "Print the encrypted value instead of storing it (`--no-store`)."
+            },
+            {
+              "name": "noReposSelected",
+              "kind": "method",
+              "optional": false,
+              "signature": "noReposSelected(): this",
+              "doc": "Share the organization secret with no repositories (`--no-repos-selected`)."
             }
           ]
         },
@@ -27326,6 +29184,235 @@
           ]
         },
         {
+          "name": "GhVariableApi",
+          "kind": "interface",
+          "doc": "The `gh variable` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhVariableApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "variableSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "variableSet(configure?: Configure<GhVariableSetSettings>): Promise<CommandOutput>",
+              "doc": "Store a variable: `gh variable set`."
+            },
+            {
+              "name": "variableGet",
+              "kind": "method",
+              "optional": false,
+              "signature": "variableGet(configure?: Configure<GhVariableGetSettings>): Promise<CommandOutput>",
+              "doc": "Read a variable: `gh variable get`."
+            },
+            {
+              "name": "variableValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "variableValue(configure?: Configure<GhVariableGetSettings>): Promise<string>",
+              "doc": "A variable's value, with the trailing newline gh prints removed."
+            },
+            {
+              "name": "variableList",
+              "kind": "method",
+              "optional": false,
+              "signature": "variableList(configure?: Configure<GhVariableListSettings>): Promise<CommandOutput>",
+              "doc": "List variables: `gh variable list`."
+            },
+            {
+              "name": "variableListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "variableListEntries(configure?: Configure<GhVariableListSettings>): Promise<GhVariableEntry[]>",
+              "doc": "The variables as parsed {@link GhVariableEntry} values, values included —\na variable is not a secret."
+            },
+            {
+              "name": "variableDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "variableDelete(configure?: Configure<GhVariableDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Remove a variable: `gh variable delete`."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable delete`.",
+          "signature": "class GhVariableDeleteSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The variable's name (required)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "Delete an organization variable (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "Delete an environment variable (`--env`)."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableEntry",
+          "kind": "interface",
+          "doc": "One variable of {@link \"./gh.ts\".GhTasks.variableListEntries}.",
+          "signature": "interface GhVariableEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The variable's name."
+            },
+            {
+              "name": "value",
+              "kind": "property",
+              "optional": true,
+              "signature": "value?: string",
+              "doc": "Its value, which GitHub returns in the clear."
+            },
+            {
+              "name": "updatedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "updatedAt?: string",
+              "doc": "When it was last updated, ISO 8601."
+            },
+            {
+              "name": "visibility",
+              "kind": "property",
+              "optional": true,
+              "signature": "visibility?: string",
+              "doc": "The visibility of an organization variable."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableGetSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable get`.",
+          "signature": "class GhVariableGetSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The variable's name (required)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "Read an organization variable (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "Read an environment variable (`--env`)."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable list`.",
+          "signature": "class GhVariableListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "List an organization's variables (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "List an environment's variables (`--env`)."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableSetSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable set`.",
+          "signature": "class GhVariableSetSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The variable's name (required)."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(value: string): this",
+              "doc": "Its value (`--body`); omit it and gh reads standard input."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Read names and values from a dotenv file (`--env-file`)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: string): this",
+              "doc": "Scope it to an organization (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "Scope it to a deployment environment (`--env`)."
+            },
+            {
+              "name": "repositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositories(...names: string[]): this",
+              "doc": "Share an organization variable with these repositories (`--repos`)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: GhScopeVisibility): this",
+              "doc": "The visibility of an organization variable (`--visibility`)."
+            }
+          ]
+        },
+        {
           "name": "GhWebReadSettings",
           "kind": "class",
           "doc": "Base for the read commands that also take `--web`: every one of them except\n`release list`, which gh gives no browser view. Keeping `.web()` here rather\nthan on {@link GhReadSettings} is what stops a build offering a flag gh\nwould reject.",
@@ -27338,6 +29425,216 @@
               "optional": false,
               "signature": "web(): this",
               "doc": "Open the result in a browser instead of printing it (`--web`). A build\nhas no browser, so this is for a developer running the target by hand."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowApi",
+          "kind": "interface",
+          "doc": "The `gh workflow` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhWorkflowApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "workflowList",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflowList(configure?: Configure<GhWorkflowListSettings>): Promise<CommandOutput>",
+              "doc": "List workflows: `gh workflow list`."
+            },
+            {
+              "name": "workflowListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflowListEntries(configure?: Configure<GhWorkflowListSettings>): Promise<GhWorkflowEntry[]>",
+              "doc": "The workflows as parsed {@link GhWorkflowEntry} values. The `--json` field\nset is pinned, since gh requires one by name."
+            },
+            {
+              "name": "workflowView",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflowView(configure?: Configure<GhWorkflowViewSettings>): Promise<CommandOutput>",
+              "doc": "Show a workflow, or its YAML: `gh workflow view`."
+            },
+            {
+              "name": "workflowRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflowRun(configure?: Configure<GhWorkflowRunSettings>): Promise<CommandOutput>",
+              "doc": "Dispatch a workflow: `gh workflow run`. This returns once the dispatch is\naccepted; {@link \"./workflow.ts\".githubWorkflow} is the wait trigger that\nsuspends the build until the run finishes."
+            },
+            {
+              "name": "workflowEnable",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflowEnable(configure?: Configure<GhWorkflowEnableSettings>): Promise<CommandOutput>",
+              "doc": "Turn a workflow on: `gh workflow enable`."
+            },
+            {
+              "name": "workflowDisable",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflowDisable(configure?: Configure<GhWorkflowDisableSettings>): Promise<CommandOutput>",
+              "doc": "Turn a workflow off: `gh workflow disable`."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowDisableSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow disable`.",
+          "signature": "class GhWorkflowDisableSettings extends GhWorkflowTargetSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GhWorkflowEnableSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow enable`.",
+          "signature": "class GhWorkflowEnableSettings extends GhWorkflowTargetSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GhWorkflowEntry",
+          "kind": "interface",
+          "doc": "One workflow of {@link \"./gh.ts\".GhTasks.workflowListEntries}.",
+          "signature": "interface GhWorkflowEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": true,
+              "signature": "id?: number",
+              "doc": "The workflow's numeric id."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "Its name, as the `name:` key of its file declares it."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": true,
+              "signature": "path?: string",
+              "doc": "Its path in the repository, e.g. `.github/workflows/ci.yml`."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": true,
+              "signature": "state?: string",
+              "doc": "Its state, as gh reports it: `active`, `disabled_manually`, …"
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow list`.",
+          "signature": "class GhWorkflowListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Include disabled workflows (`--all`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 50."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowRunSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow run` — dispatching a `workflow_dispatch` run.",
+          "signature": "class GhWorkflowRunSettings extends GhWorkflowTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: string): this",
+              "doc": "The branch or tag to run it on (`--ref`)."
+            },
+            {
+              "name": "field",
+              "kind": "method",
+              "optional": false,
+              "signature": "field(key: string, value: string | number | boolean): this",
+              "doc": "An input, as `--field key=value`. gh reads a leading `@` in the value as\na file to read, so use {@link rawField} for a value that starts with one."
+            },
+            {
+              "name": "rawField",
+              "kind": "method",
+              "optional": false,
+              "signature": "rawField(key: string, value: string | number | boolean): this",
+              "doc": "An input passed verbatim (`--raw-field`), with no `@` file syntax."
+            },
+            {
+              "name": "jsonInput",
+              "kind": "method",
+              "optional": false,
+              "signature": "jsonInput(): this",
+              "doc": "Read the whole input object as JSON on standard input (`--json`)."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowTargetSettings",
+          "kind": "class",
+          "doc": "Base for the `workflow` commands that name one workflow, which gh takes by\nfile name, name, or numeric id.",
+          "signature": "class GhWorkflowTargetSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "workflow",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflow(nameOrId: string | number): this",
+              "doc": "The workflow — its file name, its name, or its id (required)."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow view`.\n\nUnlike the other viewing commands this one prints no JSON — gh gives it\n`--yaml` and `--web` but no `--json` — so it does not carry the read flags.",
+          "signature": "class GhWorkflowViewSettings extends GhWorkflowTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: string): this",
+              "doc": "The branch or tag holding the version to view (`--ref`)."
+            },
+            {
+              "name": "yaml",
+              "kind": "method",
+              "optional": false,
+              "signature": "yaml(): this",
+              "doc": "Print the workflow's YAML rather than its summary (`--yaml`)."
+            },
+            {
+              "name": "web",
+              "kind": "method",
+              "optional": false,
+              "signature": "web(): this",
+              "doc": "Open it in a browser instead of printing it (`--web`). A build has no\nbrowser, so this is for a developer running the target by hand."
             }
           ]
         },
@@ -27484,6 +29781,13 @@
           "deprecated": false
         },
         {
+          "name": "LABEL_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readLabels} asks for; gh requires the list by\nname, so the reader pins the set {@link GhLabelEntry} describes.",
+          "signature": "const LABEL_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
           "name": "markReleaseLatest",
           "kind": "function",
           "doc": "Perform the configured mark-latest call.",
@@ -27533,6 +29837,27 @@
           "deprecated": false
         },
         {
+          "name": "REPO_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readRepositories} asks for; gh requires the list\nby name, so the reader pins the set {@link GhRepositoryEntry} describes.",
+          "signature": "const REPO_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
+          "name": "RUN_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readRuns} asks for; gh requires the list by name,\nso the reader pins the set {@link GhRunEntry} describes.",
+          "signature": "const RUN_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
+          "name": "SECRET_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readSecrets} asks for; gh requires the list by\nname, so the reader pins the set {@link GhSecretEntry} describes.",
+          "signature": "const SECRET_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
           "name": "tagCommit",
           "kind": "function",
           "doc": "Perform the configured tag.",
@@ -27551,6 +29876,20 @@
           "kind": "function",
           "doc": "Upload the SARIF report the settings describe.",
           "signature": "async function uploadSarifReport(configure?: Configure<GhSarifSettings>): Promise<GhSarifUploadResult>",
+          "deprecated": false
+        },
+        {
+          "name": "VARIABLE_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readVariables} asks for; gh requires the list by\nname, so the reader pins the set {@link GhVariableEntry} describes.",
+          "signature": "const VARIABLE_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
+          "name": "WORKFLOW_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readWorkflows} asks for; gh requires the list by\nname, so the reader pins the set {@link GhWorkflowEntry} describes.",
+          "signature": "const WORKFLOW_LIST_FIELDS: unknown",
           "deprecated": false
         },
         {
