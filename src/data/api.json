@@ -8008,6 +8008,275 @@
           ]
         },
         {
+          "name": "DenoAddSettings",
+          "kind": "class",
+          "doc": "Settings for `deno add`.",
+          "signature": "class DenoAddSettings extends DenoLockSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...specs: string[]): this",
+              "doc": "The packages to add, e.g. `jsr:@std/assert` or `npm:express` (required)."
+            },
+            {
+              "name": "dev",
+              "kind": "method",
+              "optional": false,
+              "signature": "dev(): this",
+              "doc": "Add as a dev dependency (`--dev`). Deno only distinguishes the two in a\n`package.json`; against a `deno.json` the flag has nothing to record."
+            },
+            {
+              "name": "jsr",
+              "kind": "method",
+              "optional": false,
+              "signature": "jsr(): this",
+              "doc": "Read unprefixed package names as JSR packages (`--jsr`)."
+            },
+            {
+              "name": "npm",
+              "kind": "method",
+              "optional": false,
+              "signature": "npm(): this",
+              "doc": "Read unprefixed package names as npm packages (`--npm`), deno's default."
+            },
+            {
+              "name": "saveExact",
+              "kind": "method",
+              "optional": false,
+              "signature": "saveExact(): this",
+              "doc": "Record the exact version, without a caret range (`--save-exact`)."
+            },
+            {
+              "name": "lockfileOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockfileOnly(): this",
+              "doc": "Update the lockfile without installing (`--lockfile-only`)."
+            },
+            {
+              "name": "packageJson",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageJson(): this",
+              "doc": "Record the dependency in `package.json` rather than `deno.json` (`--package-json`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoApproveScriptsSettings",
+          "kind": "class",
+          "doc": "Settings for `deno approve-scripts`.",
+          "signature": "class DenoApproveScriptsSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...specs: string[]): this",
+              "doc": "The npm specifiers whose lifecycle scripts to approve (required)."
+            },
+            {
+              "name": "lockfileOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockfileOnly(): this",
+              "doc": "Record the approval in the lockfile without installing (`--lockfile-only`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoBenchSettings",
+          "kind": "class",
+          "doc": "Settings for `deno bench`.",
+          "signature": "class DenoBenchSettings extends DenoPermissionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...paths: PathLike[]): this",
+              "doc": "Restrict the run to specific benchmark files or directories."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(pattern: string): this",
+              "doc": "Only run benchmarks whose name matches (`--filter`)."
+            },
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Report results as JSON (`--json`) rather than the table. Deno marks the\nflag unstable, so treat the shape as subject to change between releases."
+            },
+            {
+              "name": "noRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRun(): this",
+              "doc": "Cache the benchmark modules without running them (`--no-run`) — a cheap\nway to prove the benchmarks still compile without paying to run them."
+            },
+            {
+              "name": "permitNoFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "permitNoFiles(): this",
+              "doc": "Succeed when no benchmark files matched (`--permit-no-files`) instead of\nfailing the target."
+            },
+            {
+              "name": "ignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignore(...patterns: string[]): this",
+              "doc": "Skip files matching these patterns (`--ignore`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoBumpVersionSettings",
+          "kind": "class",
+          "doc": "Settings for `deno bump-version`.\n\nThe subcommand is experimental — deno itself prints a notice saying so on\nevery run — so treat its output as subject to change between releases.",
+          "signature": "class DenoBumpVersionSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "increment",
+              "kind": "method",
+              "optional": false,
+              "signature": "increment(kind: DenoVersionIncrement): this",
+              "doc": "The increment to apply. Omit it to derive the increment from the\nconventional commits since {@link start}."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Print the planned changes without writing any files (`--dry-run`)."
+            },
+            {
+              "name": "workspace",
+              "kind": "method",
+              "optional": false,
+              "signature": "workspace(): this",
+              "doc": "Bump every package in the workspace (`--workspace`)."
+            },
+            {
+              "name": "noWorkspace",
+              "kind": "method",
+              "optional": false,
+              "signature": "noWorkspace(): this",
+              "doc": "Bump only the manifest in the current directory (`--no-workspace`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "The manifest to bump (`--config`)."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "The import map whose `jsr:` constraints to rewrite (`--import-map`)."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(ref: string): this",
+              "doc": "Git ref to compare against in conventional-commits mode (`--base`)."
+            },
+            {
+              "name": "start",
+              "kind": "method",
+              "optional": false,
+              "signature": "start(ref: string): this",
+              "doc": "Git ref to start from in conventional-commits mode (`--start`)."
+            },
+            {
+              "name": "releaseNotes",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseNotes(path: PathLike): this",
+              "doc": "Release notes file to prepend to in conventional-commits mode (`--release-notes`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoCacheInfo",
+          "kind": "interface",
+          "doc": "The cache locations `deno info --json` reports when given no module.",
+          "signature": "interface DenoCacheInfo",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "denoVersion",
+              "kind": "property",
+              "optional": true,
+              "signature": "denoVersion?: string",
+              "doc": "The version of deno that produced the report."
+            },
+            {
+              "name": "denoDir",
+              "kind": "property",
+              "optional": true,
+              "signature": "denoDir?: string",
+              "doc": "The root cache directory, i.e. `DENO_DIR`."
+            },
+            {
+              "name": "modulesCache",
+              "kind": "property",
+              "optional": true,
+              "signature": "modulesCache?: string",
+              "doc": "Where fetched remote modules are stored."
+            },
+            {
+              "name": "npmCache",
+              "kind": "property",
+              "optional": true,
+              "signature": "npmCache?: string",
+              "doc": "Where npm packages are stored."
+            },
+            {
+              "name": "typescriptCache",
+              "kind": "property",
+              "optional": true,
+              "signature": "typescriptCache?: string",
+              "doc": "Where emitted TypeScript is stored."
+            },
+            {
+              "name": "registryCache",
+              "kind": "property",
+              "optional": true,
+              "signature": "registryCache?: string",
+              "doc": "Where registry metadata is stored."
+            },
+            {
+              "name": "originStorage",
+              "kind": "property",
+              "optional": true,
+              "signature": "originStorage?: string",
+              "doc": "Where origin-bound storage (`localStorage`) is kept."
+            }
+          ]
+        },
+        {
           "name": "DenoCacheSettings",
           "kind": "class",
           "doc": "Settings for `deno cache`.",
@@ -8073,6 +8342,173 @@
               "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
             }
           ]
+        },
+        {
+          "name": "DenoCiSettings",
+          "kind": "class",
+          "doc": "Settings for `deno ci`.",
+          "signature": "class DenoCiSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "prod",
+              "kind": "method",
+              "optional": false,
+              "signature": "prod(): this",
+              "doc": "Install production dependencies only, excluding dev ones (`--prod`)."
+            },
+            {
+              "name": "skipTypes",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipTypes(): this",
+              "doc": "Exclude `@types/*` packages (`--skip-types`). Deno selects them by name,\nso a package that ships runtime code under a `@types/` name is skipped\ntoo."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Load environment variables from a file (`--env-file`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoCleanSettings",
+          "kind": "class",
+          "doc": "Settings for `deno clean`.",
+          "signature": "class DenoCleanSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be removed without removing it (`--dry-run`)."
+            },
+            {
+              "name": "except",
+              "kind": "method",
+              "optional": false,
+              "signature": "except(...paths: PathLike[]): this",
+              "doc": "Keep the cache entries these files need (`--except`), clearing everything\nelse. Use it to drop stale dependencies without forcing the next build to\nre-download the ones it still uses."
+            }
+          ]
+        },
+        {
+          "name": "DenoCompileSettings",
+          "kind": "class",
+          "doc": "Settings for `deno compile`.",
+          "signature": "class DenoCompileSettings extends DenoPermissionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "script",
+              "kind": "method",
+              "optional": false,
+              "signature": "script(path: PathLike): this",
+              "doc": "The entrypoint to compile (required)."
+            },
+            {
+              "name": "scriptArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "scriptArgs(...args: Array<string | number>): this",
+              "doc": "Arguments baked into the executable, passed after the entrypoint."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Output file (`--output`); defaults to a name inferred from the entrypoint."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(triple: DenoCompileTarget): this",
+              "doc": "Cross-compile for another platform (`--target`)."
+            },
+            {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(...paths: PathLike[]): this",
+              "doc": "Embed an extra module, file or directory (`--include`, repeatable).\n\nNeeded for anything the module graph cannot see statically — a\ndynamically imported module, a worker entrypoint, or a data file the\nprogram reads at runtime."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(...paths: PathLike[]): this",
+              "doc": "Exclude a file or directory from what {@link include} embedded (`--exclude`)."
+            },
+            {
+              "name": "excludeUnusedNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeUnusedNpm(): this",
+              "doc": "Embed only the npm packages the module graph actually reaches\n(`--exclude-unused-npm`), instead of the whole lockfile snapshot.\n\nPackages reached only through a dynamic import are not statically\ntraceable, so pass those to {@link include} explicitly."
+            },
+            {
+              "name": "icon",
+              "kind": "method",
+              "optional": false,
+              "signature": "icon(path: PathLike): this",
+              "doc": "Set the executable's Windows icon from a `.ico` file (`--icon`)."
+            },
+            {
+              "name": "noTerminal",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTerminal(): this",
+              "doc": "Hide the console window on Windows (`--no-terminal`)."
+            },
+            {
+              "name": "selfExtracting",
+              "kind": "method",
+              "optional": false,
+              "signature": "selfExtracting(): this",
+              "doc": "Produce a self-extracting binary (`--self-extracting`) that unpacks its\nembedded file system to disk on first run and executes from there."
+            },
+            {
+              "name": "bundle",
+              "kind": "method",
+              "optional": false,
+              "signature": "bundle(): this",
+              "doc": "Bundle the entrypoint before embedding it (`--bundle`), rather than\nshipping the whole `node_modules` tree. Experimental: it produces a\nsmaller, faster-starting binary but drops dynamic `require`/`import`\npatterns that cannot be traced statically."
+            },
+            {
+              "name": "minify",
+              "kind": "method",
+              "optional": false,
+              "signature": "minify(): this",
+              "doc": "Minify the bundled output (`--minify`). Requires {@link bundle} — the CLI\nrejects `--minify` on its own, and so does this wrapper, so the mistake\nsurfaces while the argv is being built rather than after the compile\nstarts."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "noCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCheck(): this",
+              "doc": "Skip type-checking before compiling (`--no-check`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoCompileTarget",
+          "kind": "typeAlias",
+          "doc": "A target triple `deno compile` can cross-compile to, as listed by\n`deno compile --help`. Typed as a union so a typo in a release matrix is a\ncompile-time error rather than a build that fails minutes into CI.",
+          "signature": "type DenoCompileTarget = x86_64-unknown-linux-gnu | aarch64-unknown-linux-gnu | x86_64-pc-windows-msvc | x86_64-apple-darwin | aarch64-apple-darwin",
+          "deprecated": false
         },
         {
           "name": "DenoCoverageSettings",
@@ -8226,6 +8662,43 @@
           ]
         },
         {
+          "name": "DenoEvalSettings",
+          "kind": "class",
+          "doc": "Settings for `deno eval`.\n\nThe code is passed as a single argv entry by the shell layer, never\ninterpolated into a command string, so a value built from build parameters\ncannot break out of it.",
+          "signature": "class DenoEvalSettings extends DenoPermissionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "code",
+              "kind": "method",
+              "optional": false,
+              "signature": "code(source: string): this",
+              "doc": "The source to evaluate (required)."
+            },
+            {
+              "name": "print",
+              "kind": "method",
+              "optional": false,
+              "signature": "print(): this",
+              "doc": "Print the expression's result to stdout (`--print`)."
+            },
+            {
+              "name": "ext",
+              "kind": "method",
+              "optional": false,
+              "signature": "ext(value: DenoSourceExt): this",
+              "doc": "Treat the source as this content type (`--ext`), rather than TypeScript."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            }
+          ]
+        },
+        {
           "name": "DenoFmtSettings",
           "kind": "class",
           "doc": "Settings for `deno fmt`.",
@@ -8245,6 +8718,143 @@
               "optional": false,
               "signature": "paths(...paths: PathLike[]): this",
               "doc": "Restrict formatting to specific files or directories."
+            }
+          ]
+        },
+        {
+          "name": "DenoInfoSettings",
+          "kind": "class",
+          "doc": "Settings for `deno info`.",
+          "signature": "class DenoInfoSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(file: PathLike): this",
+              "doc": "The module to report on — a path, or any specifier `deno info` accepts,\nincluding a `file://` URL. Prefer the URL form when the specifier is\nbuilt rather than typed: it is the same string on every OS, where a\nconstructed path is not.\n\nOmit it to report on the caches themselves — `deno info` with no module\nprints the cache directories rather than a module graph, which is why\n{@link DenoTasks.cacheInfo} and {@link DenoTasks.moduleGraph} are separate\nreaders."
+            },
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Emit the report as JSON (`--json`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "Load an import map from a file or URL (`--import-map`)."
+            },
+            {
+              "name": "reload",
+              "kind": "method",
+              "optional": false,
+              "signature": "reload(): this",
+              "doc": "Reload the module cache before reporting (`--reload`)."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`)."
+            },
+            {
+              "name": "noNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "noNpm(): this",
+              "doc": "Do not resolve npm modules (`--no-npm`)."
+            },
+            {
+              "name": "noRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemote(): this",
+              "doc": "Do not resolve remote modules (`--no-remote`)."
+            },
+            {
+              "name": "modulePath",
+              "kind": "method",
+              "optional": false,
+              "signature": "modulePath(): string | undefined",
+              "doc": "The module {@link path} was set to, if any; read by\n{@link DenoTasks.moduleGraph} and {@link DenoTasks.cacheInfo} to tell the\ntwo reports apart. Reading the flag off the built argv would not do it:\n`--import-map` and `--config` also leave a non-flag token at the end."
+            }
+          ]
+        },
+        {
+          "name": "DenoInitSettings",
+          "kind": "class",
+          "doc": "Settings for `deno init`.",
+          "signature": "class DenoInitSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "directory",
+              "kind": "method",
+              "optional": false,
+              "signature": "directory(name: string): this",
+              "doc": "The directory to create, or the package to scaffold from."
+            },
+            {
+              "name": "lib",
+              "kind": "method",
+              "optional": false,
+              "signature": "lib(): this",
+              "doc": "Scaffold an example library project (`--lib`)."
+            },
+            {
+              "name": "serve",
+              "kind": "method",
+              "optional": false,
+              "signature": "serve(): this",
+              "doc": "Scaffold an example `deno serve` project (`--serve`)."
+            },
+            {
+              "name": "empty",
+              "kind": "method",
+              "optional": false,
+              "signature": "empty(): this",
+              "doc": "Scaffold a minimal project — just `main.ts` and `deno.json` (`--empty`)."
+            },
+            {
+              "name": "jsr",
+              "kind": "method",
+              "optional": false,
+              "signature": "jsr(): this",
+              "doc": "Scaffold from a JSR package (`--jsr`)."
+            },
+            {
+              "name": "npm",
+              "kind": "method",
+              "optional": false,
+              "signature": "npm(): this",
+              "doc": "Scaffold from an npm `create-*` package (`--npm`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Answer the scaffolding prompts affirmatively and grant full permissions\n(`--yes`). Required for an unattended run: without it `deno init` can stop\non a prompt no build target is there to answer."
             }
           ]
         },
@@ -8319,6 +8929,270 @@
               "optional": false,
               "signature": "paths(...paths: PathLike[]): this",
               "doc": "Restrict linting to specific files or directories."
+            }
+          ]
+        },
+        {
+          "name": "DenoLockSettings",
+          "kind": "class",
+          "doc": "Base for the `deno` subcommands that read and write the lockfile.\n\nThe lockfile flags are a section the CLI repeats across every one of them,\nso they live here once rather than being restated per subcommand.",
+          "signature": "class DenoLockSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`), neither reading nor writing it."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`) instead of the discovered `deno.lock`."
+            }
+          ]
+        },
+        {
+          "name": "DenoModule",
+          "kind": "interface",
+          "doc": "One module in the graph {@link parseModuleGraph} returns.",
+          "signature": "interface DenoModule",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "specifier",
+              "kind": "property",
+              "optional": false,
+              "signature": "specifier: string",
+              "doc": "The module's fully qualified specifier, e.g. `file:///…/mod.ts`."
+            },
+            {
+              "name": "kind",
+              "kind": "property",
+              "optional": true,
+              "signature": "kind?: string",
+              "doc": "How deno classified the module, e.g. `esm` or `npm`; absent on an error entry."
+            },
+            {
+              "name": "local",
+              "kind": "property",
+              "optional": true,
+              "signature": "local?: string",
+              "doc": "The module's path in the local cache, when it has been fetched."
+            },
+            {
+              "name": "size",
+              "kind": "property",
+              "optional": true,
+              "signature": "size?: number",
+              "doc": "The module's size in bytes, when known."
+            },
+            {
+              "name": "mediaType",
+              "kind": "property",
+              "optional": true,
+              "signature": "mediaType?: string",
+              "doc": "The media type deno resolved, e.g. `TypeScript`."
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": true,
+              "signature": "error?: string",
+              "doc": "Why the module could not be loaded, when it could not be."
+            },
+            {
+              "name": "dependencies",
+              "kind": "property",
+              "optional": false,
+              "signature": "dependencies: DenoModuleDependency[]",
+              "doc": "The specifiers this module imports, in source order."
+            }
+          ]
+        },
+        {
+          "name": "DenoModuleDependency",
+          "kind": "interface",
+          "doc": "One import edge out of a {@link DenoModule}.",
+          "signature": "interface DenoModuleDependency",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "specifier",
+              "kind": "property",
+              "optional": false,
+              "signature": "specifier: string",
+              "doc": "The specifier exactly as written in the source."
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": true,
+              "signature": "error?: string",
+              "doc": "Why the dependency could not be resolved, when it could not be."
+            }
+          ]
+        },
+        {
+          "name": "DenoModuleGraph",
+          "kind": "interface",
+          "doc": "The module graph `deno info --json <file>` reports.",
+          "signature": "interface DenoModuleGraph",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "roots",
+              "kind": "property",
+              "optional": false,
+              "signature": "roots: string[]",
+              "doc": "The entry points the graph was built from."
+            },
+            {
+              "name": "modules",
+              "kind": "property",
+              "optional": false,
+              "signature": "modules: DenoModule[]",
+              "doc": "Every module reachable from {@link roots}, deno's order preserved."
+            },
+            {
+              "name": "redirects",
+              "kind": "property",
+              "optional": false,
+              "signature": "redirects: Record<string, string>",
+              "doc": "Specifier redirects deno followed, from requested to resolved."
+            }
+          ]
+        },
+        {
+          "name": "DenoOutdatedSettings",
+          "kind": "class",
+          "doc": "Settings for `deno outdated`.",
+          "signature": "class DenoOutdatedSettings extends DenoLockSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "filters",
+              "kind": "method",
+              "optional": false,
+              "signature": "filters(...patterns: string[]): this",
+              "doc": "Restrict the report to dependencies matching these filters, which may\ninclude `*` wildcards. Filters match the alias a dependency is declared\nunder, not the package it resolves to."
+            },
+            {
+              "name": "compatible",
+              "kind": "method",
+              "optional": false,
+              "signature": "compatible(): this",
+              "doc": "Only consider versions satisfying the declared semver range (`--compatible`)."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest(): this",
+              "doc": "Consider the latest version regardless of the declared range (`--latest`)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Include every workspace member (`--recursive`)."
+            },
+            {
+              "name": "update",
+              "kind": "method",
+              "optional": false,
+              "signature": "update(): this",
+              "doc": "Write the newer versions back into the manifest (`--update`) instead of\nonly reporting them. Without it `deno outdated` reports and changes\nnothing, which is what a freshness gate wants."
+            },
+            {
+              "name": "lockfileOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockfileOnly(): this",
+              "doc": "Update the lockfile without installing (`--lockfile-only`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoPackSettings",
+          "kind": "class",
+          "doc": "Settings for `deno pack`.",
+          "signature": "class DenoPackSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "files",
+              "kind": "method",
+              "optional": false,
+              "signature": "files(...patterns: string[]): this",
+              "doc": "File patterns to include in the tarball; defaults to the package's own."
+            },
+            {
+              "name": "allowDirty",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowDirty(): this",
+              "doc": "Pack even with an uncommitted working tree (`--allow-dirty`)."
+            },
+            {
+              "name": "allowSlowTypes",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowSlowTypes(): this",
+              "doc": "Skip fast-check type extraction (`--allow-slow-types`). The tarball then\nships without `.d.ts` files, so consumers get no types from it."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be packed without writing the tarball (`--dry-run`)."
+            },
+            {
+              "name": "noSourceMaps",
+              "kind": "method",
+              "optional": false,
+              "signature": "noSourceMaps(): this",
+              "doc": "Omit source maps from the tarball (`--no-source-maps`)."
+            },
+            {
+              "name": "ignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignore(...patterns: string[]): this",
+              "doc": "Exclude files matching these patterns (`--ignore`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write the tarball here (`--output`) instead of `<name>-<version>.tgz`."
+            },
+            {
+              "name": "setVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "setVersion(version: string): this",
+              "doc": "Override the version recorded in the tarball (`--set-version`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
             }
           ]
         },
@@ -8411,6 +9285,36 @@
           ]
         },
         {
+          "name": "DenoRemoveSettings",
+          "kind": "class",
+          "doc": "Settings for `deno remove`.",
+          "signature": "class DenoRemoveSettings extends DenoLockSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...names: string[]): this",
+              "doc": "The packages to remove, by the name they are recorded under (required)."
+            },
+            {
+              "name": "lockfileOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockfileOnly(): this",
+              "doc": "Update the lockfile without touching `node_modules` (`--lockfile-only`)."
+            },
+            {
+              "name": "packageJson",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageJson(): this",
+              "doc": "Remove from `package.json` rather than `deno.json` (`--package-json`)."
+            }
+          ]
+        },
+        {
           "name": "DenoRunSettings",
           "kind": "class",
           "doc": "Settings for `deno run`.",
@@ -8448,12 +9352,84 @@
           ]
         },
         {
+          "name": "DenoServeSettings",
+          "kind": "class",
+          "doc": "Settings for `deno serve`.\n\nA server runs until it is stopped, so a build target that awaits this task\nblocks forever. Give it a bound with `.killAfter(ms)` — for a smoke test\nthat the server starts — or run it from a target the build is not waiting\non.",
+          "signature": "class DenoServeSettings extends DenoPermissionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "script",
+              "kind": "method",
+              "optional": false,
+              "signature": "script(path: PathLike): this",
+              "doc": "The module exporting the server's default handler (required)."
+            },
+            {
+              "name": "scriptArgs",
+              "kind": "method",
+              "optional": false,
+              "signature": "scriptArgs(...args: Array<string | number>): this",
+              "doc": "Arguments passed to the server module (after the module path)."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(value: number): this",
+              "doc": "The TCP port to serve on (`--port`); `0` picks a free one."
+            },
+            {
+              "name": "host",
+              "kind": "method",
+              "optional": false,
+              "signature": "host(value: string): this",
+              "doc": "The TCP address to serve on (`--host`), defaulting to all interfaces."
+            },
+            {
+              "name": "parallel",
+              "kind": "method",
+              "optional": false,
+              "signature": "parallel(): this",
+              "doc": "Run one server worker per available CPU (`--parallel`), or as many as\n`DENO_JOBS` allows."
+            },
+            {
+              "name": "open",
+              "kind": "method",
+              "optional": false,
+              "signature": "open(): this",
+              "doc": "Open a browser on the served address (`--open`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Restart the server when a watched file changes (`--watch`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            }
+          ]
+        },
+        {
           "name": "DenoSettings",
           "kind": "class",
           "doc": "Base for all `deno` subcommand settings: binary is the running deno.",
           "signature": "class DenoSettings extends ToolSettings",
           "deprecated": false,
           "members": []
+        },
+        {
+          "name": "DenoSourceExt",
+          "kind": "typeAlias",
+          "doc": "A content type `deno eval` and `deno bench` accept for `--ext`.",
+          "signature": "type DenoSourceExt = ts | tsx | js | jsx | mts | mjs | cts | cjs",
+          "deprecated": false
         },
         {
           "name": "DenoTasks",
@@ -8545,6 +9521,139 @@
               "optional": false,
               "signature": "task(configure?: Configure<DenoTaskSettings>): Promise<CommandOutput>",
               "doc": "Run a deno.json task: `deno task`."
+            },
+            {
+              "name": "serve",
+              "kind": "method",
+              "optional": false,
+              "signature": "serve(configure?: Configure<DenoServeSettings>): Promise<CommandOutput>",
+              "doc": "Run a server: `deno serve`."
+            },
+            {
+              "name": "eval",
+              "kind": "method",
+              "optional": false,
+              "signature": "eval(configure?: Configure<DenoEvalSettings>): Promise<CommandOutput>",
+              "doc": "Evaluate a snippet: `deno eval`."
+            },
+            {
+              "name": "bench",
+              "kind": "method",
+              "optional": false,
+              "signature": "bench(configure?: Configure<DenoBenchSettings>): Promise<CommandOutput>",
+              "doc": "Run benchmarks: `deno bench`."
+            },
+            {
+              "name": "compile",
+              "kind": "method",
+              "optional": false,
+              "signature": "compile(configure?: Configure<DenoCompileSettings>): Promise<CommandOutput>",
+              "doc": "Build a self-contained executable: `deno compile`."
+            },
+            {
+              "name": "clean",
+              "kind": "method",
+              "optional": false,
+              "signature": "clean(configure?: Configure<DenoCleanSettings>): Promise<CommandOutput>",
+              "doc": "Remove the cache directory: `deno clean`."
+            },
+            {
+              "name": "info",
+              "kind": "method",
+              "optional": false,
+              "signature": "info(configure?: Configure<DenoInfoSettings>): Promise<CommandOutput>",
+              "doc": "Report on a module or the caches: `deno info`."
+            },
+            {
+              "name": "init",
+              "kind": "method",
+              "optional": false,
+              "signature": "init(configure?: Configure<DenoInitSettings>): Promise<CommandOutput>",
+              "doc": "Scaffold a new project: `deno init`."
+            },
+            {
+              "name": "upgrade",
+              "kind": "method",
+              "optional": false,
+              "signature": "upgrade(configure?: Configure<DenoUpgradeSettings>): Promise<CommandOutput>",
+              "doc": "Upgrade the deno executable: `deno upgrade`."
+            },
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(configure?: Configure<DenoAddSettings>): Promise<CommandOutput>",
+              "doc": "Add dependencies: `deno add`."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(configure?: Configure<DenoRemoveSettings>): Promise<CommandOutput>",
+              "doc": "Remove dependencies: `deno remove`."
+            },
+            {
+              "name": "uninstall",
+              "kind": "method",
+              "optional": false,
+              "signature": "uninstall(configure?: Configure<DenoUninstallSettings>): Promise<CommandOutput>",
+              "doc": "Uninstall a dependency or global executable: `deno uninstall`."
+            },
+            {
+              "name": "outdated",
+              "kind": "method",
+              "optional": false,
+              "signature": "outdated(configure?: Configure<DenoOutdatedSettings>): Promise<CommandOutput>",
+              "doc": "Report outdated dependencies: `deno outdated`."
+            },
+            {
+              "name": "why",
+              "kind": "method",
+              "optional": false,
+              "signature": "why(configure?: Configure<DenoWhySettings>): Promise<CommandOutput>",
+              "doc": "Explain why a package is installed: `deno why`."
+            },
+            {
+              "name": "ci",
+              "kind": "method",
+              "optional": false,
+              "signature": "ci(configure?: Configure<DenoCiSettings>): Promise<CommandOutput>",
+              "doc": "Install strictly from the lockfile: `deno ci`."
+            },
+            {
+              "name": "approveScripts",
+              "kind": "method",
+              "optional": false,
+              "signature": "approveScripts(configure?: Configure<DenoApproveScriptsSettings>): Promise<CommandOutput>",
+              "doc": "Approve npm lifecycle scripts: `deno approve-scripts`."
+            },
+            {
+              "name": "bumpVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "bumpVersion(configure?: Configure<DenoBumpVersionSettings>): Promise<CommandOutput>",
+              "doc": "Bump the version in the manifest: `deno bump-version`."
+            },
+            {
+              "name": "pack",
+              "kind": "method",
+              "optional": false,
+              "signature": "pack(configure?: Configure<DenoPackSettings>): Promise<CommandOutput>",
+              "doc": "Build an npm-compatible tarball: `deno pack`."
+            },
+            {
+              "name": "moduleGraph",
+              "kind": "method",
+              "optional": false,
+              "signature": "moduleGraph(configure?: Configure<DenoInfoSettings>): Promise<DenoModuleGraph>",
+              "doc": "The module graph rooted at a file, parsed from `deno info --json`.\n\nA reader, not a gate: it returns the graph rather than printing it, so a\nbuild can assert on what its entry point actually pulls in."
+            },
+            {
+              "name": "cacheInfo",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheInfo(configure?: Configure<DenoInfoSettings>): Promise<DenoCacheInfo>",
+              "doc": "The toolchain's cache locations, parsed from `deno info --json`."
             }
           ]
         },
@@ -8621,6 +9730,138 @@
               "doc": "Stop on the first failure (`--fail-fast`)."
             }
           ]
+        },
+        {
+          "name": "DenoUninstallSettings",
+          "kind": "class",
+          "doc": "Settings for `deno uninstall`.",
+          "signature": "class DenoUninstallSettings extends DenoLockSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...names: string[]): this",
+              "doc": "The dependency names, or the global executable name, to remove (required)."
+            },
+            {
+              "name": "global",
+              "kind": "method",
+              "optional": false,
+              "signature": "global(): this",
+              "doc": "Remove a globally installed executable (`--global`) rather than a project dependency."
+            },
+            {
+              "name": "root",
+              "kind": "method",
+              "optional": false,
+              "signature": "root(path: PathLike): this",
+              "doc": "The installation root the executable lives under (`--root`)."
+            },
+            {
+              "name": "lockfileOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockfileOnly(): this",
+              "doc": "Update the lockfile without touching `node_modules` (`--lockfile-only`)."
+            },
+            {
+              "name": "packageJson",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageJson(): this",
+              "doc": "Remove from `package.json` rather than `deno.json` (`--package-json`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoUpgradeSettings",
+          "kind": "class",
+          "doc": "Settings for `deno upgrade`.",
+          "signature": "class DenoUpgradeSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The version, channel (`alpha`, `beta`, `rc`, `canary`) or commit hash to\ninstall. Omit it to move to the latest stable release."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Run every check without replacing the executable (`--dry-run`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Replace the executable even when it is already up to date (`--force`)."
+            },
+            {
+              "name": "noDelta",
+              "kind": "method",
+              "optional": false,
+              "signature": "noDelta(): this",
+              "doc": "Download the full archive instead of a delta update (`--no-delta`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write the upgraded executable somewhere else (`--output`), leaving the\nrunning one in place. This is what makes `upgrade` usable from a build:\na target can fetch a second Deno without replacing the one executing it."
+            },
+            {
+              "name": "checksum",
+              "kind": "method",
+              "optional": false,
+              "signature": "checksum(sha256: string): this",
+              "doc": "Verify the downloaded archive against a SHA-256 checksum (`--checksum`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoVersionIncrement",
+          "kind": "typeAlias",
+          "doc": "A version increment `deno bump-version` understands.",
+          "signature": "type DenoVersionIncrement = major | minor | patch | premajor | preminor | prepatch | prerelease",
+          "deprecated": false
+        },
+        {
+          "name": "DenoWhySettings",
+          "kind": "class",
+          "doc": "Settings for `deno why`.",
+          "signature": "class DenoWhySettings extends DenoLockSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packageName",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageName(value: string): this",
+              "doc": "The package to explain, optionally with a version (`express@4.18.2`)\n(required)."
+            }
+          ]
+        },
+        {
+          "name": "parseCacheInfo",
+          "kind": "function",
+          "doc": "Parse the cache report from `deno info --json` stdout.",
+          "signature": "function parseCacheInfo(stdout: string): DenoCacheInfo",
+          "deprecated": false
+        },
+        {
+          "name": "parseModuleGraph",
+          "kind": "function",
+          "doc": "Parse the module graph from `deno info --json <file>` stdout.\n\nEntries without a specifier are skipped rather than guessed at: a module\ndeno could not name is not a module a build can act on.",
+          "signature": "function parseModuleGraph(stdout: string): DenoModuleGraph",
+          "deprecated": false
         }
       ]
     },
