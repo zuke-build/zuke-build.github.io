@@ -14838,6 +14838,79 @@
           ]
         },
         {
+          "name": "KubectlApiResourcesSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl api-resources`.",
+          "signature": "class KubectlApiResourcesSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "apiGroup",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiGroup(name: string): this",
+              "doc": "Only resources in this API group (`--api-group`)."
+            },
+            {
+              "name": "namespaced",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespaced(value?: boolean): this",
+              "doc": "Whether to list namespaced resources (`--namespaced`); kubectl's default\nis `true`, so pass `false` for the cluster-scoped ones."
+            },
+            {
+              "name": "verbs",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbs(...names: string[]): this",
+              "doc": "Only resources supporting these verbs (`--verbs`)."
+            },
+            {
+              "name": "categories",
+              "kind": "method",
+              "optional": false,
+              "signature": "categories(...names: string[]): this",
+              "doc": "Only resources in these categories (`--categories`)."
+            },
+            {
+              "name": "sortBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "sortBy(field: name | kind): this",
+              "doc": "Sort by `name` or `kind` (`--sort-by`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: string): this",
+              "doc": "The output format (`-o`), e.g. `name` or `wide`."
+            },
+            {
+              "name": "noHeaders",
+              "kind": "method",
+              "optional": false,
+              "signature": "noHeaders(): this",
+              "doc": "Leave the header row out (`--no-headers`)."
+            },
+            {
+              "name": "cached",
+              "kind": "method",
+              "optional": false,
+              "signature": "cached(): this",
+              "doc": "Use the discovery cache rather than asking the server (`--cached`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlApiVersionsSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl api-versions`.",
+          "signature": "class KubectlApiVersionsSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
           "name": "KubectlApplySettings",
           "kind": "class",
           "doc": "Settings for `kubectl apply`.",
@@ -14899,6 +14972,267 @@
               "optional": false,
               "signature": "force(): this",
               "doc": "Force apply by delete-and-recreate when needed (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlAuthCanISettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl auth can-i`.\n\nThe command answers through its exit status — **0** when the action is\nallowed and non-zero when it is not — so\n{@link \"./kubectl.ts\".KubectlTasksApi.canI} reads the code into a boolean\nrather than failing the build on a routine \"no\".",
+          "signature": "class KubectlAuthCanISettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "verb",
+              "kind": "method",
+              "optional": false,
+              "signature": "verb(name: string): this",
+              "doc": "The API verb to check, e.g. `create` (required unless {@link list})."
+            },
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(name: string): this",
+              "doc": "The resource, e.g. `deployments` or `deployments/api`."
+            },
+            {
+              "name": "subresource",
+              "kind": "method",
+              "optional": false,
+              "signature": "subresource(name: string): this",
+              "doc": "A subresource, e.g. `log` or `scale` (`--subresource`)."
+            },
+            {
+              "name": "allNamespaces",
+              "kind": "method",
+              "optional": false,
+              "signature": "allNamespaces(): this",
+              "doc": "Check across every namespace (`--all-namespaces`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "Print every allowed action instead of checking one (`--list`)."
+            },
+            {
+              "name": "quietAnswer",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietAnswer(): this",
+              "doc": "Print nothing and answer only through the exit code (kubectl's\n`--quiet`). Named apart from the inherited `.quiet()`, which suppresses\nZuke's own echo of the command rather than kubectl's output."
+            }
+          ]
+        },
+        {
+          "name": "KubectlClusterInfoSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl cluster-info`.",
+          "signature": "class KubectlClusterInfoSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "KubectlConfigCurrentContextSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl config current-context`.",
+          "signature": "class KubectlConfigCurrentContextSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "KubectlConfigGetContextsSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl config get-contexts`.",
+          "signature": "class KubectlConfigGetContextsSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "namesOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "namesOnly(): this",
+              "doc": "Print only the names (`-o name`), the one output format gh accepts here."
+            },
+            {
+              "name": "noHeaders",
+              "kind": "method",
+              "optional": false,
+              "signature": "noHeaders(): this",
+              "doc": "Leave the header row out (`--no-headers`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlConfigSetContextSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl config set-context`.\n\nNote that `set-context` has its own `--namespace`, which sets the namespace\nrecorded **in the context entry** rather than scoping one command. The\ninherited `.namespace(...)` renders that same flag, which is what a caller\nof this command wants.",
+          "signature": "class KubectlConfigSetContextSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "contextName",
+              "kind": "method",
+              "optional": false,
+              "signature": "contextName(name: string): this",
+              "doc": "The context to write (required unless {@link current} is set)."
+            },
+            {
+              "name": "current",
+              "kind": "method",
+              "optional": false,
+              "signature": "current(): this",
+              "doc": "Modify the current context rather than a named one (`--current`)."
+            },
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster the context points at (`--cluster`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user(name: string): this",
+              "doc": "The user the context authenticates as (`--user`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlConfigUseContextSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl config use-context`.",
+          "signature": "class KubectlConfigUseContextSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "contextName",
+              "kind": "method",
+              "optional": false,
+              "signature": "contextName(name: string): this",
+              "doc": "The context to switch to (required)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlConfigViewSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl config view`.",
+          "signature": "class KubectlConfigViewSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "minify",
+              "kind": "method",
+              "optional": false,
+              "signature": "minify(): this",
+              "doc": "Keep only what the current context uses (`--minify`)."
+            },
+            {
+              "name": "flatten",
+              "kind": "method",
+              "optional": false,
+              "signature": "flatten(): this",
+              "doc": "Inline the referenced files, for a portable kubeconfig (`--flatten`)."
+            },
+            {
+              "name": "raw",
+              "kind": "method",
+              "optional": false,
+              "signature": "raw(): this",
+              "doc": "Print the credentials in the clear (`--raw`). kubectl redacts them by\ndefault; anything this prints belongs in a `parameter().secret()`, not in\na build's log."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: string): this",
+              "doc": "The output format (`-o`), e.g. `json`; kubectl's default is `yaml`."
+            }
+          ]
+        },
+        {
+          "name": "KubectlCordonSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl cordon` and `kubectl uncordon` — marking a node\nunschedulable, and letting it take pods again.",
+          "signature": "class KubectlCordonSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "node",
+              "kind": "method",
+              "optional": false,
+              "signature": "node(name: string): this",
+              "doc": "The node to act on; required unless a {@link selector} picks them."
+            },
+            {
+              "name": "uncordon",
+              "kind": "method",
+              "optional": false,
+              "signature": "uncordon(): this",
+              "doc": "Make the node schedulable again instead — `kubectl uncordon`."
+            },
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(query: string): this",
+              "doc": "Act on every node matching a label selector (`-l`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlCpSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl cp` — copying files into and out of a container.\n\nThis is how a build gets a report out of a pod that produced it. Each side\nis either a local path or a `[namespace/]pod:path` spec, and kubectl takes\nexactly one of each.",
+          "signature": "class KubectlCpSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "from",
+              "kind": "method",
+              "optional": false,
+              "signature": "from(spec: string): this",
+              "doc": "Where to copy from: a local path, or `pod:path` / `namespace/pod:path`."
+            },
+            {
+              "name": "to",
+              "kind": "method",
+              "optional": false,
+              "signature": "to(spec: string): this",
+              "doc": "Where to copy to, in the same two forms."
+            },
+            {
+              "name": "container",
+              "kind": "method",
+              "optional": false,
+              "signature": "container(name: string): this",
+              "doc": "Which container of the pod (`-c`)."
+            },
+            {
+              "name": "noPreserve",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPreserve(): this",
+              "doc": "Do not carry ownership and permissions across (`--no-preserve`)."
+            },
+            {
+              "name": "retries",
+              "kind": "method",
+              "optional": false,
+              "signature": "retries(count: number): this",
+              "doc": "Retry a copy out of a container this many times (`--retries`)."
             }
           ]
         },
@@ -15035,6 +15369,215 @@
           ]
         },
         {
+          "name": "KubectlDiffSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl diff` — what an apply would change, without changing\nit.\n\n`diff` reports its answer through the exit status: **0** when there is no\ndifference and **1** when there is, with anything above 1 meaning kubectl or\nthe differ failed. {@link \"./kubectl.ts\".KubectlTasksApi.diff} keeps the\nordinary contract, so a build that wants the printed diff and a failed\ntarget on drift gets both;\n{@link \"./kubectl.ts\".KubectlTasksApi.diffHasChanges} is the reader that\nturns the code into a boolean.",
+          "signature": "class KubectlDiffSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "Diff a manifest file, directory, or URL (`-f`); repeatable."
+            },
+            {
+              "name": "kustomize",
+              "kind": "method",
+              "optional": false,
+              "signature": "kustomize(dir: PathLike): this",
+              "doc": "Diff a kustomization directory (`-k`)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Recurse into directories given to `-f` (`-R`)."
+            },
+            {
+              "name": "serverSide",
+              "kind": "method",
+              "optional": false,
+              "signature": "serverSide(): this",
+              "doc": "Diff the server-side apply (`--server-side`)."
+            },
+            {
+              "name": "forceConflicts",
+              "kind": "method",
+              "optional": false,
+              "signature": "forceConflicts(): this",
+              "doc": "Take ownership of conflicting fields (`--force-conflicts`)."
+            },
+            {
+              "name": "prune",
+              "kind": "method",
+              "optional": false,
+              "signature": "prune(): this",
+              "doc": "Include what a prune would delete (`--prune`)."
+            },
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(query: string): this",
+              "doc": "Restrict to resources matching a label selector (`-l`)."
+            },
+            {
+              "name": "showManagedFields",
+              "kind": "method",
+              "optional": false,
+              "signature": "showManagedFields(): this",
+              "doc": "Include the managed fields, which are otherwise hidden (`--show-managed-fields`)."
+            },
+            {
+              "name": "concurrency",
+              "kind": "method",
+              "optional": false,
+              "signature": "concurrency(count: number): this",
+              "doc": "How many objects to diff in parallel (`--concurrency`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlDrainSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl drain`.\n\nkubectl refuses to drain a node whose pods it cannot safely move, and the\ntwo flags that override that refusal are exactly the ones worth being\ndeliberate about: `--ignore-daemonsets` and `--delete-emptydir-data`, the\nsecond of which destroys local data. Neither is defaulted here.",
+          "signature": "class KubectlDrainSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "node",
+              "kind": "method",
+              "optional": false,
+              "signature": "node(name: string): this",
+              "doc": "The node to drain; required unless a {@link selector} picks them."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Evict pods no controller manages, which nothing will recreate (`--force`)."
+            },
+            {
+              "name": "ignoreDaemonSets",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreDaemonSets(): this",
+              "doc": "Proceed past DaemonSet-managed pods, which drain never deletes (`--ignore-daemonsets`)."
+            },
+            {
+              "name": "deleteEmptyDirData",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteEmptyDirData(): this",
+              "doc": "Proceed past pods using emptyDir, destroying that data (`--delete-emptydir-data`)."
+            },
+            {
+              "name": "disableEviction",
+              "kind": "method",
+              "optional": false,
+              "signature": "disableEviction(): this",
+              "doc": "Delete rather than evict (`--disable-eviction`), which bypasses every\nPodDisruptionBudget — the guardrail an operator wrote down on purpose."
+            },
+            {
+              "name": "gracePeriod",
+              "kind": "method",
+              "optional": false,
+              "signature": "gracePeriod(seconds: number): this",
+              "doc": "Seconds each pod gets to terminate (`--grace-period`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string): this",
+              "doc": "How long to wait for the drain overall, e.g. `5m` (`--timeout`)."
+            },
+            {
+              "name": "podSelector",
+              "kind": "method",
+              "optional": false,
+              "signature": "podSelector(query: string): this",
+              "doc": "Only drain pods matching this label selector (`--pod-selector`)."
+            },
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(query: string): this",
+              "doc": "Drain every node matching this label selector (`-l`)."
+            },
+            {
+              "name": "skipWaitForDeleteTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipWaitForDeleteTimeout(seconds: number): this",
+              "doc": "Stop waiting on pods already deleting this long (`--skip-wait-for-delete-timeout`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlEventsSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl events` — the first thing to read when a rollout\nstalls and `rollout status` will not say why.",
+          "signature": "class KubectlEventsSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "forResource",
+              "kind": "method",
+              "optional": false,
+              "signature": "forResource(reference: string): this",
+              "doc": "Only events about this resource, as `TYPE/NAME` (`--for`)."
+            },
+            {
+              "name": "types",
+              "kind": "method",
+              "optional": false,
+              "signature": "types(...names: string[]): this",
+              "doc": "Only events of these types, e.g. `Warning` (`--types`)."
+            },
+            {
+              "name": "allNamespaces",
+              "kind": "method",
+              "optional": false,
+              "signature": "allNamespaces(): this",
+              "doc": "Across every namespace (`-A`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Keep watching after the listing (`--watch`). A target that watches blocks\nuntil something stops it, so pair it with `.killAfter(...)` unless the\nwait is the point."
+            },
+            {
+              "name": "noHeaders",
+              "kind": "method",
+              "optional": false,
+              "signature": "noHeaders(): this",
+              "doc": "Leave the header row out (`--no-headers`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: string): this",
+              "doc": "The output format (`-o`), e.g. `json`."
+            }
+          ]
+        },
+        {
           "name": "KubectlExecSettings",
           "kind": "class",
           "doc": "Settings for `kubectl exec`.",
@@ -15075,6 +15618,136 @@
               "optional": false,
               "signature": "command(...args: Array<string | number>): this",
               "doc": "The command and arguments to run in the container (required)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlExplainSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl explain` — the schema of a resource type.",
+          "signature": "class KubectlExplainSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(name: string): this",
+              "doc": "The type to explain, e.g. `pods` or `deployments.spec.replicas`."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Print nested fields too (`-R`)."
+            },
+            {
+              "name": "maxDepth",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxDepth(depth: number): this",
+              "doc": "Cap how deep {@link recursive} goes (`--max-depth`)."
+            },
+            {
+              "name": "apiVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiVersion(value: string): this",
+              "doc": "Explain a particular API group/version (`--api-version`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: string): this",
+              "doc": "How to render the schema (`-o`): `plaintext` or `plaintext-openapiv2`."
+            }
+          ]
+        },
+        {
+          "name": "KubectlExposeSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl expose` — a service in front of an existing workload.",
+          "signature": "class KubectlExposeSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(reference: string): this",
+              "doc": "The workload to expose, e.g. `deployment/api`."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "Expose the workload a manifest identifies instead (`-f`); repeatable."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(value: string | number): this",
+              "doc": "The port the service serves on (`--port`)."
+            },
+            {
+              "name": "targetPort",
+              "kind": "method",
+              "optional": false,
+              "signature": "targetPort(value: string | number): this",
+              "doc": "The container port traffic goes to (`--target-port`)."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(value: string): this",
+              "doc": "The service type (`--type`), e.g. `LoadBalancer`."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The new service's name (`--name`)."
+            },
+            {
+              "name": "protocol",
+              "kind": "method",
+              "optional": false,
+              "signature": "protocol(value: string): this",
+              "doc": "The protocol (`--protocol`), e.g. `TCP`."
+            },
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(query: string): this",
+              "doc": "The selector the service routes by (`--selector`). kubectl infers it from\nthe exposed resource when it is omitted, and only equality-based\nrequirements are supported here."
+            },
+            {
+              "name": "labels",
+              "kind": "method",
+              "optional": false,
+              "signature": "labels(value: string): this",
+              "doc": "Labels for the created service (`--labels`), comma-separated."
+            },
+            {
+              "name": "sessionAffinity",
+              "kind": "method",
+              "optional": false,
+              "signature": "sessionAffinity(value: None | ClientIP): this",
+              "doc": "Session affinity (`--session-affinity`): `None` or `ClientIP`."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
             }
           ]
         },
@@ -15133,6 +15806,43 @@
               "optional": false,
               "signature": "showLabels(): this",
               "doc": "Include resource labels as columns (`--show-labels`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlKustomizeSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl kustomize` — rendering a kustomization to stdout.",
+          "signature": "class KubectlKustomizeSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The kustomization directory or repository URL; kubectl assumes `.`."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write the rendered output to a file instead of stdout (`-o`)."
+            },
+            {
+              "name": "enableHelm",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableHelm(): this",
+              "doc": "Allow the Helm chart inflator generator (`--enable-helm`)."
+            },
+            {
+              "name": "loadRestrictor",
+              "kind": "method",
+              "optional": false,
+              "signature": "loadRestrictor(value: string): this",
+              "doc": "Relax where a kustomization may load files from (`--load-restrictor`)."
             }
           ]
         },
@@ -15320,6 +16030,78 @@
           ]
         },
         {
+          "name": "KubectlReplaceSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl replace`.",
+          "signature": "class KubectlReplaceSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "Replace from a manifest file, directory, or URL (`-f`); repeatable."
+            },
+            {
+              "name": "kustomize",
+              "kind": "method",
+              "optional": false,
+              "signature": "kustomize(dir: PathLike): this",
+              "doc": "Replace from a kustomization directory (`-k`)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Recurse into directories given to `-f` (`-R`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Delete and recreate rather than update (`--force`). This is not a retry\nknob: the resource genuinely goes away first, so anything depending on it\nsees it missing."
+            },
+            {
+              "name": "gracePeriod",
+              "kind": "method",
+              "optional": false,
+              "signature": "gracePeriod(seconds: number): this",
+              "doc": "Seconds each object gets to terminate (`--grace-period`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string): this",
+              "doc": "How long to wait on the delete half, e.g. `60s` (`--timeout`)."
+            },
+            {
+              "name": "cascade",
+              "kind": "method",
+              "optional": false,
+              "signature": "cascade(strategy: background | orphan | foreground): this",
+              "doc": "The cascading strategy for dependents (`--cascade`)."
+            },
+            {
+              "name": "wait",
+              "kind": "method",
+              "optional": false,
+              "signature": "wait(): this",
+              "doc": "Wait for the resources to be gone before returning (`--wait`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
+            }
+          ]
+        },
+        {
           "name": "KubectlRolloutSettings",
           "kind": "class",
           "doc": "Settings for `kubectl rollout`.",
@@ -15355,6 +16137,20 @@
               "doc": "Show rollout history (`rollout history`)."
             },
             {
+              "name": "pause",
+              "kind": "method",
+              "optional": false,
+              "signature": "pause(): this",
+              "doc": "Stop the rollout where it is (`rollout pause`) — half of a canary. A\npaused workload takes no further updates until {@link resume}."
+            },
+            {
+              "name": "resume",
+              "kind": "method",
+              "optional": false,
+              "signature": "resume(): this",
+              "doc": "Let a paused rollout continue (`rollout resume`)."
+            },
+            {
               "name": "resource",
               "kind": "method",
               "optional": false,
@@ -15374,6 +16170,85 @@
               "optional": false,
               "signature": "timeout(duration: string): this",
               "doc": "With `status`, how long to wait, e.g. `60s` (`--timeout`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlRunSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl run` — one pod, imperatively.\n\nThis is for a one-off: a migration job, a debug shell. A workload a build\nowns belongs in a manifest and goes through\n{@link \"./manifests.ts\".KubectlApplySettings}, which is declarative and can\nbe diffed.",
+          "signature": "class KubectlRunSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The pod's name (required)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The image to run (`--image`, required)."
+            },
+            {
+              "name": "restart",
+              "kind": "method",
+              "optional": false,
+              "signature": "restart(policy: Always | OnFailure | Never): this",
+              "doc": "The restart policy (`--restart`)."
+            },
+            {
+              "name": "envVar",
+              "kind": "method",
+              "optional": false,
+              "signature": "envVar(key: string, value: string): this",
+              "doc": "An environment variable for the container (`--env KEY=VALUE`);\nrepeatable. Named apart from the inherited `.env(...)`, which sets the\nenvironment `kubectl` itself runs in."
+            },
+            {
+              "name": "labels",
+              "kind": "method",
+              "optional": false,
+              "signature": "labels(value: string): this",
+              "doc": "Labels for the pod (`--labels`), comma-separated."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(value: string | number): this",
+              "doc": "The port the container exposes (`--port`)."
+            },
+            {
+              "name": "overrides",
+              "kind": "method",
+              "optional": false,
+              "signature": "overrides(json: string): this",
+              "doc": "An inline JSON override for the generated pod (`--overrides`)."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(): this",
+              "doc": "Also create a ClusterIP service (`--expose`), which needs {@link port}."
+            },
+            {
+              "name": "command",
+              "kind": "method",
+              "optional": false,
+              "signature": "command(first: string, ...rest: string[]): this",
+              "doc": "The command and arguments to run, after kubectl's `--` separator. Passing\nany also sets `--command`, so they replace the image's entrypoint rather\nthan being appended to it."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
             }
           ]
         },
@@ -15429,6 +16304,71 @@
           ]
         },
         {
+          "name": "KubectlSetEnvSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl set env`.",
+          "signature": "class KubectlSetEnvSettings extends KubectlSetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "set",
+              "kind": "method",
+              "optional": false,
+              "signature": "set(key: string, value: string): this",
+              "doc": "Set a variable (`-e KEY=VALUE`); repeatable."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(key: string): this",
+              "doc": "Remove a variable, which kubectl spells `KEY-` (`-e KEY-`); repeatable."
+            },
+            {
+              "name": "from",
+              "kind": "method",
+              "optional": false,
+              "signature": "from(reference: string): this",
+              "doc": "Inject every key of a ConfigMap or Secret (`--from`), e.g. `secret/db`."
+            },
+            {
+              "name": "keys",
+              "kind": "method",
+              "optional": false,
+              "signature": "keys(...names: string[]): this",
+              "doc": "Only these keys of the {@link from} resource (`--keys`)."
+            },
+            {
+              "name": "prefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "prefix(value: string): this",
+              "doc": "Prefix the injected variable names (`--prefix`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "Print the environment instead of changing it (`--list`)."
+            },
+            {
+              "name": "resolve",
+              "kind": "method",
+              "optional": false,
+              "signature": "resolve(): this",
+              "doc": "Show what the references resolve to when listing (`--resolve`)."
+            },
+            {
+              "name": "overwrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwrite(value?: boolean): this",
+              "doc": "Whether an existing variable may be replaced (`--overwrite`)."
+            }
+          ]
+        },
+        {
           "name": "KubectlSetImageSettings",
           "kind": "class",
           "doc": "Settings for `kubectl set image`.",
@@ -15466,6 +16406,87 @@
           ]
         },
         {
+          "name": "KubectlSetResourcesSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl set resources`.",
+          "signature": "class KubectlSetResourcesSettings extends KubectlSetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(resource: string, quantity: string): this",
+              "doc": "A resource limit, e.g. `.limit(\"cpu\", \"500m\")`; repeatable."
+            },
+            {
+              "name": "request",
+              "kind": "method",
+              "optional": false,
+              "signature": "request(resource: string, quantity: string): this",
+              "doc": "A resource request, e.g. `.request(\"memory\", \"256Mi\")`; repeatable."
+            }
+          ]
+        },
+        {
+          "name": "KubectlSetSettings",
+          "kind": "class",
+          "doc": "Base for the `kubectl set` subcommands that change a pod template in place:\nthey share the target (a resource, a manifest, or everything in the\nnamespace) and the container selection.",
+          "signature": "class KubectlSetSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(...names: string[]): this",
+              "doc": "The resource to change, e.g. `deployment/api`; repeatable."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "Change the resource identified by a manifest instead (`-f`); repeatable."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Change every resource of the named types in the namespace (`--all`)."
+            },
+            {
+              "name": "containers",
+              "kind": "method",
+              "optional": false,
+              "signature": "containers(pattern: string): this",
+              "doc": "Which containers to change (`-c`); kubectl's default is every one."
+            },
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(query: string): this",
+              "doc": "Restrict to resources matching a label selector (`-l`)."
+            },
+            {
+              "name": "local",
+              "kind": "method",
+              "optional": false,
+              "signature": "local(): this",
+              "doc": "Rewrite the local manifest without contacting the server (`--local`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
+            }
+          ]
+        },
+        {
           "name": "KubectlSettings",
           "kind": "class",
           "doc": "Base for all `kubectl` subcommand settings: the binary is `kubectl`, and the\ncluster-targeting flags (`--namespace`, `--context`, `--kubeconfig`) are\nshared by every subcommand.",
@@ -15492,6 +16513,64 @@
               "optional": false,
               "signature": "kubeconfig(path: PathLike): this",
               "doc": "Use an explicit kubeconfig file (`--kubeconfig`)."
+            }
+          ]
+        },
+        {
+          "name": "KubectlTaintSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl taint`.",
+          "signature": "class KubectlTaintSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "node",
+              "kind": "method",
+              "optional": false,
+              "signature": "node(...names: string[]): this",
+              "doc": "A node to taint; repeatable."
+            },
+            {
+              "name": "taint",
+              "kind": "method",
+              "optional": false,
+              "signature": "taint(key: string, value: string, effect: TaintEffect): this",
+              "doc": "Add a taint, as `key=value:effect`; repeatable."
+            },
+            {
+              "name": "removeTaint",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeTaint(key: string, effect?: TaintEffect): this",
+              "doc": "Remove a taint, which kubectl spells with a trailing `-`; repeatable."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Taint every node in the cluster (`--all`)."
+            },
+            {
+              "name": "overwrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwrite(): this",
+              "doc": "Replace a taint of the same key rather than failing (`--overwrite`)."
+            },
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(query: string): this",
+              "doc": "Taint every node matching a label selector (`-l`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(mode?: DryRunMode): this",
+              "doc": "Preview without persisting (`--dry-run=`; defaults to `client`)."
             }
           ]
         },
@@ -15627,6 +16706,202 @@
               "optional": false,
               "signature": "top(configure?: Configure<KubectlTopSettings>): Promise<CommandOutput>",
               "doc": "Show resource usage: `kubectl top`."
+            },
+            {
+              "name": "diff",
+              "kind": "method",
+              "optional": false,
+              "signature": "diff(configure?: Configure<KubectlDiffSettings>): Promise<CommandOutput>",
+              "doc": "Show what an apply would change: `kubectl diff`. The command exits 1 when\nit finds differences, so this task fails the target on drift — which is\nwhat a gate wants. Use {@link KubectlTasksApi.diffHasChanges} to read the\nanswer as a value instead."
+            },
+            {
+              "name": "diffHasChanges",
+              "kind": "method",
+              "optional": false,
+              "signature": "diffHasChanges(configure?: Configure<KubectlDiffSettings>): Promise<boolean>",
+              "doc": "Whether an apply would change anything: `true` when `kubectl diff` reports\ndifferences, `false` when it reports none. An exit code above 1 means\nkubectl or its differ failed and still fails the build."
+            },
+            {
+              "name": "replace",
+              "kind": "method",
+              "optional": false,
+              "signature": "replace(configure?: Configure<KubectlReplaceSettings>): Promise<CommandOutput>",
+              "doc": "Replace a resource wholesale: `kubectl replace`."
+            },
+            {
+              "name": "getEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "getEntries(configure?: Configure<KubectlGetSettings>): Promise<KubernetesResource[]>",
+              "doc": "Every matching resource as typed {@link KubernetesResource} records: runs\n`kubectl get … -o json` and parses the common metadata, whatever the kind."
+            },
+            {
+              "name": "explain",
+              "kind": "method",
+              "optional": false,
+              "signature": "explain(configure?: Configure<KubectlExplainSettings>): Promise<CommandOutput>",
+              "doc": "Show a resource type's schema: `kubectl explain`."
+            },
+            {
+              "name": "setEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "setEnv(configure?: Configure<KubectlSetEnvSettings>): Promise<CommandOutput>",
+              "doc": "Change environment variables on a pod template: `kubectl set env`."
+            },
+            {
+              "name": "setResources",
+              "kind": "method",
+              "optional": false,
+              "signature": "setResources(configure?: Configure<KubectlSetResourcesSettings>): Promise<CommandOutput>",
+              "doc": "Change requests and limits on a pod template: `kubectl set resources`."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<KubectlRunSettings>): Promise<CommandOutput>",
+              "doc": "Run one pod imperatively: `kubectl run`."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(configure?: Configure<KubectlExposeSettings>): Promise<CommandOutput>",
+              "doc": "Put a service in front of a workload: `kubectl expose`."
+            },
+            {
+              "name": "cp",
+              "kind": "method",
+              "optional": false,
+              "signature": "cp(configure?: Configure<KubectlCpSettings>): Promise<CommandOutput>",
+              "doc": "Copy files into or out of a container: `kubectl cp`."
+            },
+            {
+              "name": "events",
+              "kind": "method",
+              "optional": false,
+              "signature": "events(configure?: Configure<KubectlEventsSettings>): Promise<CommandOutput>",
+              "doc": "Report cluster events: `kubectl events`."
+            },
+            {
+              "name": "eventEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "eventEntries(configure?: Configure<KubectlEventsSettings>): Promise<KubernetesEvent[]>",
+              "doc": "The events as typed {@link KubernetesEvent} records — what a build reads\nwhen a rollout stalls and `rollout status` will not say why."
+            },
+            {
+              "name": "currentContext",
+              "kind": "method",
+              "optional": false,
+              "signature": "currentContext(configure?: Configure<KubectlConfigCurrentContextSettings>): Promise<string>",
+              "doc": "The name of the current kubeconfig context: `kubectl config current-context`."
+            },
+            {
+              "name": "contexts",
+              "kind": "method",
+              "optional": false,
+              "signature": "contexts(configure?: Configure<KubectlConfigGetContextsSettings>): Promise<string[]>",
+              "doc": "The available context names: `kubectl config get-contexts -o name`."
+            },
+            {
+              "name": "useContext",
+              "kind": "method",
+              "optional": false,
+              "signature": "useContext(configure?: Configure<KubectlConfigUseContextSettings>): Promise<CommandOutput>",
+              "doc": "Switch the current context: `kubectl config use-context`."
+            },
+            {
+              "name": "setContext",
+              "kind": "method",
+              "optional": false,
+              "signature": "setContext(configure?: Configure<KubectlConfigSetContextSettings>): Promise<CommandOutput>",
+              "doc": "Write a context entry: `kubectl config set-context`."
+            },
+            {
+              "name": "configView",
+              "kind": "method",
+              "optional": false,
+              "signature": "configView(configure?: Configure<KubectlConfigViewSettings>): Promise<CommandOutput>",
+              "doc": "Show the merged kubeconfig: `kubectl config view`."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(configure?: Configure<KubectlVersionSettings>): Promise<CommandOutput>",
+              "doc": "Print the client and server versions: `kubectl version`."
+            },
+            {
+              "name": "versionInfo",
+              "kind": "method",
+              "optional": false,
+              "signature": "versionInfo(configure?: Configure<KubectlVersionSettings>): Promise<KubernetesVersion>",
+              "doc": "The client and server versions, parsed from `kubectl version -o json`."
+            },
+            {
+              "name": "clusterInfo",
+              "kind": "method",
+              "optional": false,
+              "signature": "clusterInfo(configure?: Configure<KubectlClusterInfoSettings>): Promise<CommandOutput>",
+              "doc": "Show where the cluster's services live: `kubectl cluster-info`."
+            },
+            {
+              "name": "apiResources",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiResources(configure?: Configure<KubectlApiResourcesSettings>): Promise<CommandOutput>",
+              "doc": "List the server's API resources: `kubectl api-resources`."
+            },
+            {
+              "name": "apiVersions",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiVersions(configure?: Configure<KubectlApiVersionsSettings>): Promise<CommandOutput>",
+              "doc": "List the server's API versions: `kubectl api-versions`."
+            },
+            {
+              "name": "authCanI",
+              "kind": "method",
+              "optional": false,
+              "signature": "authCanI(configure?: Configure<KubectlAuthCanISettings>): Promise<CommandOutput>",
+              "doc": "Check a permission: `kubectl auth can-i`."
+            },
+            {
+              "name": "canI",
+              "kind": "method",
+              "optional": false,
+              "signature": "canI(configure?: Configure<KubectlAuthCanISettings>): Promise<boolean>",
+              "doc": "Whether the action is allowed. `kubectl auth can-i` answers through its\nexit status, so this reads the code rather than failing the build on a\nroutine \"no\"."
+            },
+            {
+              "name": "kustomize",
+              "kind": "method",
+              "optional": false,
+              "signature": "kustomize(configure?: Configure<KubectlKustomizeSettings>): Promise<CommandOutput>",
+              "doc": "Render a kustomization to stdout: `kubectl kustomize`."
+            },
+            {
+              "name": "cordon",
+              "kind": "method",
+              "optional": false,
+              "signature": "cordon(configure?: Configure<KubectlCordonSettings>): Promise<CommandOutput>",
+              "doc": "Mark a node unschedulable, or schedulable again: `kubectl cordon`/`uncordon`."
+            },
+            {
+              "name": "drain",
+              "kind": "method",
+              "optional": false,
+              "signature": "drain(configure?: Configure<KubectlDrainSettings>): Promise<CommandOutput>",
+              "doc": "Evict a node's pods before maintenance: `kubectl drain`."
+            },
+            {
+              "name": "taint",
+              "kind": "method",
+              "optional": false,
+              "signature": "taint(configure?: Configure<KubectlTaintSettings>): Promise<CommandOutput>",
+              "doc": "Add or remove node taints: `kubectl taint`."
             }
           ]
         },
@@ -15682,6 +16957,29 @@
           ]
         },
         {
+          "name": "KubectlVersionSettings",
+          "kind": "class",
+          "doc": "Settings for `kubectl version`.",
+          "signature": "class KubectlVersionSettings extends KubectlSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "clientOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "clientOnly(): this",
+              "doc": "Report the client's version without reaching a cluster (`--client`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: json | yaml): this",
+              "doc": "The output format (`-o`): `json` or `yaml`."
+            }
+          ]
+        },
+        {
           "name": "KubectlWaitSettings",
           "kind": "class",
           "doc": "Settings for `kubectl wait`.",
@@ -15733,6 +17031,57 @@
           ]
         },
         {
+          "name": "KubernetesEvent",
+          "kind": "interface",
+          "doc": "One event of {@link \"./kubectl.ts\".KubectlTasksApi.eventEntries} — what the\ncluster reports about a resource, which is the first thing to read when a\nrollout stalls.",
+          "signature": "interface KubernetesEvent",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "property",
+              "optional": false,
+              "signature": "type: string",
+              "doc": "`Normal` or `Warning` (`type`); `\"\"` when the field is absent."
+            },
+            {
+              "name": "reason",
+              "kind": "property",
+              "optional": false,
+              "signature": "reason: string",
+              "doc": "The short machine-readable cause (`reason`)."
+            },
+            {
+              "name": "message",
+              "kind": "property",
+              "optional": false,
+              "signature": "message: string",
+              "doc": "The human-readable detail (`message`)."
+            },
+            {
+              "name": "regarding",
+              "kind": "property",
+              "optional": true,
+              "signature": "regarding?: string",
+              "doc": "What the event is about, as `Kind/name` (`regarding`/`involvedObject`)."
+            },
+            {
+              "name": "count",
+              "kind": "property",
+              "optional": true,
+              "signature": "count?: number",
+              "doc": "How many times it has repeated (`series.count` or `count`)."
+            },
+            {
+              "name": "lastSeen",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastSeen?: string",
+              "doc": "When it was last seen, ISO 8601, when the payload carries a time."
+            }
+          ]
+        },
+        {
           "name": "KubernetesNamespace",
           "kind": "interface",
           "doc": "A Kubernetes namespace, parsed from `kubectl get namespaces -o json` — the\ntyped result of {@link KubectlTasksApi.getNamespaces}.",
@@ -15770,10 +17119,98 @@
           ]
         },
         {
+          "name": "KubernetesResource",
+          "kind": "interface",
+          "doc": "One resource of {@link \"./kubectl.ts\".KubectlTasksApi.getEntries} — the\nfields every Kubernetes object carries, whatever its kind.",
+          "signature": "interface KubernetesResource",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The object's name (`metadata.name`)."
+            },
+            {
+              "name": "kind",
+              "kind": "property",
+              "optional": false,
+              "signature": "kind: string",
+              "doc": "Its kind, e.g. `Pod` (`kind`); `\"\"` when the field is absent."
+            },
+            {
+              "name": "namespace",
+              "kind": "property",
+              "optional": true,
+              "signature": "namespace?: string",
+              "doc": "Its namespace (`metadata.namespace`), absent for a cluster-scoped object."
+            },
+            {
+              "name": "labels",
+              "kind": "property",
+              "optional": false,
+              "signature": "labels: Record<string, string>",
+              "doc": "Its labels (`metadata.labels`), string-valued; `{}` when none."
+            },
+            {
+              "name": "createdAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "createdAt?: string",
+              "doc": "When it was created (`metadata.creationTimestamp`), if present."
+            }
+          ]
+        },
+        {
+          "name": "KubernetesVersion",
+          "kind": "interface",
+          "doc": "The client and server versions {@link parseVersion} reads.",
+          "signature": "interface KubernetesVersion",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "client",
+              "kind": "property",
+              "optional": true,
+              "signature": "client?: string",
+              "doc": "The `kubectl` binary's version, e.g. `v1.31.2`."
+            },
+            {
+              "name": "server",
+              "kind": "property",
+              "optional": true,
+              "signature": "server?: string",
+              "doc": "The API server's version, absent when only the client was asked for."
+            }
+          ]
+        },
+        {
+          "name": "parseEvents",
+          "kind": "function",
+          "doc": "Parse the JSON text of `kubectl events -o json` into\n{@link KubernetesEvent} records. Items carrying neither a reason nor a\nmessage are skipped; empty input yields `[]`. Throws if the text is\nnon-empty and not valid JSON.",
+          "signature": "function parseEvents(json: string): KubernetesEvent[]",
+          "deprecated": false
+        },
+        {
           "name": "parseNamespaces",
           "kind": "function",
           "doc": "Parse the JSON text of `kubectl get namespaces -o json` — a `List`, or a\nsingle namespace object — into {@link KubernetesNamespace} records. Items\nwithout a `metadata.name` are skipped; empty input yields `[]`. Throws if the\ntext is non-empty and not valid JSON.",
           "signature": "function parseNamespaces(json: string): KubernetesNamespace[]",
+          "deprecated": false
+        },
+        {
+          "name": "parseResources",
+          "kind": "function",
+          "doc": "Parse the JSON text of any `kubectl get … -o json` — a `List`, or a single\nobject — into {@link KubernetesResource} records. Items without a\n`metadata.name` are skipped; empty input yields `[]`. Throws if the text is\nnon-empty and not valid JSON.",
+          "signature": "function parseResources(json: string): KubernetesResource[]",
+          "deprecated": false
+        },
+        {
+          "name": "parseVersion",
+          "kind": "function",
+          "doc": "Parse the JSON text of `kubectl version -o json` into the two version\nstrings. A payload that is not an object, or carries neither version,\nyields an empty record rather than throwing — the versions are advisory.",
+          "signature": "function parseVersion(json: string): KubernetesVersion",
           "deprecated": false
         },
         {
@@ -15787,7 +17224,14 @@
           "name": "RolloutAction",
           "kind": "typeAlias",
           "doc": "A rollout sub-action: `kubectl rollout <action>`.",
-          "signature": "type RolloutAction = status | restart | undo | history",
+          "signature": "type RolloutAction = status | restart | undo | history | pause | resume",
+          "deprecated": false
+        },
+        {
+          "name": "TaintEffect",
+          "kind": "typeAlias",
+          "doc": "What a taint does to pods that do not tolerate it.",
+          "signature": "type TaintEffect = NoSchedule | PreferNoSchedule | NoExecute",
           "deprecated": false
         }
       ]
