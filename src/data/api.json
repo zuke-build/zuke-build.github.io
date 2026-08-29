@@ -8321,11 +8321,46 @@
               "doc": "The files to type-check (at least one is required)."
             },
             {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Type-check remote modules and npm packages too (`--all`), not just the\nlocal code. Slower, and the only way to catch a dependency whose published\ntypes do not actually compile."
+            },
+            {
+              "name": "doc",
+              "kind": "method",
+              "optional": false,
+              "signature": "doc(): this",
+              "doc": "Type-check the code blocks in JSDoc and Markdown as well (`--doc`)."
+            },
+            {
+              "name": "docOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "docOnly(): this",
+              "doc": "Type-check *only* the code blocks in JSDoc and Markdown (`--doc-only`)."
+            },
+            {
+              "name": "checkJs",
+              "kind": "method",
+              "optional": false,
+              "signature": "checkJs(): this",
+              "doc": "Type-check JavaScript files too (`--check-js`)."
+            },
+            {
               "name": "config",
               "kind": "method",
               "optional": false,
               "signature": "config(path: PathLike): this",
               "doc": "Type-check against a specific configuration file (`--config`) instead of the\none Deno would discover by walking up from the checked files.\n\nThe discovered config decides how bare specifiers resolve, so pointing at\nanother one type-checks the same sources against a different dependency\nset — for example checking a workspace member against the *published*\nversion of a sibling it declares, rather than the local member that\nworkspace resolution would substitute."
+            },
+            {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
             },
             {
               "name": "noLock",
@@ -8340,6 +8375,83 @@
               "optional": false,
               "signature": "frozen(): this",
               "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`) instead of the discovered `deno.lock`."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "Load an import map from a file or URL (`--import-map`)."
+            },
+            {
+              "name": "noNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "noNpm(): this",
+              "doc": "Do not resolve npm modules (`--no-npm`)."
+            },
+            {
+              "name": "noRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemote(): this",
+              "doc": "Do not resolve remote modules (`--no-remote`)."
+            },
+            {
+              "name": "reload",
+              "kind": "method",
+              "optional": false,
+              "signature": "reload(...specifiers: string[]): this",
+              "doc": "Reload the module cache (`--reload`), optionally only these specifiers."
+            },
+            {
+              "name": "nodeModulesDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesDir(mode: NodeModulesMode): this",
+              "doc": "Set the node-modules management mode (`--node-modules-dir`)."
+            },
+            {
+              "name": "nodeModulesLinker",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesLinker(mode: NodeModulesLinker): this",
+              "doc": "Set the npm linker mode (`--node-modules-linker`)."
+            },
+            {
+              "name": "vendor",
+              "kind": "method",
+              "optional": false,
+              "signature": "vendor(enabled?: boolean): this",
+              "doc": "Toggle the local vendor folder (`--vendor`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Re-check when a watched file changes (`--watch`)."
+            },
+            {
+              "name": "watchExclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "watchExclude(...paths: PathLike[]): this",
+              "doc": "Exclude paths from the watcher (`--watch-exclude`)."
+            },
+            {
+              "name": "noClearScreen",
+              "kind": "method",
+              "optional": false,
+              "signature": "noClearScreen(): this",
+              "doc": "Keep previous output when re-running under `--watch` (`--no-clear-screen`)."
             }
           ]
         },
@@ -8546,6 +8658,34 @@
               "doc": "Exclude files matching the pattern (`--exclude=`)."
             },
             {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(pattern: string): this",
+              "doc": "Report only on files matching the pattern (`--include=`)."
+            },
+            {
+              "name": "ignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignore(...patterns: string[]): this",
+              "doc": "Skip files matching these patterns (`--ignore=`)."
+            },
+            {
+              "name": "html",
+              "kind": "method",
+              "optional": false,
+              "signature": "html(): this",
+              "doc": "Write an HTML report into the profile directory (`--html`).\n\nMutually exclusive with {@link lcov} and with any threshold: given both,\ndeno emits the lcov and silently produces no HTML, so asking for both is\nrefused rather than quietly honoured in half."
+            },
+            {
+              "name": "detailed",
+              "kind": "method",
+              "optional": false,
+              "signature": "detailed(): this",
+              "doc": "Report per-line detail alongside the summary table (`--detailed`)."
+            },
+            {
               "name": "linesThreshold",
               "kind": "method",
               "optional": false,
@@ -8611,18 +8751,32 @@
               "doc": "Output the documentation as JSON (`--json`)."
             },
             {
-              "name": "frozen",
-              "kind": "method",
-              "optional": false,
-              "signature": "frozen(): this",
-              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
-            },
-            {
               "name": "html",
               "kind": "method",
               "optional": false,
               "signature": "html(): this",
               "doc": "Generate static HTML documentation (`--html`)."
+            },
+            {
+              "name": "lint",
+              "kind": "method",
+              "optional": false,
+              "signature": "lint(): this",
+              "doc": "Report documentation diagnostics rather than rendering docs (`--lint`)."
+            },
+            {
+              "name": "private",
+              "kind": "method",
+              "optional": false,
+              "signature": "private(): this",
+              "doc": "Include private and internal symbols (`--private`)."
+            },
+            {
+              "name": "stripTrailingHtml",
+              "kind": "method",
+              "optional": false,
+              "signature": "stripTrailingHtml(): this",
+              "doc": "Drop the trailing `.html` from generated links (`--strip-trailing-html`)."
             },
             {
               "name": "name",
@@ -8639,13 +8793,6 @@
               "doc": "Output directory for HTML documentation (`--output`)."
             },
             {
-              "name": "private",
-              "kind": "method",
-              "optional": false,
-              "signature": "private(): this",
-              "doc": "Include private and internal symbols (`--private`)."
-            },
-            {
               "name": "filter",
               "kind": "method",
               "optional": false,
@@ -8653,11 +8800,74 @@
               "doc": "Document only the symbol at this dot-separated path (`--filter`)."
             },
             {
-              "name": "lint",
+              "name": "categoryDocs",
               "kind": "method",
               "optional": false,
-              "signature": "lint(): this",
-              "doc": "Report documentation diagnostics rather than rendering docs (`--lint`)."
+              "signature": "categoryDocs(path: PathLike): this",
+              "doc": "JSON file of per-category Markdown docs (`--category-docs`)."
+            },
+            {
+              "name": "symbolRedirectMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "symbolRedirectMap(path: PathLike): this",
+              "doc": "JSON file redirecting symbols to external links (`--symbol-redirect-map`)."
+            },
+            {
+              "name": "defaultSymbolMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "defaultSymbolMap(path: PathLike): this",
+              "doc": "Mapping of default export names to the names usage blocks show (`--default-symbol-map`)."
+            },
+            {
+              "name": "frozen",
+              "kind": "method",
+              "optional": false,
+              "signature": "frozen(): this",
+              "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`)."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`)."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "Load an import map from a file or URL (`--import-map`)."
+            },
+            {
+              "name": "noNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "noNpm(): this",
+              "doc": "Do not resolve npm modules (`--no-npm`)."
+            },
+            {
+              "name": "noRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemote(): this",
+              "doc": "Do not resolve remote modules (`--no-remote`)."
+            },
+            {
+              "name": "reload",
+              "kind": "method",
+              "optional": false,
+              "signature": "reload(...specifiers: string[]): this",
+              "doc": "Reload the module cache (`--reload`), optionally only these specifiers."
             }
           ]
         },
@@ -8711,6 +8921,125 @@
               "optional": false,
               "signature": "check(): this",
               "doc": "Verify formatting without writing changes (`--check`)."
+            },
+            {
+              "name": "failFast",
+              "kind": "method",
+              "optional": false,
+              "signature": "failFast(): this",
+              "doc": "Stop at the first badly formatted file (`--fail-fast`)."
+            },
+            {
+              "name": "lineWidth",
+              "kind": "method",
+              "optional": false,
+              "signature": "lineWidth(columns: number): this",
+              "doc": "Maximum line width (`--line-width`), 80 by default."
+            },
+            {
+              "name": "indentWidth",
+              "kind": "method",
+              "optional": false,
+              "signature": "indentWidth(columns: number): this",
+              "doc": "Indentation width (`--indent-width`), 2 by default."
+            },
+            {
+              "name": "useTabs",
+              "kind": "method",
+              "optional": false,
+              "signature": "useTabs(enabled?: boolean): this",
+              "doc": "Indent with tabs rather than spaces (`--use-tabs`)."
+            },
+            {
+              "name": "singleQuote",
+              "kind": "method",
+              "optional": false,
+              "signature": "singleQuote(enabled?: boolean): this",
+              "doc": "Quote strings with single quotes (`--single-quote`)."
+            },
+            {
+              "name": "noSemicolons",
+              "kind": "method",
+              "optional": false,
+              "signature": "noSemicolons(enabled?: boolean): this",
+              "doc": "Omit semicolons except where they are required (`--no-semicolons`)."
+            },
+            {
+              "name": "proseWrap",
+              "kind": "method",
+              "optional": false,
+              "signature": "proseWrap(mode: DenoProseWrap): this",
+              "doc": "How to wrap prose in Markdown (`--prose-wrap`)."
+            },
+            {
+              "name": "unstableComponent",
+              "kind": "method",
+              "optional": false,
+              "signature": "unstableComponent(): this",
+              "doc": "Format Svelte, Vue, Astro and Angular files (`--unstable-component`)."
+            },
+            {
+              "name": "unstableSql",
+              "kind": "method",
+              "optional": false,
+              "signature": "unstableSql(): this",
+              "doc": "Format SQL files (`--unstable-sql`)."
+            },
+            {
+              "name": "ext",
+              "kind": "method",
+              "optional": false,
+              "signature": "ext(value: string): this",
+              "doc": "Treat the inputs as this content type (`--ext`). `deno fmt` accepts far\nmore than the script extensions — Markdown, JSON, CSS, HTML, YAML and the\ncomponent formats among them — so this takes a string rather than the\nnarrower script-only union the runtime subcommands use."
+            },
+            {
+              "name": "ignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignore(...patterns: string[]): this",
+              "doc": "Skip files matching these patterns (`--ignore`)."
+            },
+            {
+              "name": "permitNoFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "permitNoFiles(): this",
+              "doc": "Succeed when no files matched (`--permit-no-files`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Re-format when a watched file changes (`--watch`)."
+            },
+            {
+              "name": "watchExclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "watchExclude(...paths: PathLike[]): this",
+              "doc": "Exclude paths from the watcher (`--watch-exclude`)."
+            },
+            {
+              "name": "noClearScreen",
+              "kind": "method",
+              "optional": false,
+              "signature": "noClearScreen(): this",
+              "doc": "Keep previous output when re-running under `--watch` (`--no-clear-screen`)."
             },
             {
               "name": "paths",
@@ -8905,7 +9234,245 @@
               "kind": "method",
               "optional": false,
               "signature": "moduleArgs(...args: Array<string | number>): this",
-              "doc": "Arguments baked into the generated launcher (after the module)."
+              "doc": "Arguments baked into the generated launcher, emitted after the `--`\nseparator deno requires for them."
+            },
+            {
+              "name": "dev",
+              "kind": "method",
+              "optional": false,
+              "signature": "dev(): this",
+              "doc": "Install dev dependencies only alongside the rest (`--dev`)."
+            },
+            {
+              "name": "prod",
+              "kind": "method",
+              "optional": false,
+              "signature": "prod(): this",
+              "doc": "Install production dependencies only (`--prod`)."
+            },
+            {
+              "name": "saveExact",
+              "kind": "method",
+              "optional": false,
+              "signature": "saveExact(): this",
+              "doc": "Record exact versions, without a caret range (`--save-exact`)."
+            },
+            {
+              "name": "lockfileOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockfileOnly(): this",
+              "doc": "Update the lockfile without installing (`--lockfile-only`)."
+            },
+            {
+              "name": "skipTypes",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipTypes(): this",
+              "doc": "Exclude `@types/*` packages (`--skip-types`)."
+            },
+            {
+              "name": "jsr",
+              "kind": "method",
+              "optional": false,
+              "signature": "jsr(): this",
+              "doc": "Read unprefixed package names as JSR packages (`--jsr`)."
+            },
+            {
+              "name": "npm",
+              "kind": "method",
+              "optional": false,
+              "signature": "npm(): this",
+              "doc": "Read unprefixed package names as npm packages (`--npm`)."
+            },
+            {
+              "name": "packageJson",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageJson(): this",
+              "doc": "Install into `package.json` rather than `deno.json` (`--package-json`)."
+            },
+            {
+              "name": "entrypoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "entrypoint(path: PathLike): this",
+              "doc": "Name the entrypoint the launcher runs (`--entrypoint`)."
+            },
+            {
+              "name": "compile",
+              "kind": "method",
+              "optional": false,
+              "signature": "compile(): this",
+              "doc": "Build a compiled launcher (`--compile`) rather than a script shim, and\ncross-compile it with {@link os} and {@link arch}."
+            },
+            {
+              "name": "os",
+              "kind": "method",
+              "optional": false,
+              "signature": "os(value: string): this",
+              "doc": "Target operating system for a compiled launcher (`--os`)."
+            },
+            {
+              "name": "arch",
+              "kind": "method",
+              "optional": false,
+              "signature": "arch(value: string): this",
+              "doc": "Target architecture for a compiled launcher (`--arch`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`)."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`)."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "Load an import map from a file or URL (`--import-map`)."
+            },
+            {
+              "name": "cachedOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "cachedOnly(): this",
+              "doc": "Resolve only from the cache (`--cached-only`)."
+            },
+            {
+              "name": "noNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "noNpm(): this",
+              "doc": "Do not resolve npm modules (`--no-npm`)."
+            },
+            {
+              "name": "noRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemote(): this",
+              "doc": "Do not resolve remote modules (`--no-remote`)."
+            },
+            {
+              "name": "reload",
+              "kind": "method",
+              "optional": false,
+              "signature": "reload(...specifiers: string[]): this",
+              "doc": "Reload the module cache (`--reload`), optionally only these specifiers."
+            },
+            {
+              "name": "nodeModulesDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesDir(mode: NodeModulesMode): this",
+              "doc": "Set the node-modules management mode (`--node-modules-dir`)."
+            },
+            {
+              "name": "nodeModulesLinker",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesLinker(mode: NodeModulesLinker): this",
+              "doc": "Set the npm linker mode (`--node-modules-linker`)."
+            },
+            {
+              "name": "vendor",
+              "kind": "method",
+              "optional": false,
+              "signature": "vendor(enabled?: boolean): this",
+              "doc": "Toggle the local vendor folder (`--vendor`)."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Load environment variables from a file (`--env-file`)."
+            },
+            {
+              "name": "allowScripts",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowScripts(...packages: string[]): this",
+              "doc": "Permit npm lifecycle scripts, optionally only for these packages (`--allow-scripts`)."
+            },
+            {
+              "name": "conditions",
+              "kind": "method",
+              "optional": false,
+              "signature": "conditions(...values: string[]): this",
+              "doc": "Resolve npm package exports with these conditions (`--conditions`)."
+            },
+            {
+              "name": "preload",
+              "kind": "method",
+              "optional": false,
+              "signature": "preload(...paths: PathLike[]): this",
+              "doc": "Execute these modules before the main one (`--preload`)."
+            },
+            {
+              "name": "require",
+              "kind": "method",
+              "optional": false,
+              "signature": "require(...paths: PathLike[]): this",
+              "doc": "Execute these CommonJS modules before the main one (`--require`)."
+            },
+            {
+              "name": "typeCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "typeCheck(scope?: all | remote): this",
+              "doc": "Type-check before installing (`--check`)."
+            },
+            {
+              "name": "noCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCheck(scope?: all | remote): this",
+              "doc": "Skip type-checking (`--no-check`)."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(hostPort?: string): this",
+              "doc": "Activate the inspector (`--inspect`)."
+            },
+            {
+              "name": "inspectBrk",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspectBrk(hostPort?: string): this",
+              "doc": "Activate the inspector and break at the start (`--inspect-brk`)."
+            },
+            {
+              "name": "inspectWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspectWait(hostPort?: string): this",
+              "doc": "Activate the inspector and wait for a debugger (`--inspect-wait`)."
             }
           ]
         },
@@ -8922,6 +9489,104 @@
               "optional": false,
               "signature": "fix(): this",
               "doc": "Apply automatic fixes (`--fix`)."
+            },
+            {
+              "name": "listRules",
+              "kind": "method",
+              "optional": false,
+              "signature": "listRules(): this",
+              "doc": "List the available rules and exit (`--rules`) rather than linting. Pair it\nwith {@link json} to get the catalogue in machine-readable form."
+            },
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Report diagnostics as JSON (`--json`)."
+            },
+            {
+              "name": "compact",
+              "kind": "method",
+              "optional": false,
+              "signature": "compact(): this",
+              "doc": "Report diagnostics one per line (`--compact`)."
+            },
+            {
+              "name": "rulesTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "rulesTags(...tags: string[]): this",
+              "doc": "Enable the rule sets carrying these tags (`--rules-tags`)."
+            },
+            {
+              "name": "rulesInclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "rulesInclude(...rules: string[]): this",
+              "doc": "Enable these rules on top of the configured set (`--rules-include`)."
+            },
+            {
+              "name": "rulesExclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "rulesExclude(...rules: string[]): this",
+              "doc": "Disable these rules (`--rules-exclude`)."
+            },
+            {
+              "name": "ext",
+              "kind": "method",
+              "optional": false,
+              "signature": "ext(value: string): this",
+              "doc": "Treat the inputs as this content type (`--ext`)."
+            },
+            {
+              "name": "ignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignore(...patterns: string[]): this",
+              "doc": "Skip files matching these patterns (`--ignore`)."
+            },
+            {
+              "name": "permitNoFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "permitNoFiles(): this",
+              "doc": "Succeed when no files matched (`--permit-no-files`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Re-lint when a watched file changes (`--watch`)."
+            },
+            {
+              "name": "watchExclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "watchExclude(...paths: PathLike[]): this",
+              "doc": "Exclude paths from the watcher (`--watch-exclude`)."
+            },
+            {
+              "name": "noClearScreen",
+              "kind": "method",
+              "optional": false,
+              "signature": "noClearScreen(): this",
+              "doc": "Keep previous output when re-running under `--watch` (`--no-clear-screen`)."
             },
             {
               "name": "paths",
@@ -9234,6 +9899,13 @@
           ]
         },
         {
+          "name": "DenoProseWrap",
+          "kind": "typeAlias",
+          "doc": "How `deno fmt` wraps prose in Markdown (`--prose-wrap`).",
+          "signature": "type DenoProseWrap = always | never | preserve",
+          "deprecated": false
+        },
+        {
           "name": "DenoPublishSettings",
           "kind": "class",
           "doc": "Settings for `deno publish`.",
@@ -9281,6 +9953,41 @@
               "optional": false,
               "signature": "token(value: string): this",
               "doc": "Authenticate with a token instead of interactive/OIDC auth (`--token`)."
+            },
+            {
+              "name": "setVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "setVersion(version: string): this",
+              "doc": "Publish under an overridden version (`--set-version`) instead of the one\nin the manifest — how a release job publishes a version it computed\nwithout first committing it.\n\ndeno accepts it only when publishing a single package: it is rejected in\na workspace, where the versions have to come from each member's own\nmanifest. Whether the working directory is a workspace is not visible\nwhile the argv is being built, so this is a note rather than a refusal."
+            },
+            {
+              "name": "noProvenance",
+              "kind": "method",
+              "optional": false,
+              "signature": "noProvenance(): this",
+              "doc": "Disable provenance attestation (`--no-provenance`).\n\nProvenance is what lets a consumer verify the published artifact came from\nthis repository's CI, so turning it off is a deliberate weakening rather\nthan a default worth reaching for. It stays on unless this is called.\n\ndeno produces it by default only on GitHub Actions, so elsewhere there is\nnothing to disable. The case it exists for is the trade it makes: the\nattestation publicly links the package to the repository, workflow and\ncommit it was built from, which a package published from a private\nrepository may not want disclosed. Weigh that against consumers losing\nthe ability to verify the artifact's origin, and prefer keeping it."
+            },
+            {
+              "name": "typeCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "typeCheck(scope?: all | remote): this",
+              "doc": "Type-check before publishing (`--check`), optionally including remote code."
+            },
+            {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Load environment variables from a file (`--env-file`)."
             }
           ]
         },
@@ -9343,11 +10050,214 @@
               "doc": "Use an explicit config file (`--config`)."
             },
             {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
+            },
+            {
               "name": "reload",
               "kind": "method",
               "optional": false,
-              "signature": "reload(): this",
-              "doc": "Reload the module cache (`--reload`)."
+              "signature": "reload(...specifiers: string[]): this",
+              "doc": "Reload the module cache (`--reload`), optionally only these specifiers."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`)."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`)."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "Load an import map from a file or URL (`--import-map`)."
+            },
+            {
+              "name": "cachedOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "cachedOnly(): this",
+              "doc": "Resolve only from the cache (`--cached-only`), fetching nothing."
+            },
+            {
+              "name": "noNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "noNpm(): this",
+              "doc": "Do not resolve npm modules (`--no-npm`)."
+            },
+            {
+              "name": "noRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemote(): this",
+              "doc": "Do not resolve remote modules (`--no-remote`)."
+            },
+            {
+              "name": "nodeModulesDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesDir(mode: NodeModulesMode): this",
+              "doc": "Set the node-modules management mode (`--node-modules-dir`)."
+            },
+            {
+              "name": "nodeModulesLinker",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesLinker(mode: NodeModulesLinker): this",
+              "doc": "Set the npm linker mode (`--node-modules-linker`)."
+            },
+            {
+              "name": "vendor",
+              "kind": "method",
+              "optional": false,
+              "signature": "vendor(enabled?: boolean): this",
+              "doc": "Toggle the local vendor folder (`--vendor`)."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Load environment variables from a file (`--env-file`)."
+            },
+            {
+              "name": "cert",
+              "kind": "method",
+              "optional": false,
+              "signature": "cert(path: PathLike): this",
+              "doc": "Load a certificate authority from a PEM file (`--cert`)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(href: string): this",
+              "doc": "Set `globalThis.location` (`--location`)."
+            },
+            {
+              "name": "seed",
+              "kind": "method",
+              "optional": false,
+              "signature": "seed(value: number): this",
+              "doc": "Seed the random number generator (`--seed`)."
+            },
+            {
+              "name": "v8Flags",
+              "kind": "method",
+              "optional": false,
+              "signature": "v8Flags(...flags: string[]): this",
+              "doc": "Pass flags through to V8 (`--v8-flags`)."
+            },
+            {
+              "name": "conditions",
+              "kind": "method",
+              "optional": false,
+              "signature": "conditions(...values: string[]): this",
+              "doc": "Resolve npm package exports with these conditions (`--conditions`)."
+            },
+            {
+              "name": "preload",
+              "kind": "method",
+              "optional": false,
+              "signature": "preload(...paths: PathLike[]): this",
+              "doc": "Execute these modules before the main one (`--preload`)."
+            },
+            {
+              "name": "require",
+              "kind": "method",
+              "optional": false,
+              "signature": "require(...paths: PathLike[]): this",
+              "doc": "Execute these CommonJS modules before the main one (`--require`)."
+            },
+            {
+              "name": "noCodeCache",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCodeCache(): this",
+              "doc": "Disable the V8 code cache (`--no-code-cache`)."
+            },
+            {
+              "name": "allowScripts",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowScripts(...packages: string[]): this",
+              "doc": "Permit npm lifecycle scripts, optionally only for these packages (`--allow-scripts`)."
+            },
+            {
+              "name": "typeCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "typeCheck(scope?: all | remote): this",
+              "doc": "Type-check before running (`--check`), optionally including remote code."
+            },
+            {
+              "name": "noCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCheck(scope?: all | remote): this",
+              "doc": "Skip type-checking (`--no-check`), optionally only for remote code."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(hostPort?: string): this",
+              "doc": "Activate the inspector (`--inspect`)."
+            },
+            {
+              "name": "inspectBrk",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspectBrk(hostPort?: string): this",
+              "doc": "Activate the inspector and break at the start (`--inspect-brk`)."
+            },
+            {
+              "name": "inspectWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspectWait(hostPort?: string): this",
+              "doc": "Activate the inspector and wait for a debugger (`--inspect-wait`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Restart when a watched file changes (`--watch`)."
+            },
+            {
+              "name": "watchHmr",
+              "kind": "method",
+              "optional": false,
+              "signature": "watchHmr(): this",
+              "doc": "Watch with hot-module replacement (`--watch-hmr`), which only `deno run`\noffers. It implies watching, so it replaces `--watch` rather than joining\nit."
+            },
+            {
+              "name": "watchExclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "watchExclude(...paths: PathLike[]): this",
+              "doc": "Exclude paths from the watcher (`--watch-exclude`)."
+            },
+            {
+              "name": "noClearScreen",
+              "kind": "method",
+              "optional": false,
+              "signature": "noClearScreen(): this",
+              "doc": "Keep previous output when re-running under `--watch` (`--no-clear-screen`)."
             }
           ]
         },
@@ -9679,13 +10589,97 @@
               "doc": "Arguments forwarded to the task."
             },
             {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Run the task in every workspace member (`--recursive`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(pattern: string): this",
+              "doc": "Select the workspace members to run the task in (`--filter`). It selects\non its own — {@link recursive} is not a prerequisite."
+            },
+            {
+              "name": "noPrefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPrefix(): this",
+              "doc": "Drop the per-member name prefix from output (`--no-prefix`), which a\nrecursive run adds. Useful when the output is being parsed rather than\nread."
+            },
+            {
+              "name": "evalShell",
+              "kind": "method",
+              "optional": false,
+              "signature": "evalShell(): this",
+              "doc": "Treat the task name as a shell command to evaluate (`--eval`) instead of\na task defined in the configuration file."
+            },
+            {
+              "name": "taskCwd",
+              "kind": "method",
+              "optional": false,
+              "signature": "taskCwd(path: PathLike): this",
+              "doc": "Run the task from this directory (`--cwd`).\n\nDistinct from the inherited `cwd`, which sets the directory the `deno`\nprocess itself is spawned in: this one moves only the task, leaving\nconfiguration discovery anchored where deno started."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
               "name": "frozen",
               "kind": "method",
               "optional": false,
               "signature": "frozen(): this",
               "doc": "Error out if the lockfile is out of date (`--frozen`). See\n{@link DenoPermissionSettings.frozen} for why the name mirrors the real\nDeno flag rather than `PnpmSettings.frozenLockfile()`'s naming."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`)."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`)."
+            },
+            {
+              "name": "nodeModulesDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesDir(mode: NodeModulesMode): this",
+              "doc": "Set the node-modules management mode (`--node-modules-dir`)."
+            },
+            {
+              "name": "nodeModulesLinker",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesLinker(mode: NodeModulesLinker): this",
+              "doc": "Set the npm linker mode (`--node-modules-linker`)."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Load environment variables from a file (`--env-file`)."
             }
           ]
+        },
+        {
+          "name": "DenoTestReporter",
+          "kind": "typeAlias",
+          "doc": "The report formats `deno test --reporter` accepts.",
+          "signature": "type DenoTestReporter = pretty | dot | junit | tap",
+          "deprecated": false
         },
         {
           "name": "DenoTestSettings",
@@ -9709,6 +10703,20 @@
               "doc": "Collect coverage into the given profile directory (`--coverage=`)."
             },
             {
+              "name": "coverageRawDataOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "coverageRawDataOnly(): this",
+              "doc": "Collect raw coverage data without generating a report (`--coverage-raw-data-only`)."
+            },
+            {
+              "name": "clean",
+              "kind": "method",
+              "optional": false,
+              "signature": "clean(): this",
+              "doc": "Empty the coverage profile directory before running (`--clean`), so a run\nreports on its own tests rather than on whatever a previous run left.\n\nThe directory need not come from {@link coverage}: `DENO_COVERAGE_DIR`\nsets it too, which is why this is not tied to that setter."
+            },
+            {
               "name": "filter",
               "kind": "method",
               "optional": false,
@@ -9726,8 +10734,295 @@
               "name": "failFast",
               "kind": "method",
               "optional": false,
-              "signature": "failFast(): this",
-              "doc": "Stop on the first failure (`--fail-fast`)."
+              "signature": "failFast(count?: number): this",
+              "doc": "Stop after `count` failures (`--fail-fast`), or after the first."
+            },
+            {
+              "name": "doc",
+              "kind": "method",
+              "optional": false,
+              "signature": "doc(): this",
+              "doc": "Evaluate the code blocks in JSDoc and Markdown as tests (`--doc`)."
+            },
+            {
+              "name": "noRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRun(): this",
+              "doc": "Cache the test modules without running them (`--no-run`)."
+            },
+            {
+              "name": "shuffle",
+              "kind": "method",
+              "optional": false,
+              "signature": "shuffle(seed?: number): this",
+              "doc": "Randomise test order (`--shuffle`), optionally with a fixed seed so a\nfailing order can be replayed."
+            },
+            {
+              "name": "traceLeaks",
+              "kind": "method",
+              "optional": false,
+              "signature": "traceLeaks(): this",
+              "doc": "Trace the ops a test leaks (`--trace-leaks`). It costs run time and is\nthe only practical way to find which test leaked a pending op — the\nflakiest class of failure a suite has."
+            },
+            {
+              "name": "sanitizeOps",
+              "kind": "method",
+              "optional": false,
+              "signature": "sanitizeOps(): this",
+              "doc": "Require every async op started in a test to finish in it (`--sanitize-ops`)."
+            },
+            {
+              "name": "sanitizeResources",
+              "kind": "method",
+              "optional": false,
+              "signature": "sanitizeResources(): this",
+              "doc": "Require every resource opened in a test to be closed in it (`--sanitize-resources`)."
+            },
+            {
+              "name": "hideStacktraces",
+              "kind": "method",
+              "optional": false,
+              "signature": "hideStacktraces(): this",
+              "doc": "Omit stack traces from failure output (`--hide-stacktraces`)."
+            },
+            {
+              "name": "reporter",
+              "kind": "method",
+              "optional": false,
+              "signature": "reporter(kind: DenoTestReporter): this",
+              "doc": "Select the console reporter (`--reporter`)."
+            },
+            {
+              "name": "junitPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "junitPath(path: PathLike): this",
+              "doc": "Also write a JUnit XML report to `path` (`--junit-path`), whatever the\nconsole reporter is — this is the file a CI test-report UI ingests."
+            },
+            {
+              "name": "ext",
+              "kind": "method",
+              "optional": false,
+              "signature": "ext(value: string): this",
+              "doc": "Treat the inputs as this content type (`--ext`)."
+            },
+            {
+              "name": "ignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignore(...patterns: string[]): this",
+              "doc": "Skip files matching these patterns (`--ignore`)."
+            },
+            {
+              "name": "permitNoFiles",
+              "kind": "method",
+              "optional": false,
+              "signature": "permitNoFiles(): this",
+              "doc": "Succeed when no test files matched (`--permit-no-files`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: PathLike): this",
+              "doc": "Use an explicit config file (`--config`)."
+            },
+            {
+              "name": "noConfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "noConfig(): this",
+              "doc": "Discover no configuration file at all (`--no-config`)."
+            },
+            {
+              "name": "typeCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "typeCheck(scope?: all | remote): this",
+              "doc": "Type-check before running (`--check`), optionally including remote code."
+            },
+            {
+              "name": "noCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCheck(scope?: all | remote): this",
+              "doc": "Skip type-checking (`--no-check`), optionally only for remote code."
+            },
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(hostPort?: string): this",
+              "doc": "Activate the inspector (`--inspect`)."
+            },
+            {
+              "name": "inspectBrk",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspectBrk(hostPort?: string): this",
+              "doc": "Activate the inspector and break at the start (`--inspect-brk`)."
+            },
+            {
+              "name": "inspectWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspectWait(hostPort?: string): this",
+              "doc": "Activate the inspector and wait for a debugger (`--inspect-wait`)."
+            },
+            {
+              "name": "envFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "envFile(path: PathLike): this",
+              "doc": "Load environment variables from a file (`--env-file`)."
+            },
+            {
+              "name": "cert",
+              "kind": "method",
+              "optional": false,
+              "signature": "cert(path: PathLike): this",
+              "doc": "Load a certificate authority from a PEM file (`--cert`)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(href: string): this",
+              "doc": "Set `globalThis.location` (`--location`)."
+            },
+            {
+              "name": "seed",
+              "kind": "method",
+              "optional": false,
+              "signature": "seed(value: number): this",
+              "doc": "Seed the random number generator (`--seed`), making a run reproducible."
+            },
+            {
+              "name": "v8Flags",
+              "kind": "method",
+              "optional": false,
+              "signature": "v8Flags(...flags: string[]): this",
+              "doc": "Pass flags through to V8 (`--v8-flags`)."
+            },
+            {
+              "name": "conditions",
+              "kind": "method",
+              "optional": false,
+              "signature": "conditions(...values: string[]): this",
+              "doc": "Resolve npm package exports with these conditions (`--conditions`)."
+            },
+            {
+              "name": "preload",
+              "kind": "method",
+              "optional": false,
+              "signature": "preload(...paths: PathLike[]): this",
+              "doc": "Execute these modules before the main one (`--preload`)."
+            },
+            {
+              "name": "require",
+              "kind": "method",
+              "optional": false,
+              "signature": "require(...paths: PathLike[]): this",
+              "doc": "Execute these CommonJS modules before the main one (`--require`)."
+            },
+            {
+              "name": "allowScripts",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowScripts(...packages: string[]): this",
+              "doc": "Permit npm lifecycle scripts, optionally only for these packages (`--allow-scripts`)."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(path: PathLike): this",
+              "doc": "Use an explicit lockfile (`--lock`)."
+            },
+            {
+              "name": "noLock",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLock(): this",
+              "doc": "Ignore the lockfile entirely (`--no-lock`)."
+            },
+            {
+              "name": "importMap",
+              "kind": "method",
+              "optional": false,
+              "signature": "importMap(path: PathLike): this",
+              "doc": "Load an import map from a file or URL (`--import-map`)."
+            },
+            {
+              "name": "cachedOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "cachedOnly(): this",
+              "doc": "Resolve only from the cache (`--cached-only`)."
+            },
+            {
+              "name": "noNpm",
+              "kind": "method",
+              "optional": false,
+              "signature": "noNpm(): this",
+              "doc": "Do not resolve npm modules (`--no-npm`)."
+            },
+            {
+              "name": "noRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemote(): this",
+              "doc": "Do not resolve remote modules (`--no-remote`)."
+            },
+            {
+              "name": "reload",
+              "kind": "method",
+              "optional": false,
+              "signature": "reload(...specifiers: string[]): this",
+              "doc": "Reload the module cache (`--reload`), optionally only these specifiers."
+            },
+            {
+              "name": "nodeModulesDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesDir(mode: NodeModulesMode): this",
+              "doc": "Set the node-modules management mode (`--node-modules-dir`)."
+            },
+            {
+              "name": "nodeModulesLinker",
+              "kind": "method",
+              "optional": false,
+              "signature": "nodeModulesLinker(mode: NodeModulesLinker): this",
+              "doc": "Set the npm linker mode (`--node-modules-linker`)."
+            },
+            {
+              "name": "vendor",
+              "kind": "method",
+              "optional": false,
+              "signature": "vendor(enabled?: boolean): this",
+              "doc": "Toggle the local vendor folder (`--vendor`)."
+            },
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Re-run when a watched file changes (`--watch`)."
+            },
+            {
+              "name": "watchExclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "watchExclude(...paths: PathLike[]): this",
+              "doc": "Exclude paths from the watcher (`--watch-exclude`)."
+            },
+            {
+              "name": "noClearScreen",
+              "kind": "method",
+              "optional": false,
+              "signature": "noClearScreen(): this",
+              "doc": "Keep previous output when re-running under `--watch` (`--no-clear-screen`)."
             }
           ]
         },
@@ -9848,6 +11143,20 @@
               "doc": "The package to explain, optionally with a version (`express@4.18.2`)\n(required)."
             }
           ]
+        },
+        {
+          "name": "NodeModulesLinker",
+          "kind": "typeAlias",
+          "doc": "The linker modes `--node-modules-linker` accepts.",
+          "signature": "type NodeModulesLinker = isolated | hoisted",
+          "deprecated": false
+        },
+        {
+          "name": "NodeModulesMode",
+          "kind": "typeAlias",
+          "doc": "The node-modules management modes `--node-modules-dir` accepts.",
+          "signature": "type NodeModulesMode = auto | manual | none",
+          "deprecated": false
         },
         {
           "name": "parseCacheInfo",
