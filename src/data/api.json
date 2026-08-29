@@ -24430,6 +24430,29 @@
           ]
         },
         {
+          "name": "GhBodySettings",
+          "kind": "class",
+          "doc": "Base for the commands that take message text: `pr create`, `pr comment`,\n`pr edit`, `issue create`, `issue comment`.\n\ngh spells it `--body` for the text and `--body-file` for a file, with `-`\nmeaning standard input — the same pair on every one of them.",
+          "signature": "class GhBodySettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(text: string): this",
+              "doc": "The message text (`--body`)."
+            },
+            {
+              "name": "bodyFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "bodyFile(path: PathLike): this",
+              "doc": "Read the message from a file (`--body-file`); `-` reads standard input."
+            }
+          ]
+        },
+        {
           "name": "GhCheckConclusion",
           "kind": "typeAlias",
           "doc": "A check run's conclusion, as GitHub spells them.\n\n`\"stale\"` is deliberately absent: GitHub sets it itself and rejects it from a\ncaller.",
@@ -24660,6 +24683,21 @@
           ]
         },
         {
+          "name": "GhCloseReason",
+          "kind": "typeAlias",
+          "doc": "Why an issue is being closed (`--reason`).",
+          "signature": "type GhCloseReason = completed | not planned | duplicate",
+          "deprecated": false
+        },
+        {
+          "name": "GhCommandSettings",
+          "kind": "class",
+          "doc": "Base for a typed `gh` subcommand: it contributes the command path (the\ngroup, the verb, and any operand) and its own flags, and inherits\neverything else from {@link \"./settings.ts\".GhSettings}.",
+          "signature": "class GhCommandSettings extends GhSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
           "name": "GhCommitApi",
           "kind": "interface",
           "doc": "The commit and tag operations {@link GhTasks} exposes.",
@@ -24855,11 +24893,950 @@
           ]
         },
         {
+          "name": "GhIssueApi",
+          "kind": "interface",
+          "doc": "The `gh issue` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhIssueApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "issueCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueCreate(configure?: Configure<GhIssueCreateSettings>): Promise<CommandOutput>",
+              "doc": "Open an issue: `gh issue create`."
+            },
+            {
+              "name": "issueList",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueList(configure?: Configure<GhIssueListSettings>): Promise<CommandOutput>",
+              "doc": "List issues: `gh issue list`."
+            },
+            {
+              "name": "issueListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueListEntries(configure?: Configure<GhIssueListSettings>): Promise<GhIssueEntry[]>",
+              "doc": "The issues as parsed {@link GhIssueEntry} values. The `--json` field set\nis pinned, since gh requires one by name."
+            },
+            {
+              "name": "issueView",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueView(configure?: Configure<GhIssueViewSettings>): Promise<CommandOutput>",
+              "doc": "Show an issue: `gh issue view`."
+            },
+            {
+              "name": "issueComment",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueComment(configure?: Configure<GhIssueCommentSettings>): Promise<CommandOutput>",
+              "doc": "Comment on an issue: `gh issue comment`."
+            },
+            {
+              "name": "issueClose",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueClose(configure?: Configure<GhIssueCloseSettings>): Promise<CommandOutput>",
+              "doc": "Close an issue: `gh issue close`."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueCloseSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue close`.",
+          "signature": "class GhIssueCloseSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: string | number): this",
+              "doc": "The issue — its number or URL (required)."
+            },
+            {
+              "name": "comment",
+              "kind": "method",
+              "optional": false,
+              "signature": "comment(text: string): this",
+              "doc": "Leave a closing comment (`--comment`)."
+            },
+            {
+              "name": "reason",
+              "kind": "method",
+              "optional": false,
+              "signature": "reason(value: GhCloseReason): this",
+              "doc": "Why it is closed (`--reason`)."
+            },
+            {
+              "name": "duplicateOf",
+              "kind": "method",
+              "optional": false,
+              "signature": "duplicateOf(numberOrUrl: string | number): this",
+              "doc": "Which issue it duplicates (`--duplicate-of`), by number or URL."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueCommentSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue comment`.",
+          "signature": "class GhIssueCommentSettings extends GhBodySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: string | number): this",
+              "doc": "The issue — its number or URL (required)."
+            },
+            {
+              "name": "editLast",
+              "kind": "method",
+              "optional": false,
+              "signature": "editLast(): this",
+              "doc": "Edit your most recent comment instead of adding one (`--edit-last`)."
+            },
+            {
+              "name": "createIfNone",
+              "kind": "method",
+              "optional": false,
+              "signature": "createIfNone(): this",
+              "doc": "With {@link editLast}, post a new comment when there is none (`--create-if-none`)."
+            },
+            {
+              "name": "deleteLast",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteLast(): this",
+              "doc": "Delete your most recent comment (`--delete-last`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue create`.",
+          "signature": "class GhIssueCreateSettings extends GhBodySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "The issue's title (`--title`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(...logins: string[]): this",
+              "doc": "Assign someone by login (`--assignee`), `@me` for yourself; repeatable."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(...names: string[]): this",
+              "doc": "Add a label by name (`--label`); repeatable."
+            },
+            {
+              "name": "project",
+              "kind": "method",
+              "optional": false,
+              "signature": "project(...titles: string[]): this",
+              "doc": "Add to a project by title (`--project`); repeatable."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name: string): this",
+              "doc": "Add to a milestone by name (`--milestone`)."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(name: string): this",
+              "doc": "Set the issue type by name (`--type`)."
+            },
+            {
+              "name": "parent",
+              "kind": "method",
+              "optional": false,
+              "signature": "parent(numberOrUrl: string | number): this",
+              "doc": "File it as a sub-issue of this number or URL (`--parent`)."
+            },
+            {
+              "name": "templateName",
+              "kind": "method",
+              "optional": false,
+              "signature": "templateName(name: string): this",
+              "doc": "The issue template to start the body from (`--template`)."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueEntry",
+          "kind": "interface",
+          "doc": "One issue of {@link \"./gh.ts\".GhTasks.issueListEntries}.",
+          "signature": "interface GhIssueEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "number",
+              "kind": "property",
+              "optional": true,
+              "signature": "number?: number",
+              "doc": "The issue's number."
+            },
+            {
+              "name": "title",
+              "kind": "property",
+              "optional": true,
+              "signature": "title?: string",
+              "doc": "Its title."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": true,
+              "signature": "state?: string",
+              "doc": "Its state, as gh reports it: `OPEN` or `CLOSED`."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": true,
+              "signature": "url?: string",
+              "doc": "Its web URL."
+            },
+            {
+              "name": "author",
+              "kind": "property",
+              "optional": true,
+              "signature": "author?: string",
+              "doc": "The login of whoever opened it."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue list`.",
+          "signature": "class GhIssueListSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "method",
+              "optional": false,
+              "signature": "state(value: open | closed | all): this",
+              "doc": "Filter by state (`--state`): `open`, `closed`, or `all`."
+            },
+            {
+              "name": "author",
+              "kind": "method",
+              "optional": false,
+              "signature": "author(login: string): this",
+              "doc": "Filter by author (`--author`)."
+            },
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: string): this",
+              "doc": "Filter by the GitHub App that opened it (`--app`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(login: string): this",
+              "doc": "Filter by assignee (`--assignee`)."
+            },
+            {
+              "name": "mention",
+              "kind": "method",
+              "optional": false,
+              "signature": "mention(login: string): this",
+              "doc": "Filter by who is mentioned (`--mention`)."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(nameOrNumber: string): this",
+              "doc": "Filter by milestone number or title (`--milestone`)."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(name: string): this",
+              "doc": "Filter by issue type (`--type`)."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(...names: string[]): this",
+              "doc": "Filter by label (`--label`); repeatable."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(query: string): this",
+              "doc": "Filter with a search query (`--search`)."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue view`.",
+          "signature": "class GhIssueViewSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: string | number): this",
+              "doc": "The issue — its number or URL (required)."
+            },
+            {
+              "name": "comments",
+              "kind": "method",
+              "optional": false,
+              "signature": "comments(): this",
+              "doc": "Include the comments (`--comments`)."
+            }
+          ]
+        },
+        {
+          "name": "GhMergeMethod",
+          "kind": "typeAlias",
+          "doc": "How `gh pr merge` combines the commits.",
+          "signature": "type GhMergeMethod = merge | squash | rebase",
+          "deprecated": false
+        },
+        {
           "name": "GhPermissionLevel",
           "kind": "typeAlias",
           "doc": "A permission level an installation token can be narrowed to.",
           "signature": "type GhPermissionLevel = read | write | admin",
           "deprecated": false
+        },
+        {
+          "name": "GhPrApi",
+          "kind": "interface",
+          "doc": "The `gh pr` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhPrApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "prCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "prCreate(configure?: Configure<GhPrCreateSettings>): Promise<CommandOutput>",
+              "doc": "Open a pull request: `gh pr create`. Needs the `gh` binary and its auth;\n{@link \"./pull_request.ts\".GhPullRequestApi.pullRequest} is the REST path,\nwhich needs a token instead."
+            },
+            {
+              "name": "prList",
+              "kind": "method",
+              "optional": false,
+              "signature": "prList(configure?: Configure<GhPrListSettings>): Promise<CommandOutput>",
+              "doc": "List pull requests: `gh pr list`."
+            },
+            {
+              "name": "prListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "prListEntries(configure?: Configure<GhPrListSettings>): Promise<GhPullRequestEntry[]>",
+              "doc": "The pull requests as parsed {@link GhPullRequestEntry} values. The\n`--json` field set is pinned, since gh requires one by name."
+            },
+            {
+              "name": "prView",
+              "kind": "method",
+              "optional": false,
+              "signature": "prView(configure?: Configure<GhPrViewSettings>): Promise<CommandOutput>",
+              "doc": "Show a pull request: `gh pr view`."
+            },
+            {
+              "name": "prChecks",
+              "kind": "method",
+              "optional": false,
+              "signature": "prChecks(configure?: Configure<GhPrChecksSettings>): Promise<CommandOutput>",
+              "doc": "Report a pull request's checks: `gh pr checks`."
+            },
+            {
+              "name": "prMerge",
+              "kind": "method",
+              "optional": false,
+              "signature": "prMerge(configure?: Configure<GhPrMergeSettings>): Promise<CommandOutput>",
+              "doc": "Merge a pull request: `gh pr merge`."
+            },
+            {
+              "name": "prComment",
+              "kind": "method",
+              "optional": false,
+              "signature": "prComment(configure?: Configure<GhPrCommentSettings>): Promise<CommandOutput>",
+              "doc": "Comment on a pull request: `gh pr comment`."
+            },
+            {
+              "name": "prEdit",
+              "kind": "method",
+              "optional": false,
+              "signature": "prEdit(configure?: Configure<GhPrEditSettings>): Promise<CommandOutput>",
+              "doc": "Change a pull request's metadata: `gh pr edit`."
+            },
+            {
+              "name": "prClose",
+              "kind": "method",
+              "optional": false,
+              "signature": "prClose(configure?: Configure<GhPrCloseSettings>): Promise<CommandOutput>",
+              "doc": "Close a pull request: `gh pr close`."
+            }
+          ]
+        },
+        {
+          "name": "GhPrChecksSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr checks`.",
+          "signature": "class GhPrChecksSettings extends GhPrReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch(): this",
+              "doc": "Keep watching until the checks finish (`--watch`). A target that watches\nblocks until CI is done, so pair it with `.killAfter(...)` unless the wait\nis the point."
+            },
+            {
+              "name": "failFast",
+              "kind": "method",
+              "optional": false,
+              "signature": "failFast(): this",
+              "doc": "Stop watching at the first failure (`--fail-fast`)."
+            },
+            {
+              "name": "required",
+              "kind": "method",
+              "optional": false,
+              "signature": "required(): this",
+              "doc": "Only the checks marked required (`--required`)."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(seconds: number): this",
+              "doc": "How often to refresh while watching (`--interval`), in seconds."
+            }
+          ]
+        },
+        {
+          "name": "GhPrCloseSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr close`.",
+          "signature": "class GhPrCloseSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: string | number): this",
+              "doc": "The pull request — number, URL, or branch; defaults to the current branch's."
+            },
+            {
+              "name": "comment",
+              "kind": "method",
+              "optional": false,
+              "signature": "comment(text: string): this",
+              "doc": "Leave a closing comment (`--comment`)."
+            },
+            {
+              "name": "deleteBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteBranch(): this",
+              "doc": "Delete the branch afterwards (`--delete-branch`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrCommentSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr comment`.",
+          "signature": "class GhPrCommentSettings extends GhPrTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "editLast",
+              "kind": "method",
+              "optional": false,
+              "signature": "editLast(): this",
+              "doc": "Edit your most recent comment instead of adding one (`--edit-last`)."
+            },
+            {
+              "name": "createIfNone",
+              "kind": "method",
+              "optional": false,
+              "signature": "createIfNone(): this",
+              "doc": "With {@link editLast}, post a new comment when there is none (`--create-if-none`)."
+            },
+            {
+              "name": "deleteLast",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteLast(): this",
+              "doc": "Delete your most recent comment (`--delete-last`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr create`.",
+          "signature": "class GhPrCreateSettings extends GhBodySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "The pull request's title (`--title`)."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: string): this",
+              "doc": "The branch to merge into (`--base`)."
+            },
+            {
+              "name": "head",
+              "kind": "method",
+              "optional": false,
+              "signature": "head(branch: string): this",
+              "doc": "The branch holding the commits (`--head`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(...logins: string[]): this",
+              "doc": "Assign someone by login (`--assignee`), `@me` for yourself; repeatable."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(...names: string[]): this",
+              "doc": "Add a label by name (`--label`); repeatable."
+            },
+            {
+              "name": "reviewer",
+              "kind": "method",
+              "optional": false,
+              "signature": "reviewer(...handles: string[]): this",
+              "doc": "Request a review from a person or team (`--reviewer`); repeatable."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name: string): this",
+              "doc": "Add to a milestone by name (`--milestone`)."
+            },
+            {
+              "name": "project",
+              "kind": "method",
+              "optional": false,
+              "signature": "project(...titles: string[]): this",
+              "doc": "Add to a project by title (`--project`); repeatable."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft(): this",
+              "doc": "Open it as a draft (`--draft`)."
+            },
+            {
+              "name": "fill",
+              "kind": "method",
+              "optional": false,
+              "signature": "fill(): this",
+              "doc": "Take the title and body from the commits (`--fill`)."
+            },
+            {
+              "name": "fillFirst",
+              "kind": "method",
+              "optional": false,
+              "signature": "fillFirst(): this",
+              "doc": "Take them from the first commit only (`--fill-first`)."
+            },
+            {
+              "name": "fillVerbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "fillVerbose(): this",
+              "doc": "Take the body from every commit's message (`--fill-verbose`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Print what would be created without creating it (`--dry-run`)."
+            },
+            {
+              "name": "noMaintainerEdit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noMaintainerEdit(): this",
+              "doc": "Refuse maintainer edits to the branch (`--no-maintainer-edit`)."
+            },
+            {
+              "name": "templateFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "templateFile(path: string): this",
+              "doc": "A template file to seed the body from (`--template`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr edit`.",
+          "signature": "class GhPrEditSettings extends GhPrTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "Set the title (`--title`)."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: string): this",
+              "doc": "Change the base branch (`--base`)."
+            },
+            {
+              "name": "addLabel",
+              "kind": "method",
+              "optional": false,
+              "signature": "addLabel(...names: string[]): this",
+              "doc": "Add a label (`--add-label`); repeatable."
+            },
+            {
+              "name": "removeLabel",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeLabel(...names: string[]): this",
+              "doc": "Remove a label (`--remove-label`); repeatable."
+            },
+            {
+              "name": "addAssignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "addAssignee(...logins: string[]): this",
+              "doc": "Add an assignee (`--add-assignee`); repeatable."
+            },
+            {
+              "name": "removeAssignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeAssignee(...logins: string[]): this",
+              "doc": "Remove an assignee (`--remove-assignee`); repeatable."
+            },
+            {
+              "name": "addReviewer",
+              "kind": "method",
+              "optional": false,
+              "signature": "addReviewer(...handles: string[]): this",
+              "doc": "Request a review (`--add-reviewer`); repeatable."
+            },
+            {
+              "name": "removeReviewer",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeReviewer(...handles: string[]): this",
+              "doc": "Drop a review request (`--remove-reviewer`); repeatable."
+            },
+            {
+              "name": "addProject",
+              "kind": "method",
+              "optional": false,
+              "signature": "addProject(...titles: string[]): this",
+              "doc": "Add to a project by title (`--add-project`); repeatable."
+            },
+            {
+              "name": "removeProject",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeProject(...titles: string[]): this",
+              "doc": "Take it off a project by title (`--remove-project`); repeatable."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name: string): this",
+              "doc": "Set the milestone (`--milestone`)."
+            },
+            {
+              "name": "removeMilestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeMilestone(): this",
+              "doc": "Clear the milestone (`--remove-milestone`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr list`.",
+          "signature": "class GhPrListSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "method",
+              "optional": false,
+              "signature": "state(value: open | closed | merged | all): this",
+              "doc": "Filter by state (`--state`): `open`, `closed`, `merged`, or `all`."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: string): this",
+              "doc": "Filter by base branch (`--base`)."
+            },
+            {
+              "name": "head",
+              "kind": "method",
+              "optional": false,
+              "signature": "head(branch: string): this",
+              "doc": "Filter by head branch (`--head`)."
+            },
+            {
+              "name": "author",
+              "kind": "method",
+              "optional": false,
+              "signature": "author(login: string): this",
+              "doc": "Filter by author (`--author`)."
+            },
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: string): this",
+              "doc": "Filter by the GitHub App that opened it (`--app`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(login: string): this",
+              "doc": "Filter by assignee (`--assignee`)."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(...names: string[]): this",
+              "doc": "Filter by label (`--label`); repeatable."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(query: string): this",
+              "doc": "Filter with a search query (`--search`)."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft(): this",
+              "doc": "Only draft pull requests (`--draft`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrMergeSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr merge`.",
+          "signature": "class GhPrMergeSettings extends GhPrTargetSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "merge(): this",
+              "doc": "Merge with a merge commit (`--merge`)."
+            },
+            {
+              "name": "squash",
+              "kind": "method",
+              "optional": false,
+              "signature": "squash(): this",
+              "doc": "Squash the commits into one (`--squash`)."
+            },
+            {
+              "name": "rebase",
+              "kind": "method",
+              "optional": false,
+              "signature": "rebase(): this",
+              "doc": "Rebase the commits onto the base (`--rebase`)."
+            },
+            {
+              "name": "auto",
+              "kind": "method",
+              "optional": false,
+              "signature": "auto(): this",
+              "doc": "Merge once the requirements are met (`--auto`)."
+            },
+            {
+              "name": "disableAuto",
+              "kind": "method",
+              "optional": false,
+              "signature": "disableAuto(): this",
+              "doc": "Turn auto-merge off again (`--disable-auto`)."
+            },
+            {
+              "name": "admin",
+              "kind": "method",
+              "optional": false,
+              "signature": "admin(): this",
+              "doc": "Merge with administrator privileges (`--admin`)."
+            },
+            {
+              "name": "deleteBranch",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteBranch(): this",
+              "doc": "Delete the branch afterwards (`--delete-branch`)."
+            },
+            {
+              "name": "subject",
+              "kind": "method",
+              "optional": false,
+              "signature": "subject(text: string): this",
+              "doc": "The merge commit's subject (`--subject`)."
+            },
+            {
+              "name": "authorEmail",
+              "kind": "method",
+              "optional": false,
+              "signature": "authorEmail(address: string): this",
+              "doc": "The merge commit's author email (`--author-email`)."
+            },
+            {
+              "name": "matchHeadCommit",
+              "kind": "method",
+              "optional": false,
+              "signature": "matchHeadCommit(sha: string): this",
+              "doc": "Refuse the merge unless the head is still this commit\n(`--match-head-commit`) — the guard against merging a PR that moved\nbetween the check and the merge."
+            }
+          ]
+        },
+        {
+          "name": "GhPrReadSettings",
+          "kind": "class",
+          "doc": "Base for the `pr` commands that read one pull request and can print JSON —\n`view` and `checks` — so the operand has one implementation across them.",
+          "signature": "class GhPrReadSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: string | number): this",
+              "doc": "The pull request — number, URL, or branch; defaults to the current branch's."
+            }
+          ]
+        },
+        {
+          "name": "GhPrTargetSettings",
+          "kind": "class",
+          "doc": "Base for the `pr` commands that take a pull request and post text —\n`merge`, `comment`, and `edit` — so the operand and the `--body` pair have\none implementation across them.",
+          "signature": "class GhPrTargetSettings extends GhBodySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: string | number): this",
+              "doc": "The pull request — its number, URL, or branch name. Omit it to act on the\nPR for the current branch, as gh does."
+            }
+          ]
+        },
+        {
+          "name": "GhPrViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr view`.",
+          "signature": "class GhPrViewSettings extends GhPrReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "comments",
+              "kind": "method",
+              "optional": false,
+              "signature": "comments(): this",
+              "doc": "Include the comments (`--comments`)."
+            }
+          ]
         },
         {
           "name": "GhPullRequestApi",
@@ -24881,6 +25858,71 @@
               "optional": false,
               "signature": "findPullRequest(configure?: unknown): Promise<GhPullRequestResult | undefined>",
               "doc": "Find the open pull request from `.head(...)` onto `.base(...)`, without\nopening one.\n\nFor a caller that must know whether a proposal already exists *before* it\nwrites anything — because the answer changes what it should do, not just\nwhat it should report. Opening one to find out is not a substitute: by\nthen the branch it would have to prepare has already been written."
+            }
+          ]
+        },
+        {
+          "name": "GhPullRequestEntry",
+          "kind": "interface",
+          "doc": "One pull request of {@link \"./gh.ts\".GhTasks.prListEntries}.",
+          "signature": "interface GhPullRequestEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "number",
+              "kind": "property",
+              "optional": true,
+              "signature": "number?: number",
+              "doc": "The pull request's number."
+            },
+            {
+              "name": "title",
+              "kind": "property",
+              "optional": true,
+              "signature": "title?: string",
+              "doc": "Its title."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": true,
+              "signature": "state?: string",
+              "doc": "Its state, as gh reports it: `OPEN`, `CLOSED`, or `MERGED`."
+            },
+            {
+              "name": "isDraft",
+              "kind": "property",
+              "optional": true,
+              "signature": "isDraft?: boolean",
+              "doc": "Whether it is still a draft."
+            },
+            {
+              "name": "headRefName",
+              "kind": "property",
+              "optional": true,
+              "signature": "headRefName?: string",
+              "doc": "The branch the changes are on."
+            },
+            {
+              "name": "baseRefName",
+              "kind": "property",
+              "optional": true,
+              "signature": "baseRefName?: string",
+              "doc": "The branch they would merge into."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": true,
+              "signature": "url?: string",
+              "doc": "Its web URL."
+            },
+            {
+              "name": "author",
+              "kind": "property",
+              "optional": true,
+              "signature": "author?: string",
+              "doc": "The login of whoever opened it."
             }
           ]
         },
@@ -25046,6 +26088,101 @@
               "optional": false,
               "signature": "fetch_: fetch",
               "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
+          "name": "GhReadSettings",
+          "kind": "class",
+          "doc": "Base for the commands that can print JSON: `pr list`, `pr view`,\n`pr checks`, `issue list`, `issue view`, `release list`, `release view`.\n\ngh requires an explicit field list for `--json`, which is why the\nvalue-returning tasks pin one rather than leaving it to the caller.\n\nA `…ListEntries` reader parses the array `--json` prints, so `.jq(...)` and\n`.template(...)` — which replace that array with whatever they render —\nbelong on the plain `…List` task instead.",
+          "signature": "class GhReadSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(...fields: string[]): this",
+              "doc": "Emit JSON with these fields (`--json`), which gh requires by name — there\nis no \"all fields\" form."
+            },
+            {
+              "name": "jq",
+              "kind": "method",
+              "optional": false,
+              "signature": "jq(expression: string): this",
+              "doc": "Filter the JSON with a jq expression (`--jq`)."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(text: string): this",
+              "doc": "Format the JSON through a Go template (`--template`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseApi",
+          "kind": "interface",
+          "doc": "The `gh release` members of {@link \"./gh.ts\".GhTasks}.",
+          "signature": "interface GhReleaseApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "releaseCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseCreate(configure?: Configure<GhReleaseCreateSettings>): Promise<CommandOutput>",
+              "doc": "Publish a release: `gh release create`."
+            },
+            {
+              "name": "releaseList",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseList(configure?: Configure<GhReleaseListSettings>): Promise<CommandOutput>",
+              "doc": "List releases: `gh release list`."
+            },
+            {
+              "name": "releaseListEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseListEntries(configure?: Configure<GhReleaseListSettings>): Promise<GhReleaseEntry[]>",
+              "doc": "The releases as parsed {@link GhReleaseEntry} values. The `--json` field\nset is pinned, since gh requires one by name."
+            },
+            {
+              "name": "releaseView",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseView(configure?: Configure<GhReleaseViewSettings>): Promise<CommandOutput>",
+              "doc": "Show a release: `gh release view`."
+            },
+            {
+              "name": "releaseUpload",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseUpload(configure?: Configure<GhReleaseUploadSettings>): Promise<CommandOutput>",
+              "doc": "Attach assets to a release: `gh release upload`. Needs the `gh` binary;\n{@link \"./release_asset.ts\".GhReleaseAssetApi.uploadReleaseAsset} is the\nREST path, which needs a token instead."
+            },
+            {
+              "name": "releaseDownload",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseDownload(configure?: Configure<GhReleaseDownloadSettings>): Promise<CommandOutput>",
+              "doc": "Download a release's assets: `gh release download`."
+            },
+            {
+              "name": "releaseEdit",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseEdit(configure?: Configure<GhReleaseEditSettings>): Promise<CommandOutput>",
+              "doc": "Change a release: `gh release edit`."
+            },
+            {
+              "name": "releaseDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseDelete(configure?: Configure<GhReleaseDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Remove a release: `gh release delete`."
             }
           ]
         },
@@ -25273,6 +26410,345 @@
           ]
         },
         {
+          "name": "GhReleaseCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release create`.",
+          "signature": "class GhReleaseCreateSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The tag to release (required); gh creates it when it does not exist."
+            },
+            {
+              "name": "files",
+              "kind": "method",
+              "optional": false,
+              "signature": "files(...paths: PathLike[]): this",
+              "doc": "Asset files to attach (positional); repeatable. gh reads a `#label`\nsuffix on a path as the asset's display label."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "The release title (`--title`)."
+            },
+            {
+              "name": "notes",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes(text: string): this",
+              "doc": "The release notes (`--notes`)."
+            },
+            {
+              "name": "notesFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "notesFile(path: PathLike): this",
+              "doc": "Read the notes from a file (`--notes-file`); `-` reads standard input."
+            },
+            {
+              "name": "generateNotes",
+              "kind": "method",
+              "optional": false,
+              "signature": "generateNotes(): this",
+              "doc": "Have GitHub write the title and notes (`--generate-notes`)."
+            },
+            {
+              "name": "notesFromTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "notesFromTag(): this",
+              "doc": "Take the notes from the tag's annotation (`--notes-from-tag`)."
+            },
+            {
+              "name": "notesStartTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "notesStartTag(name: string): this",
+              "doc": "Generate notes starting from this tag (`--notes-start-tag`)."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft(): this",
+              "doc": "Save it as a draft rather than publishing (`--draft`)."
+            },
+            {
+              "name": "prerelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "prerelease(): this",
+              "doc": "Mark it a prerelease (`--prerelease`)."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest(): this",
+              "doc": "Mark it the latest release (`--latest`)."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(branchOrSha: string): this",
+              "doc": "The branch or commit to tag (`--target`)."
+            },
+            {
+              "name": "discussionCategory",
+              "kind": "method",
+              "optional": false,
+              "signature": "discussionCategory(name: string): this",
+              "doc": "Open a discussion in this category (`--discussion-category`)."
+            },
+            {
+              "name": "verifyTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "verifyTag(): this",
+              "doc": "Abort unless the tag already exists on the remote (`--verify-tag`)."
+            },
+            {
+              "name": "failOnNoCommits",
+              "kind": "method",
+              "optional": false,
+              "signature": "failOnNoCommits(): this",
+              "doc": "Fail when there are no commits since the last release (`--fail-on-no-commits`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release delete`.",
+          "signature": "class GhReleaseDeleteSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The release to delete, by tag (required)."
+            },
+            {
+              "name": "cleanupTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "cleanupTag(): this",
+              "doc": "Delete the git tag as well (`--cleanup-tag`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation prompt (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseDownloadSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release download`.",
+          "signature": "class GhReleaseDownloadSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The release's tag; gh takes the latest release when it is omitted."
+            },
+            {
+              "name": "pattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "pattern(...globs: string[]): this",
+              "doc": "Only assets matching this glob (`--pattern`); repeatable."
+            },
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The directory to download into (`--dir`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Write a single asset to this file (`--output`); `-` writes standard output."
+            },
+            {
+              "name": "archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "archive(format: zip | tar.gz): this",
+              "doc": "Download the source archive instead of the assets (`--archive`)."
+            },
+            {
+              "name": "clobber",
+              "kind": "method",
+              "optional": false,
+              "signature": "clobber(): this",
+              "doc": "Overwrite files that already exist (`--clobber`)."
+            },
+            {
+              "name": "skipExisting",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipExisting(): this",
+              "doc": "Leave files that already exist alone (`--skip-existing`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release edit`.",
+          "signature": "class GhReleaseEditSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The release to edit, by its current tag (required)."
+            },
+            {
+              "name": "newTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "newTag(name: string): this",
+              "doc": "Move the release to a different tag (`--tag`)."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: string): this",
+              "doc": "Set the title (`--title`)."
+            },
+            {
+              "name": "notes",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes(text: string): this",
+              "doc": "Set the notes (`--notes`)."
+            },
+            {
+              "name": "notesFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "notesFile(path: PathLike): this",
+              "doc": "Read the notes from a file (`--notes-file`); `-` reads standard input."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft(): this",
+              "doc": "Make it a draft (`--draft`)."
+            },
+            {
+              "name": "prerelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "prerelease(): this",
+              "doc": "Mark it a prerelease (`--prerelease`)."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest(): this",
+              "doc": "Mark it the latest release (`--latest`)."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(branchOrSha: string): this",
+              "doc": "Change the target branch or commit (`--target`)."
+            },
+            {
+              "name": "discussionCategory",
+              "kind": "method",
+              "optional": false,
+              "signature": "discussionCategory(name: string): this",
+              "doc": "Open a discussion in this category when publishing (`--discussion-category`)."
+            },
+            {
+              "name": "verifyTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "verifyTag(): this",
+              "doc": "Abort unless the tag exists on the remote (`--verify-tag`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEntry",
+          "kind": "interface",
+          "doc": "One release of {@link \"./gh.ts\".GhTasks.releaseListEntries}.",
+          "signature": "interface GhReleaseEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tagName",
+              "kind": "property",
+              "optional": true,
+              "signature": "tagName?: string",
+              "doc": "The release's tag."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "Its name, which GitHub calls the title."
+            },
+            {
+              "name": "isDraft",
+              "kind": "property",
+              "optional": true,
+              "signature": "isDraft?: boolean",
+              "doc": "Whether it is still a draft."
+            },
+            {
+              "name": "isPrerelease",
+              "kind": "property",
+              "optional": true,
+              "signature": "isPrerelease?: boolean",
+              "doc": "Whether it is marked a prerelease."
+            },
+            {
+              "name": "isLatest",
+              "kind": "property",
+              "optional": true,
+              "signature": "isLatest?: boolean",
+              "doc": "Whether it is the latest release."
+            },
+            {
+              "name": "publishedAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "publishedAt?: string",
+              "doc": "When it was published, ISO 8601; absent while it is a draft."
+            }
+          ]
+        },
+        {
           "name": "GhReleaseLatestApi",
           "kind": "interface",
           "doc": "The mark-latest operation {@link GhTasks} exposes.",
@@ -25408,6 +26884,89 @@
               "optional": false,
               "signature": "fetch_: fetch",
               "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release list`.",
+          "signature": "class GhReleaseListSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(direction: asc | desc): this",
+              "doc": "The order they come back in (`--order`): `asc` or `desc`."
+            },
+            {
+              "name": "excludeDrafts",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeDrafts(): this",
+              "doc": "Leave out drafts (`--exclude-drafts`)."
+            },
+            {
+              "name": "excludePreReleases",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludePreReleases(): this",
+              "doc": "Leave out prereleases (`--exclude-pre-releases`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseUploadSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release upload`.",
+          "signature": "class GhReleaseUploadSettings extends GhCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The release's tag (required)."
+            },
+            {
+              "name": "files",
+              "kind": "method",
+              "optional": false,
+              "signature": "files(...paths: PathLike[]): this",
+              "doc": "Asset files to attach (required); repeatable. gh reads a `#label` suffix\non a path as the asset's display label."
+            },
+            {
+              "name": "clobber",
+              "kind": "method",
+              "optional": false,
+              "signature": "clobber(): this",
+              "doc": "Replace an asset of the same name (`--clobber`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release view`.",
+          "signature": "class GhReleaseViewSettings extends GhWebReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The release's tag; gh shows the latest release when it is omitted."
             }
           ]
         },
@@ -25767,6 +27326,22 @@
           ]
         },
         {
+          "name": "GhWebReadSettings",
+          "kind": "class",
+          "doc": "Base for the read commands that also take `--web`: every one of them except\n`release list`, which gh gives no browser view. Keeping `.web()` here rather\nthan on {@link GhReadSettings} is what stops a build offering a flag gh\nwould reject.",
+          "signature": "class GhWebReadSettings extends GhReadSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "web",
+              "kind": "method",
+              "optional": false,
+              "signature": "web(): this",
+              "doc": "Open the result in a browser instead of printing it (`--web`). A build\nhas no browser, so this is for a developer running the target by hand."
+            }
+          ]
+        },
+        {
           "name": "githubWorkflow",
           "kind": "function",
           "doc": "A {@link \"@zuke/core\".WaitTrigger} that dispatches a GitHub Actions workflow,\nsuspends the run until it finishes, and records its per-job conclusions to the\nawaiting target's state (read them with {@link readWorkflowResult}). See the\nmodule docs for the `run-name` correlation requirement and auth.\n\n```ts\ngithubWorkflow((g) => g.repo(\"acme/app\").workflow(\"e2e.yml\").ref(\"main\"))\n```",
@@ -25902,6 +27477,13 @@
           ]
         },
         {
+          "name": "ISSUE_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readIssues} asks for; gh requires the list by\nname, so the reader pins the set {@link GhIssueEntry} describes.",
+          "signature": "const ISSUE_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
           "name": "markReleaseLatest",
           "kind": "function",
           "doc": "Perform the configured mark-latest call.",
@@ -25930,10 +27512,24 @@
           "deprecated": false
         },
         {
+          "name": "PR_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readPullRequests} asks for. gh requires the list\nby name — there is no \"everything\" form — so the reader pins the set its\n{@link GhPullRequestEntry} describes.",
+          "signature": "const PR_LIST_FIELDS: unknown",
+          "deprecated": false
+        },
+        {
           "name": "readWorkflowResult",
           "kind": "function",
           "doc": "Read the {@link WorkflowResult} a completed {@link githubWorkflow} wait wrote\nto a target's state, or `undefined` if the wait has not completed (or this is\nnot a github-workflow gate). Call it from a **dependent** target's body with\nthe gate's handle: `readWorkflowResult(ctx.stateOf(\"<gate-target>\"))`.",
           "signature": "function readWorkflowResult(state: TargetStateHandle): WorkflowResult | undefined",
+          "deprecated": false
+        },
+        {
+          "name": "RELEASE_LIST_FIELDS",
+          "kind": "variable",
+          "doc": "The `--json` fields {@link readReleases} asks for; gh requires the list by\nname, so the reader pins the set {@link GhReleaseEntry} describes.",
+          "signature": "const RELEASE_LIST_FIELDS: unknown",
           "deprecated": false
         },
         {
