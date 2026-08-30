@@ -39504,16 +39504,23 @@
         {
           "name": "AgentFixer",
           "kind": "class",
-          "doc": "A fluent agent fixer. Construct one via {@link agentFixer} with a runner, and\nattach it to a target with `.recoverWith(...)`. Diagnose/report defaults are\non; file changes happen through the agent, gated to local runs unless\n`.allowCI()`.",
+          "doc": "A fluent agent fixer. Construct one via {@link agentFixer} with a runner, and\nattach it to a target with `.recoverWith(...)`. Diagnose/report defaults are\non; file changes happen through the agent, gated to local runs unless\n`.runOnly(...)` says otherwise.",
           "signature": "class AgentFixer",
           "deprecated": false,
           "members": [
+            {
+              "name": "runOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "runOnly(scope: RunScope): this",
+              "doc": "Where the agent may run. Defaults to `\"local\"` — run on a developer's\nmachine, refuse on CI.\n\n`\"ci\"` is the inverse, and the shape a repository's own build wants: an\nagent that heals a pull request must not be turned loose on a working tree\nsomeone is in the middle of editing. Off CI the fixer then reports the skip\nand leaves the failure standing, without ever starting the agent.\n\n`\"both\"` permits either host. One setter on one axis, so the effective\nscope never depends on the order two flags were called in."
+            },
             {
               "name": "allowCI",
               "kind": "method",
               "optional": false,
               "signature": "allowCI(): this",
-              "doc": "Permit the agent to run (and edit files) on CI; off by default."
+              "doc": "Permit the agent to run (and edit files) on CI as well as locally.\n"
             },
             {
               "name": "suggest",
@@ -39618,7 +39625,7 @@
               "kind": "method",
               "optional": false,
               "signature": "remediate(context: RemediationContext): Promise<RemediationResult>",
-              "doc": "Run the agent against the failure, optionally commit its changes, and ask\nthe executor to re-run the target as the verifier. Skips (no retry) on CI\nunless {@link allowCI} is set, or if the agent run itself fails."
+              "doc": "Run the agent against the failure, optionally commit its changes, and ask\nthe executor to re-run the target as the verifier. Skips (no retry)\noutside the hosts {@link runOnly} permits, or if the agent run itself\nfails."
             },
             {
               "name": "name",
@@ -39811,7 +39818,7 @@
               "kind": "method",
               "optional": false,
               "signature": "autoApply(): this",
-              "doc": "Apply the proposed fix to the working tree and ask the executor to re-run\nthe target. Off by default (the fixer only diagnoses). Writes are confined\nby {@link allowPaths}, the built-in exclusions, and {@link maxEdits}, and\nare refused on CI unless {@link allowCI} is set."
+              "doc": "Apply the proposed fix to the working tree and ask the executor to re-run\nthe target. Off by default (the fixer only diagnoses). Writes are confined\nby {@link allowPaths}, the built-in exclusions, and {@link maxEdits}, and\nare confined to the hosts {@link runOnly} permits."
             },
             {
               "name": "allowPaths",
@@ -39835,11 +39842,18 @@
               "doc": "Cap how many files a single applied fix may touch (default 10)."
             },
             {
+              "name": "runOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "runOnly(scope: RunScope): this",
+              "doc": "Where the fixer may run. Defaults to `\"local\"` — apply on a developer's\nmachine, refuse on CI.\n\n`\"ci\"` is the inverse, and the shape a repository's own build wants:\nself-heal a pull request without ever rewriting a working tree someone is\nin the middle of editing. Off CI the fixer then returns before the model is\ncalled, so it costs no tokens and the underlying failure stands unchanged.\n\nThat is a stronger refusal than the default scope makes on CI, where the\nfixer still diagnoses and only declines to write: a diagnosis on a pull\nrequest is worth reading, whereas one on a local run is an unasked-for\ncharge against the developer's own key.\n\n`\"both\"` permits either host. One setter on one axis, so the effective\nscope never depends on the order two flags were called in.\n\n```ts\naiFixer((f) => f.provider(\"openai\").apiKey(key).autoApply().runOnly(\"ci\"));\n```"
+            },
+            {
               "name": "allowCI",
               "kind": "method",
               "optional": false,
               "signature": "allowCI(): this",
-              "doc": "Permit auto-apply (and committing) on CI; off by default."
+              "doc": "Permit auto-apply (and committing) on CI as well as locally.\n"
             },
             {
               "name": "commitFixes",
@@ -41056,6 +41070,13 @@
               "doc": "A name for diagnostics — `\"<assessment> review\"`."
             }
           ]
+        },
+        {
+          "name": "RunScope",
+          "kind": "typeAlias",
+          "doc": "Where a fixer may run, set with `.runOnly(...)`.\n\n- `\"local\"` — apply on a developer's machine, refuse on CI. The default, and\n  what a fixer has when `.runOnly(...)` is never called.\n- `\"ci\"` — apply on CI, and do not run at all off it. The scope a\n  repository's own build wants: heal a pull request without ever rewriting a\n  working tree someone is editing.\n- `\"both\"` — apply on either host. What `.allowCI()` selects.\n\n\"On CI\" means a host `detectCiHost` recognises: GitHub Actions, GitLab CI,\nAzure Pipelines and Bitbucket Pipelines. Anywhere else — CircleCI, Jenkins,\nor a runner that only sets the generic `CI` variable — counts as local, so\n`\"ci\"` does not run there and `\"local\"` does. That is the safe direction for\n`\"ci\"` (an unrecognised host gets no writes rather than unexpected ones), but\nit does mean a fixer scoped to `\"ci\"` on such a runner will report a skip\nevery time instead of fixing anything. Use `\"both\"` there.",
+          "signature": "type RunScope = local | ci | both",
+          "deprecated": false
         },
         {
           "name": "secretsReviewer",
