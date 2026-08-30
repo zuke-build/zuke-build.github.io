@@ -25507,11 +25507,1019 @@
           "deprecated": false
         },
         {
+          "name": "GcloudArtifactsImagesDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud artifacts docker images delete`.",
+          "signature": "class GcloudArtifactsImagesDeleteSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The image or version to delete (positional)."
+            },
+            {
+              "name": "deleteTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteTags(): this",
+              "doc": "Delete the version even though tags point at it (`--delete-tags`), which\ngcloud otherwise refuses."
+            }
+          ]
+        },
+        {
+          "name": "GcloudArtifactsImagesListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud artifacts docker images list`.",
+          "signature": "class GcloudArtifactsImagesListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(path: string): this",
+              "doc": "The repository or image to list (positional)."
+            },
+            {
+              "name": "includeTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "includeTags(): this",
+              "doc": "Include each version's tags (`--include-tags`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(value: number): this",
+              "doc": "Return at most this many images (`--limit`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Restrict the listing (`--filter`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudArtifactsRepositoriesDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud artifacts repositories describe`.",
+          "signature": "class GcloudArtifactsRepositoriesDescribeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(name: string): this",
+              "doc": "The repository to describe (positional)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(value: string): this",
+              "doc": "The location it lives in (`--location`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudArtifactsRepositoriesListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud artifacts repositories list`.",
+          "signature": "class GcloudArtifactsRepositoriesListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(value: string): this",
+              "doc": "The location to list from (`--location`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(value: number): this",
+              "doc": "Return at most this many repositories (`--limit`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudAuthActivateServiceAccountSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud auth activate-service-account`.",
+          "signature": "class GcloudAuthActivateServiceAccountSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "serviceAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceAccount(email: string): this",
+              "doc": "The service account to activate (positional); optional beside a key file."
+            },
+            {
+              "name": "keyFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyFile(path: string): this",
+              "doc": "The JSON key to activate it from (`--key-file`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudAuthConfigureDockerSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud auth configure-docker`.",
+          "signature": "class GcloudAuthConfigureDockerSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "registries",
+              "kind": "method",
+              "optional": false,
+              "signature": "registries(...values: string[]): this",
+              "doc": "The registries to add a credential helper for (positional, comma\nseparated), e.g. `\"us-central1-docker.pkg.dev\"`; repeatable."
+            }
+          ]
+        },
+        {
+          "name": "GcloudAuthListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud auth list`.",
+          "signature": "class GcloudAuthListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "filterAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "filterAccount(email: string): this",
+              "doc": "Only the named account (`--filter-account`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudAuthPrintAccessTokenSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud auth print-access-token`.",
+          "signature": "class GcloudAuthPrintAccessTokenSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "forAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "forAccount(email: string): this",
+              "doc": "Print the token for this account rather than the active one (positional)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudAuthPrintIdentityTokenSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud auth print-identity-token`.",
+          "signature": "class GcloudAuthPrintIdentityTokenSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "forAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "forAccount(email: string): this",
+              "doc": "Print the token for this account rather than the active one (positional)."
+            },
+            {
+              "name": "audiences",
+              "kind": "method",
+              "optional": false,
+              "signature": "audiences(...values: string[]): this",
+              "doc": "The audiences the token is minted for (`--audiences`); repeatable.\n\nA Cloud Run service invoked service-to-service is the usual reason: the\nreceiving service's URL is the audience, and a token minted without one is\nrejected there."
+            },
+            {
+              "name": "includeEmail",
+              "kind": "method",
+              "optional": false,
+              "signature": "includeEmail(): this",
+              "doc": "Include the service account email in the token (`--include-email`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudAuthRevokeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud auth revoke`.",
+          "signature": "class GcloudAuthRevokeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "accounts",
+              "kind": "method",
+              "optional": false,
+              "signature": "accounts(...values: string[]): this",
+              "doc": "The accounts to revoke (positional); repeatable."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Revoke every credentialed account (`--all`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudBuildsDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud builds describe`.",
+          "signature": "class GcloudBuildsDescribeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "build",
+              "kind": "method",
+              "optional": false,
+              "signature": "build(id: string): this",
+              "doc": "The build to describe (positional)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region it ran in (`--region`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudBuildsListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud builds list`.",
+          "signature": "class GcloudBuildsListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(value: number): this",
+              "doc": "Return at most this many builds (`--limit`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Restrict the listing (`--filter`), e.g. `\"status=SUCCESS\"`."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region to list from (`--region`)."
+            },
+            {
+              "name": "ongoing",
+              "kind": "method",
+              "optional": false,
+              "signature": "ongoing(): this",
+              "doc": "Only builds that have not finished (`--ongoing`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudBuildsLogSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud builds log`.",
+          "signature": "class GcloudBuildsLogSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "build",
+              "kind": "method",
+              "optional": false,
+              "signature": "build(id: string): this",
+              "doc": "The build whose log to read (positional)."
+            },
+            {
+              "name": "stream",
+              "kind": "method",
+              "optional": false,
+              "signature": "stream(): this",
+              "doc": "Follow the log until the build finishes (`--stream`), which makes the task\nblock for the build's duration rather than returning what exists now."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region it ran in (`--region`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudBuildsSubmitSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud builds submit`.",
+          "signature": "class GcloudBuildsSubmitSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "The source to build (positional), e.g. `\".\"` or a `gs://` archive."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(image: string): this",
+              "doc": "Build a container and push it to this tag (`--tag`)."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(path: string): this",
+              "doc": "Build from a config file (`--config`), e.g. `cloudbuild.yaml`."
+            },
+            {
+              "name": "pack",
+              "kind": "method",
+              "optional": false,
+              "signature": "pack(spec: string): this",
+              "doc": "Build with buildpacks (`--pack`), e.g. `\"image=gcr.io/p/i\"`."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(value: string): this",
+              "doc": "Fail the build after this long (`--timeout`), e.g. `\"600s\"`."
+            },
+            {
+              "name": "machineType",
+              "kind": "method",
+              "optional": false,
+              "signature": "machineType(value: string): this",
+              "doc": "The machine type to build on (`--machine-type`)."
+            },
+            {
+              "name": "substitutions",
+              "kind": "method",
+              "optional": false,
+              "signature": "substitutions(...pairs: string[]): this",
+              "doc": "Substitution values for the config (`--substitutions`); repeatable."
+            },
+            {
+              "name": "async",
+              "kind": "method",
+              "optional": false,
+              "signature": "async(): this",
+              "doc": "Return as soon as the build is queued (`--async`)."
+            },
+            {
+              "name": "gcsSourceStagingDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "gcsSourceStagingDir(uri: string): this",
+              "doc": "Stage the source under this bucket path (`--gcs-source-staging-dir`)."
+            },
+            {
+              "name": "ignoreFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreFile(path: string): this",
+              "doc": "Exclude files matching this ignore file (`--ignore-file`)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region to build in (`--region`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudClustersDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud container clusters describe`.",
+          "signature": "class GcloudClustersDescribeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster to describe (positional)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(value: string): this",
+              "doc": "The cluster's location (`--location`)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The cluster's region (`--region`)."
+            },
+            {
+              "name": "zone",
+              "kind": "method",
+              "optional": false,
+              "signature": "zone(value: string): this",
+              "doc": "The cluster's zone (`--zone`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudClustersGetCredentialsSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud container clusters get-credentials`.",
+          "signature": "class GcloudClustersGetCredentialsSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster to fetch credentials for (positional)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(value: string): this",
+              "doc": "The cluster's location (`--location`)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The cluster's region (`--region`)."
+            },
+            {
+              "name": "zone",
+              "kind": "method",
+              "optional": false,
+              "signature": "zone(value: string): this",
+              "doc": "The cluster's zone (`--zone`)."
+            },
+            {
+              "name": "internalIp",
+              "kind": "method",
+              "optional": false,
+              "signature": "internalIp(): this",
+              "doc": "Use the internal endpoint (`--internal-ip`), for a private cluster."
+            },
+            {
+              "name": "dnsEndpoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "dnsEndpoint(): this",
+              "doc": "Use the DNS endpoint (`--dns-endpoint`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudClustersListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud container clusters list`.",
+          "signature": "class GcloudClustersListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(value: string): this",
+              "doc": "Restrict to a location (`--location`)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "Restrict to a region (`--region`)."
+            },
+            {
+              "name": "zone",
+              "kind": "method",
+              "optional": false,
+              "signature": "zone(value: string): this",
+              "doc": "Restrict to a zone (`--zone`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Restrict the listing (`--filter`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudConfigGetValueSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud config get-value`.",
+          "signature": "class GcloudConfigGetValueSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "property",
+              "kind": "method",
+              "optional": false,
+              "signature": "property(name: string): this",
+              "doc": "The property to read (positional)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudConfigListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud config list`.",
+          "signature": "class GcloudConfigListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Include properties left at their defaults (`--all`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudConfigSetSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud config set`.",
+          "signature": "class GcloudConfigSetSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "property",
+              "kind": "method",
+              "optional": false,
+              "signature": "property(name: string): this",
+              "doc": "The property to set (positional), e.g. `\"project\"` or `\"run/region\"`."
+            },
+            {
+              "name": "value",
+              "kind": "method",
+              "optional": false,
+              "signature": "value(text: string): this",
+              "doc": "The value to set it to (positional)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudConfigUnsetSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud config unset`.",
+          "signature": "class GcloudConfigUnsetSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "property",
+              "kind": "method",
+              "optional": false,
+              "signature": "property(name: string): this",
+              "doc": "The property to clear (positional)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudFunctionsDeploySettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud functions deploy`.",
+          "signature": "class GcloudFunctionsDeploySettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "function",
+              "kind": "method",
+              "optional": false,
+              "signature": "function(name: string): this",
+              "doc": "The function to deploy (positional)."
+            },
+            {
+              "name": "runtime",
+              "kind": "method",
+              "optional": false,
+              "signature": "runtime(value: string): this",
+              "doc": "The language runtime (`--runtime`), e.g. `\"nodejs20\"`."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region to deploy into (`--region`)."
+            },
+            {
+              "name": "entryPoint",
+              "kind": "method",
+              "optional": false,
+              "signature": "entryPoint(value: string): this",
+              "doc": "The exported symbol to invoke (`--entry-point`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "Where the source lives (`--source`)."
+            },
+            {
+              "name": "triggerHttp",
+              "kind": "method",
+              "optional": false,
+              "signature": "triggerHttp(): this",
+              "doc": "Trigger on HTTP requests (`--trigger-http`)."
+            },
+            {
+              "name": "triggerTopic",
+              "kind": "method",
+              "optional": false,
+              "signature": "triggerTopic(name: string): this",
+              "doc": "Trigger on a Pub/Sub topic (`--trigger-topic`)."
+            },
+            {
+              "name": "triggerBucket",
+              "kind": "method",
+              "optional": false,
+              "signature": "triggerBucket(name: string): this",
+              "doc": "Trigger on a Cloud Storage bucket (`--trigger-bucket`)."
+            },
+            {
+              "name": "triggerEventFilters",
+              "kind": "method",
+              "optional": false,
+              "signature": "triggerEventFilters(...filters: string[]): this",
+              "doc": "Trigger on matching Eventarc events (`--trigger-event-filters`)."
+            },
+            {
+              "name": "serviceAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceAccount(email: string): this",
+              "doc": "The identity the function runs as (`--service-account`)."
+            },
+            {
+              "name": "setEnvVars",
+              "kind": "method",
+              "optional": false,
+              "signature": "setEnvVars(...pairs: string[]): this",
+              "doc": "Environment variables (`--set-env-vars`), as `KEY=value`; repeatable."
+            },
+            {
+              "name": "memory",
+              "kind": "method",
+              "optional": false,
+              "signature": "memory(value: string): this",
+              "doc": "Memory per instance (`--memory`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(value: string): this",
+              "doc": "Execution timeout (`--timeout`)."
+            },
+            {
+              "name": "gen2",
+              "kind": "method",
+              "optional": false,
+              "signature": "gen2(): this",
+              "doc": "Deploy as a 2nd-generation function (`--gen2`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudFunctionsDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud functions describe`.",
+          "signature": "class GcloudFunctionsDescribeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "function",
+              "kind": "method",
+              "optional": false,
+              "signature": "function(name: string): this",
+              "doc": "The function to describe (positional)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region it runs in (`--region`)."
+            },
+            {
+              "name": "gen2",
+              "kind": "method",
+              "optional": false,
+              "signature": "gen2(): this",
+              "doc": "Look it up as a 2nd-generation function (`--gen2`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudRunDeploySettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud run deploy`.",
+          "signature": "class GcloudRunDeploySettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The service to deploy (positional)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The container image to deploy (`--image`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "Build and deploy from source instead of an image (`--source`)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region to deploy into (`--region`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: string): this",
+              "doc": "The platform to target (`--platform`), e.g. `\"managed\"`."
+            },
+            {
+              "name": "allowUnauthenticated",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowUnauthenticated(): this",
+              "doc": "Let unauthenticated callers invoke the service (`--allow-unauthenticated`)."
+            },
+            {
+              "name": "noAllowUnauthenticated",
+              "kind": "method",
+              "optional": false,
+              "signature": "noAllowUnauthenticated(): this",
+              "doc": "Require authentication to invoke it (`--no-allow-unauthenticated`)."
+            },
+            {
+              "name": "serviceAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceAccount(email: string): this",
+              "doc": "The identity the service runs as (`--service-account`)."
+            },
+            {
+              "name": "setEnvVars",
+              "kind": "method",
+              "optional": false,
+              "signature": "setEnvVars(...pairs: string[]): this",
+              "doc": "Environment variables (`--set-env-vars`), as `KEY=value`; repeatable."
+            },
+            {
+              "name": "setSecrets",
+              "kind": "method",
+              "optional": false,
+              "signature": "setSecrets(...pairs: string[]): this",
+              "doc": "Secret Manager mounts (`--set-secrets`); repeatable."
+            },
+            {
+              "name": "memory",
+              "kind": "method",
+              "optional": false,
+              "signature": "memory(value: string): this",
+              "doc": "Memory per instance (`--memory`), e.g. `\"512Mi\"`."
+            },
+            {
+              "name": "cpu",
+              "kind": "method",
+              "optional": false,
+              "signature": "cpu(value: string): this",
+              "doc": "CPU per instance (`--cpu`)."
+            },
+            {
+              "name": "concurrency",
+              "kind": "method",
+              "optional": false,
+              "signature": "concurrency(value: number): this",
+              "doc": "Requests served concurrently per instance (`--concurrency`)."
+            },
+            {
+              "name": "maxInstances",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxInstances(value: number): this",
+              "doc": "Upper bound on instances (`--max-instances`)."
+            },
+            {
+              "name": "minInstances",
+              "kind": "method",
+              "optional": false,
+              "signature": "minInstances(value: number): this",
+              "doc": "Lower bound on instances (`--min-instances`)."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(value: number): this",
+              "doc": "The port the container listens on (`--port`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(value: string): this",
+              "doc": "Request timeout (`--timeout`)."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: string): this",
+              "doc": "Tag this revision (`--tag`), so it is addressable without traffic."
+            },
+            {
+              "name": "noTraffic",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTraffic(): this",
+              "doc": "Deploy without moving traffic to the new revision (`--no-traffic`)."
+            }
+          ]
+        },
+        {
           "name": "GcloudRunner",
           "kind": "typeAlias",
           "doc": "Runs a `gcloud` command — the seam {@link gcloudAccessToken} resolves the\ntoken through. Defaults to {@link \"./gcloud.ts\".GcloudTasks} `.run`; injectable\nso the default provider is unit-testable without invoking `gcloud`.",
           "signature": "type GcloudRunner = unknown",
           "deprecated": false
+        },
+        {
+          "name": "GcloudRunServicesDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud run services describe`.",
+          "signature": "class GcloudRunServicesDescribeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The service to describe (positional)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region it runs in (`--region`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: string): this",
+              "doc": "The platform it runs on (`--platform`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudRunServicesListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud run services list`.",
+          "signature": "class GcloudRunServicesListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region to list from (`--region`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: string): this",
+              "doc": "The platform to list from (`--platform`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Restrict the listing (`--filter`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudRunUpdateTrafficSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud run services update-traffic`.",
+          "signature": "class GcloudRunUpdateTrafficSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The service whose traffic to move (positional)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region it runs in (`--region`)."
+            },
+            {
+              "name": "toLatest",
+              "kind": "method",
+              "optional": false,
+              "signature": "toLatest(): this",
+              "doc": "Send all traffic to the newest revision (`--to-latest`)."
+            },
+            {
+              "name": "toRevisions",
+              "kind": "method",
+              "optional": false,
+              "signature": "toRevisions(...splits: string[]): this",
+              "doc": "Split traffic across revisions (`--to-revisions`), as `rev=percent`."
+            },
+            {
+              "name": "toTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "toTags(...splits: string[]): this",
+              "doc": "Split traffic across tags (`--to-tags`), as `tag=percent`."
+            }
+          ]
+        },
+        {
+          "name": "GcloudSecretsVersionsAccessSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud secrets versions access`.",
+          "signature": "class GcloudSecretsVersionsAccessSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The version to read (positional); defaults to `latest`."
+            },
+            {
+              "name": "secret",
+              "kind": "method",
+              "optional": false,
+              "signature": "secret(name: string): this",
+              "doc": "The secret to read it from (`--secret`)."
+            }
+          ]
         },
         {
           "name": "GcloudSettings",
@@ -25586,6 +26594,154 @@
           ]
         },
         {
+          "name": "GcloudStorageCpSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud storage cp`.",
+          "signature": "class GcloudStorageCpSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "sources",
+              "kind": "method",
+              "optional": false,
+              "signature": "sources(...paths: string[]): this",
+              "doc": "The sources to copy (positional); repeatable."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(path: string): this",
+              "doc": "Where to copy them (positional)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Copy directories and their contents (`--recursive`)."
+            },
+            {
+              "name": "noClobber",
+              "kind": "method",
+              "optional": false,
+              "signature": "noClobber(): this",
+              "doc": "Skip objects that already exist (`--no-clobber`)."
+            },
+            {
+              "name": "contentType",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentType(value: string): this",
+              "doc": "Set the uploaded objects' content type (`--content-type`)."
+            },
+            {
+              "name": "cacheControl",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheControl(value: string): this",
+              "doc": "Set the uploaded objects' cache control (`--cache-control`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudStorageLsSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud storage ls`.",
+          "signature": "class GcloudStorageLsSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: string[]): this",
+              "doc": "The paths to list (positional); repeatable."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Recurse into prefixes (`--recursive`)."
+            },
+            {
+              "name": "long",
+              "kind": "method",
+              "optional": false,
+              "signature": "long(): this",
+              "doc": "Include size and creation time (`--long`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudStorageRmSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud storage rm`.",
+          "signature": "class GcloudStorageRmSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: string[]): this",
+              "doc": "The objects or prefixes to remove (positional); repeatable."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Remove prefixes and everything under them (`--recursive`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudStorageRsyncSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud storage rsync`.",
+          "signature": "class GcloudStorageRsyncSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "The source tree (positional)."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(path: string): this",
+              "doc": "The destination tree (positional)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Recurse into directories (`--recursive`)."
+            },
+            {
+              "name": "deleteUnmatchedDestinationObjects",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteUnmatchedDestinationObjects(): this",
+              "doc": "Delete objects at the destination that the source does not have\n(`--delete-unmatched-destination-objects`), which makes the destination a\nmirror rather than a superset."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(pattern: string): this",
+              "doc": "Skip paths matching this pattern (`--exclude`)."
+            }
+          ]
+        },
+        {
           "name": "GcloudTasks",
           "kind": "variable",
           "doc": "Typed task functions for the `gcloud` CLI.",
@@ -25605,6 +26761,265 @@
               "optional": false,
               "signature": "run(configure?: Configure<GcloudSettings>): Promise<CommandOutput>",
               "doc": "Run a `gcloud` command."
+            },
+            {
+              "name": "authActivateServiceAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "authActivateServiceAccount(configure?: Configure<GcloudAuthActivateServiceAccountSettings>): Promise<CommandOutput>",
+              "doc": "Activate a service account: `gcloud auth activate-service-account`."
+            },
+            {
+              "name": "authPrintAccessToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "authPrintAccessToken(configure?: Configure<GcloudAuthPrintAccessTokenSettings>): Promise<CommandOutput>",
+              "doc": "Print an OAuth access token: `gcloud auth print-access-token`."
+            },
+            {
+              "name": "accessToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "accessToken(configure?: Configure<GcloudAuthPrintAccessTokenSettings>): Promise<string>",
+              "doc": "The OAuth access token itself, read back as a string."
+            },
+            {
+              "name": "authPrintIdentityToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "authPrintIdentityToken(configure?: Configure<GcloudAuthPrintIdentityTokenSettings>): Promise<CommandOutput>",
+              "doc": "Print an identity token: `gcloud auth print-identity-token`."
+            },
+            {
+              "name": "identityToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "identityToken(configure?: Configure<GcloudAuthPrintIdentityTokenSettings>): Promise<string>",
+              "doc": "The identity token itself, read back as a string."
+            },
+            {
+              "name": "authConfigureDocker",
+              "kind": "method",
+              "optional": false,
+              "signature": "authConfigureDocker(configure?: Configure<GcloudAuthConfigureDockerSettings>): Promise<CommandOutput>",
+              "doc": "Register gcloud as a Docker credential helper: `gcloud auth configure-docker`."
+            },
+            {
+              "name": "authList",
+              "kind": "method",
+              "optional": false,
+              "signature": "authList(configure?: Configure<GcloudAuthListSettings>): Promise<CommandOutput>",
+              "doc": "List credentialed accounts: `gcloud auth list`."
+            },
+            {
+              "name": "authRevoke",
+              "kind": "method",
+              "optional": false,
+              "signature": "authRevoke(configure?: Configure<GcloudAuthRevokeSettings>): Promise<CommandOutput>",
+              "doc": "Revoke credentials: `gcloud auth revoke`."
+            },
+            {
+              "name": "configSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "configSet(configure?: Configure<GcloudConfigSetSettings>): Promise<CommandOutput>",
+              "doc": "Set a property: `gcloud config set`."
+            },
+            {
+              "name": "configUnset",
+              "kind": "method",
+              "optional": false,
+              "signature": "configUnset(configure?: Configure<GcloudConfigUnsetSettings>): Promise<CommandOutput>",
+              "doc": "Clear a property: `gcloud config unset`."
+            },
+            {
+              "name": "configGetValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "configGetValue(configure?: Configure<GcloudConfigGetValueSettings>): Promise<CommandOutput>",
+              "doc": "Read a property: `gcloud config get-value`."
+            },
+            {
+              "name": "configValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "configValue(configure?: Configure<GcloudConfigGetValueSettings>): Promise<string>",
+              "doc": "A configured property's value, read back as a string."
+            },
+            {
+              "name": "configList",
+              "kind": "method",
+              "optional": false,
+              "signature": "configList(configure?: Configure<GcloudConfigListSettings>): Promise<CommandOutput>",
+              "doc": "List the active configuration: `gcloud config list`."
+            },
+            {
+              "name": "buildsSubmit",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildsSubmit(configure?: Configure<GcloudBuildsSubmitSettings>): Promise<CommandOutput>",
+              "doc": "Submit a Cloud Build: `gcloud builds submit`."
+            },
+            {
+              "name": "buildsList",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildsList(configure?: Configure<GcloudBuildsListSettings>): Promise<CommandOutput>",
+              "doc": "List builds: `gcloud builds list`."
+            },
+            {
+              "name": "buildsDescribe",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildsDescribe(configure?: Configure<GcloudBuildsDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Describe a build: `gcloud builds describe`."
+            },
+            {
+              "name": "buildsLog",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildsLog(configure?: Configure<GcloudBuildsLogSettings>): Promise<CommandOutput>",
+              "doc": "Read a build's log: `gcloud builds log`."
+            },
+            {
+              "name": "runDeploy",
+              "kind": "method",
+              "optional": false,
+              "signature": "runDeploy(configure?: Configure<GcloudRunDeploySettings>): Promise<CommandOutput>",
+              "doc": "Deploy to Cloud Run: `gcloud run deploy`."
+            },
+            {
+              "name": "runServicesDescribe",
+              "kind": "method",
+              "optional": false,
+              "signature": "runServicesDescribe(configure?: Configure<GcloudRunServicesDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Describe a Cloud Run service: `gcloud run services describe`."
+            },
+            {
+              "name": "runServiceUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "runServiceUrl(configure?: Configure<GcloudRunServicesDescribeSettings>): Promise<string>",
+              "doc": "The URL Cloud Run assigned a service, read back as a string. Pins\n`--format` to gcloud's own value projection, so gcloud extracts the field."
+            },
+            {
+              "name": "runServicesList",
+              "kind": "method",
+              "optional": false,
+              "signature": "runServicesList(configure?: Configure<GcloudRunServicesListSettings>): Promise<CommandOutput>",
+              "doc": "List Cloud Run services: `gcloud run services list`."
+            },
+            {
+              "name": "runUpdateTraffic",
+              "kind": "method",
+              "optional": false,
+              "signature": "runUpdateTraffic(configure?: Configure<GcloudRunUpdateTrafficSettings>): Promise<CommandOutput>",
+              "doc": "Move traffic between revisions: `gcloud run services update-traffic`."
+            },
+            {
+              "name": "artifactsImagesList",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifactsImagesList(configure?: Configure<GcloudArtifactsImagesListSettings>): Promise<CommandOutput>",
+              "doc": "List images in Artifact Registry: `gcloud artifacts docker images list`."
+            },
+            {
+              "name": "artifactsImagesDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifactsImagesDelete(configure?: Configure<GcloudArtifactsImagesDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Delete an image: `gcloud artifacts docker images delete`."
+            },
+            {
+              "name": "artifactsRepositoriesList",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifactsRepositoriesList(configure?: Configure<GcloudArtifactsRepositoriesListSettings>): Promise<CommandOutput>",
+              "doc": "List repositories: `gcloud artifacts repositories list`."
+            },
+            {
+              "name": "artifactsRepositoriesDescribe",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifactsRepositoriesDescribe(configure?: Configure<GcloudArtifactsRepositoriesDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Describe a repository: `gcloud artifacts repositories describe`."
+            },
+            {
+              "name": "storageCp",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageCp(configure?: Configure<GcloudStorageCpSettings>): Promise<CommandOutput>",
+              "doc": "Copy to or from Cloud Storage: `gcloud storage cp`."
+            },
+            {
+              "name": "storageRsync",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageRsync(configure?: Configure<GcloudStorageRsyncSettings>): Promise<CommandOutput>",
+              "doc": "Sync a tree to or from Cloud Storage: `gcloud storage rsync`."
+            },
+            {
+              "name": "storageLs",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageLs(configure?: Configure<GcloudStorageLsSettings>): Promise<CommandOutput>",
+              "doc": "List objects: `gcloud storage ls`."
+            },
+            {
+              "name": "storageRm",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageRm(configure?: Configure<GcloudStorageRmSettings>): Promise<CommandOutput>",
+              "doc": "Remove objects: `gcloud storage rm`."
+            },
+            {
+              "name": "clustersGetCredentials",
+              "kind": "method",
+              "optional": false,
+              "signature": "clustersGetCredentials(configure?: Configure<GcloudClustersGetCredentialsSettings>): Promise<CommandOutput>",
+              "doc": "Write a kubeconfig entry for a GKE cluster:\n`gcloud container clusters get-credentials`."
+            },
+            {
+              "name": "clustersList",
+              "kind": "method",
+              "optional": false,
+              "signature": "clustersList(configure?: Configure<GcloudClustersListSettings>): Promise<CommandOutput>",
+              "doc": "List GKE clusters: `gcloud container clusters list`."
+            },
+            {
+              "name": "clustersDescribe",
+              "kind": "method",
+              "optional": false,
+              "signature": "clustersDescribe(configure?: Configure<GcloudClustersDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Describe a GKE cluster: `gcloud container clusters describe`."
+            },
+            {
+              "name": "functionsDeploy",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionsDeploy(configure?: Configure<GcloudFunctionsDeploySettings>): Promise<CommandOutput>",
+              "doc": "Deploy a Cloud Function: `gcloud functions deploy`."
+            },
+            {
+              "name": "functionsDescribe",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionsDescribe(configure?: Configure<GcloudFunctionsDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Describe a Cloud Function: `gcloud functions describe`."
+            },
+            {
+              "name": "secretsAccess",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretsAccess(configure?: Configure<GcloudSecretsVersionsAccessSettings>): Promise<CommandOutput>",
+              "doc": "Read a secret version: `gcloud secrets versions access`."
+            },
+            {
+              "name": "secretValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretValue(configure?: Configure<GcloudSecretsVersionsAccessSettings>): Promise<string>",
+              "doc": "A secret version's payload, read back as a string."
             }
           ]
         },
@@ -25719,6 +27134,13 @@
           "kind": "function",
           "doc": "Resolve a bearer token from an explicit `token` or, when it is omitted, the\n`tokenProvider` (defaulting to {@link gcloudAccessToken}). Shared by the REST\ntask groups so every call resolves auth the same way.",
           "signature": "function resolveAccessToken(options: unknown): Promise<string>",
+          "deprecated": false
+        },
+        {
+          "name": "RUN_SERVICE_URL_FORMAT",
+          "kind": "variable",
+          "doc": "The `--format` the service-URL reader pins, so gcloud does the extraction.",
+          "signature": "const RUN_SERVICE_URL_FORMAT: value(status.url)",
           "deprecated": false
         },
         {
