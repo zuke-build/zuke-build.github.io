@@ -29036,6 +29036,13 @@
               "doc": "Report an untracked directory once rather than every file in it (`--directory`)."
             },
             {
+              "name": "errorUnmatch",
+              "kind": "method",
+              "optional": false,
+              "signature": "errorUnmatch(): this",
+              "doc": "Exit non-zero when a pathspec matches nothing (`--error-unmatch`), which\nis how a build asserts that a path is tracked rather than reading the\nlisting to see whether it came back empty.\n\ngit only applies it to the paths it was given, so it needs\n{@link paths} — the flag on its own describes a whole-tree listing, which\nalways matches something."
+            },
+            {
               "name": "nulTerminated",
               "kind": "method",
               "optional": false,
