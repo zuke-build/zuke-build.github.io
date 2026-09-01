@@ -3389,6 +3389,20 @@
               "doc": "Move (rename) `source` to `destination`."
             },
             {
+              "name": "symlink",
+              "kind": "method",
+              "optional": false,
+              "signature": "symlink(target: PathLike, path: PathLike, options?: SymlinkOptions): Promise<void>",
+              "doc": "Create a symbolic link at `path` pointing to `target`.\n\n`target` is stored in the link verbatim, so a relative one resolves\nagainst the link's own directory — which is what makes a link between two\nsibling checkouts survive both being moved together.\n\nWith {@link SymlinkOptions.force} an entry already at `path` is replaced\natomically, which is the `ln -sfn` case a re-run of an idempotent target\nneeds; without it an existing entry is an `AlreadyExists` error. A\ndirectory at `path` is never replaced."
+            },
+            {
+              "name": "readLink",
+              "kind": "method",
+              "optional": false,
+              "signature": "readLink(path: PathLike): Promise<string>",
+              "doc": "The target of the symbolic link at `path`, exactly as stored in the link —\nrelative if it was created relative, and not checked for existence.\n\nThrows if `path` is not a symbolic link, which is the same answer\n`Deno.readLink` gives."
+            },
+            {
               "name": "readText",
               "kind": "method",
               "optional": false,
@@ -6391,6 +6405,29 @@
               "optional": false,
               "signature": "flag(name: string, value?: string | number): this",
               "doc": "Add an arbitrary flag. With a value it renders `--name value`; without one\nthe bare `--name`. Repeatable."
+            }
+          ]
+        },
+        {
+          "name": "SymlinkOptions",
+          "kind": "interface",
+          "doc": "Options for {@link FileTasksApi.symlink}.",
+          "signature": "interface SymlinkOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "force",
+              "kind": "property",
+              "optional": true,
+              "signature": "force?: boolean",
+              "doc": "Replace an existing entry at the link path, the way `ln -sfn` does\n(default `false`, which throws an `AlreadyExists` as `Deno.symlink` does).\n\nThe replacement is atomic: the new link is created under a sibling temp\nname and renamed over the path, so a concurrent reader sees either the old\nentry or the new link and never a missing path. A **directory** at the\npath is never replaced — the rename refuses it, empty or not — so forcing\na link cannot cost a caller a directory."
+            },
+            {
+              "name": "type",
+              "kind": "property",
+              "optional": true,
+              "signature": "type?: file | dir",
+              "doc": "What the link points at: `\"file\"` or `\"dir\"`. Windows needs the\ndistinction and ignores nothing else; POSIX ignores the option entirely.\nPass `\"dir\"` when linking a directory, or the link is unusable on Windows."
             }
           ]
         },
@@ -21500,6 +21537,108 @@
               "optional": false,
               "signature": "lint(configure?: Configure<CspellSettings>): Promise<CommandOutput>",
               "doc": "Spell-check with `cspell lint`."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@zuke/shellcheck",
+      "dir": "shellcheck",
+      "summary": "`@zuke/shellcheck` — typed [ShellCheck](https://www.shellcheck.net/) task",
+      "symbols": [
+        {
+          "name": "ShellcheckFormat",
+          "kind": "typeAlias",
+          "doc": "An output format ShellCheck can emit (`-f`).",
+          "signature": "type ShellcheckFormat = tty | gcc | checkstyle | diff | json | json1 | quiet",
+          "deprecated": false
+        },
+        {
+          "name": "ShellcheckSettings",
+          "kind": "class",
+          "doc": "Settings for a `shellcheck` run.",
+          "signature": "class ShellcheckSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "paths",
+              "kind": "method",
+              "optional": false,
+              "signature": "paths(...values: PathLike[]): this",
+              "doc": "Scripts to check (positional); repeatable."
+            },
+            {
+              "name": "shell",
+              "kind": "method",
+              "optional": false,
+              "signature": "shell(dialect: ShellcheckShell): this",
+              "doc": "The dialect to analyse as (`-s`/`--shell`), overriding the shebang.\n\nThis is the flag that makes a portability gate mean something: a script\nwith a `#!/bin/bash` shebang, or none at all, is otherwise checked as\nbash, so the POSIX violations the gate exists to catch go unreported."
+            },
+            {
+              "name": "severity",
+              "kind": "method",
+              "optional": false,
+              "signature": "severity(level: ShellcheckSeverity): this",
+              "doc": "The lowest severity to report (`-S`/`--severity`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(value: ShellcheckFormat): this",
+              "doc": "The output format (`-f`/`--format`)."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(...codes: string[]): this",
+              "doc": "Suppress specific checks by code (`-e`/`--exclude`); repeatable. Codes may\nbe given with or without the `SC` prefix, as ShellCheck accepts both."
+            },
+            {
+              "name": "externalSources",
+              "kind": "method",
+              "optional": false,
+              "signature": "externalSources(): this",
+              "doc": "Follow `source`d files outside the checked set (`-x`/`--external-sources`)."
+            }
+          ]
+        },
+        {
+          "name": "ShellcheckSeverity",
+          "kind": "typeAlias",
+          "doc": "The lowest severity ShellCheck reports (`-S`).",
+          "signature": "type ShellcheckSeverity = error | warning | info | style",
+          "deprecated": false
+        },
+        {
+          "name": "ShellcheckShell",
+          "kind": "typeAlias",
+          "doc": "A shell dialect ShellCheck can analyse (`-s`), overriding the shebang.\n\nA closed set: ShellCheck rejects anything else outright, so the type does\nthe same job the settings class does — the mistake is a compile error rather\nthan a failed run.",
+          "signature": "type ShellcheckShell = sh | bash | dash | ksh | busybox",
+          "deprecated": false
+        },
+        {
+          "name": "ShellcheckTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the ShellCheck static analyser.",
+          "signature": "const ShellcheckTasks: ShellcheckTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "ShellcheckTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link ShellcheckTasks}.",
+          "signature": "interface ShellcheckTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "lint",
+              "kind": "method",
+              "optional": false,
+              "signature": "lint(configure?: Configure<ShellcheckSettings>): Promise<CommandOutput>",
+              "doc": "Analyse shell scripts with `shellcheck`."
             }
           ]
         }
