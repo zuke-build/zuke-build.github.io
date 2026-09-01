@@ -78,6 +78,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "Biome", pkg: "@zuke/biome", desc: "check, format, lint, ci" },
       { name: "dprint", pkg: "@zuke/dprint", desc: "fmt, check" },
       { name: "cspell", pkg: "@zuke/cspell", desc: "spell-check your sources" },
+      { name: "ShellCheck", pkg: "@zuke/shellcheck", desc: "lint shell scripts, with a dialect" },
       { name: "lint-staged", pkg: "@zuke/lint-staged", desc: "lint the staged files, or a diff" },
       { name: "Knip", pkg: "@zuke/knip", desc: "find unused files & exports" },
       { name: "dpdm", pkg: "@zuke/dpdm", desc: "detect circular deps & dependency trees" },
