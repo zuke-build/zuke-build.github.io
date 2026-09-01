@@ -26455,6 +26455,120 @@
           ]
         },
         {
+          "name": "GcloudRunServicesUpdateSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud run services update` — amending a service that already\nexists.\n\nDistinct from {@link GcloudRunDeploySettings} on purpose. `run deploy`\ncreates the service when it is absent and resets settings the invocation does\nnot name; `run services update` only ever amends an existing one. A deploy\nthat points a live service at a freshly built image wants the second\nguarantee, and getting the first by accident — a service quietly created, or\nscaling config quietly dropped — is a worse failure than an error.",
+          "signature": "class GcloudRunServicesUpdateSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The service to update (positional)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region it runs in (`--region`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: string): this",
+              "doc": "The platform it runs on (`--platform`)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The container image to point the service at (`--image`)."
+            },
+            {
+              "name": "updateEnvVars",
+              "kind": "method",
+              "optional": false,
+              "signature": "updateEnvVars(...pairs: string[]): this",
+              "doc": "Set or overwrite environment variables (`--update-env-vars`), as\n`KEY=value`; repeatable. Variables the call does not name are left alone —\nwhich is the difference from `run deploy`'s `--set-env-vars`."
+            },
+            {
+              "name": "removeEnvVars",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeEnvVars(...names: string[]): this",
+              "doc": "Remove environment variables by name (`--remove-env-vars`); repeatable."
+            },
+            {
+              "name": "clearEnvVars",
+              "kind": "method",
+              "optional": false,
+              "signature": "clearEnvVars(): this",
+              "doc": "Remove every environment variable the service has (`--clear-env-vars`)."
+            },
+            {
+              "name": "updateSecrets",
+              "kind": "method",
+              "optional": false,
+              "signature": "updateSecrets(...pairs: string[]): this",
+              "doc": "Set or overwrite Secret Manager mounts (`--update-secrets`), as\n`KEY=secret:version`; repeatable."
+            },
+            {
+              "name": "memory",
+              "kind": "method",
+              "optional": false,
+              "signature": "memory(value: string): this",
+              "doc": "Memory per instance (`--memory`), e.g. `\"512Mi\"`."
+            },
+            {
+              "name": "cpu",
+              "kind": "method",
+              "optional": false,
+              "signature": "cpu(value: string): this",
+              "doc": "CPU per instance (`--cpu`)."
+            },
+            {
+              "name": "concurrency",
+              "kind": "method",
+              "optional": false,
+              "signature": "concurrency(value: number): this",
+              "doc": "Requests served concurrently per instance (`--concurrency`)."
+            },
+            {
+              "name": "maxInstances",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxInstances(value: number): this",
+              "doc": "Upper bound on instances (`--max-instances`)."
+            },
+            {
+              "name": "minInstances",
+              "kind": "method",
+              "optional": false,
+              "signature": "minInstances(value: number): this",
+              "doc": "Lower bound on instances (`--min-instances`)."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: string): this",
+              "doc": "Tag the revision this update creates (`--tag`)."
+            },
+            {
+              "name": "noTraffic",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTraffic(): this",
+              "doc": "Create the revision without moving traffic to it (`--no-traffic`)."
+            }
+          ]
+        },
+        {
           "name": "GcloudRunUpdateTrafficSettings",
           "kind": "class",
           "doc": "Settings for `gcloud run services update-traffic`.",
@@ -26908,6 +27022,13 @@
               "optional": false,
               "signature": "runServicesList(configure?: Configure<GcloudRunServicesListSettings>): Promise<CommandOutput>",
               "doc": "List Cloud Run services: `gcloud run services list`."
+            },
+            {
+              "name": "runServicesUpdate",
+              "kind": "method",
+              "optional": false,
+              "signature": "runServicesUpdate(configure?: Configure<GcloudRunServicesUpdateSettings>): Promise<CommandOutput>",
+              "doc": "Amend an existing Cloud Run service: `gcloud run services update`. Unlike\n{@link runDeploy}, it never creates the service and never resets settings\nthe call does not name."
             },
             {
               "name": "runUpdateTraffic",
