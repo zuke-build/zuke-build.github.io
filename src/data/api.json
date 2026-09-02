@@ -10830,7 +10830,7 @@
         {
           "name": "DenoTestSettings",
           "kind": "class",
-          "doc": "Settings for `deno test`.\n\nA run reports its counts into the running target's row of the build\nsummary — `// Tests: 837 · Passed: 837 · Failed: 0` — read from the result\nline the pretty and dot reporters print; a failed run reports too, so a red\nrow says how many failed. The JUnit and TAP reporters print no such line,\nso a run under `.reporter(\"junit\")`/`.reporter(\"tap\")` reports nothing.",
+          "doc": "Settings for `deno test`.\n\nA run reports its counts into the running target's row of the build\nsummary — `// Tests: 837 · Passed: 837 · Failed: 0` — read from the result\nline the pretty and dot reporters print (ignored tests count as `Skipped`);\na failed run reports too, so a red row says how many failed. The JUnit and TAP reporters print no such line,\nso a run under `.reporter(\"junit\")`/`.reporter(\"tap\")` reports nothing.",
           "signature": "class DenoTestSettings extends DenoPermissionSettings",
           "deprecated": false,
           "members": [
