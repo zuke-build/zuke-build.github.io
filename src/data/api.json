@@ -5218,6 +5218,13 @@
           ]
         },
         {
+          "name": "reportSummary",
+          "kind": "function",
+          "doc": "Report `key: value` notes into the **running target's** row of the\nend-of-build summary — the ambient form of\n{@link \"./target.ts\".TargetContext.reportSummary}, for code that has no\ncontext in hand: a tool wrapper reporting the counts its tool printed, or a\nhelper called from a body.\n\n```ts\nreportSummary({ Tests: 837, Passed: 837, Failed: 0 });\n```\n\nNotes accumulate across calls in the same target, and reporting a key again\nreplaces its value. Outside a running target (a wrapper called from a plain\nscript, a compensation) there is no row to report into, so the call is a\nno-op rather than an error — a wrapper never has to ask where it runs.",
+          "signature": "function reportSummary(pairs: SummaryPairs): void",
+          "deprecated": false
+        },
+        {
           "name": "resolveBuildId",
           "kind": "function",
           "doc": "The origin of the build running in this process — `ZUKE_BUILD_ID`, else\n`GITHUB_REPOSITORY`, else `undefined` when neither is set.\n\nRecorded on a run at creation and compared by every recovery path. An empty\nvalue counts as unset, so an exported-but-empty variable does not become an\norigin that matches nothing.",
@@ -6409,6 +6416,43 @@
           ]
         },
         {
+          "name": "SummaryEntry",
+          "kind": "interface",
+          "doc": "One rendered `key: value` note on a target's summary row.",
+          "signature": "interface SummaryEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "property",
+              "optional": false,
+              "signature": "key: string",
+              "doc": "The note's label, as reported (whitespace collapsed to one line)."
+            },
+            {
+              "name": "value",
+              "kind": "property",
+              "optional": false,
+              "signature": "value: string",
+              "doc": "The note's value, rendered as text (whitespace collapsed to one line)."
+            }
+          ]
+        },
+        {
+          "name": "SummaryPairs",
+          "kind": "typeAlias",
+          "doc": "The notes a target reports, keyed by their label — `{ Passed: 837, Failed: 0 }`.\nKeys render in the order they are first reported.",
+          "signature": "type SummaryPairs = Readonly<Record<string, SummaryValue>>",
+          "deprecated": false
+        },
+        {
+          "name": "SummaryValue",
+          "kind": "typeAlias",
+          "doc": "A value a summary note may carry; a number is rendered as written.",
+          "signature": "type SummaryValue = string | number",
+          "deprecated": false
+        },
+        {
           "name": "SymlinkOptions",
           "kind": "interface",
           "doc": "Options for {@link FileTasksApi.symlink}.",
@@ -7042,6 +7086,13 @@
               "doc": "Every outcome this run has settled so far, keyed by dotted target name — a\nsnapshot, not a live view. Targets that have not settled are absent rather\nthan present with a placeholder status."
             },
             {
+              "name": "reportSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "reportSummary(pairs: SummaryPairs): void",
+              "doc": "Report `key: value` notes into **this target's row** of the end-of-build\nsummary — where a count or a version belongs once the body is done:\n\n```text\ntest        Succeeded    8.1s  // Tests: 837 · Passed: 837 · Failed: 0\n```\n\nNotes accumulate across calls, and reporting a key again replaces its\nvalue in place. Each key and value is rendered on one line (whitespace\ncollapsed, control sequences removed). Library code with no context in\nhand — a tool wrapper reporting the counts its tool printed — reports\nthrough the ambient {@link \"./summary_note.ts\".reportSummary}, and those\nnotes land in the same row. A failed target keeps its notes:\na red `test` row still says how many failed. A compensation (see\n{@link TargetBuilder.onCancel}) has no row, so its calls are dropped."
+            },
+            {
               "name": "runId",
               "kind": "property",
               "optional": false,
@@ -7156,6 +7207,13 @@
               "optional": false,
               "signature": "ms: number",
               "doc": "The target's wall-clock duration in milliseconds."
+            },
+            {
+              "name": "summary",
+              "kind": "property",
+              "optional": true,
+              "signature": "summary?: SummaryEntry[]",
+              "doc": "The notes the target reported into its row (see\n{@link \"./target.ts\".TargetContext.reportSummary}) — present only when it\nreported at least one, so a note-less row stays `{ name, status, ms }`."
             }
           ]
         },
