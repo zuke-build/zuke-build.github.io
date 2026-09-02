@@ -7184,6 +7184,13 @@
               "optional": true,
               "signature": "endedAt?: string",
               "doc": "When it settled, ISO-8601, if it has."
+            },
+            {
+              "name": "summary",
+              "kind": "property",
+              "optional": true,
+              "signature": "summary?: unknown",
+              "doc": "The notes it reported into its row of the build summary (see\n{@link TargetContext.reportSummary}), when it reported any — so an\naggregating target can read a dependency's test counts, not only its\nverdict. Durable: present after a resume too."
             }
           ]
         },
@@ -7279,6 +7286,13 @@
               "optional": true,
               "signature": "effects?: Record<string, EffectState>",
               "doc": "The declared effects of this target, keyed by effect name — present only\nonce at least one has been armed."
+            },
+            {
+              "name": "summary",
+              "kind": "property",
+              "optional": true,
+              "signature": "summary?: SummaryEntry[]",
+              "doc": "The notes the target reported into its row of the build summary (see\n{@link \"../target.ts\".TargetContext.reportSummary}), in the order they\nwere first reported — present only when it reported at least one, and\nredacted like every other stored string. What lets `zuke runs show` and\n`ctx.outcomeOf` say a target ran 4094 tests, not only that it succeeded."
             }
           ]
         },
