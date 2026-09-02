@@ -5225,6 +5225,13 @@
           "deprecated": false
         },
         {
+          "name": "reportTestCounts",
+          "kind": "function",
+          "doc": "Report a test run's counts into the **running target's** row of the\nend-of-build summary, in the shape every test-runner wrapper shares:\n\n```text\ntest        Succeeded    8.1s  // Tests: 837 · Passed: 835 · Failed: 0 · Skipped: 2\n```\n\n`Tests` is the sum of every category; `Passed` and `Failed` always appear,\nand `Skipped`, `Todo` and `Flaky` only when non-zero — mirroring the\nrunners, which print their optional counts the same way. The ambient form\nof reporting applies (see {@link reportSummary}): a wrapper calls this from\nits `onOutput` hook with what it parsed, and outside a running target the\ncall is a no-op.",
+          "signature": "function reportTestCounts(counts: TestCounts): void",
+          "deprecated": false
+        },
+        {
           "name": "resolveBuildId",
           "kind": "function",
           "doc": "The origin of the build running in this process — `ZUKE_BUILD_ID`, else\n`GITHUB_REPOSITORY`, else `undefined` when neither is set.\n\nRecorded on a run at creation and compared by every recovery path. An empty\nvalue counts as unset, so an exported-but-empty variable does not become an\norigin that matches nothing.",
@@ -7355,6 +7362,50 @@
               "optional": false,
               "signature": "team(team: string): this",
               "doc": "Set the Teams team (group) id to post to in bot mode (Microsoft Graph)."
+            }
+          ]
+        },
+        {
+          "name": "TestCounts",
+          "kind": "interface",
+          "doc": "The counts a test run produced — the one shape every test-runner wrapper\nmaps its runner's own summary line onto, so `DenoTasks.test`,\n`VitestTasks.run`, `JestTasks.run` and the rest all put the same labels on\ntheir rows. `passed` and `failed` are always known; the rest are the\noptional categories a runner may or may not have, left out when it has none.",
+          "signature": "interface TestCounts",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "passed",
+              "kind": "property",
+              "optional": false,
+              "signature": "passed: number",
+              "doc": "Tests that passed."
+            },
+            {
+              "name": "failed",
+              "kind": "property",
+              "optional": false,
+              "signature": "failed: number",
+              "doc": "Tests that failed."
+            },
+            {
+              "name": "skipped",
+              "kind": "property",
+              "optional": true,
+              "signature": "skipped?: number",
+              "doc": "Tests the run selected but did not execute: skipped, ignored, pending."
+            },
+            {
+              "name": "todo",
+              "kind": "property",
+              "optional": true,
+              "signature": "todo?: number",
+              "doc": "Tests marked as still to be written."
+            },
+            {
+              "name": "flaky",
+              "kind": "property",
+              "optional": true,
+              "signature": "flaky?: number",
+              "doc": "Tests that failed and then passed on a retry (Playwright's \"flaky\")."
             }
           ]
         },
