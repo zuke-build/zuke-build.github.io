@@ -728,17 +728,38 @@ await run(CiBuild);`,
   </section>
 
   <section class="container ex-layout">
-    <aside class="ex-nav" aria-label="Examples on this page">
-      <span class="ex-nav__h">Examples</span>
-      <ul>
-        {examples.map((ex) => (
-          <li>
-            <a href={`#${ex.id}`} class="ex-nav__link" data-target={ex.id}>
-              {ex.title}
-            </a>
-          </li>
-        ))}
-      </ul>
+    <aside class="ex-nav" id="ex-nav" aria-label="Examples on this page">
+      <!-- Compact screens: the list collapses into this sticky bar (same
+           pattern as the docs / API menu) and opens as an overlay panel. -->
+      <button
+        class="ex-nav__btn"
+        id="ex-nav-btn"
+        type="button"
+        aria-expanded="false"
+        aria-controls="ex-menu"
+      >
+        <svg class="ex-nav__btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+        <span class="ex-nav__btn-label">
+          <span class="visually-hidden">Examples menu, current example: </span><span id="ex-nav-current">Examples</span>
+        </span>
+        <svg class="ex-nav__btn-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </button>
+      <nav id="ex-menu" class="ex-nav__menu">
+        <span class="ex-nav__h">Examples</span>
+        <ul>
+          {examples.map((ex) => (
+            <li>
+              <a href={`#${ex.id}`} class="ex-nav__link" data-target={ex.id}>
+                {ex.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </aside>
 
     <div class="ex-list">
@@ -781,6 +802,7 @@ await run(CiBuild);`,
       document.querySelectorAll<HTMLAnchorElement>(".ex-nav__link"),
     );
     const byId = new Map(links.map((l) => [l.dataset.target, l]));
+    const current = document.getElementById("ex-nav-current");
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -789,11 +811,38 @@ await run(CiBuild);`,
           if (!link) continue;
           links.forEach((l) => l.classList.remove("active"));
           link.classList.add("active");
+          // the compact menu bar names the example in view
+          if (current) current.textContent = link.textContent?.trim() ?? "";
         }
       },
       { rootMargin: "-40% 0px -55% 0px" },
     );
     document.querySelectorAll(".ex").forEach((el) => observer.observe(el));
+
+    // Compact-screen menu: toggle the overlay panel; close on link tap,
+    // outside tap, Escape, or resize to the wide layout.
+    const side = document.getElementById("ex-nav");
+    const btn = document.getElementById("ex-nav-btn");
+    const menu = document.getElementById("ex-menu");
+    if (side && btn && menu) {
+      const set = (open: boolean) => {
+        side.classList.toggle("is-open", open);
+        btn.setAttribute("aria-expanded", String(open));
+      };
+      btn.addEventListener("click", () => set(!side.classList.contains("is-open")));
+      menu.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).closest("a")) set(false);
+      });
+      document.addEventListener("click", (e) => {
+        if (!side.contains(e.target as Node)) set(false);
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") set(false);
+      });
+      matchMedia("(min-width: 861px)").addEventListener("change", (e) => {
+        if (e.matches) set(false);
+      });
+    }
   </script>
 
   <section class="section">
@@ -837,6 +886,7 @@ await run(CiBuild);`,
     overscroll-behavior: contain;
     padding-bottom: 24px;
   }
+  .ex-nav__btn { display: none; }
   .ex-nav__h {
     display: block;
     font-family: var(--font-mono);
@@ -928,44 +978,85 @@ await run(CiBuild);`,
   @media (max-width: 860px) {
     .container { max-width: none; }
     .ex { grid-template-columns: 1fr; gap: 22px; align-items: stretch; }
-    /* nav becomes a horizontal, swipeable strip that sticks just under
-       the site header — no more tall inner scroll box above the content */
-    /* plain flow so the sticky strip has the whole list to stick along */
+    /* the example list collapses into a sticky menu bar under the site
+       header, opening as an overlay panel — the same pattern as the docs
+       and API menus. Plain flow (not a grid) so the bar has the whole
+       list to stick along. */
     .ex-layout { display: block; padding-top: 0; }
-    .ex-list { padding-top: 20px; }
+    .ex-list { padding-top: 22px; }
     .ex-nav {
       position: sticky;
       top: var(--nav-h);
-      z-index: var(--z-sticky);
+      z-index: var(--z-dropdown);
       max-height: none;
       overflow: visible;
       overscroll-behavior: auto;
+      padding: 0;
       margin-inline: calc(-1 * var(--container-pad));
-      padding: 10px var(--container-pad) 0;
       background: var(--bg);
       border-bottom: 1px solid var(--border);
     }
-    .ex-nav__h { display: none; }
-    .ex-nav ul {
-      grid-auto-flow: column;
-      grid-auto-columns: max-content;
-      gap: 8px;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-x: contain;
-      padding-bottom: 10px;
-      scrollbar-width: thin;
-      scroll-snap-type: x proximity;
-      scroll-padding-inline: var(--container-pad);
+    .ex-nav__btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 46px;
+      padding: 8px var(--container-pad);
+      background: transparent;
+      border: 0;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 0.86rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
-    .ex-nav__link {
+    .ex-nav__btn-icon { color: var(--accent); flex: none; }
+    .ex-nav__btn-label {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
       white-space: nowrap;
-      border-left: 0;
-      border: 1px solid var(--border);
-      scroll-snap-align: start;
     }
-    .ex-nav__link.active { border-color: var(--cyan); }
-    .ex { scroll-margin-top: calc(var(--nav-h) + 56px); }
+    .ex-nav__btn-chev {
+      flex: none;
+      color: var(--ink-faint);
+      transition: transform 0.2s ease;
+    }
+    .ex-nav.is-open .ex-nav__btn-chev { transform: rotate(180deg); }
+    .ex-nav__menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: calc(100vh - var(--nav-h) - 46px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 16px var(--container-pad) 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 24px 40px -24px oklch(0 0 0 / 0.6);
+    }
+    @supports (height: 100dvh) {
+      .ex-nav__menu { max-height: calc(100dvh - var(--nav-h) - 46px); }
+    }
+    .ex-nav.is-open .ex-nav__menu { display: block; }
+    /* without JS the button can't open anything: show the list inline */
+    :global(html:not(.js)) .ex-nav__btn { display: none; }
+    :global(html:not(.js)) .ex-nav__menu {
+      display: block;
+      position: static;
+      max-height: none;
+      box-shadow: none;
+    }
+    .ex-nav ul { gap: 2px; }
+    .ex-nav__link { padding: 9px 12px; font-size: 0.95rem; }
+    .ex { scroll-margin-top: calc(var(--nav-h) + 46px + 16px); }
   }
   @media (max-width: 560px) {
     .ex-hero h1 { font-size: 1.9rem; }
