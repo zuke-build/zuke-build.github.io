@@ -412,7 +412,6 @@ build    <span class="t-ok">Succeeded</span>      2.2s
                 set:html={a.svg}
               />
             </a>
-            <p class="user__note">{a.note}</p>
           </li>
         ))}
       </ul>
@@ -1469,9 +1468,11 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     gap: 20px;
   }
   .user {
-    flex: 0 1 300px;
-    padding: 26px 24px 22px;
-    text-align: center;
+    flex: 0 0 auto;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .user__link {
     display: inline-flex;
@@ -1488,11 +1489,6 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     height: 30px;
     width: auto;
     max-width: 100%;
-  }
-  .user__note {
-    margin: 14px 0 0;
-    font-size: 0.86rem;
-    color: var(--text-dim);
   }
   .users__cta {
     margin: 20px 0 0;
