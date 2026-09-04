@@ -4,6 +4,7 @@ import DagDiagram from "../components/DagDiagram.astro";
 import CopyBlock from "../components/CopyBlock.astro";
 import CopyCode from "../components/CopyCode.astro";
 import { toolGroups, corePackages, packageCount } from "../data/tools.ts";
+import { adopters } from "../data/users.ts";
 
 const heroSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
@@ -392,6 +393,38 @@ build    <span class="t-ok">Succeeded</span>      2.2s
       });
     });
   </script>
+
+  <!-- ░░ WHO'S USING ZUKE ░░ -->
+  <section class="section sec-users" id="users">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">Who&rsquo;s using Zuke</span>
+        <h2>Shipping production deployments.</h2>
+      </header>
+      <ul class="users" data-reveal>
+        {adopters.map((a) => (
+          <li class="user panel">
+            <a class="user__link" href={a.href} target="_blank" rel="noopener noreferrer">
+              <svg
+                class="user__mark"
+                viewBox={a.viewBox}
+                fill="currentColor"
+                role="img"
+                aria-label={a.name}
+                set:html={a.svg}
+              />
+            </a>
+            <p class="user__note">{a.note}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="users__cta">
+        Using Zuke at your company?{" "}
+        <a href="https://github.com/zuke-build/zuke/issues">Tell us</a> and
+        we&rsquo;ll add you here.
+      </p>
+    </div>
+  </section>
 
   <!-- ░░ FEATURES ░░ -->
   <section class="section" id="features">
@@ -1415,6 +1448,50 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .sec-head { text-align: center; max-width: 640px; margin: 0 auto 48px; }
   .sec-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
   .sec-head__lead { margin-inline: auto; }
+
+  /* who's using — a logo band that stays honest at one entry and at twelve:
+     the marks centre as a row rather than stretching to fill a grid. */
+  .users {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  .user {
+    flex: 0 1 300px;
+    padding: 26px 24px 22px;
+    text-align: center;
+  }
+  .user__link {
+    display: inline-flex;
+    color: var(--ink);
+    /* the marks are wordmarks, not links to decorate */
+    text-decoration: none;
+    opacity: 0.86;
+    transition: opacity 0.18s ease;
+  }
+  .user__link:hover,
+  .user__link:focus-visible { opacity: 1; }
+  .user__mark {
+    display: block;
+    height: 30px;
+    width: auto;
+    max-width: 100%;
+  }
+  .user__note {
+    margin: 14px 0 0;
+    font-size: 0.86rem;
+    color: var(--text-dim);
+  }
+  .users__cta {
+    margin: 26px 0 0;
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--text-faint);
+  }
 
   /* features — a grouped capability manifest, not a card grid */
   .manifest {
