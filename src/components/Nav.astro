@@ -8,12 +8,17 @@ const links = [
   { href: "/api", label: "API" },
   { href: "/examples", label: "Examples" },
 ];
+// On the home page the brand starts large — spilling below the header
+// bar into the hero's top padding — and shrinks to the compact size once
+// the page scrolls. The image is rendered at the large size so it stays
+// sharp in both states; CSS only changes its displayed height.
+const bigLogo = pathname === "/";
 ---
 
-<header class="nav" id="site-nav">
+<header class:list={["nav", { "nav--big": bigLogo }]} id="site-nav">
   <div class="container nav__inner">
     <a href="/" class="nav__brand" aria-label="Zuke home">
-      <Logo height={40} />
+      <Logo height={bigLogo ? 120 : 40} />
     </a>
 
     <nav class="nav__links" aria-label="Primary">
@@ -83,7 +88,34 @@ const links = [
     gap: 16px;
     height: var(--nav-h);
   }
-  .nav__brand { display: inline-flex; flex: none; }
+  /* --logo-h is the brand's displayed height. The header bar itself keeps
+     a fixed height, so a large logo overflows below the bar rather than
+     pushing the page around; anchoring it to the top keeps it in place
+     while it grows or shrinks. */
+  .nav { --logo-h: 40px; }
+  .nav__brand {
+    display: inline-flex;
+    flex: none;
+    align-self: flex-start;
+    margin-top: max(8px, calc((var(--nav-h) - var(--logo-h)) / 2));
+  }
+  .nav__brand :global(.logo__img) {
+    height: var(--logo-h);
+    width: auto;
+  }
+  /* home page, at the top: the large brand. Its size tracks the hero's
+     top padding (8vw) so it never reaches the hero copy underneath. */
+  @media (min-width: 861px) {
+    .nav--big:not(.scrolled) { --logo-h: clamp(80px, 8vw + 24px, 120px); }
+  }
+  /* animate the change, but only after the first paint has settled so a
+     reload mid-page doesn't start with the logo visibly shrinking */
+  .nav--ready .nav__brand { transition: margin-top 0.35s ease; }
+  .nav--ready .nav__brand :global(.logo__img) { transition: height 0.35s ease; }
+  @media (prefers-reduced-motion: reduce) {
+    .nav--ready .nav__brand,
+    .nav--ready .nav__brand :global(.logo__img) { transition: none; }
+  }
   .nav__links {
     display: flex;
     align-items: center;
@@ -149,13 +181,13 @@ const links = [
     .nav__links { gap: 12px; }
     .nav__sep { display: none; }
     .nav__gh[href="https://x.com/zukebuild"] { display: none; }
-    .nav__brand :global(.logo__img) { height: 32px; }
+    .nav { --logo-h: 32px; }
     .nav__theme { width: 32px; height: 32px; }
   }
   @media (max-width: 400px) {
     .nav__links { gap: 10px; }
     .nav__link { font-size: 0.88rem; }
-    .nav__brand :global(.logo__img) { height: 30px; }
+    .nav { --logo-h: 30px; }
   }
   @media (max-width: 340px) {
     .nav__gh { display: none; }
@@ -167,6 +199,8 @@ const links = [
   const onScroll = () => nav?.classList.toggle("scrolled", window.scrollY > 8);
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
+  // enable the brand's grow/shrink transition once the initial state is painted
+  requestAnimationFrame(() => requestAnimationFrame(() => nav?.classList.add("nav--ready")));
 
   const toggle = document.getElementById("theme-toggle");
   const meta = document.querySelector('meta[name="theme-color"]');
