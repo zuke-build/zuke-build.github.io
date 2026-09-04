@@ -355,8 +355,6 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     </div>
 
     <div class="container hero__strip">
-      <span><b>v1</b> core, stabilizing</span>
-      <span class="dotsep">•</span>
       <span>Deno-native</span>
       <span class="dotsep">•</span>
       <span>Zero runtime deps</span>
@@ -1450,7 +1448,17 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .sec-head__lead { margin-inline: auto; }
 
   /* who's using — a logo band that stays honest at one entry and at twelve:
-     the marks centre as a row rather than stretching to fill a grid. */
+     the marks centre as a row rather than stretching to fill a grid. It reads
+     as a strip between the hero and the features manifest rather than a
+     section making its own argument, so it takes tighter padding and a
+     smaller head than .section / .sec-head give by default. */
+  .sec-users { padding-block: clamp(30px, 4vw, 52px) 0; }
+  /* The band's own bottom padding is 0 and the section after it carries the
+     gap, so the strip is not sandwiched between two full section paddings —
+     that stacking is what left it floating in dead space. */
+  .sec-users + .section { padding-top: clamp(44px, 5.5vw, 72px); }
+  .sec-users .sec-head { margin-bottom: 24px; }
+  .sec-users .sec-head h2 { font-size: clamp(1.3rem, 2.2vw, 1.7rem); }
   .users {
     list-style: none;
     margin: 0;
@@ -1487,7 +1495,7 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     color: var(--text-dim);
   }
   .users__cta {
-    margin: 26px 0 0;
+    margin: 20px 0 0;
     text-align: center;
     font-size: 0.88rem;
     color: var(--text-faint);
