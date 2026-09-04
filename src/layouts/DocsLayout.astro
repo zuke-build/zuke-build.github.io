@@ -82,12 +82,50 @@ const {
   nav = docsNav,
   suffix = "Zuke docs",
 } = Astro.props;
+
+const isActive = (href: string) => here === href.replace(/\/$/, "");
+// Label shown on the compact (phone / small tablet) menu bar: the current
+// nav entry, falling back to the page title for pages outside the nav.
+const current = nav.flatMap((g) => g.items).find((it) => isActive(it.href));
+const currentLabel = current?.label ?? title;
 ---
 
 <Base title={`${title} · ${suffix}`} description={description}>
   <div class="container docs">
-    <aside class="docs__side">
-      <nav aria-label="Documentation">
+    <aside class="docs__side" id="docs-side">
+      <!-- Compact screens: the sidebar collapses into this sticky bar. The
+           full nav opens as an overlay panel beneath it instead of sitting
+           in the page flow above the article (where it trapped scrolling
+           on iOS and pushed the content a screen or more down). -->
+      <button
+        class="docs__menubtn"
+        id="docs-menubtn"
+        type="button"
+        aria-expanded="false"
+        aria-controls="docs-menu"
+      >
+        <svg class="docs__menubtn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+        <span class="docs__menubtn-label">
+          <span class="visually-hidden">Navigation menu, current page: </span>{currentLabel}
+        </span>
+        <svg class="docs__menubtn-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </button>
+
+      <nav id="docs-menu" class="docs__menu" aria-label="Documentation">
+        {toc.length > 0 && (
+          <div class="docs__group docs__group--toc">
+            <span class="docs__grouph">On this page</span>
+            <ul>
+              {toc.map((t) => (
+                <li><a href={`#${t.id}`} class="docs__link docs__link--toc">{t.label}</a></li>
+              ))}
+            </ul>
+          </div>
+        )}
         {nav.map((g) => (
           <div class="docs__group">
             <span class="docs__grouph">{g.group}</span>
@@ -96,7 +134,8 @@ const {
                 <li>
                   <a
                     href={it.href}
-                    class:list={["docs__link", { active: here === it.href.replace(/\/$/, "") }]}
+                    class:list={["docs__link", { active: isActive(it.href) }]}
+                    aria-current={isActive(it.href) ? "page" : undefined}
                     target={isExternal(it.href) ? "_blank" : undefined}
                     rel={isExternal(it.href) ? "noopener noreferrer" : undefined}
                   >
@@ -140,13 +179,17 @@ const {
   }
   .docs__side, .docs__toc {
     position: sticky;
-    top: 88px;
+    top: calc(var(--nav-h) + 20px);
     align-self: start;
-    max-height: calc(100vh - 88px);
+    max-height: calc(100vh - var(--nav-h) - 20px);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-bottom: 24px;
   }
+  /* the compact-screen menu bar and its "on this page" group are hidden
+     on wide screens, where the sidebar and the TOC column stand on their own */
+  .docs__menubtn { display: none; }
+  .docs__group--toc { display: none; }
   .docs__group { margin-bottom: 24px; }
   .docs__grouph {
     display: block;
@@ -182,19 +225,23 @@ const {
   .docs__main :global(ol),
   .docs__main :global(.note) { max-width: 82ch; }
   .docs__title {
-    font-size: clamp(2rem, 4vw, 2.6rem);
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
     margin-bottom: 24px;
     padding-bottom: 20px;
     border-bottom: 1px solid var(--border);
+    overflow-wrap: anywhere;
   }
 
   /* shared prose styles for doc bodies */
   .docs__main :global(h2) {
     font-size: 1.45rem;
     margin: 44px 0 14px;
-    scroll-margin-top: 88px;
+    scroll-margin-top: calc(var(--nav-h) + 20px);
   }
   .docs__main :global(h3) { font-size: 1.12rem; margin: 28px 0 10px; }
+  .docs__main :global(h2),
+  .docs__main :global(h3),
+  .docs__main :global(h4) { overflow-wrap: anywhere; }
   .docs__main :global(p) { color: var(--text-dim); }
   .docs__main :global(ul), .docs__main :global(ol) { color: var(--text-dim); padding-left: 22px; }
   .docs__main :global(li) { margin-bottom: 8px; }
@@ -205,6 +252,8 @@ const {
     padding: 2px 6px;
     border-radius: 5px;
     font-size: 0.86em;
+    /* long identifiers and paths break instead of widening the page */
+    overflow-wrap: anywhere;
   }
   .docs__main :global(pre.astro-code) { margin: 16px 0 22px; }
   .docs__main :global(.note) {
@@ -217,17 +266,168 @@ const {
   }
   .docs__main :global(.note) :global(p:last-child) { margin-bottom: 0; }
 
+  /* ---- tablets: drop the TOC column ----------------------- */
   @media (max-width: 1040px) {
-    .docs { grid-template-columns: 200px minmax(0, 1fr); }
+    .docs { grid-template-columns: 200px minmax(0, 1fr); gap: 32px; }
     .docs__toc { display: none; }
-  }
-  @media (max-width: 760px) {
-    .docs { grid-template-columns: 1fr; gap: 24px; }
-    .docs__side {
-      position: static;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 16px;
+    /* reference tables are wider than the column here: let each one
+       scroll on its own instead of stretching the page sideways */
+    .docs__main :global(table) {
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .docs__group { margin-bottom: 14px; }
+    /* flags / names in the first column stay on one line; code elsewhere
+       breaks only between words — a scrollbar beats a token split in two */
+    .docs__main :global(table code) { overflow-wrap: normal; }
+    .docs__main :global(table th:first-child code),
+    .docs__main :global(table td:first-child code) { white-space: nowrap; }
+  }
+
+  /* ---- phones & small tablets: collapsible menu bar ------- */
+  @media (max-width: 860px) {
+    /* plain flow, not a grid: a sticky element inside a one-row grid area
+       has nothing to stick along, so the bar would scroll away in Safari */
+    .docs {
+      display: block;
+      padding-top: 0;
+      padding-bottom: 56px;
+      max-width: none;
+    }
+    /* the sidebar becomes a sticky bar just below the site header. It is
+       no longer a scroll container of its own (that was the iOS trap). */
+    .docs__side {
+      position: sticky;
+      top: var(--nav-h);
+      z-index: var(--z-dropdown);
+      max-height: none;
+      overflow: visible;
+      overscroll-behavior: auto;
+      padding-bottom: 0;
+      margin-inline: calc(-1 * var(--container-pad));
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .docs__menubtn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 46px;
+      padding: 8px var(--container-pad);
+      background: transparent;
+      border: 0;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 0.86rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .docs__menubtn-icon { color: var(--accent); flex: none; }
+    .docs__menubtn-label {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .docs__menubtn-chev {
+      flex: none;
+      color: var(--ink-faint);
+      transition: transform 0.2s ease;
+    }
+    .docs__side.is-open .docs__menubtn-chev { transform: rotate(180deg); }
+
+    /* the menu itself: an overlay panel under the bar, scrolling inside
+       its own bounds so the page behind never has to be scrolled past it */
+    .docs__menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: calc(100dvh - var(--nav-h) - 46px);
+      max-height: calc(100vh - var(--nav-h) - 46px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: 16px var(--container-pad) 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 24px 40px -24px oklch(0 0 0 / 0.6);
+    }
+    @supports (height: 100dvh) {
+      .docs__menu { max-height: calc(100dvh - var(--nav-h) - 46px); }
+    }
+    .docs__side.is-open .docs__menu { display: block; }
+    /* without JS the button can't open anything: show the menu inline */
+    :global(html:not(.js)) .docs__menubtn { display: none; }
+    :global(html:not(.js)) .docs__menu {
+      display: block;
+      position: static;
+      max-height: none;
+      box-shadow: none;
+    }
+    .docs__group--toc {
+      display: block;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .docs__group { margin-bottom: 18px; }
+    .docs__group:last-child { margin-bottom: 0; }
+    .docs__side ul { gap: 2px; }
+    .docs__link { padding: 9px 12px; font-size: 0.95rem; }
+    .docs__link--toc { font-size: 0.9rem; padding: 7px 12px; }
+
+    .docs__main { padding-top: 22px; }
+    .docs__title { margin-bottom: 18px; padding-bottom: 14px; }
+    .docs__main :global(h2) { font-size: 1.3rem; margin: 34px 0 12px; }
+    .docs__main :global(h3) { font-size: 1.08rem; }
+    /* anchors land below the site header AND the sticky menu bar */
+    .docs__main :global(h2),
+    .docs__main :global(h3),
+    .docs__main :global([id]) { scroll-margin-top: calc(var(--nav-h) + 46px + 16px); }
+    .docs__main :global(pre.astro-code) { margin: 14px 0 18px; }
+    .docs__main :global(.note) { padding: 12px 14px; }
+    .docs__main :global(ul), .docs__main :global(ol) { padding-left: 20px; }
   }
 </style>
+
+<script>
+  // Compact-screen menu: toggle the overlay panel, close it on outside
+  // tap / Escape / resize to the wide layout, and bring the active entry
+  // into view when it opens.
+  const side = document.getElementById("docs-side");
+  const btn = document.getElementById("docs-menubtn");
+  const menu = document.getElementById("docs-menu");
+  if (side && btn && menu) {
+    const set = (open: boolean) => {
+      side.classList.toggle("is-open", open);
+      btn.setAttribute("aria-expanded", String(open));
+      if (open) {
+        const active = menu.querySelector<HTMLElement>(".docs__link.active");
+        if (active) {
+          menu.scrollTop = Math.max(0, active.offsetTop - menu.clientHeight / 2);
+        }
+      }
+    };
+    btn.addEventListener("click", () => set(!side.classList.contains("is-open")));
+    menu.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement).closest("a")) set(false);
+    });
+    document.addEventListener("click", (e) => {
+      if (!side.contains(e.target as Node)) set(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") set(false);
+    });
+    const wide = matchMedia("(min-width: 861px)");
+    wide.addEventListener("change", (e) => {
+      if (e.matches) set(false);
+    });
+  }
+</script>

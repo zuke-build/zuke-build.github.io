@@ -80,18 +80,24 @@ const links = [
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 68px;
+    gap: 16px;
+    height: var(--nav-h);
   }
-  .nav__brand { display: inline-flex; }
+  .nav__brand { display: inline-flex; flex: none; }
   .nav__links {
     display: flex;
     align-items: center;
     gap: 22px;
+    /* the row must be allowed to shrink; it previously forced the whole
+       page wider than a phone screen (iOS then zooms the page out) */
+    min-width: 0;
+    flex-wrap: nowrap;
   }
   .nav__link {
     color: var(--ink-dim);
     font-size: 0.92rem;
     font-weight: 500;
+    white-space: nowrap;
   }
   .nav__link:hover { color: var(--ink); }
   .nav__link.active { color: var(--accent); }
@@ -103,6 +109,7 @@ const links = [
   }
 
   .nav__theme {
+    flex: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -126,17 +133,32 @@ const links = [
   .nav__gh {
     color: var(--ink-dim);
     display: inline-flex;
+    flex: none;
   }
   .nav__gh:hover { color: var(--ink); }
 
-  @media (max-width: 560px) {
-    .nav__inner { height: 60px; }
+  /* Compact header: the brand shrinks, secondary links (JSR, X) move to
+     the footer, and the divider goes — so Docs / API / Examples, the theme
+     toggle and GitHub all fit on a 360px-wide phone without overflow. */
+  @media (max-width: 720px) {
     .nav__links { gap: 16px; }
     .nav__link[href="https://jsr.io/@zuke"] { display: none; }
   }
-  @media (max-width: 380px) {
-    .nav__links { gap: 13px; }
+  @media (max-width: 560px) {
+    .nav__inner { gap: 10px; }
+    .nav__links { gap: 12px; }
+    .nav__sep { display: none; }
+    .nav__gh[href="https://x.com/zukebuild"] { display: none; }
+    .nav__brand :global(.logo__img) { height: 32px; }
+    .nav__theme { width: 32px; height: 32px; }
+  }
+  @media (max-width: 400px) {
+    .nav__links { gap: 10px; }
     .nav__link { font-size: 0.88rem; }
+    .nav__brand :global(.logo__img) { height: 30px; }
+  }
+  @media (max-width: 340px) {
+    .nav__gh { display: none; }
   }
 </style>
 

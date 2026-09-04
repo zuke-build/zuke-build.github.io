@@ -304,4 +304,11 @@ const toc = [
   }
 
   .symcard .dtable { margin: 12px 0 4px; }
+
+  @media (max-width: 600px) {
+    .apilinks { flex-wrap: wrap; gap: 8px 14px; }
+    .symcard { padding: 14px 14px 16px; }
+    .symcard__name { overflow-wrap: anywhere; }
+    .symcard__doc :global(.doc-pre) { padding: 10px 12px; }
+  }
 </style>

@@ -2239,6 +2239,18 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   }
   @media (max-width: 600px) {
     .manifest { grid-template-columns: 1fr; }
+    /* mockup chrome rows wrap instead of squeezing their labels */
+    .review__head, .suggest__head, .suggest__foot { flex-wrap: wrap; }
+    .review__score { flex-wrap: wrap; gap: 12px; }
+    .review { padding: 18px 16px 16px; }
+    .rcache__key { white-space: normal; overflow-wrap: anywhere; }
+    .mcp__tool { grid-template-columns: auto 1fr; }
+    .mcp__tag { grid-column: 2; justify-self: start; }
+    .term, .hero__pane .term { font-size: 0.74rem; padding: 14px; }
+    .cat__head { flex-wrap: wrap; gap: 8px 14px; }
+    .cat__rule { flex-basis: 100%; order: 3; }
+    .cta { padding: 32px 18px; }
+    .cta__btns .btn { flex: 1 1 auto; justify-content: center; }
     .hero__strip { gap: 9px 12px; font-size: 0.78rem; margin-top: 44px; }
     .hero__cta { gap: 10px; }
     .hero__cta .btn { flex: 1 1 auto; justify-content: center; }
