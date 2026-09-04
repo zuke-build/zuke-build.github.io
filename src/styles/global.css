@@ -53,6 +53,8 @@
 
   /* geometry — crisp, printed */
   --max: 1120px;
+  --nav-h: 68px;          /* site header height; 60px on small screens */
+  --container-pad: 24px;  /* .container side padding; 18px on small screens */
   --radius: 9px;
   --radius-sm: 5px;
   --shadow-term: 0 1px 0 oklch(1 0 0 / 0.03) inset,
@@ -124,7 +126,10 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 90px;
+  scroll-padding-top: calc(var(--nav-h) + 22px);
+  /* iOS inflates text in landscape unless told not to */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -136,7 +141,11 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* never let a stray wide element widen the page. `clip` (unlike
+     `hidden`) does not turn body into a scroll container, so the sticky
+     header keeps working and iOS Safari honours it. */
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* faint graph-paper / terminal grid — subtle in both modes */
@@ -196,7 +205,21 @@ code {
   width: 100%;
   max-width: var(--max);
   margin-inline: auto;
-  padding-inline: 24px;
+  padding-inline: var(--container-pad);
+}
+
+/* ---- Accessibility helpers ------------------------------- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 .section {
@@ -204,8 +227,11 @@ code {
 }
 
 @media (max-width: 600px) {
-  .container { padding-inline: 18px; }
+  :root { --container-pad: 18px; }
   .section { padding-block: clamp(48px, 13vw, 80px); }
+}
+@media (max-width: 560px) {
+  :root { --nav-h: 60px; }
 }
 
 .lead {
@@ -410,6 +436,22 @@ pre.astro-code {
 }
 pre.astro-code code {
   font-family: var(--font-mono);
+}
+@media (max-width: 600px) {
+  pre.astro-code {
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    border-radius: var(--radius-sm);
+  }
+}
+
+/* Touch devices: a hover-revealed copy button is unreachable, so keep the
+   copy affordances visible at their resting opacity instead. */
+@media (hover: none) {
+  .ccode__btn,
+  .copy__rowbtn,
+  .ccode__linebtn { opacity: 0.8 !important; }
 }
 
 ::selection {

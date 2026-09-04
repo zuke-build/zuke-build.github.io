@@ -926,31 +926,52 @@ await run(CiBuild);`,
   .ex-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
 
   @media (max-width: 860px) {
+    .container { max-width: none; }
     .ex { grid-template-columns: 1fr; gap: 22px; align-items: stretch; }
-    /* nav becomes a horizontal, scrollable strip above the examples */
-    .ex-layout { grid-template-columns: 1fr; gap: 20px; }
+    /* nav becomes a horizontal, swipeable strip that sticks just under
+       the site header — no more tall inner scroll box above the content */
+    /* plain flow so the sticky strip has the whole list to stick along */
+    .ex-layout { display: block; padding-top: 0; }
+    .ex-list { padding-top: 20px; }
     .ex-nav {
-      position: static;
+      position: sticky;
+      top: var(--nav-h);
+      z-index: var(--z-sticky);
+      max-height: none;
+      overflow: visible;
+      overscroll-behavior: auto;
+      margin-inline: calc(-1 * var(--container-pad));
+      padding: 10px var(--container-pad) 0;
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
-      padding-bottom: 14px;
     }
+    .ex-nav__h { display: none; }
     .ex-nav ul {
       grid-auto-flow: column;
       grid-auto-columns: max-content;
       gap: 8px;
       overflow-x: auto;
-      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      padding-bottom: 10px;
       scrollbar-width: thin;
+      scroll-snap-type: x proximity;
+      scroll-padding-inline: var(--container-pad);
     }
     .ex-nav__link {
       white-space: nowrap;
       border-left: 0;
       border: 1px solid var(--border);
+      scroll-snap-align: start;
     }
     .ex-nav__link.active { border-color: var(--cyan); }
+    .ex { scroll-margin-top: calc(var(--nav-h) + 56px); }
   }
   @media (max-width: 560px) {
-    .ex { padding: 20px; }
+    .ex-hero h1 { font-size: 1.9rem; }
+    .ex { padding: 16px; gap: 16px; }
+    .ex__meta h2 { font-size: 1.2rem; }
+    .codecard :global(pre.astro-code) { font-size: 0.76rem; }
     .ex-cta { padding: 26px 22px; }
     .ex-cta__btns .btn { flex: 1 1 auto; justify-content: center; }
   }
