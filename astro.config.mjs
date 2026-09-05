@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from "astro/config";
+import pagefind from "./src/integrations/pagefind.ts";
 
 // `zuke-build.github.io` is an organization root Pages site, so it is served
 // from the domain root — `base` stays at "/".
@@ -16,4 +17,6 @@ export default defineConfig({
       theme: "night-owl",
     },
   },
+  // Full-text search over the docs + API reference (see src/integrations).
+  integrations: [pagefind()],
 });
