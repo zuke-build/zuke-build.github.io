@@ -99,7 +99,7 @@ const toc = [
   description={pkg.summary}
   toc={toc}
 >
-  <p class="apiback"><a href="/api">← API reference</a></p>
+  <p class="apiback" data-pagefind-ignore><a href="/api">← API reference</a></p>
   <p class="lead">{pkg.summary}</p>
   <p class="apilinks">
     <a href={`https://jsr.io/${pkg.name}`} target="_blank" rel="noopener">
@@ -122,13 +122,14 @@ const toc = [
     {pkg.symbols.map((sym) => (
       <section
         class="symcard"
-        id={sym.name}
         data-name={sym.name.toLowerCase()}
         data-kind={sym.kind.toLowerCase()}
       >
         <div class="symcard__head">
-          <a class="symcard__anchor" href={`#${sym.name}`}>#</a>
-          <code class="symcard__name">{sym.name}</code>
+          <a class="symcard__anchor" href={`#${sym.name}`} aria-label={`Link to ${sym.name}`} data-pagefind-ignore>#</a>
+          <!-- a real heading (with the id) so full-text search can deep-link
+               to the symbol and list it as a sub-result of the package page -->
+          <h3 class="symcard__name" id={sym.name}>{sym.name}</h3>
           <span class={`symbadge symbadge--${sym.kind}`}>
             {kindLabel[sym.kind] ?? sym.kind}
           </span>
@@ -229,9 +230,8 @@ const toc = [
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 16px 20px 18px;
-    scroll-margin-top: 88px;
   }
-  .symcard:target {
+  .symcard:has(:target) {
     border-color: var(--accent);
   }
   .symcard__head {
@@ -247,11 +247,17 @@ const toc = [
     font-family: var(--font-mono);
   }
   .symcard__anchor:hover { color: var(--accent); }
-  .symcard__name {
+  /* the heading is styled as an inline code name (the layout's h3 rule
+     would otherwise give it prose margins and size) */
+  .symcard h3.symcard__name {
+    margin: 0;
     font-family: var(--font-mono);
     font-size: 1.02rem;
     font-weight: 700;
+    line-height: 1.4;
     color: var(--ink);
+    /* land the card (its padding + the head row) below the sticky header */
+    scroll-margin-top: calc(var(--nav-h) + 40px);
   }
 
   .symbadge {
@@ -305,6 +311,10 @@ const toc = [
 
   .symcard .dtable { margin: 12px 0 4px; }
 
+  /* compact screens: the sticky menu bar sits under the header too */
+  @media (max-width: 860px) {
+    .symcard h3.symcard__name { scroll-margin-top: calc(var(--nav-h) + 46px + 32px); }
+  }
   @media (max-width: 600px) {
     .apilinks { flex-wrap: wrap; gap: 8px 14px; }
     .symcard { padding: 14px 14px 16px; }

@@ -1,5 +1,6 @@
 ---
 import Base from "./Base.astro";
+import Search from "../components/Search.astro";
 
 type NavGroup = { group: string; items: { href: string; label: string }[] };
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
   nav?: NavGroup[];
   // suffix for the <title> tag
   suffix?: string;
+  // section badge/filter in full-text search results ("Docs" or "API")
+  section?: string;
 }
 const { pathname } = Astro.url;
 const here = pathname.replace(/\/$/, "") || "/docs";
@@ -81,6 +84,7 @@ const {
   toc = [],
   nav = docsNav,
   suffix = "Zuke docs",
+  section = "Docs",
 } = Astro.props;
 
 const isActive = (href: string) => here === href.replace(/\/$/, "");
@@ -97,6 +101,7 @@ const currentLabel = current?.label ?? title;
            full nav opens as an overlay panel beneath it instead of sitting
            in the page flow above the article (where it trapped scrolling
            on iOS and pushed the content a screen or more down). -->
+      <div class="docs__bar">
       <button
         class="docs__menubtn"
         id="docs-menubtn"
@@ -114,6 +119,11 @@ const currentLabel = current?.label ?? title;
           <path d="m6 9 6 6 6-6"></path>
         </svg>
       </button>
+      <!-- Full-text search over docs + API. On wide screens it sits at the
+           top of the sidebar as a faux input; on compact screens it becomes
+           an icon button beside the menu bar. -->
+      <Search />
+      </div>
 
       <nav id="docs-menu" class="docs__menu" aria-label="Documentation">
         {toc.length > 0 && (
@@ -149,8 +159,12 @@ const currentLabel = current?.label ?? title;
       </nav>
     </aside>
 
-    <article class="docs__main">
-      <h1 class="docs__title">{title}</h1>
+    <article class="docs__main" data-pagefind-body>
+      <h1
+        class="docs__title"
+        data-pagefind-filter={`section:${section}`}
+        data-pagefind-meta={`section:${section}`}
+      >{title}</h1>
       <slot />
     </article>
 
@@ -189,6 +203,7 @@ const currentLabel = current?.label ?? title;
   /* the compact-screen menu bar and its "on this page" group are hidden
      on wide screens, where the sidebar and the TOC column stand on their own */
   .docs__menubtn { display: none; }
+  .docs__bar { margin-bottom: 22px; }
   .docs__group--toc { display: none; }
   .docs__group { margin-bottom: 24px; }
   .docs__grouph {
@@ -310,11 +325,17 @@ const currentLabel = current?.label ?? title;
       background: var(--bg);
       border-bottom: 1px solid var(--border);
     }
+    .docs__bar {
+      display: flex;
+      align-items: stretch;
+      margin-bottom: 0;
+    }
     .docs__menubtn {
       display: flex;
       align-items: center;
       gap: 10px;
-      width: 100%;
+      flex: 1 1 auto;
+      min-width: 0;
       min-height: 46px;
       padding: 8px var(--container-pad);
       background: transparent;
@@ -341,6 +362,19 @@ const currentLabel = current?.label ?? title;
       transition: transform 0.2s ease;
     }
     .docs__side.is-open .docs__menubtn-chev { transform: rotate(180deg); }
+    /* the search trigger collapses to an icon button in the bar */
+    .docs__bar :global(.search__btn) {
+      flex: none;
+      width: auto;
+      padding: 0 var(--container-pad) 0 14px;
+      border: 0;
+      border-left: 1px solid var(--border);
+      border-radius: 0;
+      background: transparent;
+      color: var(--accent);
+    }
+    .docs__bar :global(.search__btn-label),
+    .docs__bar :global(.search__kbd) { display: none; }
 
     /* the menu itself: an overlay panel under the bar, scrolling inside
        its own bounds so the page behind never has to be scrolled past it */

@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@types/node": "^22.20.1",
+    "pagefind": "^1.5.2",
     "typescript": "^5.7.0"
   }
 }

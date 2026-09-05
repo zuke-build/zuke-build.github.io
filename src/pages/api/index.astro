@@ -39,7 +39,7 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
     Find a symbol by name across every package — <kbd>↑</kbd>/<kbd>↓</kbd> to
     move, <kbd>Enter</kbd> to jump, <kbd>Esc</kbd> to clear.
   </p>
-  <div class="apisearch" id="apisearch">
+  <div class="apisearch" id="apisearch" data-pagefind-ignore>
     <input
       type="text"
       id="apisearch-input"
