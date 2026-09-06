@@ -818,6 +818,13 @@
               "optional": false,
               "signature": "mcpAuth(): McpAuthenticator | undefined",
               "doc": "An authenticator for `zuke mcp` — the general form of\n{@link Build.mcpIdentity}, for a server callers reach directly rather than\nthrough a proxy that has already identified them.\n\nIt runs before any dispatch, may be asynchronous (verifying a signature is),\nand refuses by returning an {@link McpAuthReject} rather than by throwing —\nso over HTTP the refusal is answered with its own status and\n`WWW-Authenticate` challenge, which is how an MCP client discovers where to\nauthenticate. The identity it resolves overrides `--actor`, the environment,\nand the client label for that call, and flows to the audit trail, run\nrecords, lock holders, and (for a registry-spawned build) the child's\n`ZUKE_ACTOR`, `ZUKE_ACTOR_KIND` and `ZUKE_ACTOR_ROLES`. Throwing still\nrefuses the request: the seam is fail-closed. Default: none.\n\nDeclare **either** this or {@link Build.mcpIdentity}; declaring both is\nrefused when the server starts, rather than letting one silently win.\n\n```ts\nclass ControlPlane extends Build {\n  override mcpAuth(): McpAuthenticator {\n    return {\n      authenticate: async (ctx: McpRequestContext) => {\n        const claims = await verifyBearer(ctx.headers.get(\"authorization\"));\n        if (claims === null) {\n          return { status: 401, error: \"invalid_token\", challenge: \"Bearer\" };\n        }\n        return { actor: claims.sub, kind: \"human\", roles: claims.roles };\n      },\n    };\n  }\n}\n```"
+            },
+            {
+              "name": "unforceable",
+              "kind": "method",
+              "optional": false,
+              "signature": "unforceable(): TargetBuilder[]",
+              "doc": "Targets an operator may **not** force with `zuke force` — the steps whose\nbody must actually run, whatever a live incident looks like.\n\nForcing settles a target without executing it: `skipped` takes a step off\nthe plan, `succeeded` records that a person did it by hand. That is the\nright tool for a step that cannot succeed and the wrong one for a step\nwhose whole purpose is to be the thing that happened — a production apply,\na signing step, a migration. Naming those here refuses the force rather\nthan trusting an operator under pressure to remember which is which.\n\nReturns target **references**, not names, so renaming a target keeps the\nlist correct instead of silently emptying it.\n\n```ts\nclass CD extends Build {\n  applyProduction = target().executes(() => applyTerraform());\n  override unforceable() {\n    return [this.applyProduction];\n  }\n}\n```"
             }
           ]
         },
@@ -3454,6 +3461,122 @@
           "deprecated": false
         },
         {
+          "name": "ForceDenial",
+          "kind": "typeAlias",
+          "doc": "Why a force was refused. Each maps to a message naming the target, so an\noperator learns which rule stopped them rather than that \"it failed\".",
+          "signature": "type ForceDenial = unknown_run | run_terminal | unknown_target | already_settled | unforceable | has_effects | foreign_run | write_failed",
+          "deprecated": false
+        },
+        {
+          "name": "ForcedOutcome",
+          "kind": "typeAlias",
+          "doc": "What an operator may force a target to, without running it.",
+          "signature": "type ForcedOutcome = skipped | succeeded",
+          "deprecated": false
+        },
+        {
+          "name": "ForceOptions",
+          "kind": "interface",
+          "doc": "Options for {@link forceTarget}.",
+          "signature": "interface ForceOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "runId",
+              "kind": "property",
+              "optional": false,
+              "signature": "runId: string",
+              "doc": "The run to act on."
+            },
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": false,
+              "signature": "target: string",
+              "doc": "The dotted target name to force."
+            },
+            {
+              "name": "outcome",
+              "kind": "property",
+              "optional": false,
+              "signature": "outcome: ForcedOutcome",
+              "doc": "What the target should settle to without running."
+            },
+            {
+              "name": "reason",
+              "kind": "property",
+              "optional": true,
+              "signature": "reason?: string",
+              "doc": "Why — recorded on the override and shown by `zuke runs show`."
+            },
+            {
+              "name": "actor",
+              "kind": "property",
+              "optional": true,
+              "signature": "actor?: string",
+              "doc": "Who to attribute the decision to (`--actor`); resolved as for a run."
+            },
+            {
+              "name": "stateStore",
+              "kind": "property",
+              "optional": true,
+              "signature": "stateStore?: StateStore | false",
+              "doc": "The durable store the run lives in; resolved as for a run when absent."
+            },
+            {
+              "name": "readEnv",
+              "kind": "property",
+              "optional": true,
+              "signature": "readEnv?: unknown",
+              "doc": "Reads an environment variable (injectable for tests)."
+            }
+          ]
+        },
+        {
+          "name": "ForceResult",
+          "kind": "interface",
+          "doc": "The result of a {@link forceTarget} call.",
+          "signature": "interface ForceResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ok",
+              "kind": "property",
+              "optional": false,
+              "signature": "ok: boolean",
+              "doc": "Whether the override was recorded."
+            },
+            {
+              "name": "denial",
+              "kind": "property",
+              "optional": true,
+              "signature": "denial?: ForceDenial",
+              "doc": "Why it was refused, when it was."
+            },
+            {
+              "name": "message",
+              "kind": "property",
+              "optional": false,
+              "signature": "message: string",
+              "doc": "A message naming the target and the rule, suitable for an operator."
+            },
+            {
+              "name": "override",
+              "kind": "property",
+              "optional": true,
+              "signature": "override?: TargetOverride",
+              "doc": "The override as recorded, when it was."
+            }
+          ]
+        },
+        {
+          "name": "forceTarget",
+          "kind": "function",
+          "doc": "Record an operator's forced outcome for one target of a run.\n\nThe write is a compare-and-swap, retried against a re-read record, so two\noperators forcing different targets at once cannot lose each other's\ndecision. Every refusal is re-checked on each attempt, because the thing that\nbeat us to the record may be the target settling.",
+          "signature": "async function forceTarget(build: Build, options: ForceOptions): Promise<ForceResult>",
+          "deprecated": false
+        },
+        {
           "name": "ForEachFactory",
           "kind": "typeAlias",
           "doc": "Builds one item's ordered pipeline of sub-targets for {@link TargetBuilder.forEach}.\nThe returned record's keys are stage names and its values are targets; each\nstage implicitly depends on the one declared before it, so an item's stages\nrun in insertion order.",
@@ -5934,6 +6057,13 @@
               "doc": "Who asked for the run, stamped once at creation and immutable thereafter.\n\nAbsent on a record written before this field existed; such a record's\n{@link RunRecord.actor} is the closest answer available, and is exactly the\nright one on a run that was never resumed."
             },
             {
+              "name": "overrides",
+              "kind": "property",
+              "optional": true,
+              "signature": "overrides?: Record<string, TargetOverride>",
+              "doc": "Operator-forced target outcomes, keyed by dotted target name (see\n{@link TargetOverride}). Absent until something is forced.\n\nRead when the executor reaches the target, so an override lands for any\ntarget the run has not started yet — in practice on the next resume, since\nthat is the process that loads the record after the force was written."
+            },
+            {
               "name": "createdAt",
               "kind": "property",
               "optional": false,
@@ -7344,6 +7474,43 @@
               "optional": true,
               "signature": "summary?: unknown",
               "doc": "The notes it reported into its row of the build summary (see\n{@link TargetContext.reportSummary}), when it reported any — so an\naggregating target can read a dependency's test counts, not only its\nverdict. Durable: present after a resume too."
+            }
+          ]
+        },
+        {
+          "name": "TargetOverride",
+          "kind": "interface",
+          "doc": "An operator's decision to settle a target without running it — recorded on\nthe run so the executor honours it and the trail says who decided.\n\nTwo shapes of intervention, both of which a build cannot express itself:\n`skipped` takes a step off the plan that cannot succeed, and `succeeded`\nmarks one that a person completed by hand. Dependents proceed either way; the\ndifference is what a later cancellation compensates, since only the second\nasserts that the target's effects exist.",
+          "signature": "interface TargetOverride",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "outcome",
+              "kind": "property",
+              "optional": false,
+              "signature": "outcome: ForcedOutcome",
+              "doc": "What the target settles to when the executor reaches it."
+            },
+            {
+              "name": "actor",
+              "kind": "property",
+              "optional": false,
+              "signature": "actor: string",
+              "doc": "Who forced it (a resolved actor)."
+            },
+            {
+              "name": "at",
+              "kind": "property",
+              "optional": false,
+              "signature": "at: string",
+              "doc": "ISO-8601 time the override was recorded."
+            },
+            {
+              "name": "reason",
+              "kind": "property",
+              "optional": true,
+              "signature": "reason?: string",
+              "doc": "Why, when the operator gave a reason."
             }
           ]
         },
