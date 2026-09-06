@@ -804,6 +804,13 @@
               "optional": false,
               "signature": "mcpIdentity(): McpIdentityHook | undefined",
               "doc": "A per-request identity hook for `zuke mcp` — resolve a **trusted** caller\nfrom the request context (an authenticating reverse proxy's header) so a\nshared, multi-user server attributes each call to the real engineer rather\nthan a client-self-reported label. When set, the resolved actor overrides\n`--actor`, the environment, and the client label for that call, and flows to\nthe audit trail, run records, lock holders, and (for a registry-spawned\nbuild) the child's `ZUKE_ACTOR`; a throwing hook rejects the request before\nanything runs. Default: none — stdio/local use is unchanged.\n\n```ts\nclass ControlPlane extends Build {\n  override mcpIdentity() {\n    return (ctx: McpRequestContext) => {\n      // The proxy strips any client copy of this header and injects its own.\n      const sub = ctx.headers.get(\"x-forwarded-user\");\n      if (!sub) throw new Error(\"no identity from proxy\");\n      return { actor: sub, via: \"oauth-proxy\" };\n    };\n  }\n}\n```"
+            },
+            {
+              "name": "mcpAuth",
+              "kind": "method",
+              "optional": false,
+              "signature": "mcpAuth(): McpAuthenticator | undefined",
+              "doc": "An authenticator for `zuke mcp` — the general form of\n{@link Build.mcpIdentity}, for a server callers reach directly rather than\nthrough a proxy that has already identified them.\n\nIt runs before any dispatch, may be asynchronous (verifying a signature is),\nand refuses by returning an {@link McpAuthReject} rather than by throwing —\nso over HTTP the refusal is answered with its own status and\n`WWW-Authenticate` challenge, which is how an MCP client discovers where to\nauthenticate. The identity it resolves overrides `--actor`, the environment,\nand the client label for that call, and flows to the audit trail, run\nrecords, lock holders, and (for a registry-spawned build) the child's\n`ZUKE_ACTOR`, `ZUKE_ACTOR_KIND` and `ZUKE_ACTOR_ROLES`. Throwing still\nrefuses the request: the seam is fail-closed. Default: none.\n\nDeclare **either** this or {@link Build.mcpIdentity}; declaring both is\nrefused when the server starts, rather than letting one silently win.\n\n```ts\nclass ControlPlane extends Build {\n  override mcpAuth(): McpAuthenticator {\n    return {\n      authenticate: async (ctx: McpRequestContext) => {\n        const claims = await verifyBearer(ctx.headers.get(\"authorization\"));\n        if (claims === null) {\n          return { status: 401, error: \"invalid_token\", challenge: \"Bearer\" };\n        }\n        return { actor: claims.sub, kind: \"human\", roles: claims.roles };\n      },\n    };\n  }\n}\n```"
             }
           ]
         },
@@ -4442,9 +4449,62 @@
           ]
         },
         {
+          "name": "McpAuthenticator",
+          "kind": "interface",
+          "doc": "Authenticates one request for the MCP server.\n\nInvoked once per message, before any dispatch: a rejection stops the request\noutright, so nothing executes and nothing is written to state. Returning an\n{@link McpIdentity} accepts the caller; returning an {@link McpAuthReject}\nrefuses it. Throwing also refuses it — the seam is fail-closed, so a bug in an\nauthenticator denies rather than admits.\n\nConfigure one with `override mcpAuth()` on the build.",
+          "signature": "interface McpAuthenticator",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "authenticate",
+              "kind": "method",
+              "optional": false,
+              "signature": "authenticate(ctx: McpRequestContext): Promise<McpIdentity | McpAuthReject> | McpIdentity | McpAuthReject",
+              "doc": "Resolve the caller's identity from the request, or refuse the request."
+            }
+          ]
+        },
+        {
+          "name": "McpAuthReject",
+          "kind": "interface",
+          "doc": "Why a request was refused, and how the transport should say so.\n\nThe status and challenge are what make OAuth discovery work: an MCP client\nlearns where to authenticate from a `401` carrying `WWW-Authenticate`, which a\nJSON-RPC error inside a `200` can never tell it.",
+          "signature": "interface McpAuthReject",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: number",
+              "doc": "The HTTP status to answer with — a client error, `401` or `403` in practice."
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": false,
+              "signature": "error: string",
+              "doc": "A short reason, machine-readable where there is a standard code for it (an\nOAuth authenticator's `\"invalid_token\"`, say). It becomes the JSON-RPC\nerror message on the refusal, so it is read by people too."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": true,
+              "signature": "detail?: string",
+              "doc": "A short human-readable detail. Never a secret: it is returned to the caller."
+            },
+            {
+              "name": "challenge",
+              "kind": "property",
+              "optional": true,
+              "signature": "challenge?: string",
+              "doc": "The `WWW-Authenticate` header value to challenge with, when one applies. A\nvalue a header cannot carry (a newline, a NUL, a character outside Latin-1)\nis dropped rather than sent, so it cannot turn the refusal into a fault."
+            }
+          ]
+        },
+        {
           "name": "McpIdentity",
           "kind": "interface",
-          "doc": "A trusted caller identity, resolved per request by a {@link McpIdentityHook}\n(typically from an authenticating reverse proxy's header). Its\n{@link McpIdentity.actor} is the highest-precedence attribution — it overrides\n`--actor`, the environment, and the client's self-reported label for the call.",
+          "doc": "A trusted caller identity, resolved per request by an\n{@link McpAuthenticator}. Its {@link McpIdentity.actor} is the\nhighest-precedence attribution — it overrides `--actor`, the environment, and\nthe client's self-reported label for the call.",
           "signature": "interface McpIdentity",
           "deprecated": false,
           "members": [
@@ -4453,7 +4513,21 @@
               "kind": "property",
               "optional": false,
               "signature": "actor: string",
-              "doc": "The authenticated actor (e.g. an OAuth subject)."
+              "doc": "The authenticated actor — an OAuth subject, a GitHub login, a service name."
+            },
+            {
+              "name": "kind",
+              "kind": "property",
+              "optional": true,
+              "signature": "kind?: human | service",
+              "doc": "Whether a person or a machine is calling. Absent is read as `\"human\"`, the\nconservative default: a policy that treats service callers differently must\nsee the claim stated rather than inferred."
+            },
+            {
+              "name": "roles",
+              "kind": "property",
+              "optional": true,
+              "signature": "roles?: unknown",
+              "doc": "The roles this caller holds. Absent is read as none, so an authenticator\nthat says nothing about roles grants nothing. A name containing a comma is\ndropped: the comma separates the roles a registry-spawned child reads, so\nsuch a name would reach it as two."
             },
             {
               "name": "via",
@@ -4467,14 +4541,14 @@
         {
           "name": "McpIdentityHook",
           "kind": "typeAlias",
-          "doc": "Resolve a trusted {@link McpIdentity} from a request's context. Invoked once\nper message, before any dispatch; **throwing rejects the whole request** with\nan auth error, so nothing executes and nothing is written to state — the seam\na proxy in front of the server uses to inject an authenticated identity.",
+          "doc": "Resolve a trusted {@link McpIdentity} from a request's context. The original,\nsynchronous identity seam, kept as sugar for the common case of trusting a\nheader an authenticating reverse proxy injected: **throwing rejects the whole\nrequest**. {@link authenticatorFromHook} adapts one onto\n{@link McpAuthenticator}, which is what the server actually runs.",
           "signature": "type McpIdentityHook = unknown",
           "deprecated": false
         },
         {
           "name": "McpRequestContext",
           "kind": "interface",
-          "doc": "The per-request context a transport hands the message handler. Carries the\nrequest's headers, so a server's identity hook can authenticate the caller\nfrom a trusted proxy header. Empty on the stdio transport (no headers).",
+          "doc": "The per-request context a transport hands the message handler, and the only\nthing an authenticator sees of the request. Empty on the stdio transport,\nwhich has no request to describe.",
           "signature": "interface McpRequestContext",
           "deprecated": false,
           "members": [
@@ -4484,6 +4558,13 @@
               "optional": false,
               "signature": "headers: Headers",
               "doc": "The request headers; an empty {@link Headers} on stdio."
+            },
+            {
+              "name": "request",
+              "kind": "property",
+              "optional": true,
+              "signature": "request?: Request",
+              "doc": "The HTTP request the caller arrived on, when it did — so an authenticator\ncan read its method and URL, not just its headers. Absent on the stdio\ntransport, which has no request.\n\nIts **body is deliberately empty**: the body belongs to the transport, which\nreads it once to parse the JSON-RPC message, and a credential never lives\nthere. Everything else — method, URL, headers — is the real request's."
             }
           ]
         },
