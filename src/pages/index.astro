@@ -1291,6 +1291,31 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     </div>
   </section>
 
+  <!-- ░░ SWAG ░░ -->
+  <section class="section sec-swag" id="swag">
+    <div class="container">
+      <div class="swag panel" data-reveal>
+        <div class="swag__copy">
+          <span class="eyebrow">Zuke swag <span class="tag-new">New</span></span>
+          <h2>Wear the build.</h2>
+          <p class="lead">
+            The Zuke swag shop is open &mdash; Zuke-branded apparel and
+            accessories for everyone who would rather write a typed build than
+            one more YAML file.
+          </p>
+        </div>
+        <a
+          class="btn btn-primary swag__btn"
+          href="https://totollyshop.myspreadshop.net/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Visit the shop →
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- ░░ CTA ░░ -->
   <section class="section">
     <div class="container">
@@ -2220,6 +2245,23 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .cta :global(.copy) { max-width: 460px; margin: 0 auto; text-align: left; }
   .cta__btns { display: flex; gap: 14px; justify-content: center; margin-top: 26px; flex-wrap: wrap; }
 
+  /* swag — a single announcement band: copy on the left, one action on the
+     right, sharing the CTA's accent-tinted panel so the two read as a pair. */
+  .sec-swag { padding-bottom: 0; }
+  .swag {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    padding: clamp(28px, 4vw, 44px);
+    background: color-mix(in oklch, var(--accent) 7%, var(--panel));
+    border-color: color-mix(in oklch, var(--accent) 30%, var(--border));
+  }
+  .swag__copy { min-width: 0; }
+  .swag h2 { font-size: clamp(1.5rem, 2.8vw, 2rem); margin-bottom: 10px; }
+  .swag .lead { max-width: 54ch; }
+  .swag__btn { flex: none; }
+
   /* let grid children shrink so wide code/SVG scroll internally
      instead of forcing the column (and page) wider than the viewport */
   .hero__grid > *,
@@ -2250,6 +2292,8 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     .cat__head { flex-wrap: wrap; gap: 8px 14px; }
     .cat__rule { flex-basis: 100%; order: 3; }
     .cta { padding: 32px 18px; }
+    .swag { flex-direction: column; align-items: stretch; padding: 28px 18px; }
+    .swag__btn { justify-content: center; }
     .cta__btns .btn { flex: 1 1 auto; justify-content: center; }
     .hero__strip { gap: 9px 12px; font-size: 0.78rem; margin-top: 44px; }
     .hero__cta { gap: 10px; }
