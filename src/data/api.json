@@ -108,6 +108,13 @@
           "deprecated": false
         },
         {
+          "name": "ActorKind",
+          "kind": "typeAlias",
+          "doc": "Whether a person or a machine asked for a run (see {@link RunInitiator}).",
+          "signature": "type ActorKind = human | service",
+          "deprecated": false
+        },
+        {
           "name": "AffectedOptions",
           "kind": "interface",
           "doc": "Configure {@link ExecuteOptions.affected}: the base revision and diff seam.",
@@ -3060,6 +3067,13 @@
               "doc": "Who to attribute the run to in its state record (CLI `--actor`). Falls back\nto `ZUKE_ACTOR`, then the CI actor, then `\"anonymous\"`."
             },
             {
+              "name": "actorKind",
+              "kind": "property",
+              "optional": true,
+              "signature": "actorKind?: ActorKind",
+              "doc": "Whether a person or a machine asked for the run (CLI `--actor-kind`). Falls\nback to `ZUKE_ACTOR_KIND`, else `\"human\"`. Recorded on the run's immutable\ninitiator, never inferred from the actor's name."
+            },
+            {
               "name": "resume",
               "kind": "property",
               "optional": true,
@@ -4010,6 +4024,13 @@
           "kind": "function",
           "doc": "Fetch `url` and return its body as text. Throws {@link HttpError} on non-2xx.",
           "signature": "async function httpText(url: string, options?: HttpOptions): Promise<string>",
+          "deprecated": false
+        },
+        {
+          "name": "initiatorOf",
+          "kind": "function",
+          "doc": "Who a run is attributed to for a reader that wants its *owner* rather than\nits last writer: the recorded initiator, else the actor.\n\nThe fallback is not a guess — on a record written before the initiator\nexisted, and on any run that was never resumed, `actor` still holds exactly\nthe value the initiator would have been stamped with.",
+          "signature": "function initiatorOf(run: RunRecord | RunSummary): string",
           "deprecated": false
         },
         {
@@ -5721,6 +5742,36 @@
           ]
         },
         {
+          "name": "RunInitiator",
+          "kind": "interface",
+          "doc": "Who asked for a run, stamped once when it is created and never rewritten.\n\nDistinct from {@link RunRecord.actor}, which every resume overwrites with\nwhoever picked the run up — so on a run that suspended and was resumed by a\nsweep, `actor` is the sweep's service account and this is still the engineer\nwho started it. That is the subject a run-scoped authorization rule means by\n\"whoever started this run\", and the difference a notification needs to tell a\nperson's deploy from a scheduler's.",
+          "signature": "interface RunInitiator",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "actor",
+              "kind": "property",
+              "optional": false,
+              "signature": "actor: string",
+              "doc": "Who asked for the run, resolved once at creation."
+            },
+            {
+              "name": "kind",
+              "kind": "property",
+              "optional": false,
+              "signature": "kind: ActorKind",
+              "doc": "Whether a person or a machine asked. Stated, never inferred from the actor."
+            },
+            {
+              "name": "at",
+              "kind": "property",
+              "optional": false,
+              "signature": "at: string",
+              "doc": "ISO-8601 time this attribution was fixed. The run's `createdAt` for a run\nstamped at creation, and the *original* run's `createdAt` for one backfilled\nwhen a resume was about to overwrite the evidence — so it dates the\nattribution, not the write that recorded it."
+            }
+          ]
+        },
+        {
           "name": "RunningService",
           "kind": "interface",
           "doc": "A started service the executor holds until it tears it down.",
@@ -5873,7 +5924,14 @@
               "kind": "property",
               "optional": false,
               "signature": "actor: string",
-              "doc": "Who started the run (resolved from `--actor`, `ZUKE_ACTOR`, or CI env)."
+              "doc": "The run's **last writer** (resolved from `--actor`, `ZUKE_ACTOR`, or CI\nenv). Every resume overwrites it with whoever picked the run up, so it\nanswers \"who touched this most recently\", not \"whose run is this\" — see\n{@link RunRecord.initiator} for that."
+            },
+            {
+              "name": "initiator",
+              "kind": "property",
+              "optional": true,
+              "signature": "initiator?: RunInitiator",
+              "doc": "Who asked for the run, stamped once at creation and immutable thereafter.\n\nAbsent on a record written before this field existed; such a record's\n{@link RunRecord.actor} is the closest answer available, and is exactly the\nright one on a run that was never resumed."
             },
             {
               "name": "createdAt",
@@ -6001,7 +6059,14 @@
               "kind": "property",
               "optional": false,
               "signature": "actor: string",
-              "doc": "Who started the run."
+              "doc": "The run's last writer (see {@link RunRecord.actor})."
+            },
+            {
+              "name": "initiator",
+              "kind": "property",
+              "optional": true,
+              "signature": "initiator?: RunInitiator",
+              "doc": "Who asked for the run (see {@link RunRecord.initiator}). Absent on a record\nwritten before the field existed, and from a store that does not project\nit — {@link RunSummary.actor} is the fallback in both cases."
             },
             {
               "name": "createdAt",
@@ -7186,6 +7251,13 @@
               "optional": false,
               "signature": "runId: string",
               "doc": "Unique ID of this run, stable for every target in the run."
+            },
+            {
+              "name": "initiator",
+              "kind": "property",
+              "optional": true,
+              "signature": "initiator?: RunInitiator",
+              "doc": "Who asked for this run — stamped once when the run was created, and\nunchanged by any later resume, so it still names the engineer who started a\ndeploy that a sweep has since picked up several times.\n\nAbsent when the run has no durable record to have stamped one (no state\nstore), and on a record written before the field existed."
             },
             {
               "name": "target",
