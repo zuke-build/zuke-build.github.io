@@ -825,6 +825,13 @@
               "optional": false,
               "signature": "unforceable(): TargetBuilder[]",
               "doc": "Targets an operator may **not** force with `zuke force` — the steps whose\nbody must actually run, whatever a live incident looks like.\n\nForcing settles a target without executing it: `skipped` takes a step off\nthe plan, `succeeded` records that a person did it by hand. That is the\nright tool for a step that cannot succeed and the wrong one for a step\nwhose whole purpose is to be the thing that happened — a production apply,\na signing step, a migration. Naming those here refuses the force rather\nthan trusting an operator under pressure to remember which is which.\n\nReturns target **references**, not names, so renaming a target keeps the\nlist correct instead of silently emptying it.\n\n```ts\nclass CD extends Build {\n  applyProduction = target().executes(() => applyTerraform());\n  override unforceable() {\n    return [this.applyProduction];\n  }\n}\n```"
+            },
+            {
+              "name": "mcpAuthorize",
+              "kind": "method",
+              "optional": false,
+              "signature": "mcpAuthorize(identity: McpIdentity, call: McpCall): McpAuthorization",
+              "doc": "Decide whether an authenticated MCP caller may make one call — the\nbuild-level half of [authorization](../../docs/mcp.md#authorization).\n\nThe default implementation is {@link defaultMcpAuthorize}: read tools need\n`read`, running a target needs `run` (or whatever the target's\n`requiresRole` asks for), and a run-scoped mutation needs the run's\ninitiator or `operator`. Override to express what the engine cannot know —\na change window, team ownership, a freeze.\n\nOnly consulted when the server authenticates its callers. With no\n`mcpAuth()`/`mcpIdentity()` every caller is treated as holding every role,\nso `--allow-run`, `--protect` and the operator token remain exactly the\ngates they were; a local stdio server is unchanged.\n\nCalled **after** the allow-list and operator-token checks, so it can only\nnarrow what those already permit — an override cannot open a target the\nserver was not started to expose.\n\n```ts\nclass ControlPlane extends Build {\n  override mcpAuthorize(identity: McpIdentity, call: McpCall) {\n    if (call.tool === \"run:promote\" && !inChangeWindow()) {\n      return { allow: false, reason: \"outside the change window\" };\n    }\n    return defaultMcpAuthorize(identity, call);\n  }\n}\n```"
             }
           ]
         },
@@ -2603,6 +2610,13 @@
           "kind": "variable",
           "doc": "The default directory a {@link Toolchain} (and {@link ToolTasks}) installs into.",
           "signature": "const DEFAULT_TOOLS_DIR: .zuke/tools",
+          "deprecated": false
+        },
+        {
+          "name": "defaultMcpAuthorize",
+          "kind": "function",
+          "doc": "The shipped default policy.\n\n| Call | Needs |\n| --- | --- |\n| `list_*` / `show_*` / `describe_*` | `read` |\n| `run:<target>` | `run`, **and** the target's `requiresRole` when it declares one |\n| a run-scoped mutation | the run's initiator, or `operator` |\n| a sweep over every run | `operator` |\n\nA run whose initiator is a **service** may be steered by any caller holding\n`run`: a scheduler's run has no person to ask, and treating the scheduler as\nits owner would mean nobody could intervene. Documented, and overridable by\n`Build.mcpAuthorize`.",
+          "signature": "function defaultMcpAuthorize(identity: McpIdentity, call: McpCall): McpAuthorization",
           "deprecated": false
         },
         {
@@ -4609,6 +4623,13 @@
           ]
         },
         {
+          "name": "McpAuthorization",
+          "kind": "typeAlias",
+          "doc": "A policy's verdict on one call.",
+          "signature": "type McpAuthorization = unknown | unknown",
+          "deprecated": false
+        },
+        {
           "name": "McpAuthReject",
           "kind": "interface",
           "doc": "Why a request was refused, and how the transport should say so.\n\nThe status and challenge are what make OAuth discovery work: an MCP client\nlearns where to authenticate from a `401` carrying `WWW-Authenticate`, which a\nJSON-RPC error inside a `200` can never tell it.",
@@ -4646,6 +4667,43 @@
           ]
         },
         {
+          "name": "McpCall",
+          "kind": "interface",
+          "doc": "What is being authorized — one MCP tool call, described for a policy.",
+          "signature": "interface McpCall",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tool",
+              "kind": "property",
+              "optional": false,
+              "signature": "tool: string",
+              "doc": "The tool name, e.g. `run:deploy`, `cancel_run`, `list_runs`."
+            },
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": true,
+              "signature": "target?: string",
+              "doc": "The target a `run:` call names, when it names one."
+            },
+            {
+              "name": "requiredRoles",
+              "kind": "property",
+              "optional": true,
+              "signature": "requiredRoles?: unknown",
+              "doc": "Every role declared with `.requiresRole(...)` **anywhere in the plan** this\ncall would execute — not just on the target it names.\n\nInvoking a target runs its dependencies, so a requirement that only guarded\nthe entry point would be bypassed by invoking anything that depends on it.\nThis mirrors `--protect`, which is enforced across the whole plan for the\nsame reason. The caller must satisfy all of them."
+            },
+            {
+              "name": "run",
+              "kind": "property",
+              "optional": true,
+              "signature": "run?: RunSummary",
+              "doc": "The run a run-scoped call acts on, when it acts on one. Absent for a sweep\nover every run, which no single run's owner can authorize."
+            }
+          ]
+        },
+        {
           "name": "McpIdentity",
           "kind": "interface",
           "doc": "A trusted caller identity, resolved per request by an\n{@link McpAuthenticator}. Its {@link McpIdentity.actor} is the\nhighest-precedence attribution — it overrides `--actor`, the environment, and\nthe client's self-reported label for the call.",
@@ -4671,7 +4729,7 @@
               "kind": "property",
               "optional": true,
               "signature": "roles?: unknown",
-              "doc": "The roles this caller holds. Absent is read as none, so an authenticator\nthat says nothing about roles grants nothing. A name containing a comma is\ndropped: the comma separates the roles a registry-spawned child reads, so\nsuch a name would reach it as two."
+              "doc": "The roles this caller holds.\n\nOmitting it means this authenticator does not speak roles: the\n[role policy](../../docs/mcp.md#authorization) then does not constrain the\ncaller, and the server's allow-list, `--protect` globs and operator token\nremain the only gates — what a server did before roles existed. An **empty\nlist** is the opposite claim: the question was considered and nothing was\ngranted, so the policy denies.\n\nRole names are passed through as given; the comma-separated environment\nvariable a registry-spawned child reads escapes them rather than this\ndropping them, so sanitisation cannot turn a granted set into an empty one."
             },
             {
               "name": "via",
@@ -5808,6 +5866,13 @@
               "optional": true,
               "signature": "detail?: string",
               "doc": "A short, redacted human detail (e.g. a denial reason), when present."
+            },
+            {
+              "name": "roles",
+              "kind": "property",
+              "optional": true,
+              "signature": "roles?: unknown",
+              "doc": "The roles the caller held, when the server authenticated them. What makes a\ndenial answerable afterwards: the actor and the reason say who was refused\nand by which rule, and this says what they were carrying at the time.\nAbsent on a server with no authenticator, which knows of no roles."
             }
           ]
         },
@@ -6213,6 +6278,13 @@
               "doc": "ISO-8601 timestamp of the last write."
             }
           ]
+        },
+        {
+          "name": "satisfiesRole",
+          "kind": "function",
+          "doc": "Whether a caller holding `held` satisfies a requirement for `required`.\n\nA built-in role is satisfied by any built-in at or above it; anything else is\nsatisfied only by holding that exact name. The two rules cannot be collapsed:\nordering a name the model does not know would mean guessing where an identity\nprovider's group sits in a hierarchy it never agreed to.",
+          "signature": "function satisfiesRole(held: unknown, required: string): boolean",
+          "deprecated": false
         },
         {
           "name": "ScheduleEntry",
@@ -7003,6 +7075,13 @@
               "doc": "Mark this target **query-only** for MCP: its `run:` tool advertises MCP's\n`readOnlyHint` instead of the default `destructiveHint`, and it is exempt\nfrom `--confirm-destructive`. A hint about intent only — the target still\nruns its real body — so declare it on targets that inspect rather than\nmutate (a status check, a report)."
             },
             {
+              "name": "requiresRole",
+              "kind": "method",
+              "optional": false,
+              "signature": "requiresRole(role: string): this",
+              "doc": "The role an MCP caller must hold to run this target — the per-target half\nof [authorization](../../docs/mcp.md#authorization).\n\nThe built-in roles are ordered `read` < `run` < `operator`, so an operator\nsatisfies a requirement for `run`; any other name is matched exactly, so an\nidentity provider's own group (`sre`, `release-manager`) works here without\nbeing ranked into a hierarchy it never agreed to.\n\nOnly meaningful when the server authenticates its callers — a build with no\n`mcpAuth()`/`mcpIdentity()` is gated by `--allow-run` and `--protect` as\nbefore, and this is inert. It raises the bar for one target; it cannot\nlower it, so a target requiring `read` still needs `run` to be executed.\n\n```ts\npromote = target().requiresRole(\"operator\").executes(() => deployProd());\n```"
+            },
+            {
               "name": "always",
               "kind": "method",
               "optional": false,
@@ -7232,6 +7311,13 @@
               "optional": false,
               "signature": "readOnly_: boolean",
               "doc": "Advertise this target as query-only over MCP (set by {@link readOnly})."
+            },
+            {
+              "name": "requiresRole_",
+              "kind": "property",
+              "optional": true,
+              "signature": "requiresRole_?: string",
+              "doc": "The role an MCP caller needs to run this target (set by {@link requiresRole})."
             },
             {
               "name": "dryRunnable_",
