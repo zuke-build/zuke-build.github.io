@@ -12,6 +12,43 @@ interface Example {
   imageAlt?: string;
 }
 
+// Complete projects in the Zuke repository's examples/ folder — each one a
+// repo in miniature you copy and run, as opposed to the single build files
+// below. Order matches the folder's README.
+const REPO_EXAMPLES = "https://github.com/zuke-build/zuke/tree/master/examples";
+const starters = [
+  {
+    dir: "deno-library",
+    tag: "Deno library",
+    title: "The everyday gate",
+    desc: "Format, lint, type-check, test, and a 95% coverage threshold — the pipeline you want on every pull request.",
+  },
+  {
+    dir: "ci-only",
+    tag: "Generated CI",
+    title: "Never write CI YAML again",
+    desc: "A project whose only job is the pipeline: one cicd() per provider — GitHub, GitLab, Azure — generated from two targets and verified on every run.",
+  },
+  {
+    dir: "node-app",
+    tag: "Node / npm",
+    title: "Drive a Node app",
+    desc: "npm ci, npm test, npm run build and npm pack through the typed @zuke/npm wrapper, with no dependency added to package.json.",
+  },
+  {
+    dir: "release-library",
+    tag: "Release",
+    title: "Release a small library",
+    desc: "Test, bump, commit, tag, push, GitHub release with generated notes, publish to JSR — one chain of targets you can stop anywhere.",
+  },
+  {
+    dir: "scripts-to-zuke",
+    tag: "Shell scripts",
+    title: "Replace scripts/release.sh",
+    desc: "The same script three ways: bash, the $ shell with no build class at all, and targets. The smallest door into Zuke.",
+  },
+];
+
 const examples: Example[] = [
   {
     id: "astro-site",
@@ -719,12 +756,42 @@ await run(CiBuild);`,
       <span class="eyebrow">Examples</span>
       <h1>Real builds, start to finish.</h1>
       <p class="lead">
-        Each example is a complete <code>zuke.ts</code> you can drop into a
-        project and run with <code>./zuke &lt;target&gt;</code>. They show targets,
-        typed dependencies, tool wrappers, and the <code>$</code> shell working
-        together.
+        Five runnable projects to clone, then a catalogue of complete
+        <code>zuke.ts</code> files you can drop into your own. They show
+        targets, typed dependencies, tool wrappers, and the <code>$</code>
+        shell working together.
       </p>
     </div>
+  </section>
+
+  <!-- ░░ CLONE AND RUN ░░ -->
+  <section class="container starters" id="clone-and-run">
+    <header class="starters__head">
+      <span class="eyebrow">Clone and run</span>
+      <h2>Five small projects, each a repo in miniature.</h2>
+      <p class="lead">
+        Every folder under
+        <a href={REPO_EXAMPLES} target="_blank" rel="noopener noreferrer"><code>examples/</code></a>
+        has its own <code>zuke.ts</code>, config and README, runs from its own
+        directory, and is type-checked against the source on every CI run — so
+        what you copy is what works.
+      </p>
+      <CopyCode code={`git clone https://github.com/zuke-build/zuke
+cd zuke/examples/deno-library
+deno run -A zuke.ts --list`} lang="bash" />
+    </header>
+    <ul class="starters__grid">
+      {starters.map((s) => (
+        <li class="starter panel" data-reveal>
+          <a class="starter__link" href={`${REPO_EXAMPLES}/${s.dir}`} target="_blank" rel="noopener noreferrer">
+            <span class="starter__tag">{s.tag}</span>
+            <span class="starter__title">{s.title}</span>
+            <span class="starter__desc">{s.desc}</span>
+            <span class="starter__dir">examples/{s.dir} ↗</span>
+          </a>
+        </li>
+      ))}
+    </ul>
   </section>
 
   <section class="container ex-layout">
@@ -868,6 +935,48 @@ await run(CiBuild);`,
   .ex-hero { padding-top: clamp(48px, 7vw, 88px); padding-bottom: 24px; }
   .ex-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.1rem); margin-bottom: 16px; }
   .ex-hero .lead { max-width: 70ch; }
+
+  /* clone-and-run starters */
+  .starters { padding-block: 8px 40px; }
+  .starters__head { max-width: 76ch; margin-bottom: 22px; }
+  .starters__head h2 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 6px 0 12px; }
+  .starters__head .lead { margin-bottom: 16px; }
+  .starters__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .starter { overflow: hidden; }
+  .starter__link {
+    display: grid;
+    gap: 8px;
+    height: 100%;
+    padding: 18px 18px 16px;
+    color: inherit;
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+  .starter__link:hover,
+  .starter__link:focus-visible { border-left-color: var(--cyan); background: rgba(255,255,255,0.03); }
+  .starter__tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cyan);
+  }
+  .starter__title { font-weight: 700; font-size: 1.02rem; }
+  .starter__desc { color: var(--text-dim); font-size: 0.9rem; line-height: 1.5; }
+  .starter__dir {
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-faint);
+  }
 
   /* layout: sticky example nav + the list of examples */
   .ex-layout {
