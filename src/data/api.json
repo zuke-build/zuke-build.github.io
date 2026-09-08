@@ -7912,6 +7912,13 @@
               "doc": "Merge a JSON patch into this target's persisted metadata (awaits the write)."
             },
             {
+              "name": "trySet",
+              "kind": "method",
+              "optional": false,
+              "signature": "trySet(patch: Record<string, JsonValue>): Promise<boolean>",
+              "doc": "{@link set}, reporting whether the patch was recorded: `true` when it\nreached the store, `false` when the write was dropped.\n\nA write can be dropped — conflicted away for good, or refused by a store\nthat errored — and {@link set} resolves the same either way, so a body\nthat needs the value to be durable cannot tell. This is the seam for the\ncases that do need to know: before an irreversible step that depends on\nthe value, or before handing a compensation something it will have to read\nback.\n\nDo not read `false` as \"it may still land\": a dropped write is sometimes\nre-persisted by a later one, but nothing guarantees it, so treat `false`\nas not recorded. A dropped write also warns, and one that is definitely\nunrecoverable marks the run {@link \"./state/types.ts\".RunRecord.degraded}\nso a later resume knows the record is missing something.\n\nA handle with nothing durable behind it always answers `true` — a build\nwith no state store, and a compensation, whose state is in-memory by\ndesign. Nothing is persisted, but nothing is dropped either."
+            },
+            {
               "name": "get",
               "kind": "method",
               "optional": false,
