@@ -15093,6 +15093,20 @@
               "optional": true,
               "signature": "launcherName?: string",
               "doc": "Base name for the launcher scripts, when `zuke` is taken by a directory."
+            },
+            {
+              "name": "mcp",
+              "kind": "property",
+              "optional": false,
+              "signature": "mcp: boolean",
+              "doc": "Also write `.mcp.json`, registering the build's MCP server for agent clients."
+            },
+            {
+              "name": "allowRun",
+              "kind": "property",
+              "optional": false,
+              "signature": "allowRun: boolean",
+              "doc": "Register that server with `--allow-run`, so the agent may execute targets. Implies `mcp`."
             }
           ]
         },
