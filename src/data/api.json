@@ -3231,7 +3231,7 @@
               "kind": "property",
               "optional": true,
               "signature": "setupSteps?: CiStep[]",
-              "doc": "Steps prepended to every job — checkout, tool setup, cache restore. Defaults\nto a single `actions/checkout` (rendered on GitHub; GitLab and Azure check\nout automatically). Provide `env` for `ZUKE_REMOTE_CACHE_*` here or via\n{@link env}."
+              "doc": "Steps prepended to every job — tool setup, cache restore. None by default:\nthe prelude action every job starts with already hardens the runner and\nchecks the repository out (and GitLab and Azure check out on their own), so\na job's steps are just `Run <target>` unless you add to them. Provide `env`\nfor `ZUKE_REMOTE_CACHE_*` here or via {@link env}."
             },
             {
               "name": "runsOn",
