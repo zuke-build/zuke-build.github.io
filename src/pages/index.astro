@@ -160,13 +160,17 @@ const cacheBackends = [
   { name: "S3 / GCS / R2", color: "#9b6bff" },
 ];
 
-const mcpSnippet = `# read-only: an agent inspects the build, never runs it
+const mcpSnippet = `# scaffold a build that is agent-ready from day one:
+# writes .mcp.json registering the build's server
+zuke setup --mcp
+
+# read-only: an agent inspects the build, never runs it
 zuke mcp
 
 # also expose run:<target> tools that execute targets
 zuke mcp --allow-run
 
-# register with an MCP client (Claude Code shown)
+# or register by hand with any MCP client (Claude Code shown)
 claude mcp add zuke -- deno run -A zuke.ts mcp`;
 
 // MCP clients that can drive a Zuke build, shown as chips.
@@ -1051,6 +1055,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <li><strong>Read tools, always on</strong> — <code>list_targets</code>, <code>describe_build</code>, and <code>graph</code> expose the whole build surface: the live counterpart of <code>llms.txt</code>.</li>
           <li><strong><code>run:&lt;target&gt;</code> with <code>--allow-run</code></strong> — one run tool per target, its input schema derived from your declared parameters (required, <code>enum</code>, number) plus a <code>dryRun</code> flag.</li>
           <li><strong>Safe by default</strong> — execution is off until you opt in; run tools carry MCP's <code>destructiveHint</code> so clients prompt, and <code>.secret()</code> values stay redacted in what the agent sees.</li>
+          <li><strong>Registered by the scaffolder</strong> — <code>zuke setup --mcp</code> writes the <code>.mcp.json</code> Claude Code, Codex and other stdio clients read, so a new project is agent-ready before its first commit.</li>
           <li><strong>Dependency-free</strong> — newline-delimited JSON-RPC 2.0 over stdio, implemented by hand; no MCP SDK, no network endpoint.</li>
         </ul>
         <div class="providers">
