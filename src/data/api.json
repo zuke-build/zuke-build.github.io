@@ -1198,6 +1198,13 @@
               "optional": true,
               "signature": "also?: string[]",
               "doc": "Extra compensation target names to run first (a timed-out wait whose\n`onTimeout` names a specific compensation target routes through here)."
+            },
+            {
+              "name": "expiredWait",
+              "kind": "property",
+              "optional": true,
+              "signature": "expiredWait?: unknown",
+              "doc": "The wait whose expired deadline caused this cancellation, when one did:\nthe target's name and the message describing the miss. Recorded on that\ntarget's row as it settles, so the terminal record still says why."
             }
           ]
         },
