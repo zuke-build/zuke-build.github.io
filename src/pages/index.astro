@@ -26,6 +26,63 @@ class MyBuild extends Build {
 
 await run(MyBuild);`;
 
+const ciBuildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class MyBuild extends Build {
+  // one line → .github/workflows/ci.yml, one job per target
+  ci = cicd({ provider: "github", fanOut: true });
+
+  lint = target().executes(() => DenoTasks.lint());
+
+  test = target()
+    .dependsOn(this.lint)
+    .executes(() => DenoTasks.test((s) => s.allowAll()));
+}
+
+await run(MyBuild);`;
+
+// What `./zuke generate-ci` writes for the build above (trimmed to the two
+// jobs): the dependsOn edge became a needs: edge, and every job opens with the
+// hardening + checkout action, SHA-pinned.
+const ciYamlSnippet = `name: CI
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: zuke-build/zuke@7a62523b… # v1.0.1
+      - run: ./zuke lint
+  test:
+    runs-on: ubuntu-latest
+    needs: [lint]          # ← from .dependsOn(this.lint)
+    steps:
+      - uses: zuke-build/zuke@7a62523b… # v1.0.1
+      - run: ./zuke test`;
+
+const ciCommandsSnippet = `# write every declared pipeline file
+./zuke generate-ci
+
+# the CI gate: fail if the committed YAML drifted
+./zuke generate-ci --check
+
+# the same targets, locally, before you push
+./zuke test`;
+
+// The providers one cicd() declaration can target, shown as chips.
+const ciProviders = [
+  { name: "GitHub Actions", color: "#e6ebf5" },
+  { name: "GitLab CI", color: "#fc6d26" },
+  { name: "Azure Pipelines", color: "#2ea0ee" },
+  { name: "Bitbucket", color: "#2684ff" },
+];
+
 const shellSnippet = `// The $ tagged template runs processes safely — no shell injection.
 const sha = await $\`git rev-parse HEAD\`.text();   // trimmed stdout
 await $\`deno test -A\`;                              // throws on non-zero
@@ -290,7 +347,9 @@ const cdMoreIcons: Record<string, string> = {
           Zuke <span class="hero__ipa" title="pronounced “zook”">/zuːk/</span>
           is a code-first, strongly-typed build system. Define targets as
           TypeScript class fields, wire dependencies with a fluent API, and let
-          Zuke resolve and run them in topological order — with zero runtime
+          Zuke resolve and run them in topological order. The same file
+          <strong>generates your CI YAML</strong> and is served to
+          <strong>AI agents</strong> as typed tools — with zero runtime
           dependencies.
         </p>
         <div class="hero__cta">
@@ -306,6 +365,7 @@ const cdMoreIcons: Record<string, string> = {
               "deno install -A -g -n zuke jsr:@zuke/cli",
               "zuke setup",
               "./zuke",
+              "./zuke generate-ci",
             ]}
           />
         </div>
@@ -478,6 +538,77 @@ build    <span class="t-ok">Succeeded</span>      2.2s
       </div>
       <div data-reveal>
         <DagDiagram />
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ GENERATED CI ░░ -->
+  <section class="section sec-ci" id="ci">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">Code-first CI/CD</span>
+        <h2>Never write CI YAML <span class="gradient-text">again</span>.</h2>
+        <p class="lead sec-head__lead">
+          For a small project the YAML hurts more than the build. Declare the
+          pipeline <em>in</em> the build with one line, and Zuke writes the
+          workflow file, keeps it in sync on every run, and fails CI the moment
+          the committed copy drifts. The targets you push are the targets you
+          just ran locally.
+        </p>
+      </header>
+    </div>
+
+    <div class="container ci-grid">
+      <div class="codecard panel" data-reveal>
+        <div class="codecard__bar">
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__name">zuke.ts</span>
+        </div>
+        <CopyCode code={ciBuildSnippet} lang="ts" />
+      </div>
+      <div class="ci-arrow" aria-hidden="true">
+        <span class="ci-arrow__cmd">./zuke generate-ci</span>
+        <span class="ci-arrow__glyph">→</span>
+      </div>
+      <div class="codecard panel" data-reveal>
+        <div class="codecard__bar">
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__name">.github/workflows/ci.yml <span class="ci-gen">generated</span></span>
+        </div>
+        <CopyCode code={ciYamlSnippet} lang="yaml" />
+      </div>
+    </div>
+
+    <div class="container ci-foot">
+      <div data-reveal>
+        <ul class="ticks">
+          <li><strong>One declaration, four providers</strong> — the same <code>cicd()</code> emits GitHub Actions, GitLab CI, Azure Pipelines, or Bitbucket Pipelines. The provider is the only required field.</li>
+          <li><strong><code>fanOut: true</code></strong> turns every target into its own job, wired with <code>needs:</code> edges that mirror <code>dependsOn</code> — independent targets run in parallel on the provider.</li>
+          <li><strong>Verified, not just generated</strong> — every run regenerates the file; on CI it verifies instead and fails on drift, so the YAML can never disagree with the build.</li>
+          <li><strong>Run it before you push</strong> — <code>./zuke ci</code> is the pipeline. There is no second definition to keep aligned by hand.</li>
+        </ul>
+        <div class="providers">
+          <span class="providers__label">Targets</span>
+          {ciProviders.map((c) => (
+            <span class="provider" style={`--c:${c.color}`}>
+              <span class="host-dot"></span>{c.name}
+            </span>
+          ))}
+        </div>
+        <a class="btn btn-ghost" href="/docs/concepts#cicd">Read the CI generation guide →</a>
+      </div>
+      <div class="codecard panel" data-reveal>
+        <div class="codecard__bar">
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__dot"></span>
+          <span class="codecard__name">shell</span>
+        </div>
+        <CopyCode code={ciCommandsSnippet} lang="bash" multi />
       </div>
     </div>
   </section>
@@ -1672,6 +1803,49 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   }
   .shell-grid h2 { font-size: clamp(1.7rem, 3.2vw, 2.3rem); }
 
+  /* generated CI */
+  .sec-ci { border-block: 1px solid var(--border); }
+  .ci-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 22px;
+    align-items: center;
+    margin-top: 36px;
+  }
+  .ci-arrow {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    color: var(--text-faint);
+  }
+  .ci-arrow__cmd { font-size: 0.74rem; white-space: nowrap; }
+  .ci-arrow__glyph {
+    font-size: 1.6rem;
+    color: var(--cyan);
+    line-height: 1;
+  }
+  .ci-gen {
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--cyan);
+    background: var(--gradient-soft);
+    color: var(--cyan);
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .ci-foot {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 48px;
+    align-items: center;
+    margin-top: 40px;
+  }
+  .ci-foot .ticks { margin-top: 0; }
+  .ci-foot .providers { margin: 22px 0 18px; }
+
   /* ai review */
   .sec-review {
     border-block: 1px solid var(--border);
@@ -2270,12 +2444,17 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .heal-grid > *,
   .cache-grid > *,
   .mcp-grid > *,
+  .ci-grid > *,
+  .ci-foot > *,
   .out-grid > *,
   .dag-grid > * { min-width: 0; }
 
   /* responsive */
   @media (max-width: 940px) {
     .hero__grid, .dag-grid, .shell-grid, .review-grid, .heal-grid, .cache-grid, .mcp-grid, .out-grid { grid-template-columns: 1fr; gap: 36px; }
+    .ci-grid, .ci-foot { grid-template-columns: 1fr; gap: 24px; }
+    .ci-arrow { grid-auto-flow: column; gap: 12px; }
+    .ci-arrow__glyph { transform: rotate(90deg); }
     .hero__code { order: 2; }
     .shell-grid .codecard { order: 2; }
   }
