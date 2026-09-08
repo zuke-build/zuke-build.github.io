@@ -1,0 +1,144 @@
+---
+import { Code } from "astro:components";
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "one-line", label: "One line in the build" },
+  { id: "output", label: "What generate-ci writes" },
+  { id: "verified", label: "Verified, not just generated" },
+  { id: "providers", label: "One declaration, four providers" },
+];
+
+const buildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class MyBuild extends Build {
+  // one line → .github/workflows/ci.yml, one job per target
+  ci = cicd({ provider: "github", fanOut: true });
+
+  lint = target().executes(() => DenoTasks.lint());
+
+  test = target()
+    .dependsOn(this.lint)
+    .executes(() => DenoTasks.test((s) => s.allowAll()));
+}
+
+await run(MyBuild);`;
+
+const commandsSnippet = `# write every declared pipeline file
+./zuke generate-ci
+
+# the CI gate: fail if a committed file drifted
+./zuke generate-ci --check
+
+# the same targets, locally, before you push
+./zuke test`;
+
+const yamlSnippet = `name: CI
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: zuke-build/zuke@7a62523b… # v1.0.1
+      - run: ./zuke lint
+  test:
+    runs-on: ubuntu-latest
+    needs: [lint]          # ← from .dependsOn(this.lint)
+    steps:
+      - uses: zuke-build/zuke@7a62523b… # v1.0.1
+      - run: ./zuke test`;
+
+const providersSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class Pipeline extends Build {
+  ci = cicd({ provider: "github", fanOut: true }); // .github/workflows/ci.yml
+  gitlab = cicd({ provider: "gitlab" });           // .gitlab-ci.yml
+  azure = cicd({ provider: "azure" });             // azure-pipelines.yml
+  bitbucket = cicd({ provider: "bitbucket" });     // bitbucket-pipelines.yml
+
+  test = target().executes(() => DenoTasks.test((s) => s.allowAll()));
+}
+
+await run(Pipeline);`;
+---
+
+<DocsLayout
+  title="Recipe: generate your CI"
+  description="Declare the pipeline in the build with one cicd() line and let Zuke write the GitHub, GitLab, Azure or Bitbucket YAML, keep it in sync on every run, and fail CI when the committed copy drifts."
+  toc={toc}
+>
+  <p class="lead">
+    For a small project the CI YAML hurts more than the build: it is the one
+    file nobody can run locally, it drifts from the scripts it calls, and every
+    provider spells it differently. This recipe declares the pipeline
+    <em>in</em> the build, so Zuke writes the workflow file, keeps it in sync
+    on every run, and fails CI the moment the committed copy drifts.
+  </p>
+
+  <h2 id="one-line">One line in the build</h2>
+  <CopyCode code={buildSnippet} lang="ts" />
+  <CopyCode code={commandsSnippet} lang="bash" multi />
+  <p>
+    The provider is the only required field. The default is a workflow named
+    <code>CI</code>, triggered on push and pull request to <code>main</code>,
+    with one job that runs <code>./zuke</code>; override only what you need.
+  </p>
+
+  <h2 id="output">What <code>generate-ci</code> writes</h2>
+  <p>For the build above, trimmed to its two jobs:</p>
+  <Code code={yamlSnippet} lang="yaml" />
+  <ul>
+    <li>
+      <strong><code>fanOut: true</code> turns every target into its own job</strong>,
+      wired with <code>needs:</code> edges that mirror <code>dependsOn</code>.
+      Independent targets run in parallel on the provider, and the workflow's
+      shape <em>is</em> the build's graph — a hand-written YAML could never stay
+      in sync with it. Leave <code>fanOut</code> off for a single job that runs
+      the whole build.
+    </li>
+    <li>
+      <strong>Every job opens with the SHA-pinned <code>zuke-build/zuke</code> action</strong>,
+      which hardens the runner and checks the repository out before the target
+      runs. You never write that step, and it is never left unpinned.
+    </li>
+    <li>
+      <strong>The targets are the same ones you run locally.</strong> There is
+      no second definition of "what CI does" to keep aligned by hand.
+    </li>
+  </ul>
+
+  <h2 id="verified">Verified, not just generated</h2>
+  <p>
+    Running any target regenerates the declared files, so you cannot forget
+    to. On CI, a run <em>verifies</em> the committed files instead and fails
+    when they have drifted. <code>./zuke generate-ci --check</code> is the same
+    verification as a dedicated gate, and <code>--dry-run</code> skips
+    regeneration altogether.
+  </p>
+
+  <h2 id="providers">One declaration, four providers</h2>
+  <p>
+    The same <code>cicd()</code> emits GitHub Actions, GitLab CI, Azure
+    Pipelines, or Bitbucket Pipelines. Declare one field per provider and every
+    file follows the same targets; the default path follows the provider:
+  </p>
+  <CopyCode code={providersSnippet} lang="ts" />
+  <p>
+    Triggers, a matrix, extra steps, permissions, a timezone-aware schedule —
+    the <code>pipeline</code> field takes all of it, provider-agnostically.
+    <a href="/docs/concepts#cicd">Code-first CI/CD</a> has the full shape and
+    <a href="/docs/schedules">Scheduled pipelines</a> covers
+    <code>&#123; cron, tz &#125;</code>. A complete project whose <em>only</em>
+    job is its pipeline, generated files included, is
+    <a href="https://github.com/zuke-build/zuke/tree/master/examples/ci-only" target="_blank" rel="noopener noreferrer"><code>examples/ci-only</code></a>.
+  </p>
+</DocsLayout>

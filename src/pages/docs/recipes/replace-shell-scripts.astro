@@ -1,0 +1,169 @@
+---
+import { Code } from "astro:components";
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "before", label: "The script you have" },
+  { id: "after", label: "The same script with $" },
+  { id: "gains", label: "What you gained" },
+  { id: "targets", label: "When to take the next step" },
+];
+
+const bashSnippet = `#!/usr/bin/env bash
+set -euo pipefail
+
+VERSION="\${1:-}"
+if [ -z "$VERSION" ]; then
+  echo "usage: scripts/release.sh <version>" >&2
+  exit 2
+fi
+if [ -n "$(git status --porcelain)" ]; then
+  echo "release: the working tree is not clean" >&2
+  exit 1
+fi
+
+deno test -A
+git tag -a "v$VERSION" -m "Release $VERSION"
+git push origin --follow-tags`;
+
+const tsSnippet = `#!/usr/bin/env -S deno run -A
+import { $ } from "jsr:@zuke/core/shell";
+
+const [version, flag] = Deno.args;
+if (version === undefined) {
+  console.error("usage: deno run -A scripts/release.ts <version> [--dry-run]");
+  Deno.exit(2);
+}
+
+const dirty = await $\`git status --porcelain\`.quiet().text();
+if (dirty !== "") throw new Error("release: the working tree is not clean");
+
+await $\`deno test -A\`;
+
+if (flag === "--dry-run") {
+  console.log(\`dry run: would tag v\${version} and push\`);
+} else {
+  await $\`git tag -a \${\`v\${version}\`} -m \${\`Release \${version}\`}\`;
+  await $\`git push origin --follow-tags\`;
+}`;
+
+const runSnippet = `deno run -A scripts/release.ts 1.1.0 --dry-run
+deno run -A scripts/release.ts 1.1.0`;
+
+const targetsSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { GitTasks } from "jsr:@zuke/git";
+
+class Release extends Build {
+  version = parameter("The version to release, e.g. 1.1.0").required();
+
+  clean = target()
+    .description("Refuse to release from a dirty working tree")
+    .executes(async () => {
+      // \`$\` still works inside a target, for the command that has no wrapper.
+      const dirty = await $\`git status --porcelain\`.quiet().text();
+      if (dirty !== "") throw new Error("the working tree is not clean");
+    });
+
+  test = target()
+    .description("Run the tests")
+    .dependsOn(this.clean)
+    .executes(() => DenoTasks.test((s) => s.allowAll()));
+
+  tag = target()
+    .description("Create the annotated release tag")
+    .dependsOn(this.test)
+    .executes(() =>
+      GitTasks.tag((s) =>
+        s.name(\`v\${this.version.value}\`)
+          .message(\`Release \${this.version.value}\`)
+      )
+    );
+
+  push = target()
+    .description("Push the tag")
+    .dependsOn(this.tag)
+    .executes(() => GitTasks.push((s) => s.remote("origin").followTags()));
+}
+
+await run(Release);`;
+
+const targetsRunSnippet = `./zuke tag --version 1.1.0   # clean → test → tag, and stop there
+./zuke --list                # every step, with its description`;
+---
+
+<DocsLayout
+  title="Recipe: replace your shell scripts"
+  description="Swap a scripts/release.sh for the $ shell from @zuke/core/shell — no build class, no targets — and see what a typed, injection-free script gives you before you take the next step to targets."
+  toc={toc}
+>
+  <p class="lead">
+    Every small project has a <code>scripts/release.sh</code>. It started as
+    three lines, grew a flag and two guards, and now nobody wants to touch it.
+    This recipe replaces it with the <code>$</code> shell from
+    <code>@zuke/core/shell</code> — and nothing else. No build class, no
+    targets: the smallest possible door into Zuke, and a script you run
+    exactly as before.
+  </p>
+
+  <h2 id="before">The script you have</h2>
+  <Code code={bashSnippet} lang="bash" />
+  <p>
+    It works, until a version string has a space in it, or someone copies it
+    to a project without <code>set -e</code>, or the <code>$(...)</code>
+    quoting is one level off.
+  </p>
+
+  <h2 id="after">The same script with <code>$</code></h2>
+  <CopyCode code={tsSnippet} lang="ts" />
+  <CopyCode code={runSnippet} lang="bash" multi />
+
+  <h2 id="gains">What you gained</h2>
+  <ul>
+    <li>
+      <strong>No shell, so nothing to break out of.</strong> Every
+      <code>$&#123;…&#125;</code> interpolation becomes one discrete argv entry;
+      the process is spawned directly. A version with a space, a quote, or a
+      <code>;</code> in it is just a string — the bash script has to trust its
+      quoting.
+    </li>
+    <li>
+      <strong>A non-zero exit throws.</strong> <code>set -e</code> is not
+      something you can forget, and the error names the command and its code.
+      <code>.noThrow()</code> is the explicit opt-out, and <code>.code()</code>
+      gives you the exit code as a number when that is what you want.
+    </li>
+    <li>
+      <strong>Typed output.</strong> <code>.text()</code> is trimmed stdout,
+      <code>.lines()</code> is a <code>string[]</code>, and both replace
+      <code>$(...)</code>, <code>IFS</code> tricks and <code>$?</code>.
+      <code>.quiet()</code> replaces <code>&gt; /dev/null 2&gt;&amp;1</code>.
+    </li>
+    <li>
+      <strong>The rest of TypeScript.</strong> Arrays expand to multiple
+      arguments, a value can be validated before it is used, and the editor
+      knows what <code>$</code> returns. See the
+      <a href="/docs/library#shell">shell guide</a> for <code>.env()</code>,
+      <code>.cwd()</code>, <code>.killAfter()</code> and <code>.spawn()</code>.
+    </li>
+  </ul>
+
+  <h2 id="targets">When to take the next step</h2>
+  <p>
+    The moment you have two scripts that share a step, give the steps names.
+    The same routine as targets — each one runnable alone, visible in
+    <code>--list</code>, and free to depend on the others:
+  </p>
+  <CopyCode code={targetsSnippet} lang="ts" />
+  <CopyCode code={targetsRunSnippet} lang="bash" multi />
+  <p>
+    The git steps moved from <code>$</code> to the typed <code>GitTasks</code>
+    wrapper, where the flags are methods and a typo is a compile error.
+    <code>./zuke --list</code>, <code>graph</code>, <code>--parallel</code> and
+    <code>./zuke mcp</code> come with the targets for free. All three versions
+    of this script, side by side, are in
+    <a href="https://github.com/zuke-build/zuke/tree/master/examples/scripts-to-zuke" target="_blank" rel="noopener noreferrer"><code>examples/scripts-to-zuke</code></a>.
+  </p>
+</DocsLayout>

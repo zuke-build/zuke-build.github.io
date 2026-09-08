@@ -1,0 +1,171 @@
+---
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "chain", label: "The chain" },
+  { id: "why", label: "Why a chain beats a script" },
+  { id: "variations", label: "Variations" },
+];
+
+const chainSnippet = `import { Build, FileTasks, parameter, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+import { GhTasks } from "jsr:@zuke/gh";
+import { GitTasks } from "jsr:@zuke/git";
+
+class Release extends Build {
+  // \`--version 1.1.0\` on the command line, or VERSION in the environment.
+  // Required: a missing value is an error before anything runs.
+  version = parameter("The version to release, e.g. 1.1.0").required();
+
+  check = target()
+    .description("Type-check the public entrypoint")
+    .executes(() => DenoTasks.check((s) => s.paths("mod.ts")));
+
+  test = target()
+    .description("Run the tests")
+    .dependsOn(this.check)
+    .executes(() => DenoTasks.test((s) => s.allowAll()));
+
+  bump = target()
+    .description("Write the version into jsr.json and commit it")
+    .dependsOn(this.test)
+    .executes(async () => {
+      const manifest: Record<string, unknown> = JSON.parse(
+        await FileTasks.readText("jsr.json"),
+      );
+      const bumped = { ...manifest, version: this.version.value };
+      await FileTasks.writeText("jsr.json", \`\${JSON.stringify(bumped, null, 2)}\\n\`);
+      await GitTasks.add((s) => s.paths("jsr.json"));
+      await GitTasks.commit((s) => s.message(\`chore: release \${this.version.value}\`));
+    });
+
+  tag = target()
+    .description("Create the annotated release tag")
+    .dependsOn(this.bump)
+    .executes(() =>
+      GitTasks.tag((s) =>
+        s.name(\`v\${this.version.value}\`).message(\`Release \${this.version.value}\`)
+      )
+    );
+
+  push = target()
+    .description("Push the commit and the tag")
+    .dependsOn(this.tag)
+    .executes(() => GitTasks.push((s) => s.remote("origin").followTags()));
+
+  release = target()
+    .description("Create the GitHub release, with notes generated from the PRs")
+    .dependsOn(this.push)
+    .executes(() =>
+      GhTasks.releaseCreate((s) =>
+        s.tag(\`v\${this.version.value}\`).generateNotes().latest()
+      )
+    );
+
+  publish = target()
+    .description("Publish the package to JSR")
+    .dependsOn(this.release)
+    .executes(() => DenoTasks.publish());
+
+  default = target()
+    .description("Default: the whole release")
+    .dependsOn(this.publish)
+    .executes(() => {});
+}
+
+await run(Release);`;
+
+const runSnippet = `# the whole release
+./zuke --version 1.1.0
+
+# stop after the tag: a safe local rehearsal
+./zuke tag --version 1.1.0
+
+# print the plan, run nothing
+./zuke release --version 1.1.0 --dry-run
+
+# the parameter from the environment
+VERSION=1.1.0 ./zuke`;
+---
+
+<DocsLayout
+  title="Recipe: release a small library"
+  description="Build, test, bump, tag, push, GitHub release with generated notes, publish — the release routine of a small library as one chain of typed targets you can stop anywhere."
+  toc={toc}
+>
+  <p class="lead">
+    Build, test, bump the version, tag, push, cut the GitHub release, write the
+    notes, publish. For a small library this is where the real pain lives: a
+    routine you run once a month, from a script that grew ugly, with a step
+    you always forget. This recipe is that routine as one chain of targets —
+    every step a typed wrapper, and a chain you can stop anywhere.
+  </p>
+
+  <h2 id="chain">The chain</h2>
+  <CopyCode code={chainSnippet} lang="ts" />
+  <CopyCode code={runSnippet} lang="bash" multi />
+
+  <h2 id="why">Why a chain beats a script</h2>
+  <ul>
+    <li>
+      <strong>You can stop anywhere.</strong> <code>./zuke tag</code> runs
+      check → test → bump → tag and nothing after it; <code>--dry-run</code>
+      prints the plan for any target. A script has one entry point and a
+      comment that says "don't run past here".
+    </li>
+    <li>
+      <strong>Every step is the real CLI, typed.</strong>
+      <code>GitTasks.tag((s) =&gt; s.name(…).message(…))</code> is
+      <code>git tag -a … -m …</code>;
+      <code>GhTasks.releaseCreate((s) =&gt; s.generateNotes().latest())</code>
+      is <code>gh release create --generate-notes --latest</code>;
+      <code>DenoTasks.publish()</code> is <code>deno publish</code>, which reads
+      your <code>jsr.json</code> (or <code>deno.json</code>). The flags are
+      methods, a typo is a compile error, and the argv is built without a
+      shell.
+    </li>
+    <li>
+      <strong>The version is a typed input.</strong>
+      <code>parameter(…).required()</code> is read from <code>--version</code>
+      or <code>VERSION</code>, checked before the first target runs, and used
+      in the targets as <code>this.version.value</code>.
+      <code>./zuke --list</code> documents it.
+    </li>
+    <li>
+      <strong>The release notes write themselves.</strong>
+      <code>--generate-notes</code> turns the merged pull requests since the
+      previous tag into the release body.
+    </li>
+  </ul>
+
+  <h2 id="variations">Variations</h2>
+  <ul>
+    <li>
+      <strong>npm instead of JSR:</strong> replace the <code>publish</code> body
+      with <code>NpmTasks.publish((s) =&gt; s.access("public"))</code> from
+      <code>@zuke/npm</code>, and bump <code>package.json</code> instead of
+      <code>jsr.json</code>.
+    </li>
+    <li>
+      <strong>A changelog file:</strong> <code>GhTasks.releaseCreate</code> also
+      takes <code>.notesFile(path)</code>, so a <code>CHANGELOG.md</code>
+      section you maintain by hand becomes the release body.
+    </li>
+    <li>
+      <strong>Fully automated:</strong> <code>@zuke/release-please</code> wraps
+      release-please, which opens a release pull request from your conventional
+      commits, keeps the changelog, and cuts the GitHub release when the PR
+      merges — the routine Zuke uses for its own 58 packages.
+    </li>
+    <li>
+      <strong>Secrets:</strong> a token for <code>gh</code> or <code>npm</code>
+      is a <code>parameter("…").secret()</code>, which Zuke masks in every log —
+      see <a href="/docs/secrets">Secrets</a>.
+    </li>
+  </ul>
+  <p>
+    The complete project, with a one-function library beside it, is
+    <a href="https://github.com/zuke-build/zuke/tree/master/examples/release-library" target="_blank" rel="noopener noreferrer"><code>examples/release-library</code></a>.
+  </p>
+</DocsLayout>
