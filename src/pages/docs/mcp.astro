@@ -21,6 +21,18 @@ const runSnippet = `zuke mcp`;
 
 const runAllowRunSnippet = `zuke mcp --allow-run`;
 
+const setupMcpSnippet = `# read-only registration
+zuke setup --mcp
+
+# …and let the agent run targets
+zuke setup --mcp --allow-run`;
+
+const mcpJsonSnippet = `{
+  "mcpServers": {
+    "zuke": { "command": "deno", "args": ["run", "-A", "zuke.ts", "mcp"] }
+  }
+}`;
+
 const registerSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp`;
 
 const registerAllowRunSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
@@ -103,7 +115,19 @@ const identitySnippet = `class ControlPlane extends Build {
 
   <h2 id="register">Registering with a client</h2>
   <p>
-    Most clients take a command to launch the server — any client that speaks
+    The scaffolder can do it for you. <code>zuke setup --mcp</code> (and
+    <code>zuke import --mcp</code>) writes a project-scoped
+    <code>.mcp.json</code> next to <code>zuke.ts</code> that registers this
+    server as <code>zuke</code>, in the format Claude Code, Codex and most
+    stdio clients read — so the build is agent-ready from its first commit.
+    <code>--allow-run</code> registers it with execution enabled. An existing
+    file is merged around its other servers.
+  </p>
+  <CopyCode code={setupMcpSnippet} lang="bash" multi />
+  <p>What it writes:</p>
+  <Code code={mcpJsonSnippet} lang="json" />
+  <p>
+    Any client also takes the command directly — any client that speaks
     stdio MCP works the same way. In Claude Code, give it
     <code>deno run -A zuke.ts mcp</code>:
   </p>
