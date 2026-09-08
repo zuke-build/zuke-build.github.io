@@ -632,6 +632,50 @@
           "deprecated": false
         },
         {
+          "name": "bearerChallenge",
+          "kind": "function",
+          "doc": "A `WWW-Authenticate: Bearer` challenge built from `parts`.\n\nReturns a bare `Bearer` when nothing usable is supplied, and drops any single\npart that survives filtering as empty, so a caller cannot produce a malformed\nheader by passing an odd string.",
+          "signature": "function bearerChallenge(parts?: BearerChallenge): string",
+          "deprecated": false
+        },
+        {
+          "name": "BearerChallenge",
+          "kind": "interface",
+          "doc": "The parts of a `WWW-Authenticate: Bearer` challenge Zuke emits.",
+          "signature": "interface BearerChallenge",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metadataUrl",
+              "kind": "property",
+              "optional": true,
+              "signature": "metadataUrl?: string",
+              "doc": "Absolute URL of the protected resource metadata document (RFC 9728)."
+            },
+            {
+              "name": "scopes",
+              "kind": "property",
+              "optional": true,
+              "signature": "scopes?: unknown",
+              "doc": "Scopes required for the attempted operation — all of them, in one go."
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": true,
+              "signature": "error?: ChallengeError",
+              "doc": "The failure, omitted for a request that presented no credentials."
+            },
+            {
+              "name": "description",
+              "kind": "property",
+              "optional": true,
+              "signature": "description?: string",
+              "doc": "Developer-facing explanation; never shown to an end user."
+            }
+          ]
+        },
+        {
           "name": "box",
           "kind": "function",
           "doc": "A bordered panel around `content` (a string, split on newlines, or an array\nof lines). Content may carry ANSI codes; padding is measured on the visible\ntext so the border stays flush.",
@@ -818,6 +862,13 @@
               "optional": false,
               "signature": "mcpAuth(): McpAuthenticator | undefined",
               "doc": "An authenticator for `zuke mcp` — the general form of\n{@link Build.mcpIdentity}, for a server callers reach directly rather than\nthrough a proxy that has already identified them.\n\nIt runs before any dispatch, may be asynchronous (verifying a signature is),\nand refuses by returning an {@link McpAuthReject} rather than by throwing —\nso over HTTP the refusal is answered with its own status and\n`WWW-Authenticate` challenge, which is how an MCP client discovers where to\nauthenticate. The identity it resolves overrides `--actor`, the environment,\nand the client label for that call, and flows to the audit trail, run\nrecords, lock holders, and (for a registry-spawned build) the child's\n`ZUKE_ACTOR`, `ZUKE_ACTOR_KIND` and `ZUKE_ACTOR_ROLES`. Throwing still\nrefuses the request: the seam is fail-closed. Default: none.\n\nDeclare **either** this or {@link Build.mcpIdentity}; declaring both is\nrefused when the server starts, rather than letting one silently win.\n\n```ts\nclass ControlPlane extends Build {\n  override mcpAuth(): McpAuthenticator {\n    return {\n      authenticate: async (ctx: McpRequestContext) => {\n        const claims = await verifyBearer(ctx.headers.get(\"authorization\"));\n        if (claims === null) {\n          return { status: 401, error: \"invalid_token\", challenge: \"Bearer\" };\n        }\n        return { actor: claims.sub, kind: \"human\", roles: claims.roles };\n      },\n    };\n  }\n}\n```"
+            },
+            {
+              "name": "mcpProtectedResource",
+              "kind": "method",
+              "optional": false,
+              "signature": "mcpProtectedResource(): ProtectedResourceSettings | undefined",
+              "doc": "Declares this MCP endpoint an OAuth 2.0 **protected resource**, so a client\nthat has never authenticated can find out where to get a token.\n\n`zuke mcp --http` then publishes the RFC 9728 metadata document and names\nit in every `WWW-Authenticate` challenge, which is the whole of what\n`claude mcp add --transport http <url>` needs to open a browser and\nauthenticate with nothing pasted. Zuke issues no tokens and hosts no\n`/authorize`, `/token` or `/register` endpoint — those belong to the\nidentity provider named here, and {@link Build.mcpAuth} is where the tokens\nit mints are verified. Default: none, and the server behaves exactly as\nbefore.\n\nThe one thing to get right is that **three strings must agree byte for\nbyte**: the resource identifier below, the `resource` parameter the client\nsends, and the audience the identity provider puts in the token. When they\ndiffer every token fails validation, and nothing in the error says why.\n\n```ts\nclass ControlPlane extends Build {\n  override mcpProtectedResource(): ProtectedResourceSettings {\n    return protectedResource(\"https://build.example.com/mcp\")\n      .authorizationServer(\"https://acme.eu.auth0.com\")\n      .scopes(\"zuke:run\")\n      .name(\"Acme build server\");\n  }\n}\n```"
             },
             {
               "name": "unforceable",
@@ -1199,6 +1250,13 @@
           "kind": "function",
           "doc": "Cancel the run `options.runId` for `build`: transition it to `cancelling`\n(exactly one canceller drives the walk; a live owning process observes the\nchange and aborts), run the compensations of every succeeded target in reverse\norder, and settle the record as `cancelled`. Idempotent — cancelling an\nalready-terminal run is a friendly no-op.\n",
           "signature": "async function cancelRun(build: Build, options: CancelOptions): Promise<CancelResult>",
+          "deprecated": false
+        },
+        {
+          "name": "ChallengeError",
+          "kind": "typeAlias",
+          "doc": "How a bearer challenge names the failure, when there is one to name.",
+          "signature": "type ChallengeError = invalid_token | insufficient_scope",
           "deprecated": false
         },
         {
@@ -4389,6 +4447,13 @@
           "deprecated": false
         },
         {
+          "name": "INVALID_TOKEN",
+          "kind": "variable",
+          "doc": "The refusal for a request that **presented** a token which did not hold up —\nexpired, wrong signature, wrong audience.\n\nDistinct from {@link UNAUTHORIZED} on purpose: OAuth 2.1 §5.3.1 says a\nchallenge SHOULD NOT carry error information when the request had no\ncredentials at all, because there is nothing yet to have been wrong. Sending\n`invalid_token` to a client that simply has not logged in tells it its stored\ntoken was rejected, which is a different and misleading thing.",
+          "signature": "const INVALID_TOKEN: McpAuthReject",
+          "deprecated": false
+        },
+        {
           "name": "isCI",
           "kind": "function",
           "doc": "Whether the build appears to be running in a CI environment.",
@@ -4769,6 +4834,27 @@
               "doc": "The HTTP request the caller arrived on, when it did — so an authenticator\ncan read its method and URL, not just its headers. Absent on the stdio\ntransport, which has no request.\n\nIts **body is deliberately empty**: the body belongs to the transport, which\nreads it once to parse the JSON-RPC message, and a credential never lives\nthere. Everything else — method, URL, headers — is the real request's."
             }
           ]
+        },
+        {
+          "name": "metadataDocument",
+          "kind": "function",
+          "doc": "The metadata document itself, as the JSON object RFC 9728 §2 defines.\n\nFields with no values are omitted rather than serialised empty — §3.2 makes\nthat a MUST, and an empty `scopes_supported` would in any case advertise\n\"this resource accepts no scopes\".",
+          "signature": "function metadataDocument(settings: ProtectedResourceSettings): Record<string, unknown>",
+          "deprecated": false
+        },
+        {
+          "name": "metadataPath",
+          "kind": "function",
+          "doc": "The path the metadata document is published at: the well-known suffix with\nthe resource's own path inserted after it.\n\nFor a resource that is a bare origin this is the root well-known path, which\nis then the conformant location for that identifier. A trailing slash is\ndropped before insertion, as RFC 9728 §3.1 requires.",
+          "signature": "function metadataPath(resource: string): string",
+          "deprecated": false
+        },
+        {
+          "name": "metadataUrl",
+          "kind": "function",
+          "doc": "The absolute URL a `WWW-Authenticate` challenge points at: always the\npath-inserted location, which is the one a client can validate under both\nhalves of RFC 9728 §3.3.",
+          "signature": "function metadataUrl(resource: string): string",
+          "deprecated": false
         },
         {
           "name": "missingTool",
@@ -5245,6 +5331,101 @@
           "doc": "Prepend `dir` to the process `PATH`, and return the new value. A tool\nprovisioned into `dir` (e.g. the `bin` directory of an {@link \"./install.ts\".installTree}\nruntime) then resolves for the rest of the build: the shell `$`, `Command`,\nand every tool wrapper spawn subprocesses that inherit `Deno.env`, so the\n`node_modules/.bin` shims and `NpmTasks` that assume a `node`/`npm` on `PATH`\nfind the provisioned one.\n\nIdempotent — a directory already on `PATH` is left in place, not duplicated —\nand uses the platform separator (`;` on Windows, `:` elsewhere).\n",
           "signature": "function prependPath(dir: PathLike, os?: Deno.build.os): string",
           "deprecated": false
+        },
+        {
+          "name": "protectedResource",
+          "kind": "function",
+          "doc": "Begin a protected-resource declaration for `resource`, the canonical URI of\nthis MCP endpoint (`https://build.example.com/mcp`).\n\n```ts\nimport { Build, protectedResource } from \"jsr:@zuke/core\";\n\nclass CI extends Build {\n  override mcpProtectedResource() {\n    return protectedResource(\"https://build.example.com/mcp\")\n      .authorizationServer(\"https://acme.eu.auth0.com\")\n      .scopes(\"zuke:run\")\n      .name(\"Acme build server\");\n  }\n}\n```",
+          "signature": "function protectedResource(resource: string): ProtectedResourceSettings",
+          "deprecated": false
+        },
+        {
+          "name": "ProtectedResourceError",
+          "kind": "class",
+          "doc": "Raised when a protected-resource declaration cannot produce a valid document.",
+          "signature": "class ProtectedResourceError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "ProtectedResourceSettings",
+          "kind": "class",
+          "doc": "A build's protected-resource declaration, configured fluently.\n\nThe resource identifier is the single value everything else has to agree\nwith, so it is a direct argument to {@link protectedResource}; the rest are\nsetters. It must be the **canonical URI of this MCP endpoint** — the same\nstring the client sends as its RFC 8707 `resource` parameter, and the same\nstring the identity provider mints into the token's `aud`. Those three\nagreeing byte for byte is the whole contract; when they disagree every token\nfails validation, and the error says nothing about why.",
+          "signature": "class ProtectedResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "authorizationServer",
+              "kind": "method",
+              "optional": false,
+              "signature": "authorizationServer(issuer: string): this",
+              "doc": "Add an authorization server by its **issuer identifier** — `https://acme.eu.auth0.com`,\nnot its metadata URL. It must string-match the `issuer` in that server's own\nmetadata document, or a client is required to reject it. At least one is\nrequired: RFC 9728 marks the field optional, but MCP raises it to required."
+            },
+            {
+              "name": "scopes",
+              "kind": "method",
+              "optional": false,
+              "signature": "scopes(...values: string[]): this",
+              "doc": "Declare the scope values a caller may request. These are advertised to\nclients, which request them wholesale when a challenge names none, so keep\nthe list to what this server actually distinguishes rather than the whole\ncatalogue of a shared identity provider."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "Set the human-readable resource name shown on a consent screen."
+            },
+            {
+              "name": "documentation",
+              "kind": "method",
+              "optional": false,
+              "signature": "documentation(url: string): this",
+              "doc": "Set the URL of human-readable documentation for this resource."
+            },
+            {
+              "name": "resource_",
+              "kind": "property",
+              "optional": false,
+              "signature": "resource_: string",
+              "doc": "The canonical resource identifier of this MCP endpoint."
+            },
+            {
+              "name": "authorizationServers_",
+              "kind": "property",
+              "optional": false,
+              "signature": "authorizationServers_: string[]",
+              "doc": "Issuer identifiers of the authorization servers that issue for it."
+            },
+            {
+              "name": "scopes_",
+              "kind": "property",
+              "optional": false,
+              "signature": "scopes_: string[]",
+              "doc": "Scope values a caller may request for this resource."
+            },
+            {
+              "name": "resourceName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "resourceName_?: string",
+              "doc": "Human-readable name of the resource, for a consent screen."
+            },
+            {
+              "name": "documentation_",
+              "kind": "property",
+              "optional": true,
+              "signature": "documentation_?: string",
+              "doc": "URL of human-readable documentation for the resource."
+            }
+          ]
         },
         {
           "name": "PutBuildResult",
@@ -8274,6 +8455,13 @@
               "doc": "Provision a single npm-registry package as a version-pinned, cached tool and\nresolve to its installed bin path. Defaults the install root to\n`.zuke/tools`. See {@link installNpmTool}; group several with\n{@link Toolchain.npm}."
             }
           ]
+        },
+        {
+          "name": "UNAUTHORIZED",
+          "kind": "variable",
+          "doc": "The bare `401` challenge: the refusal an authenticator's own failure produces\n(so a throw leaks nothing about why it threw), and the one the transport\nanswers an **absent** static bearer token with. A token that was presented\nand rejected gets {@link INVALID_TOKEN} instead: the two are different facts\nabout the caller, and only the second one is about a credential.",
+          "signature": "const UNAUTHORIZED: McpAuthReject",
+          "deprecated": false
         },
         {
           "name": "untar",
