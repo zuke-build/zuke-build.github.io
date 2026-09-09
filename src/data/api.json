@@ -15142,6 +15142,13 @@
               "optional": false,
               "signature": "allowRun: boolean",
               "doc": "Register that server with `--allow-run`, so the agent may execute targets. Implies `mcp`."
+            },
+            {
+              "name": "bootstrapDeno",
+              "kind": "property",
+              "optional": true,
+              "signature": "bootstrapDeno?: boolean",
+              "doc": "Which launchers to scaffold: `true` (`--bootstrap-deno`) for ones that\ninstall a pinned, checksum-verified Deno when none is on `PATH`, `false`\n(`--no-bootstrap-deno`) for ones that require it and fail closed. Unset:\nask when interactive, else take the default (bootstrap)."
             }
           ]
         },
