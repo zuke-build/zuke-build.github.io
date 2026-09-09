@@ -502,6 +502,13 @@
               "doc": "An explicit environment variable name override."
             },
             {
+              "name": "flagName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "flagName_?: string",
+              "doc": "An explicit CLI flag name override, without the leading dashes."
+            },
+            {
               "name": "hasFallback_",
               "kind": "property",
               "optional": false,
@@ -5115,6 +5122,13 @@
               "doc": "Override the environment variable read as a fallback for this parameter."
             },
             {
+              "name": "flag",
+              "kind": "method",
+              "optional": false,
+              "signature": "flag(name: string): Parameter<K, T>",
+              "doc": "Override the CLI flag this parameter is set by. The leading `--` is\noptional, so `.flag(\"--skip-e2e\")` and `.flag(\"skip-e2e\")` are the same.\n\nThe declared spelling **replaces** the derived one: only it is accepted on\nthe command line, and it is what `--help`, the JSON build surface, shell\ncompletions and the registry descriptor all show. Reach for this when the\nname-to-flag rule produces something you would not have chosen — a name\ncontaining an initialism that ends in a digit is the usual case, since the\ndigit ends the run of capitals and `skipE2E` derives `--skip-e2-e`.\n\nThe environment variable is derived separately and is unaffected; override\nit with {@link env}."
+            },
+            {
               "name": "array",
               "kind": "method",
               "optional": false,
@@ -5169,6 +5183,13 @@
               "optional": true,
               "signature": "envName_?: string",
               "doc": "An explicit environment variable name override."
+            },
+            {
+              "name": "flagName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "flagName_?: string",
+              "doc": "An explicit CLI flag name override, without the leading dashes."
             },
             {
               "name": "hasFallback_",
