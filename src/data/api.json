@@ -6363,7 +6363,7 @@
               "kind": "property",
               "optional": false,
               "signature": "params: Record<string, string>",
-              "doc": "Resolved parameter values, keyed by name. Secrets are always omitted."
+              "doc": "Resolved parameter values, keyed by name. Secrets are always omitted.\n\nThe values the run was **launched** with, and they are not rewritten. A\nresume may supply different ones, in which case the run executes under two\nsets and this field cannot hold both — so it keeps the launch's, which is\nwhat the targets that ran before the suspension used, and what a\ncancellation resolves each compensation body from. A resume that changed\nanything records it in {@link RunRecord.events} instead."
             },
             {
               "name": "targets",
