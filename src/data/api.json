@@ -2507,9 +2507,32 @@
         {
           "name": "Condition",
           "kind": "typeAlias",
-          "doc": "A predicate gating whether a target runs; may be synchronous or async.",
+          "doc": "A predicate gating whether a target runs; may be synchronous or async.\n\nReceiving the context is optional — a zero-argument\n`.onlyWhen(() => …)` stays valid, since a zero-argument function is\nassignable to this one-parameter type.",
           "signature": "type Condition = unknown",
           "deprecated": false
+        },
+        {
+          "name": "ConditionContext",
+          "kind": "interface",
+          "doc": "The context a condition receives.\n\nDeliberately narrower than a {@link TargetContext}. A condition on a\n`.whenSkipped(\"skip-dependencies\")` target is evaluated **before** the run\nstarts, to decide what the run prunes — at which point the run's identity,\nits durable state handles, and its cancellation signal do not exist yet. This\ntype carries only what is available at every moment a condition can be\ncalled.",
+          "signature": "interface ConditionContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "plan",
+              "kind": "method",
+              "optional": false,
+              "signature": "plan(): RunPlan",
+              "doc": "The resolved shape of this run — which targets it plans, and how they\nrelate. Lets a condition gate on the graph (\"only when `deploy` was asked\nfor\") rather than only on the environment.\n\nReports the plan, not the outcome, which matters most here: a condition can\nbe one of the things *deciding* what runs, so the plan deliberately does not\nclaim to know what will execute. See {@link \"./run_plan.ts\".RunPlan}."
+            },
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": false,
+              "signature": "target: string",
+              "doc": "Dotted name of the target this condition gates."
+            }
+          ]
         },
         {
           "name": "CONFIG_FILE",
@@ -6238,6 +6261,36 @@
           ]
         },
         {
+          "name": "RunPlan",
+          "kind": "interface",
+          "doc": "The resolved shape of this run: the class-field targets it plans, in order,\nand the dependencies between them.\n\n**This describes the plan, not the outcome.** A target is in the plan because\nthe graph put it there; it may still be skipped by a condition, by\n`--affected`, or by an operator's forced outcome, and a run that fails early\nnever reaches its later targets at all. Ask {@link RunPlan.includes} what the\nrun set out to do, and `ctx.outcomeOf(...)` what actually became of a target\nonce it settled.\n\n**Two things the plan is not.**\n\nIt is not every target that will appear in the run record. A `.forEach()`\nfan-out expands into its sub-targets while the run executes, long after the\ngraph is planned, so `fan[us].prep` has an outcome and a summary row but is\n**absent** from the plan — only the `fan` target that produced it is in\nthere. For a fan-out, `outcomeOf` sees more than `includes` does.\n\nIt is not a promise that holds across processes. The plan is the graph **as\nthis process resolved it**, and it is fixed for the whole of this process: two\nbodies, and both evaluations of a condition, always agree. A second process —\na resume, or a `zuke cancel` running compensations — re-resolves the graph\nfrom the build class it was given, so it can legitimately differ: the class\nmay have changed since the run was suspended (which is what `--force-graph`\nis for), and a lazy `orderWith` provider may answer differently or, if it is\nunreachable, be degraded to the base topological order.",
+          "signature": "interface RunPlan",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "includes",
+              "kind": "method",
+              "optional": false,
+              "signature": "includes(target: string): boolean",
+              "doc": "Whether `target` is part of this run's planned set.\n\nThe question a body asks to decide whether its work is needed by something\nelse in the run — \"am I building for a `deploy` that was actually asked\nfor?\". An unknown name is `false`, never an error, so probing for an\noptional target does not need a guard."
+            },
+            {
+              "name": "dependenciesOf",
+              "kind": "method",
+              "optional": false,
+              "signature": "dependenciesOf(target: string): unknown",
+              "doc": "The targets that must complete before `target` may start: everything the\nplanner treats as a predecessor — declared `dependsOn` dependencies, the\ntargets this one `triggers`, and the soft `before`/`after`, `extraEdges`\nand `orderWith` edges that apply within this run's set.\n\nEmpty for a target with no predecessors **and** for a name that is not in\nthe plan — use {@link RunPlan.includes} to tell those apart."
+            },
+            {
+              "name": "targets",
+              "kind": "property",
+              "optional": false,
+              "signature": "targets: unknown",
+              "doc": "Every planned target's dotted name, in the run's deterministic execution\norder.\n\nThe build summary can list **more** rows than this: a `.forEach()` fan-out's\nsub-targets are created during execution and get their own rows, but are\nnot part of the planned graph."
+            }
+          ]
+        },
+        {
           "name": "RunQuery",
           "kind": "interface",
           "doc": "Filters for {@link \"./store.ts\".StateStore.listRuns}; all fields are optional.",
@@ -7662,6 +7715,13 @@
               "optional": false,
               "signature": "outcomes(): ReadonlyMap<string, TargetOutcomeView>",
               "doc": "Every outcome this run has settled so far, keyed by dotted target name — a\nsnapshot, not a live view. Targets that have not settled are absent rather\nthan present with a placeholder status."
+            },
+            {
+              "name": "plan",
+              "kind": "method",
+              "optional": false,
+              "signature": "plan(): RunPlan",
+              "doc": "The resolved shape of this run — which targets it plans, and how they\nrelate. The seam for a body whose work depends on what *else* was asked\nfor: a build that signs its artifact only when `deploy` is in the run.\n\nReports the plan, not the outcome — see {@link \"./run_plan.ts\".RunPlan}."
             },
             {
               "name": "reportSummary",
