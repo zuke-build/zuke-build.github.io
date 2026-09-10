@@ -40725,7 +40725,7 @@
               "kind": "method",
               "optional": false,
               "signature": "conventions(text: string): this",
-              "doc": "Supply the project conventions text directly instead of reading\n`CLAUDE.md`/`AGENTS.md`. Pass an empty string to send none."
+              "doc": "Supply the project conventions text directly, instead of letting the fixer\nread `CLAUDE.md`/`AGENTS.md` from the working tree. Pass an empty string to\nsend none.\n\nThis is a **trust pin**, not only a convenience. By default the conventions\nare read from the tree under repair, which on a contributor's branch is\ncontent that contributor wrote — so the model is told to respect a document\nthe author of the failing change controls. The prompt fences it as untrusted\ndata and says so, but a fence is defence-in-depth against a model that can\nstill be coaxed, not a guarantee.\n\nPinning the text here — or passing `\"\"` — takes the branch out of the loop\nentirely, and is worth doing wherever the fixer is authorized to write:\nan {@link AgentFixer} runs an agent that edits files and runs\ncommands with no path allow-list at all."
             },
             {
               "name": "quiet",
@@ -40925,7 +40925,7 @@
               "kind": "method",
               "optional": false,
               "signature": "conventions(text: string): this",
-              "doc": "Supply the project conventions text directly, instead of letting the fixer\nread `CLAUDE.md`/`AGENTS.md`. Pass an empty string to send none."
+              "doc": "Supply the project conventions text directly, instead of letting the fixer\nread `CLAUDE.md`/`AGENTS.md` from the working tree. Pass an empty string to\nsend none.\n\nThis is a **trust pin**, not only a convenience. By default the conventions\nare read from the tree under repair, which on a contributor's branch is\ncontent that contributor wrote — so the model is told to respect a document\nthe author of the failing change controls. The prompt fences it as untrusted\ndata and says so, but a fence is defence-in-depth against a model that can\nstill be coaxed, not a guarantee.\n\nPinning the text here — or passing `\"\"` — takes the branch out of the loop\nentirely, and is worth doing wherever the fixer is authorized to write:\n{@link AiFixer.autoApply} or {@link AiFixer.commitFixes}."
             },
             {
               "name": "diff",
