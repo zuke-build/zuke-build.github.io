@@ -4896,7 +4896,7 @@
         {
           "name": "missingTool",
           "kind": "function",
-          "doc": "Point `settings` at a binary that cannot exist, so running it raises a\n{@link \"./tooling.ts\".ToolNotFoundError} without ever launching a real\nprocess — the way a wrapper test proves each of its task functions reaches\nexecution.\n\nThe platform is pinned to `linux` because on Windows a missing binary is\nretried through `cmd /c`, which exists, so the failure would surface as a\ncommand error instead:\n\n```ts\nawait assertRejects(() => BiomeTasks.check(missingTool), ToolNotFoundError);\n```",
+          "doc": "Point `settings` at a binary that cannot exist, so running it raises a\n{@link \"./tooling.ts\".ToolNotFoundError} without ever launching a real\nprocess — the way a wrapper test proves each of its task functions reaches\nexecution.\n\nThe platform is pinned to `linux` so the assertion reads the same on every\nrunner, rather than depending on how the host reports a missing binary:\n\n```ts\nawait assertRejects(() => BiomeTasks.check(missingTool), ToolNotFoundError);\n```",
           "signature": "function missingTool(settings: S): S",
           "deprecated": false
         },
@@ -6756,9 +6756,9 @@
         {
           "name": "shimFallbackArgv",
           "kind": "function",
-          "doc": "On Windows, wrap an argv in a `cmd /c` invocation so `.cmd`/`.bat` shims\n(such as npm's) become spawnable; returns `null` on other platforms.",
+          "doc": "On Windows, wrap an argv in a `cmd /c` invocation so `.cmd`/`.bat` shims\n(such as npm's) become spawnable; returns `null` on other platforms.\n",
           "signature": "function shimFallbackArgv(argv: ReadonlyArray<string>, os: Deno.build.os): string[] | null",
-          "deprecated": false
+          "deprecated": true
         },
         {
           "name": "SignalRecord",
@@ -8496,7 +8496,7 @@
               "kind": "method",
               "optional": false,
               "signature": "run(): Promise<CommandOutput>",
-              "doc": "Run the configured tool. If the binary is missing and the platform is\nWindows, retry once through `cmd /c` (covers `.cmd`/`.bat` shims);\notherwise raise a {@link ToolNotFoundError} naming the tool."
+              "doc": "Run the configured tool, raising a {@link ToolNotFoundError} naming it when\nthe binary is missing.\n\nThe argv is spawned as it was resolved, on every platform. Windows batch\nshims used to be wrapped in `cmd /c` here, which silently gave up the\nargv-boundary guarantee every wrapper relies on: `Deno.Command` hands\n`cmd.exe` a single command line built with C-runtime quoting, which quotes\non spaces but not on `&`, `|` or `^`, so cmd.exe re-parsed an operand like\n`A=1&whoami` as a second command. Spawning the shim itself instead keeps\nthat decision where it belongs: Deno resolves a bare name through `PATHEXT`\nand launches a `.cmd`/`.bat` through the command processor with quoting\nhardened for it, so the operand stays one argument."
             },
             {
               "name": "os_",
@@ -8776,9 +8776,9 @@
         {
           "name": "windowsCmdShim",
           "kind": "function",
-          "doc": "On Windows, spawn a resolved `.cmd`/`.bat` shim (such as npm's `node_modules`\nshims) through `cmd /c` — a batch shim is not a PE executable, so\n`Deno.Command` cannot launch it directly. Returns `argv` unchanged on other\nplatforms or when the binary is not a batch shim.",
+          "doc": "On Windows, wrap a resolved `.cmd`/`.bat` shim in `cmd /c`. Returns `argv`\nunchanged on other platforms or when the binary is not a batch shim.\n",
           "signature": "function windowsCmdShim(argv: ReadonlyArray<string>, os: Deno.build.os): string[]",
-          "deprecated": false
+          "deprecated": true
         },
         {
           "name": "WrapperConformanceOptions",
@@ -15234,6 +15234,13 @@
               "doc": "Whether a path exists and is a directory (a reserved-name collision)."
             },
             {
+              "name": "isSymlink",
+              "kind": "method",
+              "optional": false,
+              "signature": "isSymlink(path: string): Promise<boolean>",
+              "doc": "Whether a path is a symbolic link, without following it. Scaffolding\nrefuses to write through one: the writes below follow links, so a link\nplanted at a scaffold name by the very repository being set up would\nredirect them outside the target directory.\n\nThe guard covers the names scaffolding chooses, which is where the hazard\nis — the caller never asked for `.gitignore` to be written, so a repository\nredirecting it is a decision nobody made. It reports what is there when it\nruns, and a link planted after it would escape it; that is why\n{@link SetupHost.writeText} does not write through a link either, so the\nrefusal is the friendly answer rather than the only defence.\n\nTwo things stay out of scope. The directory the caller names with `--dir`\nis the caller's to name, symlink or not. And a **hard** link is\nindistinguishable from the file it shares, so no probe can see one; git\ncannot check one out either, which is what keeps it out of the threat this\nguards."
+            },
+            {
               "name": "readText",
               "kind": "method",
               "optional": false,
@@ -15245,7 +15252,7 @@
               "kind": "method",
               "optional": false,
               "signature": "writeText(path: string, content: string): Promise<void>",
-              "doc": "Write UTF-8 text to a file, creating or truncating it."
+              "doc": "Write UTF-8 text to a file, creating or replacing it.\n\nAn implementation must not write *through* a symbolic link standing at\n`path`: the scaffolder's confinement to its target directory rests on this,\nand the pre-write {@link SetupHost.isSymlink} check alone cannot carry it,\nsince a link can appear after the check."
             },
             {
               "name": "chmod",
