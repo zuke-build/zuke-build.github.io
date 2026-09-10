@@ -4060,7 +4060,7 @@
         {
           "name": "HttpCacheStore",
           "kind": "class",
-          "doc": "A {@link RemoteCacheStore} backed by HTTP: `GET <url>/<key>` fetches an\nartifact (a `404` means a miss) and `PUT <url>/<key>` stores one. Works with\nany object store or cache server that speaks plain HTTP GET/PUT — an S3, GCS,\nor R2 bucket behind a URL, or a self-hosted cache endpoint.\n\n**Security.** The `url` (and `token`) are *trusted configuration*: outputs are\nuploaded to that host and archives are extracted from it, so point it only at\na cache you control, and prefer a {@link \"./params.ts\" | secret parameter} or\nan environment variable over a hard-coded value. On CI, restrict egress to\nthe cache host so a misconfigured or overridden URL can't exfiltrate\nartifacts. Restored archives are always confined to the workspace (see\n{@link restoreOutputs}), so a poisoned store cannot write outside it.",
+          "doc": "A {@link RemoteCacheStore} backed by HTTP: `GET <url>/<key>` fetches an\nartifact (a `404` means a miss) and `PUT <url>/<key>` stores one. Works with\nany object store or cache server that speaks plain HTTP GET/PUT — an S3, GCS,\nor R2 bucket behind a URL, or a self-hosted cache endpoint.\n\n**Security.** The `url` (and `token`) are *trusted configuration*: outputs are\nuploaded to that host and archives are extracted from it, so point it only at\na cache you control, and prefer a {@link \"./params.ts\" | secret parameter} or\nan environment variable over a hard-coded value. On CI, restrict egress to\nthe cache host so a misconfigured or overridden URL can't exfiltrate\nartifacts. A restored archive cannot name a path outside the workspace, cannot\ncarry a link or directory entry, and is refused if the path it would land on\npasses through a symlink the workspace already holds — so a poisoned store\ncannot write outside the workspace (see {@link restoreOutputs}). An artifact\nlarger than {@link HttpCacheStoreOptions.maxArtifactBytes} is refused before\nit is buffered, and {@link restoreOutputs} separately bounds what it\ndecompresses to.",
           "signature": "class HttpCacheStore",
           "deprecated": false,
           "members": [
@@ -4107,6 +4107,13 @@
               "optional": true,
               "signature": "fetch?: fetch",
               "doc": "The `fetch` implementation; defaults to the global. Overridable for tests."
+            },
+            {
+              "name": "maxArtifactBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxArtifactBytes?: number",
+              "doc": "The most a fetched artifact may weigh on the wire, in bytes, before it is\nrefused. Defaults to 512 MiB. Raise it for a target whose compressed\noutputs are genuinely larger; a refusal is a warned rebuild, not a build\nfailure. What the bytes *decompress* to is bounded separately, by\n{@link restoreOutputs}."
             }
           ]
         },
@@ -5038,6 +5045,13 @@
               "doc": "Whether a path exists and is a directory, or `null` if it is missing."
             },
             {
+              "name": "lstat",
+              "kind": "method",
+              "optional": false,
+              "signature": "lstat(path: string): Promise<unknown | null>",
+              "doc": "Describe a path *without* following a final symlink, or `null` if it is\nmissing. Distinct from {@link OutputHost.stat}, which resolves a link and so\ncannot see one: {@link restoreOutputs} refuses to write *through* a link,\nwhich is a question only an `lstat` can answer."
+            },
+            {
               "name": "readDir",
               "kind": "method",
               "optional": false,
@@ -5872,8 +5886,8 @@
         {
           "name": "restoreOutputs",
           "kind": "function",
-          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\nsymlink or directory entry (which {@link archiveOutputs} never produces),\nwhen it lands under `.git` or `.zuke`, and — when `outputs` is given — when it\nfalls outside the target's declared outputs.\n",
-          "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost, outputs?: unknown): Promise<string[]>",
+          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\nsymlink or directory entry (which {@link archiveOutputs} never produces),\nwhen it lands under `.git` or `.zuke`, when — given `outputs` — it falls\noutside the target's declared outputs, and when the path it would be written\nto passes through, or is, a symlink that already exists on disk.\n\nThat last refusal is what makes the confinement real rather than lexical. The\narchive cannot plant a link, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
+          "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost, outputs?: unknown, maxBytes?: number): Promise<string[]>",
           "deprecated": false
         },
         {
