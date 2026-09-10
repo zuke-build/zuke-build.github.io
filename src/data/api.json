@@ -2978,6 +2978,27 @@
           "deprecated": false
         },
         {
+          "name": "escapeData",
+          "kind": "function",
+          "doc": "Escape a value interpolated into the body of a GitHub Actions workflow\ncommand (`::error::<data>`).\n\nA workflow command is terminated by the end of its line, so a value carrying\na newline continues into what the runner parses as a *fresh* command. A\ntarget's failure message embeds a subprocess's stderr verbatim, which is not\nours to trust: a tool that writes `::stop-commands::` on a line of its own\nwould otherwise suspend the runner's command processing, and one that writes\n`::error::` would forge an annotation. Percent-encoding is the escape the\nActions spec defines for exactly this, and `%` is encoded first so the\nencoding cannot be spoofed by a literal `%0A` in the input.",
+          "signature": "function escapeData(value: string): string",
+          "deprecated": false
+        },
+        {
+          "name": "escapeLine",
+          "kind": "function",
+          "doc": "Neutralise workflow commands in text that is *printed as itself* on a stream\nthe GitHub Actions runner parses — a failure message, a target name, a\nsummary row — rather than interpolated into a command's body.\n\n{@link escapeData} is the wrong tool there. It answers the same threat, but\nby encoding every newline, which would fold a multi-line compiler dump into\none unreadable `%0A`-joined line: correct, and useless to the person reading\nthe log. This keeps the text as it was written and disarms only the two\nsequences the runner acts on.\n\nBoth forms are covered, because the runner accepts both. A line whose first\nnon-blank characters are `::` opens a command, and leading whitespace is\ntrimmed before that test, so indenting the text defends nothing. The legacy\n`##[command]` form is recognised *anywhere* in a line, so it needs no newline\nto reach at all.\n\n\"Blank\" is the runner's idea of it, not this language's. The two sets differ\nby exactly one character in the direction that matters: NEXT LINE (U+0085),\nwhich the runner trims and `\\s` does not match. It is not a line terminator\nfor the reader the runner uses, so it travels inside a line and disappears\nonly when the command is parsed, which would let `::` reach the front of a\nline that looked indented here. It is matched explicitly for that reason.\n\nOrdinary output is returned unchanged; only text that would have been\nexecuted as a command comes back visibly encoded.",
+          "signature": "function escapeLine(text: string): string",
+          "deprecated": false
+        },
+        {
+          "name": "escapeProperty",
+          "kind": "function",
+          "doc": "Escape a value interpolated into a workflow command's **property** list\n(`::error title=<property>::`). Properties are comma-separated and\ncolon-terminated, so those two characters need encoding on top of what\n{@link escapeData} handles.",
+          "signature": "function escapeProperty(value: string): string",
+          "deprecated": false
+        },
+        {
           "name": "execSecret",
           "kind": "function",
           "doc": "A {@link SecretSource} that runs a command and takes its standard output as\nthe secret value. Configure it through an {@link ExecSecretSettings} lambda.\n\n```ts\nparameter(\"Vault token\").secret().from(\n  execSecret((s) => s.command(\"vault\").arg(\"kv\", \"get\", \"-field=token\", \"secret/ci\")),\n);\n```",
