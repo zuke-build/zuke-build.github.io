@@ -3006,6 +3006,13 @@
           "deprecated": false
         },
         {
+          "name": "escapeLineIf",
+          "kind": "function",
+          "doc": "{@link escapeLine}, applied only when something is parsing this process's\noutput for workflow commands.\n\nThe condition is not a security gate — the runner parses every line a step\nwrites, whatever this process believes about its own style. It is a\nreadability one: `escapeLine` leaves ordinary text alone, but a compiler\ndump that legitimately begins a line with `::` would come back encoded, and\non a developer's terminal that is noise protecting against nothing.\n\nIt exists so the decision has one implementation. It was written out at more\nthan a dozen call sites, in three shapes that had already drifted apart — two\nasking the style, one asking the environment — which is how a site gets added\nwithout it.",
+          "signature": "function escapeLineIf(github: boolean, text: string): string",
+          "deprecated": false
+        },
+        {
           "name": "escapeProperty",
           "kind": "function",
           "doc": "Escape a value interpolated into a workflow command's **property** list\n(`::error title=<property>::`). Properties are comma-separated and\ncolon-terminated, so those two characters need encoding on top of what\n{@link escapeData} handles.",
