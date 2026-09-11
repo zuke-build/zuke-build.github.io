@@ -1605,8 +1605,8 @@
         {
           "name": "ciHost",
           "kind": "function",
-          "doc": "A short identifier for the detected CI host, or `\"local\"` when not on CI.\nRecognises GitHub Actions, GitLab CI, Azure Pipelines, Bitbucket Pipelines,\nand the generic `CI` convention.\n\nPrefer {@link detectCiHost} for new code: its values match {@link CiProvider}.\nThis function is kept for compatibility and uses longer, host-specific names.",
-          "signature": "function ciHost(): string",
+          "doc": "A short identifier for the detected CI host, or `\"local\"` when not on CI.\nRecognises GitHub Actions, GitLab CI, Azure Pipelines, Bitbucket Pipelines,\nand — as the generic `\"ci\"` — the common markers other systems set, including\nJenkins, Buildkite, CircleCI, Travis and TeamCity.\n\nPrefer {@link detectCiHost} for new code: its values match {@link CiProvider}.\nThis function is kept for compatibility and uses longer, host-specific names.\n",
+          "signature": "function ciHost(env?: unknown): string",
           "deprecated": false
         },
         {
@@ -2369,6 +2369,13 @@
               "doc": "Kill the process if it runs longer than `ms` milliseconds, raising a\n{@link CommandTimeoutError}. Fires even under {@link noThrow}."
             },
             {
+              "name": "stdin",
+              "kind": "method",
+              "optional": false,
+              "signature": "stdin(text: string): this",
+              "doc": "Write `text` to the child's standard input, then close it.\n\nThe reason this exists is credentials. A tool that takes a password or token\nas an argument puts it in the process table, where any local user reading\n`/proc` or running `ps` can see it, and in whatever transcript the command\nline is echoed into. Tools that care offer a stdin form instead — `docker\nlogin --password-stdin` is the canonical one — and without this there was no\nway to use it: the secret had nowhere to go but argv.\n\nThe text never reaches {@link Command.commandLine}, because it is not part\nof the command line. That is the point, not a side effect.\n\nOnly affects the run paths. A {@link Command.spawn}ed long-running process\nkeeps its inherited stdin, since a service that reads from the terminal is a\ndifferent thing from a one-shot that takes a secret."
+            },
+            {
               "name": "maxCapturedBytes",
               "kind": "method",
               "optional": false,
@@ -2575,6 +2582,13 @@
               "optional": true,
               "signature": "log?: unknown",
               "doc": "Emit a line of output (default `console.log`)."
+            },
+            {
+              "name": "readEnv",
+              "kind": "property",
+              "optional": true,
+              "signature": "readEnv?: unknown",
+              "doc": "Read an environment variable (default the process environment)."
             }
           ]
         },
@@ -4521,8 +4535,8 @@
         {
           "name": "isCI",
           "kind": "function",
-          "doc": "Whether the build appears to be running in a CI environment.",
-          "signature": "function isCI(): boolean",
+          "doc": "Whether the build appears to be running in a CI environment.\n\nBroader than `detectCiHost(env) !== \"local\"`, which answers only whether the\nhost is one of the four Zuke names: a system it has no specific support for is\nstill CI, and this says so.\n",
+          "signature": "function isCI(env?: unknown): boolean",
           "deprecated": false
         },
         {
@@ -5595,6 +5609,13 @@
           "deprecated": false,
           "members": [
             {
+              "name": "redact",
+              "kind": "method",
+              "optional": false,
+              "signature": "redact(text: string): string",
+              "doc": "Mask every resolved `secret` parameter in `text`.\n\nA remediation that publishes anywhere — a pull-request comment, a job\nsummary, a file it writes — has to run its output through this first. What\nit is publishing is typically a model's response to a prompt built from the\nfailure, and that prompt carries the failed command and its output, so a\nsecret the build holds can come back in the reply.\n\nZuke's own reporter and run record redact what *they* emit, but a\nremediation that posts over the network is not going through either of them:\nthis is the only thing between such a value and a comment that cannot be\ntaken back.\n\nMasks the same values {@link \"./params.ts\".parameter} marked secret, so a\ncredential the build never declared is not covered — declare it."
+            },
+            {
               "name": "target",
               "kind": "property",
               "optional": false,
@@ -6081,7 +6102,7 @@
         {
           "name": "runConformanceCli",
           "kind": "function",
-          "doc": "Run the conformance kit as a CLI: `--url <base>` (required) and `--token\n<bearer>` (optional) name the backend, then both suites run against it. Prints\na `PASS`/`FAIL` line per scenario and resolves to a process exit code — `0`\nwhen every scenario passes, `1` when any fails or `--url` is missing.",
+          "doc": "Run the conformance kit as a CLI: `--url <base>` (required) names the backend\nand both suites run against it. Prints a `PASS`/`FAIL` line per scenario and\nresolves to a process exit code — `0` when every scenario passes, `1` when any\nfails, `--url` is missing, or a credential was passed as an argument.\n\n**The bearer token comes from the environment**, `ZUKE_STATE_TOKEN` and\n`ZUKE_REGISTRY_TOKEN`, exactly as every other consumer of these stores reads\nit. It used to be a `--token` argument, which put a credential that can forge\nrun records, the audit trail and lock exclusivity into the process table for\nany local user to read, and into the transcript of whatever invoked it.\n\n`--token` is now **refused** rather than ignored: an invocation that still\npasses one would otherwise authenticate as anonymous and fail somewhere less\nobvious, and the credential would already have been exposed by the time it\ndid.",
           "signature": "async function runConformanceCli(args: string[], deps?: ConformanceCliDeps): Promise<number>",
           "deprecated": false
         },
@@ -8538,7 +8559,7 @@
               "kind": "property",
               "optional": false,
               "signature": "os_: Deno.build.os",
-              "doc": "The platform identifier used by {@link run} to decide whether to retry a\nmissing binary through the `cmd /c` shim path (Windows only).\n\nIn production this is always `Deno.build.os`. It is exposed as a public\nfield — rather than read from `Deno.build.os` inline — so that tests can\npin a specific platform without spawning a subprocess or touching the\nenvironment:\n\n```ts\nconst s = new MyToolSettings();\ns.os_ = \"windows\"; // exercise the cmd /c retry branch on any host\n```\n\nThe trailing underscore signals an internal test seam: do not rely on this\nfield in production code."
+              "doc": "The platform identifier used when resolving a tool from `node_modules`,\nwhich on Windows means looking for the `.cmd` shim rather than the bare\nname.\n\nIn production this is always `Deno.build.os`. It is exposed as a public\nfield — rather than read from `Deno.build.os` inline — so that tests can\npin a specific platform without spawning a subprocess or touching the\nenvironment:\n\n```ts\nconst s = new MyToolSettings();\ns.os_ = \"windows\"; // resolve as Windows would, on any host\n```\n\nThe trailing underscore signals an internal test seam: do not rely on this\nfield in production code."
             }
           ]
         },
