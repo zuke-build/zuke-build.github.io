@@ -2283,6 +2283,13 @@
           ]
         },
         {
+          "name": "cliReporter",
+          "kind": "variable",
+          "doc": "The sink every command-surface module writes through, neutralised for a\nGitHub Actions runner.\n\nThese commands echo arguments the invoker chose — a run id, a target name, a\nforce reason — and read values another process wrote into the shared state\nstore. Under Actions those commonly come from a workflow-dispatch input or an\nissue body rather than from a person at a terminal, and a thrown message\nquotes them straight back.\n\nA sink rather than a guard at each of the sixty-odd writes, because none of\nthem should be exempt: unlike the run's reporter, none of these modules emits\na workflow command of its own, so there is no half to carve out. The MCP\ncommand writes only diagnostics here — its protocol never goes through the\nconsole — so escaping cannot corrupt it.\n\nThe decision is made per line, not once when this module loads. A top-level\nconstant would read the environment at import time, before an embedder or a\ntest has set it, and the escaping would then silently not apply.\n\nPublic so a companion command surface — `@zuke/cli` is one — can write\nthrough the same sink instead of composing a copy of it. It is the sink for\na command's own diagnostics and output, **not** the `reporter` handed to\n{@link execute}: the run's renderer writes `::group::` and `::endgroup::` of\nits own and wraps only third-party text in {@link escapingReporter} beside\nthem, and a sink that neutralises every leading `::` would break that\ngrouping.",
+          "signature": "const cliReporter: Reporter",
+          "deprecated": false
+        },
+        {
           "name": "CliTargetInfo",
           "kind": "interface",
           "doc": "A target declared on the build.",
