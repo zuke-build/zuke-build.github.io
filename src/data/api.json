@@ -15116,6 +15116,66 @@
       "summary": "`@zuke/cli` — the `zuke` command. Install it globally with",
       "symbols": [
         {
+          "name": "BuildLocation",
+          "kind": "interface",
+          "doc": "Where a forwarded command runs, and how.",
+          "signature": "interface BuildLocation",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "root",
+              "kind": "property",
+              "optional": false,
+              "signature": "root: string",
+              "doc": "The absolute repository root: the directory holding `zuke.json`."
+            },
+            {
+              "name": "frozen",
+              "kind": "property",
+              "optional": false,
+              "signature": "frozen: boolean",
+              "doc": "Whether a `deno.lock` sits at the root, so the run passes `--frozen`."
+            }
+          ]
+        },
+        {
+          "name": "BuildProbe",
+          "kind": "interface",
+          "doc": "The filesystem questions discovery asks, injectable so the walk and its\ntrust gate are testable without a filesystem or a second user.",
+          "signature": "interface BuildProbe",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "exists",
+              "kind": "method",
+              "optional": false,
+              "signature": "exists(path: string): Promise<boolean>",
+              "doc": "Whether a path exists (the link itself, not its target)."
+            },
+            {
+              "name": "ownership",
+              "kind": "method",
+              "optional": false,
+              "signature": "ownership(path: string): Promise<Ownership | null>",
+              "doc": "The owner and mode of what a path resolves to, or `null` when nothing is\nthere."
+            },
+            {
+              "name": "uid",
+              "kind": "method",
+              "optional": false,
+              "signature": "uid(): number | null",
+              "doc": "The current user's numeric id, or `null` where the platform has none."
+            }
+          ]
+        },
+        {
+          "name": "BuildRunner",
+          "kind": "typeAlias",
+          "doc": "Runs `deno <denoArgs>` from `root` and resolves to its exit code — the\ninjectable subprocess seam, so the forwarding is testable without a build.",
+          "signature": "type BuildRunner = unknown",
+          "deprecated": false
+        },
+        {
           "name": "defaultPrompter",
           "kind": "variable",
           "doc": "The real {@link Prompter}, backed by Deno's `prompt`/`confirm`.",
@@ -15155,9 +15215,32 @@
         {
           "name": "main",
           "kind": "function",
-          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, and `starActions` are injectable for testing.",
-          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions): Promise<number>",
+          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, and `buildProbe` are injectable\nfor testing.",
+          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe): Promise<number>",
           "deprecated": false
+        },
+        {
+          "name": "Ownership",
+          "kind": "interface",
+          "doc": "What the trust gate needs to know about a filesystem entry.",
+          "signature": "interface Ownership",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "uid",
+              "kind": "property",
+              "optional": false,
+              "signature": "uid: number | null",
+              "doc": "The numeric owner, or `null` where the platform reports none (Windows)."
+            },
+            {
+              "name": "mode",
+              "kind": "property",
+              "optional": false,
+              "signature": "mode: number | null",
+              "doc": "The permission bits, or `null` where the platform reports none."
+            }
+          ]
         },
         {
           "name": "parseImportFlags",
