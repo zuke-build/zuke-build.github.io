@@ -42173,7 +42173,7 @@
               "kind": "method",
               "optional": false,
               "signature": "criteria(criteria: string): this",
-              "doc": "Optional project-specific notes appended above the diff in the user prompt\n— framing that fine-tunes the built-in rubric (e.g. \"strict TypeScript,\nno `any`/`as`\"). Works for every reviewer; the assessment's own system\nprompt already covers what to look for, so this is purely additive."
+              "doc": "Optional project-specific notes appended above the diff in the user prompt\n— framing that fine-tunes the built-in rubric (e.g. \"strict TypeScript,\nno `any`/`as`\"). Works for every reviewer; the assessment's own system\nprompt already covers what to look for, so this is purely additive.\n\nThese notes are **read from the head under review**, and cannot be\nanything else: they are build code, evaluated by the very build the\npull request changed, so there is no base copy to read short of running\nthe base's build. A branch can therefore widen what its own review\noverlooks, which is real but bounded — the change is first-party code in\nthe diff a maintainer reads, and a build that could not configure its own\nreviewer from its own source would be a different feature.\n{@link Reviewer.criteriaFile} is the base-anchored form for notes that\nshould not be editable by the change they judge."
             },
             {
               "name": "diff",
@@ -42299,7 +42299,7 @@
               "kind": "method",
               "optional": false,
               "signature": "suppress(suppressions: Suppressions): this",
-              "doc": "Hide findings whose stable ID is in a {@link Suppressions} list — a learned\nset of dismissed false positives. Every finding is fingerprinted and its ID\nsurfaced in the report, so dismissing one is a copy-paste into the list."
+              "doc": "Hide findings whose stable ID is in a {@link Suppressions} list — a learned\nset of dismissed false positives. Every finding is fingerprinted and its ID\nsurfaced in the report, so dismissing one is a copy-paste into the list.\n\nLike {@link Reviewer.criteria}, the list is read at the **head** under\nreview — inline entries are build code, and the file is read from disk —\nso a change can suppress a finding on its own run. That is deliberate:\nevery suppressed finding is still listed in the report, so the muting is\nvisible on the thread rather than silent, and the entry is in the diff a\nmaintainer reads. Nothing here reads the base, and nothing should be\nassumed to."
             },
             {
               "name": "conventionsFile",
@@ -42307,6 +42307,13 @@
               "optional": false,
               "signature": "conventionsFile(path: string, maxTokens?: number): this",
               "doc": "Feed the project's conventions document (e.g. `AGENTS.md`) to the model as\nreference material, so the review judges the change against the project's\ndocumented rules instead of generic taste. When the diff has a base ref\n(`.diff((d) => d.base(...))` or a successful `.fetchBase()`), the file is\nread from that **base** via `git show` — never from the head under review,\nso a pull request cannot rewrite the rules it is judged by. Without a base\n(a local working-tree review) it is read from disk. Truncated at roughly\n`maxTokens` (default 8000)."
+            },
+            {
+              "name": "criteriaFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "criteriaFile(path: string, maxTokens?: number): this",
+              "doc": "Project-specific notes read from a **file**, appended to whatever\n{@link Reviewer.criteria} set inline — the base-anchored half of the same\nslot.\n\nRead exactly as {@link Reviewer.conventionsFile} is: from the diff's base\nref via `git show` when there is one, from disk otherwise, truncated at\nroughly `maxTokens` (default 8000). That is the point of it. A note that\ntells the reviewer a design is accepted — and so suppresses the findings\nthat restate it — is a rule the review is judged by, and a pull request\nshould not be able to add one to its own run. Keeping it in a file the\nbase supplies costs one merge of lag, which is the same lag the\nconventions document already accepts, and is arguably the point: a newly\naccepted design should be agreed before it starts muting findings.\n\nUse it for what a branch should not be able to widen; keep\n{@link Reviewer.criteria} for the framing that travels with the build.\n\nWhat it does not buy: the build still decides *whether* to read a criteria\ndocument at all, and that decision is head code, so a branch can drop the\ncall as easily as it can edit a string. This bounds what a change can add\nto the rules of its own review, not whether the reviewer is configured —\nthe same limit {@link Reviewer.conventionsFile} has, and the reason the\ndiff a maintainer reads remains the control that matters."
             },
             {
               "name": "fileContext",
