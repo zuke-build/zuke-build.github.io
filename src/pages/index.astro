@@ -212,6 +212,7 @@ const featureGroups = [
       { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
       { t: "Zero runtime dependencies", d: "Ships on Deno with nothing else to install. The launcher installs Deno for you on first run." },
       { t: "Extensible by design", d: "Extend ToolSettings to build your own typed wrapper for any tool — no fork required." },
+      { t: "Starts from what you have", d: "zuke import reads your package.json scripts or Makefile and writes a target per task — && chains become steps, run delegations become dependsOn." },
     ],
   },
   {
@@ -228,9 +229,11 @@ const featureGroups = [
   {
     label: "ship & automate",
     items: [
-      { t: "Code-first CI/CD", d: "Declare pipelines with cicd() and generate GitHub, GitLab, or Azure YAML — verified up to date on every run." },
+      { t: "Code-first CI/CD", d: "Declare pipelines with cicd() and generate GitHub, GitLab, Azure, or Bitbucket YAML — verified up to date on every run." },
       { t: "A typed tool ecosystem", d: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Docker, Kubernetes, Vite and more, all on JSR.` },
       { t: "Announce to chat", d: "Post build status to Slack, Teams, and Discord from a target — typed messages with levels, fields, and links." },
+      { t: "Pins that can't quietly rot", d: "zuke outdated reads the lock — not the import map — so an inline jsr: specifier several minors behind is named, and --exit-code gates on it." },
+      { t: "A supply chain you can verify", d: "Every package publishes to JSR over OIDC trusted publishing — no long-lived registry token exists — and JSR records a Sigstore provenance attestation naming the workflow and commit that built the version." },
     ],
   },
   {
@@ -1056,7 +1059,8 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <li><strong><code>run:&lt;target&gt;</code> with <code>--allow-run</code></strong> — one run tool per target, its input schema derived from your declared parameters (required, <code>enum</code>, number) plus a <code>dryRun</code> flag.</li>
           <li><strong>Safe by default</strong> — execution is off until you opt in; run tools carry MCP's <code>destructiveHint</code> so clients prompt, and <code>.secret()</code> values stay redacted in what the agent sees.</li>
           <li><strong>Registered by the scaffolder</strong> — <code>zuke setup --mcp</code> writes the <code>.mcp.json</code> Claude Code, Codex and other stdio clients read, so a new project is agent-ready before its first commit.</li>
-          <li><strong>Dependency-free</strong> — newline-delimited JSON-RPC 2.0 over stdio, implemented by hand; no MCP SDK, no network endpoint.</li>
+          <li><strong>Knows who is calling</strong> — <code>mcpAuth()</code> turns a bearer token or a proxy header into a typed identity, and the ordered roles <code>read</code> &lt; <code>run</code> &lt; <code>operator</code> decide each call. A target's <code>requiresRole()</code> is enforced across the whole plan it would run, never just the entry point.</li>
+          <li><strong>Dependency-free</strong> — newline-delimited JSON-RPC 2.0, implemented by hand with no MCP SDK. Stdio by default; <code>--http &lt;host:port&gt;</code> serves the same server over streamable HTTP, advertising where to authenticate via OAuth protected-resource metadata.</li>
         </ul>
         <div class="providers">
           <span class="providers__label">Works with</span>
@@ -1335,13 +1339,19 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           The MCP server grows a <strong>streamable-HTTP transport</strong> and
           three authorization tiers: an allow-list of runnable targets, an
           operator token for protected ones, and a confirm step for destructive
-          calls. Every mutating call is <strong>attributed in an audit log</strong>.
-          A <strong>build registry</strong> makes it fleet-wide — one server over a
-          catalog of pipelines that picks up newly-registered builds with no restart.
+          calls. Authenticate the callers and it goes further — <strong>per-caller
+          roles</strong> decide each call, and an agent can <strong>intervene on a
+          live run</strong>: signal it, cancel it, or settle one target it must not
+          execute. Every mutating call is
+          <strong>attributed in an audit log</strong>. A <strong>build registry</strong>
+          makes it fleet-wide — one server over a catalog of pipelines that picks up
+          newly-registered builds with no restart.
         </p>
         <ul class="ticks">
           <li><code>--allow-run=deploy,checks*</code>, <code>--protect promoteToProd</code>, <code>--confirm-destructive</code>.</li>
           <li>Loopback by default; a non-loopback bind requires a bearer token.</li>
+          <li>Roles <code>read</code> &lt; <code>run</code> &lt; <code>operator</code>, or your own IdP group names — and a run stays steerable by its initiator.</li>
+          <li><code>force_target</code> (<code>zuke force</code>) settles a step that cannot succeed, or one a person did by hand — refused on anything the build declared <code>unforceable()</code>.</li>
           <li><code>zuke register</code> + <code>zuke mcp --registry</code> — new pipelines become callable tools live.</li>
         </ul>
         <div class="cd-links">
@@ -1457,7 +1467,13 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     <div class="container">
       <div class="cta panel" data-reveal>
         <h2>Ship your first typed build in minutes.</h2>
-        <p>Install the CLI, scaffold a <code>zuke.ts</code>, and run your first target.</p>
+        <p>
+          Install the CLI, scaffold a <code>zuke.ts</code>, and run your first
+          target. Already have <code>package.json</code> scripts or a
+          <code>Makefile</code>? Swap <code>zuke setup</code> for
+          <code>zuke import</code> and start from a target per task instead of a
+          blank page.
+        </p>
         <CopyBlock
           lines={[
             "deno install -A -g -n zuke jsr:@zuke/cli",

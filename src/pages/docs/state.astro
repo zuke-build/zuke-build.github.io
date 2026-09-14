@@ -11,6 +11,7 @@ const toc = [
   { id: "backends", label: "FileSystem vs HTTP backends" },
   { id: "degraded", label: "Degraded records" },
   { id: "cli", label: "zuke runs CLI" },
+  { id: "overrides", label: "Forcing a target" },
   { id: "retention", label: "Retention" },
   { id: "http-api", label: "HTTP REST contract" },
   { id: "api-stability", label: "API stability" },
@@ -77,6 +78,14 @@ class CD extends Build {
     return new HttpStateStore({ url: this.stateUrl.value, token: this.stateToken.value });
   }
   deploy = target().executes(async (ctx) => { await ctx.state.set({ target: "sit-7" }); });
+}`;
+
+const forceSnippet = `zuke force <run-id> <target> --outcome skipped|succeeded [--reason "…"]`;
+
+const unforceableSnippet = `class CD extends Build {
+  override unforceable() {
+    return [this.applyProduction]; // references, so a rename cannot empty this
+  }
 }`;
 
 const cliSnippet = `zuke runs list                                                   # all runs, newest first
@@ -297,6 +306,43 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     <code>&#123; total, byStatus &#125;</code>. <code>zuke runs show
     &lt;id&gt;</code> prints the header, params, per-target status, signals,
     and events — add <code>--json</code> for the raw <code>RunRecord</code>.
+  </p>
+
+  <h2 id="overrides">Forcing a target — <code>overrides</code></h2>
+  <p>
+    An operator sometimes has to take a step off a live run: one that cannot
+    succeed, or one a person completed by hand.
+  </p>
+  <CopyCode code={forceSnippet} lang="bash" />
+  <p>
+    That records an entry under <code>overrides</code>, keyed by target name,
+    carrying the outcome, who forced it, when, and why. The executor reads it
+    when it reaches the target and settles it <strong>without running the
+    body</strong> — ahead of the target's <code>onlyWhen</code> conditions and
+    its cache, because forcing is a decision that outranks what the build would
+    work out for itself. Dependents proceed either way.
+  </p>
+  <p>
+    The two outcomes differ in what a later cancellation does. A forced
+    <code>succeeded</code> asserts the target's effects exist, so it is
+    compensated like any other succeeded target; a forced <code>skipped</code>
+    never happened, so it is not — exactly like a target a condition skipped.
+  </p>
+  <p>
+    It is refused, naming the rule, when the target has already settled (the
+    record is the account of what happened, and rewriting a settled outcome
+    would make it untrue), when the run is terminal, when the target is not in
+    the run's graph, or when the build declared it off-limits:
+  </p>
+  <CopyCode code={unforceableSnippet} lang="ts" />
+  <p>
+    An override lands for any target the run has not started yet, which in
+    practice means the next resume — that is the process which loads the record
+    after the force was written. <code>zuke runs show</code> prints every
+    override, and over <a href="/docs/mcp">MCP</a> the same operation is the
+    <code>force_target</code> tool, subject to the same
+    <a href="/docs/mcp#authorization">authorization</a> as cancelling or
+    signalling the run.
   </p>
 
   <h2 id="retention">Retention</h2>

@@ -9,8 +9,10 @@ const toc = [
   { id: "http", label: "HTTP transport" },
   { id: "tools", label: "Tools" },
   { id: "authorization", label: "Authorization tiers" },
+  { id: "roles", label: "Roles" },
   { id: "audit", label: "Audit log" },
-  { id: "identity", label: "Trusted per-call identity" },
+  { id: "identity", label: "Authentication" },
+  { id: "discovery-auth", label: "OAuth discovery" },
   { id: "errors", label: "Structured errors" },
   { id: "discovery", label: "Dynamic discovery" },
   { id: "safety", label: "Safety" },
@@ -57,6 +59,25 @@ const errorSnippet = `{ "error": "lock_conflict", "holder": "…", "guidance": "
 { "error": "missing_argument" }
 { "error": "no_run" }`;
 
+const authSnippet = `class ControlPlane extends Build {
+  override mcpAuth(): McpAuthenticator {
+    return {
+      authenticate: async (ctx: McpRequestContext) => {
+        const claims = await verifyBearer(ctx.headers.get("authorization"));
+        if (claims === null) {
+          return {
+            status: 401,
+            error: "invalid_token",
+            detail: "expired or unknown bearer token",
+            challenge: 'Bearer realm="zuke", error="invalid_token"',
+          };
+        }
+        return { actor: claims.sub, kind: "service", roles: claims.roles };
+      },
+    };
+  }
+}`;
+
 const identitySnippet = `class ControlPlane extends Build {
   override mcpIdentity() {
     return (ctx: McpRequestContext) => {
@@ -66,11 +87,38 @@ const identitySnippet = `class ControlPlane extends Build {
     };
   }
 }`;
+
+const protectedResourceSnippet = `import { Build, protectedResource, run, target } from "jsr:@zuke/core";
+
+class ControlPlane extends Build {
+  deploy = target().executes(() => {});
+
+  override mcpProtectedResource() {
+    return protectedResource("https://build.example.com/mcp")
+      .authorizationServer("https://acme.eu.auth0.com")
+      .scopes("zuke:run")
+      .name("Acme build server");
+  }
+}
+
+await run(ControlPlane);`;
+
+const challengeSnippet = `401 Unauthorized
+WWW-Authenticate: Bearer resource_metadata="https://build.example.com/.well-known/oauth-protected-resource/mcp"`;
+
+const authorizeSnippet = `class ControlPlane extends Build {
+  override mcpAuthorize(identity: McpIdentity, call: McpCall) {
+    if (call.tool === "run:promote" && !inChangeWindow()) {
+      return { allow: false, reason: "outside the change window" };
+    }
+    return defaultMcpAuthorize(identity, call);
+  }
+}`;
 ---
 
 <DocsLayout
   title="MCP server"
-  description="zuke mcp runs a dependency-free Model Context Protocol server over your build on stdio, so an AI agent can operate the pipeline through typed tool calls — list targets, inspect the graph, run one with the right parameters — instead of guessing shell commands. Read-only by default; --allow-run opts into execution."
+  description="zuke mcp runs a dependency-free Model Context Protocol server over your build — on stdio, or over streamable HTTP with --http — so an AI agent can operate the pipeline through typed tool calls — list targets, inspect the graph, run one with the right parameters — instead of guessing shell commands. Read-only by default; --allow-run opts into execution, and authenticated callers are gated by role."
   toc={toc}
 >
   <p class="lead">
@@ -262,6 +310,90 @@ const identitySnippet = `class ControlPlane extends Build {
   </ul>
   <CopyCode code={authorizationSnippet} lang="bash" />
 
+  <h2 id="roles">Roles</h2>
+  <p>
+    The three tiers above are <strong>process-wide</strong>: they say what
+    <em>anyone</em> reaching this server may do. Once the server
+    <a href="#identity">authenticates</a> its callers it can say what
+    <em>this</em> caller may do, which is what roles are for.
+  </p>
+  <p>
+    Three built-in roles are ordered — <code>read</code> &lt; <code>run</code>
+    &lt; <code>operator</code> — so an operator satisfies a requirement for
+    <code>run</code> without being granted it separately. Any other name is
+    matched <strong>exactly</strong>: an identity provider's own group
+    (<code>sre</code>, <code>release-manager</code>) works with
+    <code>requiresRole</code> without being ranked into a hierarchy it never
+    agreed to. Map your groups onto the three tiers for the general permission
+    and use your own names for the specific one.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Call</th><th>Needs</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>list_*</code> / <code>show_*</code> / <code>describe_*</code> / <code>graph</code></td><td><code>read</code></td></tr>
+      <tr><td><code>run:&lt;target&gt;</code></td><td><code>run</code>, <strong>and</strong> every <code>requiresRole</code> declared anywhere in the plan it would run</td></tr>
+      <tr><td><code>cancel_run</code> / <code>signal_run</code> / <code>force_target</code>, and <code>resume_check</code> on one run</td><td>the run's initiator or <code>operator</code>, <strong>and</strong> every <code>requiresRole</code> in the run's plan</td></tr>
+      <tr><td><code>resume_check</code> sweeping every run</td><td><code>operator</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>requiresRole</code> can only <strong>raise</strong> the bar —
+    <code>run</code> is the floor for executing anything, so declaring
+    <code>requiresRole("read")</code> does not let a read-only caller run a
+    target. It is enforced <strong>across the whole plan</strong>, like
+    <code>--protect</code> and for the same reason: invoking a target runs its
+    dependencies, so a requirement that guarded only the entry point would be
+    bypassed by invoking anything that depends on it. A run-scoped mutation
+    executes the run's plan too, so the same requirements apply to resuming,
+    signalling, cancelling, or <a href="/docs/state#overrides">forcing</a> it.
+  </p>
+  <p>
+    A run whose initiator is a <strong>service</strong> may be steered by any
+    caller holding <code>run</code>: a scheduler's run has no person to ask, and
+    treating the scheduler as its owner would mean nobody could intervene.
+    Presenting a valid <code>ZUKE_OPERATOR_TOKEN</code> <strong>grants the
+    <code>operator</code> role</strong> for that call, so the shared secret and
+    the role model are one policy rather than two that can disagree — and a
+    deployment can move to roles a piece at a time.
+  </p>
+  <p>
+    Override the whole decision with <code>mcpAuthorize</code> when the rule is
+    something the engine cannot know — a change window, team ownership, a freeze:
+  </p>
+  <CopyCode code={authorizeSnippet} lang="ts" />
+  <p>
+    It runs <strong>after</strong> the allow-list and operator-token checks, so
+    it can narrow what those permit and never widen it.
+  </p>
+  <div class="note">
+    <p>
+      <strong>Two servers are deliberately unaffected.</strong> One with no
+      authenticator at all treats every caller as holding every role, so
+      <code>--allow-run</code>, <code>--protect</code> and the operator token
+      remain exactly the gates they were; and a build using the legacy
+      <a href="#identity"><code>mcpIdentity()</code></a> hook — which never had
+      roles to give — is not constrained by the policy either. Those two are what
+      keep a local stdio server, and every deployment that predates roles,
+      working unchanged. Enforcement is a property of the <strong>seam</strong>,
+      not of one identity: declaring <code>mcpAuth()</code> opts in, and an
+      identity it returns without a <code>roles</code> list settles to none and
+      is denied — inferring it per identity would mean a token carrying
+      <em>less</em> information bought <em>more</em> privilege. The one exception
+      is <code>requiresRole</code>: a target that declares one is
+      <strong>refused</strong> for a caller whose authenticator cannot express
+      roles, naming the seam, because silently ignoring the declaration would
+      tell you a target is gated when nothing is checking.
+    </p>
+  </div>
+  <p>
+    In <a href="#discovery">registry mode</a> the policy decides on the tiers
+    alone — <code>read</code> to list or describe a registered build,
+    <code>run</code> to spawn one — because a registry descriptor carries no
+    per-target <code>requiresRole</code>.
+  </p>
+
   <h2 id="audit">Audit log</h2>
   <p>
     Every mutating or denied call is appended as a <code>RunEvent</code> to a
@@ -288,22 +420,57 @@ export interface RunEvent {
     never in an authorization decision.
   </p>
 
-  <h3 id="identity">Trusted per-call identity</h3>
+  <h3 id="identity">Authentication</h3>
   <p>
-    On a shared, multi-user endpoint "who did this" must not be
-    self-reported. Front the server with an authenticating reverse proxy
+    By default the server does not identify its callers: on stdio it inherits
+    the trust of the shell that launched it, and over HTTP
+    <code>ZUKE_MCP_TOKEN</code> is a shared secret, not an identity. On a
+    shared, multi-user endpoint "who did this" must not be self-reported, so a
+    build can declare an <strong>authenticator</strong> that runs once per
+    request, <strong>before any dispatch</strong>, on both transports.
+  </p>
+  <p>
+    <code>override mcpAuth()</code> is the general seam. It returns an object
+    with an <code>authenticate(ctx)</code> method, which may be asynchronous
+    (verifying a token signature is), and either returns an
+    <strong>identity</strong> — <code>&#123; actor, kind?, roles?, via? &#125;</code>
+    — or refuses with an <code>McpAuthReject</code>:
+  </p>
+  <CopyCode code={authSnippet} lang="ts" />
+  <p>
+    <code>ctx</code> is the request context: its <code>headers</code>, plus the
+    underlying <code>request</code> (so an authenticator can read the method and
+    URL) when the caller arrived over HTTP. On <strong>stdio</strong> both are
+    empty — an authenticator that insists on a header refuses every stdio call,
+    which is the point: declare one for the endpoint you actually expose.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Field</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>actor</code></td><td>the authenticated caller. Required and non-empty — anything else refuses the request</td></tr>
+      <tr><td><code>kind</code></td><td><code>"human"</code> or <code>"service"</code>. Omitted reads as <code>"human"</code>, so a service claim must be stated</td></tr>
+      <tr><td><code>roles</code></td><td>the caller's <a href="#roles">roles</a>, in three states. <strong>Omitted</strong> means this authenticator does not speak roles — only meaningful for the legacy <code>mcpIdentity()</code> seam, whose callers the policy leaves alone. An <strong>empty list</strong> means the question was considered and nothing granted, which denies. A <strong>non-empty list</strong> is evaluated. An <code>mcpAuth()</code> identity that omits the list settles to empty, so a token carrying less information never buys more privilege</td></tr>
+      <tr><td><code>via</code></td><td>how the identity was established (<code>"oauth-proxy"</code>). Informational only</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The resolved <code>actor</code> overrides <code>--actor</code>, the
+    environment, and the client label for that call, and flows to the audit
+    trail, run records, lock-holder identity, and a registry-spawned child's
+    <code>ZUKE_ACTOR</code>. <code>kind</code> and <code>roles</code> reach that
+    child as <code>ZUKE_ACTOR_KIND</code> and <code>ZUKE_ACTOR_ROLES</code>
+    (each role percent-encoded, so a name containing the separator survives).
+  </p>
+  <p>
+    <code>override mcpIdentity()</code> is the older, synchronous seam,
+    unchanged for authors: front the server with an authenticating reverse proxy
     (e.g. OAuth 2.1) that injects the real caller in a header it strips from
-    client input, and resolve it with a per-request <strong>identity
-    hook</strong> — <code>override mcpIdentity()</code> on the build:
+    client input, and return that caller. <strong>Any throw rejects the
+    request.</strong>
   </p>
   <CopyCode code={identitySnippet} lang="ts" />
-  <p>
-    The hook runs <strong>once per request, before any dispatch</strong>. Its
-    <code>actor</code> overrides <code>--actor</code>, the environment, and
-    the client label for that call, and flows to the audit trail, run
-    records, lock-holder identity, and — for a registry-spawned build — the
-    child's <code>ZUKE_ACTOR</code>.
-  </p>
   <div class="note">
     <p>
       <strong>Fail-closed:</strong> a hook that throws <em>or</em> yields no
@@ -311,11 +478,32 @@ export interface RunEvent {
       <code>headers.get(…) ?? ""</code> when the header is missing) rejects
       the request with an auth error — nothing executes, nothing is written,
       and it never falls back to the static actor, so the hook's precedence
-      stays absolute. Without a hook, stdio/local behavior is unchanged. This
-      is deliberately the <em>minimal</em> seam — TLS, the OAuth flow, and
-      header stripping are the proxy's job, not Zuke's.
+      stays absolute. Without a hook, stdio/local behavior is unchanged. Zuke
+      is only ever the <em>resource</em>: TLS, minting tokens, and running the
+      OAuth flow belong to the identity provider you already have.
     </p>
   </div>
+
+  <h3 id="discovery-auth">Telling a client where to authenticate</h3>
+  <p>
+    Verifying a token only helps a client that already has one. A fresh
+    <code>claude mcp add --transport http &lt;url&gt;</code> has nothing, and no
+    way to guess where to get one — so it asks, the way OAuth 2.0 defines: it
+    reads the <code>WWW-Authenticate</code> challenge on the <code>401</code>,
+    fetches the metadata document that challenge names, and finds the
+    authorization server there.
+  </p>
+  <p>
+    <code>mcpProtectedResource()</code> publishes that document. Zuke issues no
+    tokens and hosts no <code>/authorize</code>, <code>/token</code> or
+    <code>/register</code> endpoint — those belong to whatever identity provider
+    you already run (Auth0, Okta, Entra, Keycloak, Dex), and
+    <a href="#identity"><code>mcpAuth()</code></a> is where the tokens it mints
+    are verified.
+  </p>
+  <CopyCode code={protectedResourceSnippet} lang="ts" />
+  <p>That is the whole configuration. An unauthenticated call is then answered with:</p>
+  <Code code={challengeSnippet} lang="http" theme="night-owl" />
 
   <h2 id="errors">Structured errors</h2>
   <p>
@@ -376,8 +564,9 @@ export interface RunEvent {
 
   <h2 id="protocol">Protocol notes</h2>
   <ul>
-    <li><strong>Transport:</strong> newline-delimited JSON-RPC 2.0 on stdio.</li>
-    <li><strong>Lifecycle:</strong> the server answers <code>initialize</code> (negotiating the <code>protocolVersion</code>), <code>notifications/initialized</code> (no reply), <code>ping</code>, <code>tools/list</code>, and <code>tools/call</code>. Unknown requests get a JSON-RPC <code>-32601 Method not found</code>; notifications never get a reply.</li>
+    <li><strong>Transport:</strong> newline-delimited JSON-RPC 2.0 on stdio, or one JSON-RPC message per <code>POST</code> over the <a href="#http">HTTP transport</a> (<code>--http</code>).</li>
+    <li><strong>Lifecycle:</strong> the server answers <code>initialize</code> (echoing the client's requested <code>protocolVersion</code>), <code>notifications/initialized</code> (no reply), <code>ping</code>, <code>tools/list</code>, and <code>tools/call</code>. Unknown requests get a JSON-RPC <code>-32601 Method not found</code>; notifications never get a reply.</li>
+    <li><strong>Protocol revisions:</strong> <code>2025-11-25</code> (the newest offered), <code>2025-06-18</code>, <code>2025-03-26</code> and <code>2024-11-05</code>. A client's requested version is echoed when this server implements it, and otherwise answered with the newest. Over HTTP, an <code>MCP-Protocol-Version</code> header naming an unimplemented revision is refused <code>400</code> — <em>after</em> authentication, so the supported list is not something an unauthenticated caller can enumerate. An absent header is fine.</li>
     <li><strong>Errors:</strong> a bad <em>tool</em> call (unknown tool, unknown target, a failed run) is reported through the tool result (<code>isError: true</code>) so the model sees it, rather than as a transport-level error — matching the MCP convention.</li>
   </ul>
 </DocsLayout>

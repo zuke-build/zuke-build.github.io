@@ -1,0 +1,210 @@
+---
+import { Code } from "astro:components";
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "not-the-gate", label: "Do not put it in the gate" },
+  { id: "wiring", label: "The wiring" },
+  { id: "generated", label: "What gets generated" },
+  { id: "exit-code", label: "What --exit-code fails on" },
+  { id: "refresh", label: "Refreshing the lock" },
+];
+
+const buildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
+import { DenoTasks } from "jsr:@zuke/deno";
+
+class MyBuild extends Build {
+  // The ordinary gate: hermetic, on every push and pull request.
+  ci = cicd({
+    pipeline: {
+      name: "CI",
+      triggers: { push: ["main"], pullRequest: ["main"] },
+    },
+  });
+
+  // Freshness, on its own file and its own cadence.
+  freshness = cicd({
+    path: ".github/workflows/freshness.yml",
+    pipeline: {
+      name: "Dependency freshness",
+      triggers: {
+        // 06:00 Monday, in a real timezone (see below).
+        schedule: [{ cron: "0 6 * * 1", tz: "Europe/Sofia" }],
+        // So anyone can ask the question on demand.
+        manual: true,
+      },
+      jobs: [{
+        id: "outdated",
+        name: "Are we current?",
+        // \`outdated\` is a reserved command rather than a target, so the job
+        // names it directly instead of invoking a target.
+        steps: [{ name: "Check", run: "./zuke outdated --exit-code" }],
+      }],
+    },
+  });
+
+  test = target().executes(() => DenoTasks.test((s) => s.allowAll()));
+}
+
+await run(MyBuild);`;
+
+const commandsSnippet = `./zuke generate-ci           # writes both workflow files
+./zuke generate-ci --check   # the gate: fails if a committed file drifted
+./zuke outdated              # ask right now, as a report`;
+
+const yamlSnippet = `name: Dependency freshness
+"on":
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 4 * * 1"
+    - cron: "0 3 * * 1"
+permissions:
+  contents: read
+jobs:
+  outdated:
+    name: "Are we current?"
+    runs-on: ubuntu-latest
+    needs:
+      - zuke-schedule-guard
+    if: "\${{ needs.zuke-schedule-guard.outputs.run == 'true' }}"
+    steps:
+      - name: Harden and check out with Zuke
+        uses: zuke-build/zuke@… # pinned
+        with:
+          egress-policy: audit
+          persist-credentials: "false"
+      - name: Check
+        run: ./zuke outdated --exit-code
+  zuke-schedule-guard:
+    # …resolves the local time and sets run=true only in the intended hour`;
+
+const outputSnippet = `@zuke/git     1.5.0  →  1.11.0
+@zuke/gcloud  1.1.0  →  1.3.0`;
+---
+
+<DocsLayout
+  title="Recipe: keep dependencies current"
+  description="A build that pins its tools inline has no manifest for deno outdated to read, so it can sit months behind a wrapper while staying green. Wire zuke outdated into its own scheduled pipeline — never into the hermetic gate — so the signal arrives on a cadence instead of when someone remembers to look."
+  toc={toc}
+>
+  <h1>Recipe: know when your dependencies fall behind</h1>
+  <p class="lead">
+    A build that pins its tools inline — <code>jsr:@zuke/git@^1</code> in
+    <code>zuke.ts</code> and its helper modules, rather than in a
+    <code>deno.json</code> imports map — has no manifest for
+    <code>deno outdated</code> to read. The lock keeps resolving the versions
+    recorded when the build was written, and <code>--frozen</code> is perfectly
+    content with that, because a stale-but-valid lock is exactly what
+    <code>--frozen</code> is for.
+  </p>
+  <p>
+    Nothing fails. The build stays green for months while a wrapper it depends
+    on grows the typed command the build is still hand-rolling.
+    <a href="/docs/cli#outdated"><code>zuke outdated</code></a> is the signal
+    nothing else gives you; this recipe wires it up so it arrives on its own
+    schedule instead of when someone remembers to look.
+  </p>
+
+  <h2 id="not-the-gate">Do not put it in the gate</h2>
+  <p>
+    The obvious move is a line in the <code>ci</code> target. Resist it, for two
+    reasons. <code>outdated</code> needs the <strong>network</strong>, and the
+    gate is deliberately hermetic — that is what makes it reproducible and fast.
+    And a dependency publishing a release would turn a red X on a pull request
+    that has nothing to do with it, blocking an author who cannot fix the cause
+    and did not create it. Freshness is a property of the repository over time,
+    not of a change.
+  </p>
+  <p>So it gets its own pipeline, on a schedule.</p>
+
+  <h2 id="wiring">The wiring</h2>
+  <CopyCode code={buildSnippet} lang="ts" />
+  <CopyCode code={commandsSnippet} lang="bash" multi />
+
+  <h2 id="generated">What gets generated</h2>
+  <p>The freshness workflow, as written by <code>generate-ci</code>:</p>
+  <Code code={yamlSnippet} lang="yaml" theme="night-owl" />
+  <p>
+    <strong>Two UTC crons for one schedule, and a guard job.</strong> GitHub
+    only understands UTC cron, so a schedule in a daylight-saving zone
+    contributes one UTC cron per distinct offset — <code>0 4</code> for winter,
+    <code>0 3</code> for summer here. Both fire on <strong>every</strong>
+    occurrence, so a bare pair of crons would run this job twice a week, one of
+    them at the wrong local hour. Zuke generates the
+    <code>zuke-schedule-guard</code> job to compare the real local time against
+    the schedule and let the run proceed only on the matching one. A
+    fixed-offset zone, or plain UTC, needs no guard.
+  </p>
+  <p>
+    The guard is only generated for <strong>GitHub</strong>. On
+    <strong>Azure</strong>, a daylight-saving zone is a hard error at generation
+    time — write the cron in UTC, or use a fixed-offset zone, for that provider.
+    <strong>GitLab</strong> and <strong>Bitbucket</strong> configure schedules in
+    the provider UI rather than in-file, so the field is ignored there. See
+    <a href="/docs/schedules">Scheduled pipelines</a> for the full matrix.
+  </p>
+  <div class="note">
+    <p>
+      <strong>Egress.</strong> The default hardening policy is
+      <code>audit</code>, which reports egress rather than blocking it. If you
+      tighten a job to <code>egress-policy: block</code>, this one needs
+      <code>jsr.io:443</code> on its allowed endpoints — it is the one job in the
+      repository whose whole purpose is to talk to the registry.
+    </p>
+  </div>
+
+  <h2 id="exit-code">What <code>--exit-code</code> fails on</h2>
+  <p>
+    Without the flag, <code>outdated</code> is a report: being behind exits
+    <code>0</code>. With it, the command exits <code>1</code> when a package is
+    <strong>behind</strong> <em>or</em> when a package <strong>could not be
+    checked</strong> — a private scope, a rename, a runner behind a proxy.
+  </p>
+  <p>
+    One case fails either way: with <strong>no lock file</strong> there are no
+    resolved versions to compare, and <code>outdated</code> reports that as an
+    error and exits <code>1</code> with or without the flag. If the scheduled job
+    runs before anything has written a lock, it goes red for that reason rather
+    than for staleness.
+  </p>
+  <p>
+    That second half is the point of the gate. A run that reached nothing at all
+    would otherwise print that every package is at its latest release, which is
+    the confident wrong answer this command exists to prevent. A gate asking
+    "are we current?" has not been told yes by a run that never got an answer.
+  </p>
+
+  <h2 id="refresh">Refreshing the lock</h2>
+  <p>The output names each package and the version it is behind:</p>
+  <Code code={outputSnippet} lang="text" theme="night-owl" />
+  <p>
+    Refreshing the lock is the part that catches people out, because the obvious
+    commands do nothing. Measured against deno 2.9.5, on a stale entry for an
+    inline <code>jsr:</code> specifier:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Command</th><th>Effect on the locked version</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>deno cache --reload=jsr:</code></td><td>unchanged — re-resolves from cached registry metadata</td></tr>
+      <tr><td><code>deno cache --reload</code></td><td>unchanged — re-downloads sources, keeps the locked resolution</td></tr>
+      <tr><td><code>deno outdated --update</code></td><td>unchanged — it reads manifests, and an inline specifier is in no manifest</td></tr>
+      <tr><td>delete the lock, then re-cache</td><td><strong>re-resolved</strong></td></tr>
+    </tbody>
+  </table>
+  <p>
+    That last row is the one that works. <code>deno outdated --update</code>
+    <em>is</em> the right tool when the dependency is declared in a
+    <code>deno.json</code> imports map — but then you would not have needed
+    <code>zuke outdated</code> to find it, which is the whole point of the
+    command. And in a repository that also has a <code>package.json</code>,
+    <code>deno cache</code> resolves the whole npm tree and writes an
+    <code>npm</code> section a jsr-only lock never had.
+  </p>
+  <p>
+    Review the lock diff and commit it in the same change, exactly as you would
+    for a deliberate dependency bump — the lock is part of the gate.
+  </p>
+</DocsLayout>
