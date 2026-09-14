@@ -16288,14 +16288,14 @@
               "kind": "method",
               "optional": false,
               "signature": "password(value: string): this",
-              "doc": "The password (`-p`). This lands directly in the process argv, where it\ncan leak through `ps`/process listings, shell history, or CI job logs —\n{@link passwordStdin} is the safe choice in CI (and generally), since it\npipes the secret through STDIN instead of putting it on the command line."
+              "doc": "The password (`-p`), which docker accepts and which therefore stays on the\nwrapper.\n\nPrefer {@link passwordStdin}. This flag puts the password in the child's\nargv, and a child's argv is world-readable on a default Linux host —\nthrough `ps` or `/proc/<pid>/cmdline` — to every other user on the machine\nand every process the build starts. On a shared or self-hosted runner that\nis every co-tenant.\n\nThe value is registered with the run's redactor, so Zuke's own renderings\nof the command mask it. That does not cover the process table: the argv\nhanded to the operating system is not redacted, and docker itself warns\nabout `-p` for the same reason. Masking is what can be done here, not a\nfix for the exposure."
             },
             {
               "name": "passwordStdin",
               "kind": "method",
               "optional": false,
-              "signature": "passwordStdin(): this",
-              "doc": "Read the password from STDIN (`--password-stdin`)."
+              "signature": "passwordStdin(token: string): this",
+              "doc": "Pipe the password to docker through STDIN (`--password-stdin`), which\nkeeps it off the command line entirely.\n\nThis is the route docker documents for exactly this reason, and the one to\nuse in CI. The token goes to the child's standard input, which — unlike its\nargv — no other process on the host can read.\n\nThe password is required, because the flag on its own means nothing: it\ntells docker to read standard input, and this wrapper is what has to put\nsomething there. A `--password-stdin` with no writer leaves docker reading\na stream that is never written."
             },
             {
               "name": "registry",
