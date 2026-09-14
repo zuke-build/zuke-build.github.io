@@ -29,6 +29,35 @@ const path = ([a, b]: string[]) => {
   const mx = (x1 + x2) / 2;
   return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
 };
+
+// The same graph, folded downwards for a phone. A wide graph on a narrow
+// screen has to either scale its labels into illegibility or hide half of
+// itself behind a sideways scroll — so the narrow build re-lays the nodes
+// top-to-bottom instead, and the whole graph fits at a readable size.
+//
+//   clean      install
+//     │           │
+//     │         check
+//     └──▶ build ◀┘
+//            │
+//         preview
+const nodesNarrow = [
+  { id: "clean", x: 82, y: 30 },
+  { id: "install", x: 228, y: 30 },
+  { id: "check", x: 228, y: 126 },
+  { id: "build", x: 155, y: 222 },
+  { id: "preview", x: 155, y: 318 },
+];
+const byIdNarrow = Object.fromEntries(nodesNarrow.map((n) => [n.id, n]));
+const WN = 124;
+const HN = 42;
+// every narrow edge runs downwards: bottom edge of source to top edge of target
+const pathNarrow = ([a, b]: string[]) => {
+  const s = byIdNarrow[a], t = byIdNarrow[b];
+  const y1 = s.y + HN / 2, y2 = t.y - HN / 2;
+  const my = (y1 + y2) / 2;
+  return `M ${s.x} ${y1} C ${s.x} ${my}, ${t.x} ${my}, ${t.x} ${y2}`;
+};
 ---
 
 <div class="dag" role="img" aria-label="Dependency graph: clean and install feed into check and build, which feeds preview, resolved in topological order.">
@@ -36,7 +65,7 @@ const path = ([a, b]: string[]) => {
     <span class="dag__dot"></span><span class="dag__dot"></span><span class="dag__dot"></span>
     <span class="dag__title">zuke · resolving target graph</span>
   </div>
-  <svg viewBox="-20 -8 744 200" class="dag__svg" xmlns="http://www.w3.org/2000/svg">
+  <svg viewBox="-20 -8 744 200" class="dag__svg dag__svg--wide" xmlns="http://www.w3.org/2000/svg">
     {edges.map((e, i) => (
       <>
         <path d={path(e)} class="dag__edge" />
@@ -50,6 +79,24 @@ const path = ([a, b]: string[]) => {
         <rect width={W} height={H} rx="8" class="dag__box" />
         <circle cx="18" cy={H / 2} r="4.5" class="dag__pulse" />
         <text x="34" y={H / 2 + 5} class="dag__label">{n.id}</text>
+      </g>
+    ))}
+  </svg>
+
+  <svg viewBox="-4 0 318 366" class="dag__svg dag__svg--narrow" xmlns="http://www.w3.org/2000/svg">
+    {edges.map((e, i) => (
+      <>
+        <path d={pathNarrow(e)} class="dag__edge" />
+        <path d={pathNarrow(e)} class="dag__flow" style={`animation-delay:${i * 0.5}s`} />
+      </>
+    ))}
+
+    {nodesNarrow.map((n, i) => (
+      <g class="dag__node" style={`animation-delay:${i * 0.45}s`}
+         transform={`translate(${n.x - WN / 2} ${n.y - HN / 2})`}>
+        <rect width={WN} height={HN} rx="8" class="dag__box" />
+        <circle cx="16" cy={HN / 2} r="4.5" class="dag__pulse" />
+        <text x="31" y={HN / 2 + 5} class="dag__label">{n.id}</text>
       </g>
     ))}
   </svg>
@@ -140,10 +187,12 @@ const path = ([a, b]: string[]) => {
     .dag__flow { stroke-dasharray: none; opacity: 0.85; }
   }
 
-  /* On narrow screens, scroll the graph horizontally so node labels stay
-     legible rather than scaling down to an unreadable size. */
-  @media (max-width: 560px) {
-    .dag { overflow-x: auto; overflow-y: hidden; }
-    .dag__svg { min-width: 460px; }
+  /* One graph, two layouts. The wide one is the desktop drawing, untouched;
+     below the breakpoint the folded one takes over so the whole graph is on
+     screen at a readable size — no sideways scroll, nothing cropped. */
+  .dag__svg--narrow { display: none; }
+  @media (max-width: 620px) {
+    .dag__svg--wide { display: none; }
+    .dag__svg--narrow { display: block; }
   }
 </style>
