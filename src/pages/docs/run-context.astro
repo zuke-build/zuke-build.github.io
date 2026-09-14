@@ -7,11 +7,30 @@ const toc = [
   { id: "shape", label: "The shape of ctx" },
   { id: "state", label: "ctx.state" },
   { id: "outcomes", label: "Reading what the run did" },
+  { id: "plan", label: "The run's shape — ctx.plan()" },
   { id: "effects", label: "Crash-durable effects" },
   { id: "signals", label: "ctx.signals" },
   { id: "cancel", label: "Ambient cancellation" },
   { id: "dryrun", label: "Dry runs" },
 ];
+
+const planSnippet = `class Ci extends Build {
+  build = target().executes((ctx) => {
+    // Only worth signing the artifact if this run is going to deploy it.
+    if (ctx.plan().includes("deploy")) console.log("signing");
+  });
+  deploy = target().dependsOn(this.build).executes(() => {});
+}`;
+
+const planConditionSnippet = `class Ci extends Build {
+  unit = target().executes(() => {});
+  // Only worth publishing coverage when the run is also going to deploy.
+  coverage = target()
+    .dependsOn(this.unit)
+    .onlyWhen((ctx) => ctx.plan().includes("deploy"))
+    .executes(() => {});
+  deploy = target().dependsOn(this.unit).executes(() => {});
+}`;
 
 const shapeSnippet = `export interface TargetContext {
   readonly runId: string;                 // stable for every target in the run (crypto.randomUUID())
@@ -21,6 +40,7 @@ const shapeSnippet = `export interface TargetContext {
   stateOf(target: string): TargetStateHandle;   // another target's state handle
   outcomeOf(target: string): TargetOutcomeView | undefined;   // what another target did
   outcomes(): ReadonlyMap<string, TargetOutcomeView>;         // every outcome settled so far
+  plan(): RunPlan;                        // the run's planned shape — see below
   readonly signals: ReadonlyMap<string, SignalRecord>;  // external signal payloads
   readonly dryRun: boolean;               // true under a dry run (bodies don't execute)
 }
@@ -174,6 +194,70 @@ const cancelSnippet = `ship = target().executes(async (ctx) => {
       answers the same way for everything settled in that process.
     </li>
   </ul>
+
+  <h2 id="plan">The run's shape — <code>ctx.plan()</code></h2>
+  <p>
+    <code>ctx.plan()</code> answers what the run <em>set out to do</em>: which
+    targets it planned, in execution order, and which targets must finish before
+    a given one starts. It is the seam for a body whose work depends on what else
+    was asked for.
+  </p>
+  <CopyCode code={planSnippet} lang="ts" />
+  <p>
+    <code>zuke build</code> prints nothing; <code>zuke deploy</code> signs. Same
+    body, same build — the plan describes <strong>this run</strong>, not the
+    class.
+  </p>
+  <p>
+    A condition reads the same view, so a target can gate on the graph rather
+    than only on the environment. Gate on a target you do <strong>not</strong>
+    depend on — a hard dependency is in the plan whenever its dependent is, so
+    gating on one is a condition that can never be false:
+  </p>
+  <CopyCode code={planConditionSnippet} lang="ts" />
+  <p>
+    Receiving the context is optional: an existing
+    <code>.onlyWhen(() =&gt; …)</code> keeps working, since a zero-argument
+    function is assignable to the one-parameter type. A condition gets a
+    <strong>narrower</strong> context than a body — <code>target</code> and
+    <code>plan()</code> only. A
+    <code>.whenSkipped("skip-dependencies")</code> condition is evaluated
+    <em>before</em> the run starts, to decide what the run prunes, and at that
+    point the run's identity, its state handles, and its cancellation signal do
+    not exist yet.
+  </p>
+  <div class="note">
+    <p>
+      <strong>The plan is not the outcome.</strong> <code>ctx.plan()</code> says
+      what the run <strong>planned</strong>, as this process resolved it;
+      <code>ctx.outcomeOf(name)</code> says what <strong>became</strong> of a
+      target once it settled. A planned target can still be skipped — by a
+      condition, by <code>--affected</code>, or by an operator's
+      <a href="/docs/state#overrides">forced outcome</a> — and a run that fails
+      early never reaches its later targets at all. So
+      <code>plan().includes("deploy")</code> means "<code>deploy</code> is part
+      of this run", never "<code>deploy</code> will execute". Ask
+      <code>outcomeOf</code> for that.
+    </p>
+  </div>
+  <p>
+    There is a concrete reason the plan refuses to answer "will it run". A
+    <code>whenSkipped("skip-dependencies")</code> condition is evaluated
+    <strong>twice</strong>: once up front, to decide what the run prunes, and
+    again when the scheduler reaches the target. A "will it run" view would
+    answer differently at those two moments — and at the first one it would be
+    circular, since that very condition is one of the things deciding the
+    answer. Reporting the planned graph gives one answer everywhere.
+  </p>
+  <p>
+    <code>dependenciesOf</code> returns an empty list both for a target with no
+    predecessors and for a name that is not in the plan at all; use
+    <code>includes</code> to tell those apart. And a <code>.forEach()</code>
+    fan-out expands into its sub-targets <strong>while the run executes</strong>,
+    after the graph has been planned — so <code>fan[us].prep</code> has a summary
+    row, a run-record entry and an outcome, but
+    <code>plan().includes("fan[us].prep")</code> is <code>false</code>.
+  </p>
 
   <h2 id="effects">Crash-durable effects — <code>.effect()</code></h2>
   <p>

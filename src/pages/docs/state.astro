@@ -5,6 +5,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
   { id: "state-handle", label: "ctx.state — writing metadata" },
+  { id: "tryset", label: "Checking that a write landed" },
   { id: "durable-state", label: "Durable run state" },
   { id: "precedence", label: "Store selection precedence" },
   { id: "interfaces", label: "StateStore interface & RunRecord" },
@@ -29,8 +30,9 @@ class Deploy extends Build {
 }`;
 
 const stateHandleSnippet = `export interface TargetStateHandle {
-  set(patch: Record<string, JsonValue>): Promise<void>;  // merge a JSON patch, awaits write
-  get(): Record<string, JsonValue>;                       // read current metadata
+  set(patch: Record<string, JsonValue>): Promise<void>;     // merge a JSON patch, awaits write
+  trySet(patch: Record<string, JsonValue>): Promise<boolean>; // …and report whether it landed
+  get(): Record<string, JsonValue>;                          // read current metadata
 }
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };`;
 
@@ -79,6 +81,16 @@ class CD extends Build {
   }
   deploy = target().executes(async (ctx) => { await ctx.state.set({ target: "sit-7" }); });
 }`;
+
+const trySetSnippet = `deploy = target().executes(async (ctx) => {
+  const slot = await lease();
+  if (!await ctx.state.trySet({ slot })) {
+    // Nothing has been deployed yet, so failing here is cheap. Going ahead
+    // would leave a slot held that no compensation can find again.
+    throw new Error(\`could not record the leased slot \${slot}\`);
+  }
+  await deployTo(slot);
+});`;
 
 const forceSnippet = `zuke force <run-id> <target> --outcome skipped|succeeded [--reason "…"]`;
 
@@ -131,6 +143,29 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     <a href="/docs/run-context">run context</a> for the full
     <code>TargetContext</code> — run id, cancellation signal, signals,
     dry-run — that <code>ctx.state</code> lives on.
+  </p>
+
+  <h3 id="tryset">Checking that a write landed</h3>
+  <p>
+    <code>set</code> resolves when the write has been <em>attempted</em>,
+    whether or not it landed. When a body needs to <em>know</em>, use
+    <code>trySet</code>, which resolves <code>true</code> when the patch reached
+    the store and <code>false</code> when the write was dropped — conflicted
+    away for good, or refused by a store that errored:
+  </p>
+  <CopyCode code={trySetSnippet} lang="ts" />
+  <p>
+    Treat <code>false</code> as <strong>not recorded</strong>: a dropped write
+    is sometimes re-persisted by a later one, but nothing guarantees it. A
+    dropped write also warns, and one that is definitely unrecoverable marks the
+    record <a href="#degraded"><code>degraded</code></a> so a later resume
+    refuses it rather than repeating a step against state it cannot trust.
+  </p>
+  <p>
+    Two contexts have nothing durable behind them and so always answer
+    <code>true</code>: a build with no state store, and a compensation body,
+    whose <code>ctx.state</code> is seeded from the original target's metadata
+    and kept in memory (the run is ending, so cleanup state is not persisted).
   </p>
 
   <h2 id="durable-state">Durable run state</h2>
