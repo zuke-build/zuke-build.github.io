@@ -2773,6 +2773,13 @@
           ]
         },
         {
+          "name": "denoExecutable",
+          "kind": "function",
+          "doc": "The executable that runs Deno here — what to spawn when a build needs `deno`\nitself, rather than a tool it installed.\n\nUnder `deno run` the executable running this code **is** Deno, so\n`Deno.execPath()` names it and nothing has to be looked up: a project whose\nDeno came from the `./zuke` launcher rather than from `PATH` still works, and\nthe subprocess is the same version as the parent.\n\nA build compiled with `deno compile` is not Deno. There `Deno.execPath()` is\nthe compiled binary, so spawning it re-enters the build instead of running\nDeno — `deno test` becomes the build running itself with `test` as a target,\nand `deno doc <spec>` becomes the build being asked for a target named `doc`.\nThe compiled case therefore resolves the bare name and lets the OS find a\nreal Deno on `PATH`. `Deno.build.standalone` is what tells the two apart.\n\n```ts\nimport { denoExecutable } from \"jsr:@zuke/core\";\nconst deno = new Deno.Command(denoExecutable(), { args: [\"doc\", \"jsr:@zuke/core\"] });\n```\n\n`@zuke/cli` answers the same question with one more step — a compiled global\n`zuke` falls back to the launchers' bootstrap directory when `PATH` has no\nDeno — because it is the command a user installs on a machine that may have\nno Deno at all. That fallback is the CLI's, and this is the decision the two\nshare.\n",
+          "signature": "function denoExecutable(standalone?: boolean): string",
+          "deprecated": false
+        },
+        {
           "name": "describeCli",
           "kind": "function",
           "doc": "Describe a build's full CLI surface — reserved commands, option flags, targets\n(with descriptions and dependencies), and declared parameters — as a plain\nobject ready for JSON. This is the same data `zuke --list --json` prints, made\navailable to tooling and agents that introspect a build in code.\n\n```ts\nimport { describeCli } from \"jsr:@zuke/core\";\nconst surface = describeCli(new MyBuild());\nconsole.log(surface.targets.map((t) => t.name));\n```\n\nPass `{ omitSecrets: true }` to drop `.secret()` parameters from the result —\nthe posture the build registry uses, so a secret never becomes a spawnable\nMCP input or crosses the run boundary (`zuke register` writes this form).",
