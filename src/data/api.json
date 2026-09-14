@@ -8680,6 +8680,13 @@
           "deprecated": false,
           "members": [
             {
+              "name": "redact",
+              "kind": "method",
+              "optional": false,
+              "signature": "redact(text: string): string",
+              "doc": "Mask every resolved `secret` parameter in `text`.\n\nA validation that publishes anywhere — a pull-request comment, a review\nthread, a job summary, a file it writes — has to run its output through\nthis first. What it is publishing is typically a model's assessment of a\ndiff, or of a failure, and the prompt behind it carries the command output\nthat a secret the build holds can appear in; the secret then comes back in\nthe reply.\n\nHanded over rather than left for the validation to find, for the same\nreason {@link RemediationContext.redact} is: the validation that most needs\nit lives in another package and cannot reach core's internals. Zuke's own\nreporter and run record redact what *they* emit, but a validation that\nposts over the network goes through neither.\n\nMasks the same values {@link \"./params.ts\".parameter} marked secret, so a\ncredential the build never declared is not covered — declare it."
+            },
+            {
               "name": "target",
               "kind": "property",
               "optional": false,
@@ -42334,7 +42341,7 @@
         {
           "name": "RunScope",
           "kind": "typeAlias",
-          "doc": "Where a fixer may run, set with `.runOnly(...)`.\n\n- `\"local\"` — apply on a developer's machine, refuse on CI. The default, and\n  what a fixer has when `.runOnly(...)` is never called.\n- `\"ci\"` — apply on CI, and do not run at all off it. The scope a\n  repository's own build wants: heal a pull request without ever rewriting a\n  working tree someone is editing.\n- `\"both\"` — apply on either host. What `.allowCI()` selects.\n\n\"On CI\" means a host `detectCiHost` recognises: GitHub Actions, GitLab CI,\nAzure Pipelines and Bitbucket Pipelines. Anywhere else — CircleCI, Jenkins,\nor a runner that only sets the generic `CI` variable — counts as local, so\n`\"ci\"` does not run there and `\"local\"` does. That is the safe direction for\n`\"ci\"` (an unrecognised host gets no writes rather than unexpected ones), but\nit does mean a fixer scoped to `\"ci\"` on such a runner will report a skip\nevery time instead of fixing anything. Use `\"both\"` there.",
+          "doc": "Where a fixer may run, set with `.runOnly(...)`.\n\n- `\"local\"` — apply on a developer's machine, refuse on CI. The default, and\n  what a fixer has when `.runOnly(...)` is never called.\n- `\"ci\"` — apply on CI, and do not run at all off it. The scope a\n  repository's own build wants: heal a pull request without ever rewriting a\n  working tree someone is editing.\n- `\"both\"` — apply on either host. What `.allowCI()` selects.\n\n\"On CI\" means any CI system, not only the four Zuke names it can generate\npipelines for: `isCI` recognises GitHub Actions, GitLab CI, Azure Pipelines\nand Bitbucket Pipelines by their own variables, and Jenkins, Buildkite,\nCircleCI, Travis, TeamCity and the generic `CI` convention by theirs.\n\nReading one of those as a developer's machine would fail in the dangerous\ndirection for both of the other scopes, which is why the broader test is the\nright one: `\"ci\"` would silently skip every run, and `\"local\"` — the default\n— would apply and commit changes to what it believed was a working tree\nsomeone was editing. Jenkins is the case that matters most, since it sets\nnone of the four and does not set `CI` either.",
           "signature": "type RunScope = local | ci | both",
           "deprecated": false
         },

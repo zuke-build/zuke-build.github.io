@@ -4714,6 +4714,24 @@ interface ValidationContext
 
   target: string
     The name of the target the validation is attached to.
+  redact(text: string): string
+    Mask every resolved `secret` parameter in `text`.
+
+    A validation that publishes anywhere — a pull-request comment, a review
+    thread, a job summary, a file it writes — has to run its output through
+    this first. What it is publishing is typically a model's assessment of a
+    diff, or of a failure, and the prompt behind it carries the command output
+    that a secret the build holds can appear in; the secret then comes back in
+    the reply.
+
+    Handed over rather than left for the validation to find, for the same
+    reason {@link RemediationContext.redact} is: the validation that most needs
+    it lives in another package and cannot reach core's internals. Zuke's own
+    reporter and run record redact what they emit, but a validation that
+    posts over the network goes through neither.
+
+    Masks the same values {@link "./params.ts".parameter} marked secret, so a
+    credential the build never declared is not covered — declare it.
 
 interface WaitContext
   The durable context a {@link WaitTrigger} may use while deciding whether its
@@ -20384,13 +20402,17 @@ type RunScope = "local" | "ci" | "both"
     working tree someone is editing.
   - `"both"` — apply on either host. What `.allowCI()` selects.
 
-  "On CI" means a host `detectCiHost` recognises: GitHub Actions, GitLab CI,
-  Azure Pipelines and Bitbucket Pipelines. Anywhere else — CircleCI, Jenkins,
-  or a runner that only sets the generic `CI` variable — counts as local, so
-  `"ci"` does not run there and `"local"` does. That is the safe direction for
-  `"ci"` (an unrecognised host gets no writes rather than unexpected ones), but
-  it does mean a fixer scoped to `"ci"` on such a runner will report a skip
-  every time instead of fixing anything. Use `"both"` there.
+  "On CI" means any CI system, not only the four Zuke names it can generate
+  pipelines for: `isCI` recognises GitHub Actions, GitLab CI, Azure Pipelines
+  and Bitbucket Pipelines by their own variables, and Jenkins, Buildkite,
+  CircleCI, Travis, TeamCity and the generic `CI` convention by theirs.
+
+  Reading one of those as a developer's machine would fail in the dangerous
+  direction for both of the other scopes, which is why the broader test is the
+  right one: `"ci"` would silently skip every run, and `"local"` — the default
+  — would apply and commit changes to what it believed was a working tree
+  someone was editing. Jenkins is the case that matters most, since it sets
+  none of the four and does not set `CI` either.
 
 type Severity = "none" | "low" | "medium" | "high" | "critical"
   A severity level, ordered `none` < `low` < `medium` < `high` < `critical`.
