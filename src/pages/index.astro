@@ -729,10 +729,8 @@ build    <span class="t-ok">Succeeded</span>      2.2s
 <span class="t-ok">✔</span> published 4 packages
 <span class="t-warn">⚠</span> coverage <span class="t-warn">94.2%</span> — below gate
 
-<span class="t-box">┌</span> <span class="t-title">Artifacts</span> <span class="t-box">───────────────────┐</span>
-<span class="t-box">│</span>  core  1.2.0  <span class="t-ok">✔</span>              <span class="t-box">│</span>
-<span class="t-box">│</span>  cli   1.2.0  <span class="t-ok">✔</span>              <span class="t-box">│</span>
-<span class="t-box">└──────────────────────────────┘</span>
+<span class="t-frame"><span class="t-framename">Artifacts</span>  core  1.2.0  <span class="t-ok">✔</span>
+  cli   1.2.0  <span class="t-ok">✔</span></span>
 
 <span class="t-head">Package      Size</span>
 <span class="t-rule">─────────────────</span>
@@ -1427,49 +1425,18 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           attack each dimension, and every candidate finding is
           <strong>reproduced against the real code path</strong>, defaulting to
           refuted when the reproduction fails. What survives is a list of
-          defects, not of suspicions.
+          defects, not of suspicions. Anything confirmed is fixed
+          <strong>before the pull request opens</strong>, each with a regression
+          test that keeps it fixed.
         </p>
-        <ul class="ticks">
-          <li>Confirmed defects are fixed <strong>before the pull request opens</strong>, each with a regression test that keeps them fixed.</li>
-          <li>Standing on every PR, between the dedicated reviews: an AI security assessment on the thread, CodeQL over both the sources and the workflow YAML, and the scanner gate — zizmor, actionlint, gitleaks.</li>
-          <li>A moved trust boundary — a new transport, credential, or privilege — triggers a fresh dedicated review in the same change that moves it.</li>
-        </ul>
       </div>
 
       <div data-reveal>
-        <div class="ledger panel">
-          <div class="ledger__head">
-            <span class="ledger__name">🛡 2026 · MCP authorization &amp; audit surface</span>
-            <span class="ledger__count">3 confirmed · 3 shipped fixed</span>
-          </div>
-          <p class="ledger__scope">
-            Scope: the boundary where an external agent may inspect and execute
-            build targets — reviewed against the requirements that authorization
-            holds on every path and that secrets never reach output.
-          </p>
-          <ul class="ledger__findings">
-            <li>
-              <span class="sevtag sevtag--high">HIGH</span>
-              <span class="ftext">Authorization bypass — a path reached target execution without passing the authorization check</span>
-              <span class="fmeta"><span class="fout">fixed</span></span>
-            </li>
-            <li>
-              <span class="sevtag sevtag--high">HIGH</span>
-              <span class="ftext">Secret-redaction gap — a route by which a secret value could reach output unredacted</span>
-              <span class="fmeta"><span class="fout">fixed</span></span>
-            </li>
-            <li>
-              <span class="sevtag sevtag--med">MED</span>
-              <span class="ftext">Transport-crashing throw — an unhandled error could take down the MCP transport</span>
-              <span class="fmeta"><span class="fout">fixed</span></span>
-            </li>
-          </ul>
-          <p class="ledger__foot">
-            <span class="ledger__dot"></span>All three had already passed lint,
-            strict type-checking, and the 95% coverage gate — which is why the
-            adversarial pass is a standing requirement, not a one-time event.
-          </p>
-        </div>
+        <ul class="ticks">
+          <li><strong>Standing on every PR</strong>, between the dedicated reviews: an AI security assessment on the thread, CodeQL over both the sources and the workflow YAML, and the scanner gate — zizmor, actionlint, gitleaks.</li>
+          <li><strong>A moved trust boundary</strong> — a new transport, credential, or privilege — triggers a fresh dedicated review in the same change that moves it.</li>
+          <li><strong>Least privilege by default</strong> — fork pull requests run without secrets, every action is pinned to a commit SHA, and egress is blocked to an allowlist on any job holding a write-scoped token.</li>
+        </ul>
       </div>
     </div>
 
@@ -1862,6 +1829,31 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .term .t-warn { color: #e0b341; }
   .term .t-info { color: var(--cyan); }
   .term .t-box { color: #41d18a; }
+  /* A Log.box drawn with CSS rather than box-drawing characters. The drawn
+     version only lines up where every glyph in it — ─ │ ┌ and the ✔ inside —
+     resolves to exactly one cell, and on iOS Safari the fallback for those
+     breaks the right edge. A real border cannot drift. */
+  .term .t-frame {
+    display: inline-block;
+    min-width: 26ch;
+    margin: 2px 0 4px;
+    padding: 7px 14px 8px;
+    border: 1px solid #41d18a;
+    border-radius: 4px;
+    position: relative;
+  }
+  /* Real text, not a ::before — the title stays in the DOM, selectable and
+     announced, while sitting out of flow so it does not shift the rows. */
+  .term .t-framename {
+    position: absolute;
+    top: 0;
+    left: 11px;
+    transform: translateY(-52%);
+    padding: 0 6px;
+    background: var(--term-bg);
+    color: var(--text);
+    font-weight: 700;
+  }
 
   /* "compose your own" @zuke/console demo under the output section */
   .out-compose {
@@ -2497,73 +2489,16 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 48px;
-    align-items: center;
+    align-items: start;
     margin-top: 44px;
   }
+  .harden-grid .ticks { margin-top: 6px; }
   .harden-grid h3 { font-size: clamp(1.4rem, 2.6vw, 1.85rem); }
   .harden-more {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
     margin-top: 48px;
-  }
-
-  /* the review ledger: a findings record, not a trust badge */
-  .ledger { padding: 20px 22px; min-width: 0; }
-  .ledger__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  .ledger__name { font-family: var(--font-mono); font-size: 0.86rem; color: var(--text); }
-  .ledger__count {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.04em;
-    padding: 2px 8px;
-    border-radius: 999px;
-    color: var(--text-faint);
-    border: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  .ledger__scope {
-    margin: 14px 0 16px;
-    font-size: 0.84rem;
-    line-height: 1.6;
-    color: var(--text-dim);
-  }
-  .ledger__findings { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-  .ledger__findings li {
-    display: flex;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 0.84rem;
-    line-height: 1.55;
-    color: var(--text-dim);
-  }
-  .ledger__foot {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    margin: 18px 0 0;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-    font-size: 0.78rem;
-    line-height: 1.6;
-    color: var(--text-faint);
-  }
-  .ledger__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--cyan);
-    flex: none;
-    margin-top: 7px;
   }
 
   @media (max-width: 940px) {
@@ -2682,8 +2617,17 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     .review__score { flex-wrap: wrap; gap: 12px; }
     .review { padding: 18px 16px 16px; }
     .rcache__key { white-space: normal; overflow-wrap: anywhere; }
-    .mcp__tool { grid-template-columns: auto 1fr; }
-    .mcp__tag { grid-column: 2; justify-self: start; }
+    /* Name and tag share the first row, description spans beneath — so every
+       tag lands on the same right edge instead of drifting with the length of
+       the description above it. */
+    .mcp__tool {
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 4px 10px;
+    }
+    .mcp__name { grid-area: 1 / 1; }
+    .mcp__tag { grid-area: 1 / 2; justify-self: end; }
+    .mcp__desc { grid-area: 2 / 1 / auto / span 2; }
     .term, .hero__pane .term { font-size: 0.74rem; padding: 14px; }
     .cat__head { flex-wrap: wrap; gap: 8px 14px; }
     .cat__rule { flex-basis: 100%; order: 3; }
