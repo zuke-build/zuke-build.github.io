@@ -212,6 +212,7 @@ const featureGroups = [
       { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
       { t: "Zero runtime dependencies", d: "Ships on Deno with nothing else to install. The launcher installs Deno for you on first run." },
       { t: "Extensible by design", d: "Extend ToolSettings to build your own typed wrapper for any tool — no fork required." },
+      { t: "Starts from what you have", d: "zuke import reads your package.json scripts or Makefile and writes a target per task — && chains become steps, run delegations become dependsOn." },
     ],
   },
   {
@@ -228,9 +229,11 @@ const featureGroups = [
   {
     label: "ship & automate",
     items: [
-      { t: "Code-first CI/CD", d: "Declare pipelines with cicd() and generate GitHub, GitLab, or Azure YAML — verified up to date on every run." },
+      { t: "Code-first CI/CD", d: "Declare pipelines with cicd() and generate GitHub, GitLab, Azure, or Bitbucket YAML — verified up to date on every run." },
       { t: "A typed tool ecosystem", d: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Docker, Kubernetes, Vite and more, all on JSR.` },
       { t: "Announce to chat", d: "Post build status to Slack, Teams, and Discord from a target — typed messages with levels, fields, and links." },
+      { t: "Pins that can't quietly rot", d: "zuke outdated reads the lock — not the import map — so an inline jsr: specifier several minors behind is named, and --exit-code gates on it." },
+      { t: "A supply chain you can verify", d: "Every package publishes to JSR over OIDC trusted publishing — no long-lived registry token exists — and JSR records a Sigstore provenance attestation naming the workflow and commit that built the version." },
     ],
   },
   {
@@ -315,6 +318,27 @@ zuke mcp --http 0.0.0.0:7777 \\
 # one server over the whole catalog —
 # pipelines registered later appear with no restart
 zuke mcp --registry --allow-run`;
+
+// The security band: the two standing practices, linked to the repo documents
+// that define them. Kept to what those documents actually claim.
+const hardening = [
+  {
+    icon: "shield",
+    title: "Periodic independent assessments",
+    body: "Point-in-time reviews by reviewers independent of the implementation, each scoped to a trust boundary and recorded with its method, findings and outcomes — plus OpenSSF Scorecard publishing to code scanning continuously.",
+    href: "https://github.com/zuke-build/zuke/blob/master/docs/security-review.md",
+  },
+  {
+    icon: "chain",
+    title: "A stated threat model, not a claim",
+    body: "The assurance case names each adversary, the asset they target, and the counter — fork PRs without secrets, SHA-pinned actions, blocked egress on write-scoped jobs, OIDC-only publishing with Sigstore provenance.",
+    href: "https://github.com/zuke-build/zuke/blob/master/docs/assurance-case.md",
+  },
+];
+const hardeningIcons: Record<string, string> = {
+  shield: `<path d="M12 3l7 3v5c0 4.4-2.9 8.3-7 9.5C7.9 19.3 5 15.4 5 11V6z"/><path d="m9 12 2 2 4-4"/>`,
+  chain: `<path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.3-2.3a4 4 0 0 0-5.7-5.7L11.5 6.8"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.3 2.3a4 4 0 0 0 5.7 5.7l1.3-1.3"/>`,
+};
 
 // Supporting enterprise features shown as a compact pair below the band.
 const cdMore = [
@@ -1056,7 +1080,8 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <li><strong><code>run:&lt;target&gt;</code> with <code>--allow-run</code></strong> — one run tool per target, its input schema derived from your declared parameters (required, <code>enum</code>, number) plus a <code>dryRun</code> flag.</li>
           <li><strong>Safe by default</strong> — execution is off until you opt in; run tools carry MCP's <code>destructiveHint</code> so clients prompt, and <code>.secret()</code> values stay redacted in what the agent sees.</li>
           <li><strong>Registered by the scaffolder</strong> — <code>zuke setup --mcp</code> writes the <code>.mcp.json</code> Claude Code, Codex and other stdio clients read, so a new project is agent-ready before its first commit.</li>
-          <li><strong>Dependency-free</strong> — newline-delimited JSON-RPC 2.0 over stdio, implemented by hand; no MCP SDK, no network endpoint.</li>
+          <li><strong>Knows who is calling</strong> — <code>mcpAuth()</code> turns a bearer token or a proxy header into a typed identity, and the ordered roles <code>read</code> &lt; <code>run</code> &lt; <code>operator</code> decide each call. A target's <code>requiresRole()</code> is enforced across the whole plan it would run, never just the entry point.</li>
+          <li><strong>Dependency-free</strong> — newline-delimited JSON-RPC 2.0, implemented by hand with no MCP SDK. Stdio by default; <code>--http &lt;host:port&gt;</code> serves the same server over streamable HTTP, advertising where to authenticate via OAuth protected-resource metadata.</li>
         </ul>
         <div class="providers">
           <span class="providers__label">Works with</span>
@@ -1335,13 +1360,19 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           The MCP server grows a <strong>streamable-HTTP transport</strong> and
           three authorization tiers: an allow-list of runnable targets, an
           operator token for protected ones, and a confirm step for destructive
-          calls. Every mutating call is <strong>attributed in an audit log</strong>.
-          A <strong>build registry</strong> makes it fleet-wide — one server over a
-          catalog of pipelines that picks up newly-registered builds with no restart.
+          calls. Authenticate the callers and it goes further — <strong>per-caller
+          roles</strong> decide each call, and an agent can <strong>intervene on a
+          live run</strong>: signal it, cancel it, or settle one target it must not
+          execute. Every mutating call is
+          <strong>attributed in an audit log</strong>. A <strong>build registry</strong>
+          makes it fleet-wide — one server over a catalog of pipelines that picks up
+          newly-registered builds with no restart.
         </p>
         <ul class="ticks">
           <li><code>--allow-run=deploy,checks*</code>, <code>--protect promoteToProd</code>, <code>--confirm-destructive</code>.</li>
           <li>Loopback by default; a non-loopback bind requires a bearer token.</li>
+          <li>Roles <code>read</code> &lt; <code>run</code> &lt; <code>operator</code>, or your own IdP group names — and a run stays steerable by its initiator.</li>
+          <li><code>force_target</code> (<code>zuke force</code>) settles a step that cannot succeed, or one a person did by hand — refused on anything the build declared <code>unforceable()</code>.</li>
           <li><code>zuke register</code> + <code>zuke mcp --registry</code> — new pipelines become callable tools live.</li>
         </ul>
         <div class="cd-links">
@@ -1362,6 +1393,96 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           <span class="cd-morecard__body">
             <span class="cd-morecard__title">{f.title} <span class="cd-morecard__arrow">→</span></span>
             <span class="cd-morecard__text">{f.body}</span>
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- ░░ SECURITY ░░ -->
+  <section class="section sec-harden" id="security">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">Security posture</span>
+        <h2>Every feature ships <span class="gradient-text">attacked</span>.</h2>
+        <p class="lead sec-head__lead">
+          Zuke runs inside your pipeline with your credentials in scope, and
+          publishes {packageCount} packages to a public registry. That makes
+          security a gate on the way in rather than a page in the docs: no
+          feature is finalized until a review pass has actively tried to break
+          it, and periodic independent assessments re-check the whole surface
+          for what a feature-level pass cannot see.
+        </p>
+      </header>
+    </div>
+
+    <div class="container harden-grid">
+      <div data-reveal>
+        <span class="eyebrow">Adversarial review · every feature</span>
+        <h3>A green gate is the floor, not the bar.</h3>
+        <p class="lead">
+          Once the implementation and its tests pass, a separate pass tries to
+          <strong>break</strong> the change — bypasses, leaks, race conditions,
+          unhandled throws, untested security branches. Independent reviewers
+          attack each dimension, and every candidate finding is
+          <strong>reproduced against the real code path</strong>, defaulting to
+          refuted when the reproduction fails. What survives is a list of
+          defects, not of suspicions.
+        </p>
+        <ul class="ticks">
+          <li>Confirmed defects are fixed <strong>before the pull request opens</strong>, each with a regression test that keeps them fixed.</li>
+          <li>Standing on every PR, between the dedicated reviews: an AI security assessment on the thread, CodeQL over both the sources and the workflow YAML, and the scanner gate — zizmor, actionlint, gitleaks.</li>
+          <li>A moved trust boundary — a new transport, credential, or privilege — triggers a fresh dedicated review in the same change that moves it.</li>
+        </ul>
+      </div>
+
+      <div data-reveal>
+        <div class="ledger panel">
+          <div class="ledger__head">
+            <span class="ledger__name">🛡 2026 · MCP authorization &amp; audit surface</span>
+            <span class="ledger__count">3 confirmed · 3 shipped fixed</span>
+          </div>
+          <p class="ledger__scope">
+            Scope: the boundary where an external agent may inspect and execute
+            build targets — reviewed against the requirements that authorization
+            holds on every path and that secrets never reach output.
+          </p>
+          <ul class="ledger__findings">
+            <li>
+              <span class="sevtag sevtag--high">HIGH</span>
+              <span class="ftext">Authorization bypass — a path reached target execution without passing the authorization check</span>
+              <span class="fmeta"><span class="fout">fixed</span></span>
+            </li>
+            <li>
+              <span class="sevtag sevtag--high">HIGH</span>
+              <span class="ftext">Secret-redaction gap — a route by which a secret value could reach output unredacted</span>
+              <span class="fmeta"><span class="fout">fixed</span></span>
+            </li>
+            <li>
+              <span class="sevtag sevtag--med">MED</span>
+              <span class="ftext">Transport-crashing throw — an unhandled error could take down the MCP transport</span>
+              <span class="fmeta"><span class="fout">fixed</span></span>
+            </li>
+          </ul>
+          <p class="ledger__foot">
+            <span class="ledger__dot"></span>All three had already passed lint,
+            strict type-checking, and the 95% coverage gate — which is why the
+            adversarial pass is a standing requirement, not a one-time event.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container harden-more" data-reveal>
+      {hardening.map((h) => (
+        <a class="cd-morecard panel" href={h.href} target="_blank" rel="noopener noreferrer">
+          <span class="cd-morecard__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={hardeningIcons[h.icon]} />
+          </span>
+          <span class="cd-morecard__body">
+            <span class="cd-morecard__title">{h.title} <span class="cd-morecard__arrow">→</span></span>
+            <span class="cd-morecard__text">{h.body}</span>
           </span>
         </a>
       ))}
@@ -1457,7 +1578,13 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     <div class="container">
       <div class="cta panel" data-reveal>
         <h2>Ship your first typed build in minutes.</h2>
-        <p>Install the CLI, scaffold a <code>zuke.ts</code>, and run your first target.</p>
+        <p>
+          Install the CLI, scaffold a <code>zuke.ts</code>, and run your first
+          target. Already have <code>package.json</code> scripts or a
+          <code>Makefile</code>? Swap <code>zuke setup</code> for
+          <code>zuke import</code> and start from a target per task instead of a
+          blank page.
+        </p>
         <CopyBlock
           lines={[
             "deno install -A -g -n zuke jsr:@zuke/cli",
@@ -2032,6 +2159,11 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .sevtag--high { color: #ff8088; background: rgba(240, 97, 109, 0.14); }
   .sevtag--med { color: #e8bd6b; background: rgba(224, 169, 59, 0.14); }
   .sevtag--low { color: #6ea8ff; background: rgba(79, 140, 255, 0.14); }
+  /* On the paper theme the dark-mode tints drop to ~2:1 against the panel, so
+     each severity gets a darkened pair that clears 4.5:1 (WCAG AA, small text). */
+  :root[data-theme="light"] .sevtag--high { color: #a81d28; background: rgba(168, 29, 40, 0.10); }
+  :root[data-theme="light"] .sevtag--med { color: #6f4a00; background: rgba(111, 74, 0, 0.10); }
+  :root[data-theme="light"] .sevtag--low { color: #1a4eb5; background: rgba(26, 78, 181, 0.10); }
 
   /* caching & distributed builds */
   .sec-cache {
@@ -2357,6 +2489,86 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     .cd-grid { grid-template-columns: 1fr; gap: 30px; }
     .cd-grid--rev .cd-visual { order: 2; }
     .cd-more { grid-template-columns: 1fr; }
+  }
+
+  /* security posture — the adversarial-review band */
+  .sec-harden { border-top: 1px solid var(--border); }
+  .harden-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+    margin-top: 44px;
+  }
+  .harden-grid h3 { font-size: clamp(1.4rem, 2.6vw, 1.85rem); }
+  .harden-more {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-top: 48px;
+  }
+
+  /* the review ledger: a findings record, not a trust badge */
+  .ledger { padding: 20px 22px; min-width: 0; }
+  .ledger__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ledger__name { font-family: var(--font-mono); font-size: 0.86rem; color: var(--text); }
+  .ledger__count {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .ledger__scope {
+    margin: 14px 0 16px;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+  .ledger__findings { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .ledger__findings li {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+  }
+  .ledger__foot {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: var(--text-faint);
+  }
+  .ledger__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    flex: none;
+    margin-top: 7px;
+  }
+
+  @media (max-width: 940px) {
+    .harden-grid { grid-template-columns: 1fr; gap: 30px; }
+    .harden-more { grid-template-columns: 1fr; }
   }
 
   .sec-tools { border-top: 1px solid var(--border); }

@@ -6,6 +6,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 const toc = [
   { id: "declaring", label: "Declaring a parameter" },
   { id: "naming", label: "Flags and environment variables" },
+  { id: "reserved", label: "Names a parameter may not use" },
   { id: "typing", label: "Typing the value" },
   { id: "lists", label: "Lists with .array()" },
   { id: "optionality", label: ".required() and .default()" },
@@ -43,6 +44,10 @@ const invokeEnvSnippet = `ENVIRONMENT=staging ./zuke deploy`;
 const namingSnippet = `retries    = parameter().number();    // --retries      / RETRIES
 targetEnv  = parameter();             // --target-env    / TARGET_ENV
 apiKey     = parameter().env("CI_API_KEY"); // --api-key / CI_API_KEY`;
+
+const flagSnippet = `class CI extends Build {
+  skipE2E = parameter("skip the E2E suite").flag("--skip-e2e").boolean();
+}`;
 
 const typingSnippet = `// string (the default): value is \`string | undefined\`
 region = parameter("Deploy region");
@@ -181,13 +186,83 @@ const readingSnippet = `deploy = target().executes(() => {
     property name</strong>: the flag is kebab-case, the env var is
     SCREAMING_SNAKE_CASE. A camelCase field like <code>targetEnv</code> becomes
     <code>--target-env</code> and <code>TARGET_ENV</code>. Override just the
-    environment variable with <code>.env("NAME")</code> — the flag is unaffected.
+    environment variable with <code>.env("NAME")</code> — that half is derived
+    separately and is unaffected by a declared flag.
   </p>
   <CopyCode code={namingSnippet} lang="ts" />
   <p>
     A flag accepts both <code>--environment production</code> and
     <code>--environment=production</code>. A boolean is set simply by naming the
     flag (<code>--dry-run</code>).
+  </p>
+  <p>
+    The derivation rule is one dash (or underscore) at <strong>each
+    lower-to-upper transition</strong>. A run of capitals has no internal
+    transition and so stays together — but a digit ends a run, which is where
+    the rule surprises people:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Property name</th><th>Flag</th><th>Environment variable</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>apiURL</code></td><td><code>--api-url</code></td><td><code>API_URL</code></td></tr>
+      <tr><td><code>useHTTPS</code></td><td><code>--use-https</code></td><td><code>USE_HTTPS</code></td></tr>
+      <tr><td><code>skipE2E</code></td><td><code>--skip-e2-e</code></td><td><code>SKIP_E2_E</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>skipE2E</code> gives <code>--skip-e2-e</code> because the
+    <code>2</code> ends the run of capitals, making <code>2E</code> a transition
+    of its own. Two ways out, and the first is often enough: <strong>name it so
+    the rule agrees with you</strong> (<code>skipE2e</code> →
+    <code>--skip-e2e</code>), or <strong>declare the flag</strong> with
+    <code>.flag("--skip-e2e")</code>, where the leading dashes are optional.
+  </p>
+  <CopyCode code={flagSnippet} lang="ts" />
+  <p>
+    A declared flag <strong>replaces</strong> the derived one: only it is
+    accepted on the command line, and it is what <code>--help</code>,
+    <code>--list --json</code>, shell completions and a
+    <a href="/docs/registry">registered build's</a> descriptor all show. It must
+    be lowercase letters, digits and dashes starting with a letter, it may not be
+    a built-in flag, and no two parameters may claim the same one — each is a
+    <code>ParameterError</code> when the build loads, naming the field.
+  </p>
+
+  <h3 id="reserved">Names a parameter may not use</h3>
+  <p>
+    Two sets of names are refused when the build is loaded, with a
+    <code>ParameterError</code> naming the field:
+  </p>
+  <ul>
+    <li>
+      <strong>A name that renders as a built-in CLI flag</strong> —
+      <code>actor</code> → <code>--actor</code>, <code>actorKind</code> →
+      <code>--actor-kind</code>, <code>limit</code> → <code>--limit</code>, and
+      so on for every flag <code>zuke --help</code> lists. The parser matches a
+      built-in first, so the flag means the built-in and not the parameter:
+      <code>--actor=alice</code> attributes the run and leaves the parameter
+      unresolved. Such a parameter is not wholly dead — its environment variable
+      still resolves it, as does an MCP <code>run:&lt;target&gt;</code> call —
+      and that is exactly why it is refused rather than merely documented. It
+      works until someone reaches for its flag, and then the value quietly does
+      something else.
+    </li>
+    <li>
+      <strong><code>dryRun</code>, <code>confirm</code> and
+      <code>operatorToken</code></strong> — the control keys an MCP
+      <code>run:&lt;target&gt;</code> tool adds to its input schema alongside the
+      build's parameters, which would shadow a parameter of the same name.
+    </li>
+  </ul>
+  <p>
+    Only the rendered flag matters, so a longer or nested name is fine:
+    <code>actorName</code> → <code>--actor-name</code> and a grouped
+    <code>runs.limit</code> → <code>--runs-limit</code> both stay usable. Rename
+    the field, or declare a different flag with <code>.flag("--…")</code>. What
+    is not available is keeping the colliding spelling, because the alternative
+    is a flag that silently belongs to something else.
   </p>
 
   <h2 id="typing">Typing the value</h2>

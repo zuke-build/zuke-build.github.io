@@ -5,12 +5,14 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
   { id: "state-handle", label: "ctx.state — writing metadata" },
+  { id: "tryset", label: "Checking that a write landed" },
   { id: "durable-state", label: "Durable run state" },
   { id: "precedence", label: "Store selection precedence" },
   { id: "interfaces", label: "StateStore interface & RunRecord" },
   { id: "backends", label: "FileSystem vs HTTP backends" },
   { id: "degraded", label: "Degraded records" },
   { id: "cli", label: "zuke runs CLI" },
+  { id: "overrides", label: "Forcing a target" },
   { id: "retention", label: "Retention" },
   { id: "http-api", label: "HTTP REST contract" },
   { id: "api-stability", label: "API stability" },
@@ -28,8 +30,9 @@ class Deploy extends Build {
 }`;
 
 const stateHandleSnippet = `export interface TargetStateHandle {
-  set(patch: Record<string, JsonValue>): Promise<void>;  // merge a JSON patch, awaits write
-  get(): Record<string, JsonValue>;                       // read current metadata
+  set(patch: Record<string, JsonValue>): Promise<void>;     // merge a JSON patch, awaits write
+  trySet(patch: Record<string, JsonValue>): Promise<boolean>; // …and report whether it landed
+  get(): Record<string, JsonValue>;                          // read current metadata
 }
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };`;
 
@@ -79,6 +82,24 @@ class CD extends Build {
   deploy = target().executes(async (ctx) => { await ctx.state.set({ target: "sit-7" }); });
 }`;
 
+const trySetSnippet = `deploy = target().executes(async (ctx) => {
+  const slot = await lease();
+  if (!await ctx.state.trySet({ slot })) {
+    // Nothing has been deployed yet, so failing here is cheap. Going ahead
+    // would leave a slot held that no compensation can find again.
+    throw new Error(\`could not record the leased slot \${slot}\`);
+  }
+  await deployTo(slot);
+});`;
+
+const forceSnippet = `zuke force <run-id> <target> --outcome skipped|succeeded [--reason "…"]`;
+
+const unforceableSnippet = `class CD extends Build {
+  override unforceable() {
+    return [this.applyProduction]; // references, so a rename cannot empty this
+  }
+}`;
+
 const cliSnippet = `zuke runs list                                                   # all runs, newest first
 zuke runs list --status failed --target deploy --since 2026-07-01
 zuke runs list --limit 20                                        # newest 20 only
@@ -122,6 +143,29 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     <a href="/docs/run-context">run context</a> for the full
     <code>TargetContext</code> — run id, cancellation signal, signals,
     dry-run — that <code>ctx.state</code> lives on.
+  </p>
+
+  <h3 id="tryset">Checking that a write landed</h3>
+  <p>
+    <code>set</code> resolves when the write has been <em>attempted</em>,
+    whether or not it landed. When a body needs to <em>know</em>, use
+    <code>trySet</code>, which resolves <code>true</code> when the patch reached
+    the store and <code>false</code> when the write was dropped — conflicted
+    away for good, or refused by a store that errored:
+  </p>
+  <CopyCode code={trySetSnippet} lang="ts" />
+  <p>
+    Treat <code>false</code> as <strong>not recorded</strong>: a dropped write
+    is sometimes re-persisted by a later one, but nothing guarantees it. A
+    dropped write also warns, and one that is definitely unrecoverable marks the
+    record <a href="#degraded"><code>degraded</code></a> so a later resume
+    refuses it rather than repeating a step against state it cannot trust.
+  </p>
+  <p>
+    Two contexts have nothing durable behind them and so always answer
+    <code>true</code>: a build with no state store, and a compensation body,
+    whose <code>ctx.state</code> is seeded from the original target's metadata
+    and kept in memory (the run is ending, so cleanup state is not persisted).
   </p>
 
   <h2 id="durable-state">Durable run state</h2>
@@ -297,6 +341,43 @@ const conformanceSnippet = `deno run -A jsr:@zuke/core/conformance --url http://
     <code>&#123; total, byStatus &#125;</code>. <code>zuke runs show
     &lt;id&gt;</code> prints the header, params, per-target status, signals,
     and events — add <code>--json</code> for the raw <code>RunRecord</code>.
+  </p>
+
+  <h2 id="overrides">Forcing a target — <code>overrides</code></h2>
+  <p>
+    An operator sometimes has to take a step off a live run: one that cannot
+    succeed, or one a person completed by hand.
+  </p>
+  <CopyCode code={forceSnippet} lang="bash" />
+  <p>
+    That records an entry under <code>overrides</code>, keyed by target name,
+    carrying the outcome, who forced it, when, and why. The executor reads it
+    when it reaches the target and settles it <strong>without running the
+    body</strong> — ahead of the target's <code>onlyWhen</code> conditions and
+    its cache, because forcing is a decision that outranks what the build would
+    work out for itself. Dependents proceed either way.
+  </p>
+  <p>
+    The two outcomes differ in what a later cancellation does. A forced
+    <code>succeeded</code> asserts the target's effects exist, so it is
+    compensated like any other succeeded target; a forced <code>skipped</code>
+    never happened, so it is not — exactly like a target a condition skipped.
+  </p>
+  <p>
+    It is refused, naming the rule, when the target has already settled (the
+    record is the account of what happened, and rewriting a settled outcome
+    would make it untrue), when the run is terminal, when the target is not in
+    the run's graph, or when the build declared it off-limits:
+  </p>
+  <CopyCode code={unforceableSnippet} lang="ts" />
+  <p>
+    An override lands for any target the run has not started yet, which in
+    practice means the next resume — that is the process which loads the record
+    after the force was written. <code>zuke runs show</code> prints every
+    override, and over <a href="/docs/mcp">MCP</a> the same operation is the
+    <code>force_target</code> tool, subject to the same
+    <a href="/docs/mcp#authorization">authorization</a> as cancelling or
+    signalling the run.
   </p>
 
   <h2 id="retention">Retention</h2>

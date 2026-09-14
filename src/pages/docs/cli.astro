@@ -22,7 +22,9 @@ const installLaunchSnippet = `./zuke build`;
 const setupSnippet = `zuke setup                        # scaffold into the current directory
 zuke setup --dir services/api     # scaffold into a subdirectory
 zuke setup --name ApiBuild --yes  # name the Build class, skip prompts
-zuke setup --launcher-name make   # write ./make when a zuke/ dir is in the way`;
+zuke setup --launcher-name make   # write ./make when a zuke/ dir is in the way
+zuke setup --mcp                  # also write .mcp.json so agents find the build
+zuke setup --no-bootstrap-deno    # launchers that require Deno on PATH`;
 
 const importSnippet = `zuke import                       # auto-detect package.json scripts or a Makefile
 zuke import --from package.json   # force the source
@@ -44,6 +46,14 @@ source <(./zuke completions print zsh)
 
 # Or wire it into your shell's startup once:
 ./zuke completions install zsh`;
+
+const outdatedSnippet = `./zuke outdated               # report jsr: pins the lock resolves behind latest
+./zuke outdated --exit-code   # exit 1 if anything is behind or unverifiable`;
+
+const outdatedOutSnippet = `@zuke/git     1.5.0  →  1.11.0
+@zuke/gcloud  1.1.0  →  1.3.0
+
+2 packages are behind. Delete these entries from the lock (or the lock file) and re-run …`;
 
 const runSnippet = `./zuke build                     # run 'build' and all its dependencies
 ./zuke                           # run the 'default' target, else print --list
@@ -71,6 +81,10 @@ const runsSnippet = `./zuke ci --state                       # persist a run rec
 ./zuke runs list --counts --json        # aggregate { total, byStatus }
 ./zuke runs show <run-id> --json        # one run's full per-target status
 ./zuke runs prune --keep 90d --keep-last 50 --dry-run`;
+
+const forceSnippet = `# settle a step that cannot succeed, or one a person completed by hand
+./zuke force <run-id> migrate --outcome succeeded --reason "ran by DBA"
+./zuke force <run-id> smokeTest --outcome skipped --reason "env is down"`;
 
 const resumeSnippet = `./zuke resume <run-id>                       # continue a suspended run
 ./zuke resume <run-id> --signal approved --data '{"by":"alice"}'
@@ -174,6 +188,9 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
       <tr><td><code>--launcher-name &lt;name&gt;</code></td><td>base name for the launcher scripts — used when a <code>zuke/</code> directory already occupies the name. Must be a single path segment</td></tr>
       <tr><td><code>--force</code>, <code>-f</code></td><td>overwrite existing files</td></tr>
       <tr><td><code>--yes</code>, <code>-y</code></td><td>accept defaults without prompting</td></tr>
+      <tr><td><code>--mcp</code></td><td>also write a <code>.mcp.json</code> registering the build's own <a href="/docs/mcp">MCP server</a>, so an agent client picks the build up from the first commit. An existing file is merged around its other servers, and an existing <code>zuke</code> entry is kept unless <code>--force</code> is set</td></tr>
+      <tr><td><code>--allow-run</code></td><td>register the MCP server with execution enabled; implies <code>--mcp</code></td></tr>
+      <tr><td><code>--bootstrap-deno</code> / <code>--no-bootstrap-deno</code></td><td>which launchers to write. The default (and what <code>--yes</code> takes) installs a pinned, checksum-verified Deno when none is on <code>PATH</code>, so a checkout needs nothing up front; <code>--no-</code> writes launchers that require Deno on <code>PATH</code> and fail closed without it — for a project that must never download a tool from its build entry point</td></tr>
     </tbody>
   </table>
   <p>
@@ -233,6 +250,44 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     The script is a static snapshot of the build it was generated from, so
     regenerate and re-source it after you add, rename, or remove targets — the
     same model as <code>deno completions</code>.
+  </p>
+
+  <h3 id="outdated"><code>./zuke outdated</code></h3>
+  <p>
+    Compares the version your <code>deno.lock</code> resolves for every
+    <code>jsr:</code> specifier against the latest each package publishes, and
+    prints the ones that are behind.
+  </p>
+  <CopyCode code={outdatedSnippet} lang="bash" multi />
+  <Code code={outdatedOutSnippet} lang="text" theme="night-owl" />
+  <p>
+    It covers the case nothing else does. A build whose specifiers are written
+    inline — <code>jsr:@zuke/git@^1</code> in <code>zuke.ts</code> rather than in
+    a <code>deno.json</code> imports map — gets no signal from
+    <code>deno outdated</code>, which reads manifests. The lock keeps resolving
+    the versions recorded when the build was written and <code>--frozen</code> is
+    content with that, so a build can sit several minors behind a wrapper for
+    months, still hand-rolling a command the package has since typed. Reading the
+    <strong>lock</strong> is the point: it records what a run actually resolves,
+    which is the number a stale pin hides.
+  </p>
+  <p>
+    A package the registry can't answer for — a private scope, a rename, an
+    offline runner — doesn't fail the report, but it <em>is</em> named in it.
+    Otherwise a run behind a proxy that reached nothing at all would print
+    "every package is at its latest release", the confident wrong answer this
+    command exists to prevent. <code>--exit-code</code> exits <code>1</code> when
+    anything is behind <strong>or</strong> could not be checked, for the same
+    reason; without it the command is a report and always exits <code>0</code>.
+    A missing lock file is an outright error.
+  </p>
+  <p>
+    It needs the network, which is why it's a command you run rather than a line
+    in <code>--list</code> or the run summary — those stay offline and instant.
+    To refresh afterwards, remove the stale entries from <code>deno.lock</code>
+    (or delete the lock) and re-run: neither <code>--reload</code> flavour
+    re-resolves an inline specifier, and <code>deno outdated --update</code>
+    reads manifests, so it can't see one either.
   </p>
 
   <h2 id="running">Running targets</h2>
@@ -377,6 +432,36 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   <p>
     <code>Ctrl-C</code> (or <code>SIGTERM</code>) during a run triggers the same
     graceful cancellation in-process; a second signal forces an immediate exit.
+  </p>
+
+  <h3 id="force"><code>./zuke force</code></h3>
+  <p>
+    An operator sometimes has to take a step off a live run: one that cannot
+    succeed, or one a person completed by hand.
+    <code>./zuke force &lt;id&gt; &lt;target&gt; --outcome skipped|succeeded</code>
+    records an <a href="/docs/state#overrides">override</a> on the record, and
+    the executor settles that target <strong>without running its body</strong> —
+    ahead of its <code>onlyWhen</code> conditions and its cache, because forcing
+    outranks what the build would work out for itself. Dependents proceed either
+    way.
+  </p>
+  <Code code={forceSnippet} lang="bash" theme="night-owl" />
+  <p>
+    The two outcomes differ under a later cancellation. A forced
+    <code>succeeded</code> asserts the target's effects exist, so it is
+    compensated like any other succeeded target; a forced <code>skipped</code>
+    never happened, so it isn't — exactly like a target a condition skipped.
+  </p>
+  <p>
+    It is refused, naming the rule, when the target has already settled (the
+    record is the account of what happened, and rewriting a settled outcome would
+    make it untrue), when the run is terminal, when the target is not in the
+    run's graph, or when the build declared it off-limits via
+    <code>unforceable()</code>. An override lands for any target the run has not
+    started yet, which in practice means the next resume.
+    <code>./zuke runs show</code> prints every override, and over
+    <a href="/docs/mcp">MCP</a> the same operation is the
+    <code>force_target</code> tool.
   </p>
   <div class="note">
     <p>
