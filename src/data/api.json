@@ -11262,7 +11262,7 @@
         {
           "name": "DenoSettings",
           "kind": "class",
-          "doc": "Base for all `deno` subcommand settings: binary is the running deno.",
+          "doc": "Base for all `deno` subcommand settings: binary is the deno running here.",
           "signature": "class DenoSettings extends ToolSettings",
           "deprecated": false,
           "members": []
