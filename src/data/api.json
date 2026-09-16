@@ -32987,6 +32987,13 @@
           "deprecated": false
         },
         {
+          "name": "ensureRelease",
+          "kind": "function",
+          "doc": "Perform the configured ensure-release call.",
+          "signature": "async function ensureRelease(configure?: Configure<GhReleaseEnsureSettings>): Promise<GhReleaseEnsureResult>",
+          "deprecated": false
+        },
+        {
           "name": "findPullRequest",
           "kind": "function",
           "doc": "Look for an open pull request without opening one.",
@@ -35934,6 +35941,194 @@
               "optional": false,
               "signature": "verifyTag(): this",
               "doc": "Abort unless the tag exists on the remote (`--verify-tag`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEnsureApi",
+          "kind": "interface",
+          "doc": "The ensure-release operation {@link GhTasks} exposes.",
+          "signature": "interface GhReleaseEnsureApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ensureRelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "ensureRelease(configure?: Configure<GhReleaseEnsureSettings>): Promise<GhReleaseEnsureResult>",
+              "doc": "Publish a release for `.tag(...)` unless it already has one.\n\nReads the tag's release first and returns `state: \"exists\"` when there is\none, writing nothing — so an unattended pipeline can run this on every\npush without overwriting notes a maintainer wrote by hand. Needs a token\nwith `contents: write`."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEnsureResult",
+          "kind": "interface",
+          "doc": "What became of a {@link GhReleaseEnsureApi.ensureRelease} call.",
+          "signature": "interface GhReleaseEnsureResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: created | exists",
+              "doc": "`created` when this call published the release; `exists` when the tag\nalready had one and nothing was written."
+            },
+            {
+              "name": "tag",
+              "kind": "property",
+              "optional": false,
+              "signature": "tag: string",
+              "doc": "The tag the release is attached to."
+            },
+            {
+              "name": "releaseId",
+              "kind": "property",
+              "optional": false,
+              "signature": "releaseId: number",
+              "doc": "The release's id."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "The release's page, for a log line a human can follow."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEnsureSettings",
+          "kind": "class",
+          "doc": "Settings for ensuring a release exists.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them names only the release.",
+          "signature": "class GhReleaseEnsureSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: string): this",
+              "doc": "The tag to release (required).\n\nIt should already exist. GitHub creates a missing tag on the default\nbranch rather than refusing, so a typo here publishes a tag as well as a\nrelease — which is why the caller that reconciles a backlog reads its tags\nfrom git rather than composing them."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(text: string): this",
+              "doc": "The release title (required), e.g. `Zuke Build v1.2.3`."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(text: string): this",
+              "doc": "The release notes (required); pass `\"\"` for a release with none."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest(value?: boolean): this",
+              "doc": "Move the repository's \"Latest release\" pointer onto this release.\n\nOff unless asked, which is the opposite of GitHub's own default — it\ntreats a new release as latest unless told otherwise. The default is\ninverted because the first thing this is used for is back-filling\nreleases a pipeline missed, and those are created oldest-first: taking\nGitHub's default would walk the pointer backwards through the backlog and\nleave it on whichever release was created last, which is the oldest one.\nNaming it explicitly costs the one caller that wants it a method call, and\ncosts the ones that do not want it nothing at all."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with — needs `contents: write`. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "tag_",
+              "kind": "property",
+              "optional": true,
+              "signature": "tag_?: string",
+              "doc": "The tag to release. Set by {@link tag}."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The release title. Set by {@link name}."
+            },
+            {
+              "name": "body_",
+              "kind": "property",
+              "optional": true,
+              "signature": "body_?: string",
+              "doc": "The release notes. Set by {@link body}."
+            },
+            {
+              "name": "latest_",
+              "kind": "property",
+              "optional": false,
+              "signature": "latest_: boolean",
+              "doc": "Whether to move the \"Latest release\" pointer. Set by {@link latest}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
             }
           ]
         },
