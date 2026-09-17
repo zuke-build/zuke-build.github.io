@@ -41579,6 +41579,13 @@
               "optional": true,
               "signature": "timeoutMinutes?: number",
               "doc": "Per-job timeout in minutes. Defaults to 15."
+            },
+            {
+              "name": "command",
+              "kind": "property",
+              "optional": true,
+              "signature": "command?: Configure<ReviewCommandSettings>",
+              "doc": "Run the review on demand when a maintainer comments a command on a pull\nrequest — any pull request, a fork's included. GitHub only; see\n{@link ReviewCommandSettings} for the job it adds and the gate it runs\nbehind.\n\n```ts\naiReviewWorkflow({\n  reviewers: [this.security],\n  command: (c) =>\n    c.text(\"@zuke-build review\")\n      .secrets(\"ZUKE_BUILD_APP_ID\", \"ZUKE_BUILD_APP_KEY\"),\n});\n```"
             }
           ]
         },
@@ -41852,6 +41859,13 @@
               "doc": "Store `entry` under `key`, replacing any prior value."
             }
           ]
+        },
+        {
+          "name": "CommentTokenSource",
+          "kind": "typeAlias",
+          "doc": "Where a reviewer's comment-posting token comes from: a secret parameter (for\nits env var), a literal, or a function that produces the token when a post\nfirst needs it — the shape for a token minted by the build itself, such as a\nGitHub App installation token, so the comments carry the app's identity.",
+          "signature": "type CommentTokenSource = AnyParameter | string | unknown",
+          "deprecated": false
         },
         {
           "name": "Confidence",
@@ -42315,6 +42329,43 @@
           ]
         },
         {
+          "name": "ReviewCommandSettings",
+          "kind": "class",
+          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command}.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets — so its `if:` is the whole access control. It fires only\nwhen the comment is on a pull request, starts with {@link text}, was written\nby a human (not a bot account), and its author's `author_association` is\n`OWNER`, `MEMBER` or `COLLABORATOR`. The comment body is matched in the\nexpression and never interpolated into a `run:` line. Then, before the\nreview runs, the job asks the collaborators API whether the commenter has\npush access, and stops if not — an association alone admits read-only\nmembers and collaborators.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
+          "signature": "class ReviewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "text",
+              "kind": "method",
+              "optional": false,
+              "signature": "text(command: string): this",
+              "doc": "The command, e.g. `\"@zuke-build review\"`. Matched case-insensitively at\nthe start of the comment, so a reply that quotes it (`> @zuke-build\nreview`) does not start a run. Letters, digits, `@/_.:-` and single spaces\nonly."
+            },
+            {
+              "name": "secrets",
+              "kind": "method",
+              "optional": false,
+              "signature": "secrets(...names: string[]): this",
+              "doc": "Pass these repository secrets to the command job's review step as env vars\nof the same name — e.g. the GitHub App credentials the build mints its\n`commentToken` from, so the review posts as the app. Only the command job\nreceives them; the `pull_request` job is unchanged."
+            },
+            {
+              "name": "text_",
+              "kind": "property",
+              "optional": true,
+              "signature": "text_?: string",
+              "doc": "The command a comment must start with. Set by {@link text}."
+            },
+            {
+              "name": "secrets_",
+              "kind": "property",
+              "optional": false,
+              "signature": "secrets_: string[]",
+              "doc": "Secrets the command job's review step receives beyond the reviewers' own\nkeys and the host token. Set by {@link secrets}."
+            }
+          ]
+        },
+        {
           "name": "Reviewer",
           "kind": "class",
           "doc": "A fluent AI reviewer. Construct one via {@link securityReviewer} (and the\nsibling factories), configure it, and attach it to a target with\n`.validateBefore(...)` / `.validateAfter(...)`. `.provider(...)` and\n`.apiKey(...)` are required; everything else has a default.",
@@ -42346,7 +42397,7 @@
               "name": "commentToken_",
               "kind": "method",
               "optional": false,
-              "signature": "commentToken_(): AnyParameter | string | undefined",
+              "signature": "commentToken_(): CommentTokenSource | undefined",
               "doc": "The configured comment-posting token, if `.commentToken(...)` was called."
             },
             {
@@ -42451,14 +42502,14 @@
               "name": "commentToken",
               "kind": "method",
               "optional": false,
-              "signature": "commentToken(token: AnyParameter | string): this",
-              "doc": "The token used to post the PR/MR comment. Defaults to the active host's\nconventional env var: `GITHUB_TOKEN` (GitHub), `GITLAB_TOKEN` (GitLab),\n`SYSTEM_ACCESSTOKEN` (Azure), `BITBUCKET_TOKEN` (Bitbucket)."
+              "signature": "commentToken(token: CommentTokenSource): this",
+              "doc": "The token used to post the PR/MR comment. Defaults to the active host's\nconventional env var: `GITHUB_TOKEN` (GitHub), `GITLAB_TOKEN` (GitLab),\n`SYSTEM_ACCESSTOKEN` (Azure), `BITBUCKET_TOKEN` (Bitbucket).\n\nA function is called each time a post needs the token — for a token that\ndoes not exist until the build mints it, such as a GitHub App installation\ntoken narrowed to `pull_requests: write`, which makes the comments the\napp's rather than `github-actions[bot]`'s. A function that mints should\nremember its result, since a review posts more than once. The generated\nworkflow cannot name a secret for a function, so it passes the host's\ndefault token alongside, for the function to fall back to."
             },
             {
               "name": "githubToken",
               "kind": "method",
               "optional": false,
-              "signature": "githubToken(token: AnyParameter | string): this",
+              "signature": "githubToken(token: CommentTokenSource): this",
               "doc": "Backwards-compatible alias for {@link commentToken}."
             },
             {
