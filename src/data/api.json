@@ -1850,6 +1850,13 @@
               "doc": "Fail the job if it runs longer than this many minutes."
             },
             {
+              "name": "concurrency",
+              "kind": "property",
+              "optional": true,
+              "signature": "concurrency?: CiConcurrency",
+              "doc": "A concurrency group for this job alone (GitHub only), as opposed to the\npipeline-level {@link CiPipeline.concurrency}. A job the `if:` skips never\nenters its group, whereas a run whose every job is skipped still enters the\npipeline's — and, with `cancelInProgress`, cancels the run it shares the\ngroup with. Use it when a trigger can fire runs that do no work."
+            },
+            {
               "name": "steps",
               "kind": "property",
               "optional": true,
@@ -2103,6 +2110,13 @@
               "optional": true,
               "signature": "manual?: boolean",
               "doc": "Allow manual runs (workflow dispatch / web)."
+            },
+            {
+              "name": "issueComment",
+              "kind": "property",
+              "optional": true,
+              "signature": "issueComment?: string[]",
+              "doc": "Run when a comment is created, edited, or deleted on an issue or a pull\nrequest (`issue_comment`), filtered to these activity types — an empty\narray means every type. A comment on a pull request arrives as an issue\ncomment too, which is what lets a maintainer's comment start a job; the job\nruns on the default branch, so its `if:` must decide who may start it.\nGitHub only."
             },
             {
               "name": "branchProtectionRule",
