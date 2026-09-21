@@ -3127,6 +3127,13 @@
               "doc": "Suppress all banner/summary output (used by tests)."
             },
             {
+              "name": "banner",
+              "kind": "property",
+              "optional": true,
+              "signature": "banner?: boolean",
+              "doc": "Print the opening banner — the wordmark (off CI), the framework, runtime\nand platform versions, and this run's id and directory. Defaults to on;\n`false` is the CLI's `--no-banner`, and `ZUKE_NO_BANNER` turns it off from\nthe environment.\n\nOnly ever printed when the run writes to the real console. A `silent` run\nor one given its own {@link ExecuteOptions.reporter} is embedding the\nexecutor, and gets no banner whatever this says."
+            },
+            {
               "name": "reporter",
               "kind": "property",
               "optional": true,
@@ -4786,6 +4793,43 @@
           ]
         },
         {
+          "name": "logoLines",
+          "kind": "function",
+          "doc": "The logo as printable lines: the {@link ZUKE_LOGO} art painted two-tone when\n`color` is on (letters bright, shadow dimmed), plus the optional tagline.\nPure — no I/O and no environment reads — so callers that manage their own\noutput (like the `zuke` CLI) can route the lines through any sink.",
+          "signature": "function logoLines(color: boolean, options?: LogoOptions): string[]",
+          "deprecated": false
+        },
+        {
+          "name": "LogoOptions",
+          "kind": "interface",
+          "doc": "Options for {@link logoLines} and `ConsoleTasks.logo`.",
+          "signature": "interface LogoOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tagline",
+              "kind": "property",
+              "optional": true,
+              "signature": "tagline?: string",
+              "doc": "A line printed dimmed under the art (e.g. a version or strapline)."
+            },
+            {
+              "name": "letterStyle",
+              "kind": "property",
+              "optional": true,
+              "signature": "letterStyle?: unknown",
+              "doc": "Styles for the solid letter blocks. Defaults to `[\"cyan\", \"bold\"]`."
+            },
+            {
+              "name": "shadowStyle",
+              "kind": "property",
+              "optional": true,
+              "signature": "shadowStyle?: unknown",
+              "doc": "Styles for the shadow characters. Defaults to `[\"dim\"]`."
+            }
+          ]
+        },
+        {
           "name": "McpAuthenticator",
           "kind": "interface",
           "doc": "Authenticates one request for the MCP server.\n\nInvoked once per message, before any dispatch: a rejection stops the request\noutright, so nothing executes and nothing is written to state. Returning an\n{@link McpIdentity} accepts the caller; returning an {@link McpAuthReject}\nrefuses it. Throwing also refuses it — the seam is fail-closed, so a bug in an\nauthenticator denies rather than admits.\n\nConfigure one with `override mcpAuth()` on the build.",
@@ -5994,6 +6038,13 @@
               "optional": true,
               "signature": "params?: Record<string, string>",
               "doc": "Non-secret parameter overrides; the rest come from the record."
+            },
+            {
+              "name": "banner",
+              "kind": "property",
+              "optional": true,
+              "signature": "banner?: boolean",
+              "doc": "Print the opening banner (see {@link \"./executor.ts\".ExecuteOptions.banner})."
             },
             {
               "name": "readEnv",
@@ -8724,6 +8775,13 @@
           ]
         },
         {
+          "name": "VERSION",
+          "kind": "variable",
+          "doc": "The `@zuke/core` version. Kept in sync with deno.json by release-please.",
+          "signature": "const VERSION: 1.56.0",
+          "deprecated": false
+        },
+        {
           "name": "visibleWidth",
           "kind": "function",
           "doc": "The printable width of `text`, ignoring any ANSI colour codes it carries.",
@@ -8906,6 +8964,13 @@
           "kind": "variable",
           "doc": "The name a {@link CiPinResolver} is asked for the prelude action, so a\nrepository that pins its own actions can pin this one the same way.",
           "signature": "const ZUKE_ACTION: zuke-build/zuke",
+          "deprecated": false
+        },
+        {
+          "name": "ZUKE_LOGO",
+          "kind": "variable",
+          "doc": "The Zuke wordmark in FIGlet's ANSI-shadow style. Solid `█` blocks form the\nletters; box-drawing characters draw the shadow.",
+          "signature": "const ZUKE_LOGO: ███████╗██╗   ██╗██╗  ██╗███████╗\n╚══███╔╝██║   ██║██║ ██╔╝██╔════╝\n  ███╔╝ ██║   ██║█████╔╝ █████╗\n ███╔╝  ██║   ██║██╔═██╗ ██╔══╝\n███████╗╚██████╔╝██║  ██╗███████╗\n╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝",
           "deprecated": false
         }
       ]
