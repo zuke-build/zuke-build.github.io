@@ -42119,11 +42119,25 @@
               "doc": "Also anchor each finding to a file/line **review thread** on the pull\nrequest, so a maintainer contests it by replying in that thread instead of\nquoting its id somewhere on the PR.\n\nThe summary comment is posted either way and stays the one source of\ntruth: it lists every finding — anchored or not — and carries the state\nblock, so a thread that cannot be posted never hides a finding. The\nreviewer replies into the thread with the outcome and resolves it once the\nfinding is fixed or dismissed. GitHub only; on other hosts the reviewer\nnotes that and posts the summary alone."
             },
             {
+              "name": "commands",
+              "kind": "method",
+              "optional": false,
+              "signature": "commands(mention: string): this",
+              "doc": "Take commands from maintainers, addressed to `mention` — e.g.\n`\"@zuke-build\"`, the account the workflow's comment command is addressed\nto, so one handle serves both.\n\nWith it set, every review comment carries a collapsed **Commands** panel\nlisting what a maintainer can say, and a trusted comment starting with\n`<mention> accept <id> <reason>` **accepts** the finding: it is recorded as\naccepted for this pull request without adjudication, answered in its\nthread and the thread resolved, and never re-raised on the pull request\nby any reviewer, however it is reworded, moved or escalated. In a\nfinding's own thread the id may be left out. The trust gate is the one\nrebuttals pass — {@link trustAssociations} and {@link trustAuthors},\ndecided in code from the host's author metadata — so a stranger's\n`accept` is dropped before anything reads it. Unlike a rebuttal, an\nacceptance is **one key**: no adjudicator weighs it. On a host where the\ndefault associations admit accounts that should not decide for the\nproject (GitHub's `MEMBER` and `COLLABORATOR` include read-only ones),\nnarrow the gate with {@link trustAssociations} or {@link trustAuthors}\nbefore turning commands on.\n\nThe panel also lists `<mention> review`, the workflow's comment command\nthat runs the review on demand; pair this with `aiReviewWorkflow`'s\n`command` so that both are true."
+            },
+            {
               "name": "maxTokens_",
               "kind": "method",
               "optional": false,
               "signature": "maxTokens_(): number",
               "doc": "INTERNAL: the total comment-token cap."
+            },
+            {
+              "name": "mention_",
+              "kind": "method",
+              "optional": false,
+              "signature": "mention_(): string | undefined",
+              "doc": "INTERNAL: the mention commands are addressed to, when set."
             },
             {
               "name": "threads_",
@@ -42443,6 +42457,13 @@
               "doc": "The command, e.g. `\"@zuke-build review\"`. Matched case-insensitively at\nthe start of the comment, so a reply that quotes it (`> @zuke-build\nreview`) does not start a run. Letters, digits, `@/_.:-` and single spaces\nonly."
             },
             {
+              "name": "also",
+              "kind": "method",
+              "optional": false,
+              "signature": "also(...commands: string[]): this",
+              "doc": "Other comment commands that also start a run, matched like {@link text}\n— e.g. `\"@zuke-build accept\"`, so a maintainer's acceptance of a finding\n(see `DiscussionSettings.commands`) is applied by the run the comment\nstarts, with no second comment to ask for it. Same alphabet as\n{@link text}."
+            },
+            {
               "name": "secrets",
               "kind": "method",
               "optional": false,
@@ -42455,6 +42476,13 @@
               "optional": true,
               "signature": "text_?: string",
               "doc": "The command a comment must start with. Set by {@link text}."
+            },
+            {
+              "name": "also_",
+              "kind": "property",
+              "optional": false,
+              "signature": "also_: string[]",
+              "doc": "Other commands that also start a run. Set by {@link also}."
             },
             {
               "name": "secrets_",
