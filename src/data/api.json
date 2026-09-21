@@ -8777,8 +8777,8 @@
         {
           "name": "VERSION",
           "kind": "variable",
-          "doc": "The `@zuke/core` version. Kept in sync with deno.json by release-please.",
-          "signature": "const VERSION: 1.56.0",
+          "doc": "The `@zuke/core` version. Kept in sync with deno.json by release-please.\n\nAnnotated `string` rather than left to inference on purpose. Without the\nannotation the declared type is the version itself, as a string literal\ntype, and `deno doc` records a declared type verbatim — so the version\nwould be baked into `llms-full.txt` and the package README. release-please\nrewrites the marked line below when it cuts a release but cannot run\n`deno doc`, so those generated files would drift on every bump and\n`apiDocsCheck` would fail on the release PR itself. Widening keeps a\nversion bump a self-contained edit.",
+          "signature": "const VERSION: string",
           "deprecated": false
         },
         {
