@@ -33052,6 +33052,13 @@
       "summary": "`@zuke/gh` — typed GitHub tooling for Zuke builds: the `gh` (GitHub CLI) task",
       "symbols": [
         {
+          "name": "appTokenSource",
+          "kind": "function",
+          "doc": "Build a {@link GhAppTokenSource} from the settings a lambda configures. The\nfirst call mints (or falls back); every later call returns the same\npromise. Nothing runs until the first call, so the source can be a build\nfield that names parameters declared above it.",
+          "signature": "function appTokenSource(configure?: Configure<GhAppTokenSourceSettings>): GhAppTokenSource",
+          "deprecated": false
+        },
+        {
           "name": "assertRefName",
           "kind": "function",
           "doc": "Reject a branch or tag name that git itself would.\n\nNot cosmetic. These names are interpolated into request paths, and URL\nnormalisation resolves `..` before the request is sent — so\n`../../../user/repos` as a branch turns `/repos/o/n/git/ref/heads/<branch>`\ninto `/repos/o/n/user/repos`, sending a write-scoped token somewhere the\ncaller never named. Validating here rather than trusting every caller is the\ndifference between an API that is safe to hand a string and one that is safe\nonly when used carefully.\n\nThe rules are git's own (see `git check-ref-format`), minus those that only\nmatter for multi-level refs.",
@@ -33170,7 +33177,7 @@
         {
           "name": "GhAppTokenApi",
           "kind": "interface",
-          "doc": "The shape of the app-token task, mixed into `GhTasks`.",
+          "doc": "The shape of the app-token tasks, mixed into `GhTasks`.",
           "signature": "interface GhAppTokenApi",
           "deprecated": false,
           "members": [
@@ -33180,8 +33187,22 @@
               "optional": false,
               "signature": "appToken(configure?: Configure<GhAppTokenSettings>): Promise<GhAppTokenResult>",
               "doc": "Mint a GitHub App installation token, scoped to the repositories and\npermissions the settings request. The returned token is registered with the\nActions log masker, so it is safe to pass onward through `env`."
+            },
+            {
+              "name": "appTokenSource",
+              "kind": "method",
+              "optional": false,
+              "signature": "appTokenSource(configure?: Configure<GhAppTokenSourceSettings>): GhAppTokenSource",
+              "doc": "A token **source** for the App: a function that mints the installation\ntoken the first time it is called and returns the same token after, or\nyields `GITHUB_TOKEN` when the App is not configured — the credential a\nbuild hands to an AI reviewer's `.commentToken(...)` so its reviews post\nas the App where it is installed and as `github-actions[bot]` everywhere\nelse. Nothing runs until the first call.\n\n```ts\nappId = parameter(\"GitHub App id\").env(\"REVIEW_APP_ID\");\nappKey = parameter(\"GitHub App key\").secret().env(\"REVIEW_APP_KEY\");\nbotToken = GhTasks.appTokenSource((s) => s.app(this.appId, this.appKey));\n```"
             }
           ]
+        },
+        {
+          "name": "GhAppTokenMint",
+          "kind": "typeAlias",
+          "doc": "The shape of the mint, replaceable by a test.",
+          "signature": "type GhAppTokenMint = unknown",
+          "deprecated": false
         },
         {
           "name": "GhAppTokenResult",
@@ -33352,6 +33373,155 @@
               "optional": false,
               "signature": "now_: unknown",
               "doc": "Seconds since the epoch, for the JWT's claims. Set by {@link now}."
+            }
+          ]
+        },
+        {
+          "name": "GhAppTokenSource",
+          "kind": "typeAlias",
+          "doc": "A token provider: resolves to the App's installation token, or to the\nfallback when the App is not configured or cannot be minted from. The same\npromise is returned on every call, so the token is minted at most once per\nrun.",
+          "signature": "type GhAppTokenSource = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "GhAppTokenSourceSettings",
+          "kind": "class",
+          "doc": "Settings for {@link GhAppTokenApi.appTokenSource}.",
+          "signature": "class GhAppTokenSourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(appId: GhCredential, privateKey: GhCredential): this",
+              "doc": "The App's credentials — its numeric id and the PEM contents of its\nprivate key, as the build's parameters (`.secret()` for the key). Either\none unset at call time means \"no App\": the source yields the\n{@link fallback}. Both are read when the token is first needed, never at\nconstruction, so parameters declared on the build resolve first."
+            },
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: string): this",
+              "doc": "The repository to mint for, as `owner/name`. Defaults to the repository\nthe run is on, `GITHUB_REPOSITORY`. Name it to refuse minting anywhere\nelse: a run whose `GITHUB_REPOSITORY` is another repository then gets the\nfallback, with a warning, rather than a token for this one minted into a\nbuild running elsewhere."
+            },
+            {
+              "name": "permission",
+              "kind": "method",
+              "optional": false,
+              "signature": "permission(name: string, level: GhPermissionLevel): this",
+              "doc": "Narrow the token to one permission, e.g. `.permission(\"contents\", \"write\")`.\nRepeatable. Without any, the token holds the installation's whole grant,\nwhich is the App's configured permissions — the sane default for an App\nset up for one job. A hyphenated name is accepted as the mint accepts it."
+            },
+            {
+              "name": "fallback",
+              "kind": "method",
+              "optional": false,
+              "signature": "fallback(token: GhCredential): this",
+              "doc": "The token yielded when no App is configured or the mint fails. Defaults\nto `GITHUB_TOKEN` from the environment — the workflow's own token, so a\nbuild that names an App still posts, as `github-actions[bot]`, wherever\nthe App is absent."
+            },
+            {
+              "name": "env",
+              "kind": "method",
+              "optional": false,
+              "signature": "env(reader: GhEnvReader): this",
+              "doc": "Override the environment reader (a test seam)."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` the mint uses (a test seam)."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "Use a different REST base for the mint (GitHub Enterprise Server)."
+            },
+            {
+              "name": "mint",
+              "kind": "method",
+              "optional": false,
+              "signature": "mint(fn: GhAppTokenMint): this",
+              "doc": "Override the mint itself (a test seam)."
+            },
+            {
+              "name": "fallbackValue_",
+              "kind": "method",
+              "optional": false,
+              "signature": "fallbackValue_(): string",
+              "doc": "The fallback token: the configured one, else `GITHUB_TOKEN`, else empty."
+            },
+            {
+              "name": "resolve_",
+              "kind": "method",
+              "optional": false,
+              "signature": "resolve_(): Promise<string>",
+              "doc": "Mint the token these settings describe, or return the fallback: without\nboth credentials silently, and with a warning when the repository is not\nan `owner/name` or the mint fails."
+            },
+            {
+              "name": "appId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "appId_?: GhCredential",
+              "doc": "The App's id. Set by {@link app}."
+            },
+            {
+              "name": "privateKey_",
+              "kind": "property",
+              "optional": true,
+              "signature": "privateKey_?: GhCredential",
+              "doc": "The App's PEM private key. Set by {@link app}."
+            },
+            {
+              "name": "repository_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repository_?: string",
+              "doc": "The `owner/name` to mint for. Set by {@link repository}."
+            },
+            {
+              "name": "permissions_",
+              "kind": "property",
+              "optional": false,
+              "signature": "permissions_: Record<string, GhPermissionLevel>",
+              "doc": "Permissions to narrow the token to. Set by {@link permission}."
+            },
+            {
+              "name": "fallback_",
+              "kind": "property",
+              "optional": true,
+              "signature": "fallback_?: GhCredential",
+              "doc": "The token yielded without an App. Set by {@link fallback}."
+            },
+            {
+              "name": "env_",
+              "kind": "property",
+              "optional": false,
+              "signature": "env_: GhEnvReader",
+              "doc": "The env reader for the defaults. Set by {@link env}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetch_?: fetch",
+              "doc": "The `fetch` implementation the mint uses. Set by {@link fetch}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "baseUrl_?: string",
+              "doc": "REST base URL for the mint. Set by {@link baseUrl}."
+            },
+            {
+              "name": "mint_",
+              "kind": "property",
+              "optional": false,
+              "signature": "mint_: GhAppTokenMint",
+              "doc": "The mint itself. Set by {@link mint}."
             }
           ]
         },
@@ -33986,6 +34156,20 @@
               "doc": "The `fetch` implementation. Set by {@link fetch}."
             }
           ]
+        },
+        {
+          "name": "GhCredential",
+          "kind": "typeAlias",
+          "doc": "A credential a build passes: a parameter, or a literal for tests.",
+          "signature": "type GhCredential = AnyParameter | string",
+          "deprecated": false
+        },
+        {
+          "name": "GhEnvReader",
+          "kind": "typeAlias",
+          "doc": "Read an environment variable, tolerating an absent `--allow-env`.",
+          "signature": "type GhEnvReader = unknown",
+          "deprecated": false
         },
         {
           "name": "GhIssueApi",
@@ -41664,7 +41848,7 @@
               "kind": "property",
               "optional": true,
               "signature": "secrets?: unknown",
-              "doc": "Repository secrets every review step receives as env vars of the same\nname, beyond the reviewers' own keys and the host token — on the\npull-request job and, with a {@link command}, the command job alike. The\ncase for it is a GitHub App the build mints its `.commentToken(...)`\nfrom: the Actions token may post a review and reply in its threads, but\nGitHub refuses it the mutation that **resolves** a thread, so a review\nthat closes the threads it answers needs the App's token on the job that\nanswers most of them, the pull-request job. Name secrets here only for a\nrepository whose pull-request job you would hand them to: it executes the\npull request's own build, so everyone who can push a branch can read what\nit holds. Secrets for the command job alone go on\n{@link ReviewCommandSettings.secrets}."
+              "doc": "Repository secrets every review step receives as env vars of the same\nname, beyond the reviewers' own keys and the host token — on the\npull-request job and, with a {@link command}, the command job alike. The\ncase for it is a GitHub App the build mints its `.commentToken(...)`\nfrom: the Actions token may post a review and reply in its threads, but\nGitHub refuses it the mutation that **resolves** a thread, so a review\nthat closes the threads it answers needs the App's token on the job that\nanswers most of them, the pull-request job. Name secrets here only for a\nrepository whose pull-request job you would hand them to: it executes the\npull request's own build, so everyone who can push a branch can read what\nit holds. Secrets for the command job alone go on\n{@link ReviewCommandSettings.secrets}.\n\nEach is the build's parameter — its env name is read off it, so a rename\nfollows — or, for a secret the build never reads itself, its plain name."
             },
             {
               "name": "egress",
@@ -41685,7 +41869,7 @@
               "kind": "property",
               "optional": true,
               "signature": "command?: Configure<ReviewCommandSettings>",
-              "doc": "Run the review on demand when a maintainer comments a command on a pull\nrequest — any pull request, a fork's included. GitHub only; see\n{@link ReviewCommandSettings} for the job it adds and the gate it runs\nbehind.\n\n```ts\naiReviewWorkflow({\n  reviewers: [this.security],\n  secrets: [\"ZUKE_BUILD_APP_ID\", \"ZUKE_BUILD_APP_KEY\"],\n  egress: \"block\",\n  allowedEndpoints: [\"dl.deno.land:443\", \"jsr.io:443\", \"api.github.com:443\"],\n  command: (c) => c.text(\"@zuke-build review\"),\n});\n```"
+              "doc": "Refine the job that runs the review on demand when a maintainer comments\na command on a pull request — any pull request, a fork's included. The\njob is generated whenever a reviewer takes commands, with that reviewer's\nmention, so this is only needed to change who may start a run, the\nsecrets the job holds, or the command text. GitHub only; see\n{@link ReviewCommandSettings} for the job it adds and the gate it runs\nbehind.\n\n```ts\naiReviewWorkflow({\n  reviewers: [this.security],\n  secrets: [\"ZUKE_BUILD_APP_ID\", \"ZUKE_BUILD_APP_KEY\"],\n  egress: \"block\",\n  allowedEndpoints: [\"dl.deno.land:443\", \"jsr.io:443\", \"api.github.com:443\"],\n  command: (c) => c.text(\"@zuke-build review\"),\n});\n```"
             }
           ]
         },
@@ -41959,6 +42143,13 @@
               "doc": "Store `entry` under `key`, replacing any prior value."
             }
           ]
+        },
+        {
+          "name": "CommandRole",
+          "kind": "typeAlias",
+          "doc": "A repository role a commenter may hold, as GitHub's collaborators API\nreports it (`role_name`) — see {@link ReviewCommandSettings.role}.",
+          "signature": "type CommandRole = read | triage | write | maintain | admin",
+          "deprecated": false
         },
         {
           "name": "CommentTokenSource",
@@ -42445,7 +42636,7 @@
         {
           "name": "ReviewCommandSettings",
           "kind": "class",
-          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command}.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets. Its `if:` fires only when the comment is on a pull\nrequest, starts with {@link text}, and was written by a human (not a bot\naccount); the comment body is matched in the expression and never\ninterpolated into a `run:` line. The access control is the job's first\nstep: it asks the collaborators API whether the commenter has push access,\nand every later step is skipped if not (see {@link PUSH_ACCESS_STEP}). The\nevent's `author_association` is deliberately not consulted — it reports a\nprivate organisation member as `CONTRIBUTOR`, and `MEMBER` and\n`COLLABORATOR` admit read-only accounts, so it can neither admit nor refuse\nanyone correctly.\n\nThe command is also how a maintainer who contested a finding in its review\nthread, and pushed nothing, gets an answer: the run it starts reads every\nthread, adjudicates the rebuttals, and replies in the threads.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
+          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command} — and derived from the reviewers\nwithout it: a reviewer that takes commands (`.discussion((d) =>\nd.commands(\"@acme-bot\"))`) names the mention, and the job it needs is\ngenerated with `<mention> review` and `<mention> accept`, so the Commands\npanel the reviewer posts is true by construction. The lambda refines the\njob: who may start a run, which secrets it holds, or a command text of its\nown.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets. Its `if:` fires only when the comment is on a pull\nrequest, starts with one of the commands, and was written by a human (not a\nbot account); the comment body is matched in the expression and never\ninterpolated into a `run:` line. The access control is the job's first\nstep: it asks the collaborators API what role the commenter holds, and\nevery later step is skipped unless it is at or above {@link role} or the\nlogin is among {@link users}. The event's `author_association` is\ndeliberately not consulted — it reports a private organisation member as\n`CONTRIBUTOR`, and `MEMBER` and `COLLABORATOR` admit read-only accounts, so\nit can neither admit nor refuse anyone correctly.\n\nThe command is also how a maintainer who contested a finding in its review\nthread, and pushed nothing, gets an answer: the run it starts reads every\nthread, adjudicates the rebuttals, and replies in the threads.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
           "signature": "class ReviewCommandSettings",
           "deprecated": false,
           "members": [
@@ -42454,28 +42645,42 @@
               "kind": "method",
               "optional": false,
               "signature": "text(command: string): this",
-              "doc": "The command, e.g. `\"@zuke-build review\"`. Matched case-insensitively at\nthe start of the comment, so a reply that quotes it (`> @zuke-build\nreview`) does not start a run. Letters, digits, `@/_.:-` and single spaces\nonly."
+              "doc": "A command text of its own, e.g. `\"/review\"`, replacing the ones derived\nfrom the reviewers' mention. Matched case-insensitively at the start of\nthe comment, so a reply that quotes it (`> /review`) does not start a run.\nLetters, digits, `@/_.:-` and single spaces only. A reviewer that takes\ncommands still parses `accept` under its own mention, so name that too\nwith {@link also} when overriding."
             },
             {
               "name": "also",
               "kind": "method",
               "optional": false,
               "signature": "also(...commands: string[]): this",
-              "doc": "Other comment commands that also start a run, matched like {@link text}\n— e.g. `\"@zuke-build accept\"`, so a maintainer's acceptance of a finding\n(see `DiscussionSettings.commands`) is applied by the run the comment\nstarts, with no second comment to ask for it. Same alphabet as\n{@link text}."
+              "doc": "Other comment commands that also start a run, matched like {@link text}.\nSame alphabet."
             },
             {
               "name": "secrets",
               "kind": "method",
               "optional": false,
-              "signature": "secrets(...names: string[]): this",
-              "doc": "Pass these repository secrets to the command job's review step as env vars\nof the same name — e.g. the GitHub App credentials the build mints its\n`commentToken` from, so the review posts as the app. Only the command job\nreceives them; the `pull_request` job is unchanged. Secrets both jobs\nshould hold go on {@link AiReviewWorkflowSpec.secrets} instead."
+              "signature": "secrets(...secrets: ReviewSecret[]): this",
+              "doc": "Pass these repository secrets to the command job's review step as env vars\n— the build's parameters, whose env names the workflow reads off them, or\nplain names. Only the command job receives them; the `pull_request` job is\nunchanged. Secrets both jobs should hold go on\n{@link AiReviewWorkflowSpec.secrets} instead."
+            },
+            {
+              "name": "role",
+              "kind": "method",
+              "optional": false,
+              "signature": "role(role: CommandRole): this",
+              "doc": "The least repository role a commenter needs to start a run — `\"read\"`,\n`\"triage\"`, `\"write\"` (the default: push access), `\"maintain\"` or\n`\"admin\"`, as GitHub's collaborators API reports them. Every role above\nit is admitted too. `\"read\"` admits anyone the repository admits, which\non a public repository is everyone: the run spends the reviewers' keys,\nso choose that knowingly."
+            },
+            {
+              "name": "users",
+              "kind": "method",
+              "optional": false,
+              "signature": "users(...logins: string[]): this",
+              "doc": "Logins admitted to start a run whatever their role — an outside\ncontributor the project trusts, say. Checked before the collaborators API\nis asked."
             },
             {
               "name": "text_",
               "kind": "property",
               "optional": true,
               "signature": "text_?: string",
-              "doc": "The command a comment must start with. Set by {@link text}."
+              "doc": "A command text of its own, replacing the derived ones. Set by {@link text}."
             },
             {
               "name": "also_",
@@ -42488,8 +42693,22 @@
               "name": "secrets_",
               "kind": "property",
               "optional": false,
-              "signature": "secrets_: string[]",
+              "signature": "secrets_: ReviewSecret[]",
               "doc": "Secrets the command job's review step receives beyond the reviewers' own\nkeys and the host token. Set by {@link secrets}."
+            },
+            {
+              "name": "role_",
+              "kind": "property",
+              "optional": false,
+              "signature": "role_: CommandRole",
+              "doc": "The least role that may start a run. Set by {@link role}."
+            },
+            {
+              "name": "users_",
+              "kind": "property",
+              "optional": false,
+              "signature": "users_: string[]",
+              "doc": "Logins admitted whatever their role. Set by {@link users}."
             }
           ]
         },
@@ -42527,6 +42746,13 @@
               "optional": false,
               "signature": "commentToken_(): CommentTokenSource | undefined",
               "doc": "The configured comment-posting token, if `.commentToken(...)` was called."
+            },
+            {
+              "name": "mention_",
+              "kind": "method",
+              "optional": false,
+              "signature": "mention_(): string | undefined",
+              "doc": "The mention this reviewer takes commands under, when it takes any — what\nthe workflow generator derives the command job from."
             },
             {
               "name": "provider",
@@ -42739,6 +42965,13 @@
               "doc": "A name for diagnostics — `\"<assessment> review\"`."
             }
           ]
+        },
+        {
+          "name": "ReviewSecret",
+          "kind": "typeAlias",
+          "doc": "A repository secret named to a workflow: the build's parameter, or its name.",
+          "signature": "type ReviewSecret = AnyParameter | string",
+          "deprecated": false
         },
         {
           "name": "RunScope",
