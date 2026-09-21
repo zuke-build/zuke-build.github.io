@@ -41653,11 +41653,32 @@
               "doc": "Per-job timeout in minutes. Defaults to 15."
             },
             {
+              "name": "secrets",
+              "kind": "property",
+              "optional": true,
+              "signature": "secrets?: unknown",
+              "doc": "Repository secrets every review step receives as env vars of the same\nname, beyond the reviewers' own keys and the host token — on the\npull-request job and, with a {@link command}, the command job alike. The\ncase for it is a GitHub App the build mints its `.commentToken(...)`\nfrom: the Actions token may post a review and reply in its threads, but\nGitHub refuses it the mutation that **resolves** a thread, so a review\nthat closes the threads it answers needs the App's token on the job that\nanswers most of them, the pull-request job. Name secrets here only for a\nrepository whose pull-request job you would hand them to: it executes the\npull request's own build, so everyone who can push a branch can read what\nit holds. Secrets for the command job alone go on\n{@link ReviewCommandSettings.secrets}."
+            },
+            {
+              "name": "egress",
+              "kind": "property",
+              "optional": true,
+              "signature": "egress?: audit | block",
+              "doc": "The harden-runner egress policy of the GitHub jobs. `\"audit\"` (the\ndefault) records outbound connections; `\"block\"` drops everything outside\n{@link allowedEndpoints}, which is what a job holding a credential worth\nstealing should do — the App key {@link secrets} names, say. Each\nreviewer's provider host is added to the allow-list automatically, so a\nbuild lists only what its own launcher and module resolution reach."
+            },
+            {
+              "name": "allowedEndpoints",
+              "kind": "property",
+              "optional": true,
+              "signature": "allowedEndpoints?: unknown",
+              "doc": "The `host:port` endpoints a `\"block\"` {@link egress} permits, on top of\nevery reviewer's provider host. For a Zuke launcher that is the Deno\ndownload, JSR, and GitHub (`github.com`, `api.github.com`, and the\nrelease-asset hosts the bootstrap fetches from). Ignored when auditing."
+            },
+            {
               "name": "command",
               "kind": "property",
               "optional": true,
               "signature": "command?: Configure<ReviewCommandSettings>",
-              "doc": "Run the review on demand when a maintainer comments a command on a pull\nrequest — any pull request, a fork's included. GitHub only; see\n{@link ReviewCommandSettings} for the job it adds and the gate it runs\nbehind.\n\n```ts\naiReviewWorkflow({\n  reviewers: [this.security],\n  command: (c) =>\n    c.text(\"@zuke-build review\")\n      .secrets(\"ZUKE_BUILD_APP_ID\", \"ZUKE_BUILD_APP_KEY\"),\n});\n```"
+              "doc": "Run the review on demand when a maintainer comments a command on a pull\nrequest — any pull request, a fork's included. GitHub only; see\n{@link ReviewCommandSettings} for the job it adds and the gate it runs\nbehind.\n\n```ts\naiReviewWorkflow({\n  reviewers: [this.security],\n  secrets: [\"ZUKE_BUILD_APP_ID\", \"ZUKE_BUILD_APP_KEY\"],\n  egress: \"block\",\n  allowedEndpoints: [\"dl.deno.land:443\", \"jsr.io:443\", \"api.github.com:443\"],\n  command: (c) => c.text(\"@zuke-build review\"),\n});\n```"
             }
           ]
         },
@@ -42419,7 +42440,7 @@
               "kind": "method",
               "optional": false,
               "signature": "secrets(...names: string[]): this",
-              "doc": "Pass these repository secrets to the command job's review step as env vars\nof the same name — e.g. the GitHub App credentials the build mints its\n`commentToken` from, so the review posts as the app. Only the command job\nreceives them; the `pull_request` job is unchanged."
+              "doc": "Pass these repository secrets to the command job's review step as env vars\nof the same name — e.g. the GitHub App credentials the build mints its\n`commentToken` from, so the review posts as the app. Only the command job\nreceives them; the `pull_request` job is unchanged. Secrets both jobs\nshould hold go on {@link AiReviewWorkflowSpec.secrets} instead."
             },
             {
               "name": "text_",
