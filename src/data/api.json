@@ -2750,6 +2750,13 @@
           "deprecated": false
         },
         {
+          "name": "defaultReadEnv",
+          "kind": "function",
+          "doc": "Read an environment variable, tolerating a denied `--allow-env` permission by\nreturning `undefined` rather than throwing. The default env reader every\ncommand uses when the caller doesn't inject one.",
+          "signature": "function defaultReadEnv(name: string): string | undefined",
+          "deprecated": false
+        },
+        {
           "name": "defaultRenderer",
           "kind": "variable",
           "doc": "The built-in renderer: Zuke's ruled headers and summary table.",
