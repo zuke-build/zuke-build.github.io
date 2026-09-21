@@ -6829,6 +6829,13 @@
           "deprecated": false
         },
         {
+          "name": "sha256Hex",
+          "kind": "function",
+          "doc": "The SHA-256 digest of `data` — a UTF-8 string or raw bytes — as a lowercase\nhex string.\n\nBytes are copied into a fresh `ArrayBuffer`-backed view so the digest input\ntype is unambiguous whatever buffer the source view sits on (e.g. a\n`SharedArrayBuffer`).",
+          "signature": "async function sha256Hex(data: string | Uint8Array): Promise<string>",
+          "deprecated": false
+        },
+        {
           "name": "ShellArgsError",
           "kind": "class",
           "doc": "Raised when {@link splitShellArgs} reaches the end of the input with a quote\nstill open. Names the offending quote character and the offset at which it was\nopened so the bad spot in a long command line is findable.",
@@ -42331,7 +42338,7 @@
         {
           "name": "ReviewCommandSettings",
           "kind": "class",
-          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command}.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets — so its `if:` is the whole access control. It fires only\nwhen the comment is on a pull request, starts with {@link text}, was written\nby a human (not a bot account), and its author's `author_association` is\n`OWNER`, `MEMBER` or `COLLABORATOR`. The comment body is matched in the\nexpression and never interpolated into a `run:` line. Then, before the\nreview runs, the job asks the collaborators API whether the commenter has\npush access, and stops if not — an association alone admits read-only\nmembers and collaborators.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
+          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command}.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets. Its `if:` fires only when the comment is on a pull\nrequest, starts with {@link text}, and was written by a human (not a bot\naccount); the comment body is matched in the expression and never\ninterpolated into a `run:` line. The access control is the job's first\nstep: it asks the collaborators API whether the commenter has push access,\nand every later step is skipped if not (see {@link PUSH_ACCESS_STEP}). The\nevent's `author_association` is deliberately not consulted — it reports a\nprivate organisation member as `CONTRIBUTOR`, and `MEMBER` and\n`COLLABORATOR` admit read-only accounts, so it can neither admit nor refuse\nanyone correctly.\n\nThe command is also how a maintainer who contested a finding in its review\nthread, and pushed nothing, gets an answer: the run it starts reads every\nthread, adjudicates the rebuttals, and replies in the threads.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
           "signature": "class ReviewCommandSettings",
           "deprecated": false,
           "members": [
