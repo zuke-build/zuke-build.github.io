@@ -2766,7 +2766,7 @@
         {
           "name": "defineTool",
           "kind": "function",
-          "doc": "Define a fluent task for a CLI that has no dedicated `@zuke` wrapper. Returns\na task that runs the tool, configured through a {@link DynamicToolSettings}\nlambda — the same settings-lambda style as the built-in wrappers, with\n`arg`/`flag`/`option` for argv and the shared `cwd`/`env`/`noThrow`/… chainers.\n\n```ts\nimport { defineTool } from \"jsr:@zuke/core/tooling\";\n\nconst terraform = defineTool(\"terraform\");\nawait terraform((s) => s.arg(\"plan\").option(\"out\", \"plan.tfplan\"));\n// → terraform plan --out plan.tfplan\n\nconst helmUpgrade = defineTool(\"helm\", { subcommand: \"upgrade\" });\nawait helmUpgrade((s) => s.arg(\"api\", \"./chart\").flag(\"install\"));\n// → helm upgrade api ./chart --install\n```",
+          "doc": "Define a fluent task for a CLI that has no dedicated `@zuke` wrapper. Returns\na task that runs the tool, configured through a {@link DynamicToolSettings}\nlambda — the same settings-lambda style as the built-in wrappers, with\n`arg`/`flag`/`option` for argv and the shared `cwd`/`env`/`noThrow`/… chainers.\n\n```ts\nimport { defineTool } from \"@zuke/core/tooling\";\n\nconst terraform = defineTool(\"terraform\");\nawait terraform((s) => s.arg(\"plan\").option(\"out\", \"plan.tfplan\"));\n// → terraform plan --out plan.tfplan\n\nconst helmUpgrade = defineTool(\"helm\", { subcommand: \"upgrade\" });\nawait helmUpgrade((s) => s.arg(\"api\", \"./chart\").flag(\"install\"));\n// → helm upgrade api ./chart --install\n```",
           "signature": "function defineTool(tool: string, options?: DefineToolOptions): ToolTask",
           "deprecated": false
         },
@@ -2789,14 +2789,14 @@
         {
           "name": "denoExecutable",
           "kind": "function",
-          "doc": "The executable that runs Deno here — what to spawn when a build needs `deno`\nitself, rather than a tool it installed.\n\nUnder `deno run` the executable running this code **is** Deno, so\n`Deno.execPath()` names it and nothing has to be looked up: a project whose\nDeno came from the `./zuke` launcher rather than from `PATH` still works, and\nthe subprocess is the same version as the parent.\n\nA build compiled with `deno compile` is not Deno. There `Deno.execPath()` is\nthe compiled binary, so spawning it re-enters the build instead of running\nDeno — `deno test` becomes the build running itself with `test` as a target,\nand `deno doc <spec>` becomes the build being asked for a target named `doc`.\nThe compiled case therefore resolves the bare name and lets the OS find a\nreal Deno on `PATH`. `Deno.build.standalone` is what tells the two apart.\n\n```ts\nimport { denoExecutable } from \"jsr:@zuke/core\";\nconst deno = new Deno.Command(denoExecutable(), { args: [\"doc\", \"jsr:@zuke/core\"] });\n```\n\n`@zuke/cli` answers the same question with one more step — a compiled global\n`zuke` falls back to the launchers' bootstrap directory when `PATH` has no\nDeno — because it is the command a user installs on a machine that may have\nno Deno at all. That fallback is the CLI's, and this is the decision the two\nshare.\n",
+          "doc": "The executable that runs Deno here — what to spawn when a build needs `deno`\nitself, rather than a tool it installed.\n\nUnder `deno run` the executable running this code **is** Deno, so\n`Deno.execPath()` names it and nothing has to be looked up: a project whose\nDeno came from the `./zuke` launcher rather than from `PATH` still works, and\nthe subprocess is the same version as the parent.\n\nA build compiled with `deno compile` is not Deno. There `Deno.execPath()` is\nthe compiled binary, so spawning it re-enters the build instead of running\nDeno — `deno test` becomes the build running itself with `test` as a target,\nand `deno doc <spec>` becomes the build being asked for a target named `doc`.\nThe compiled case therefore resolves the bare name and lets the OS find a\nreal Deno on `PATH`. `Deno.build.standalone` is what tells the two apart.\n\n```ts\nimport { denoExecutable } from \"@zuke/core\";\nconst deno = new Deno.Command(denoExecutable(), { args: [\"doc\", \"jsr:@zuke/core\"] });\n```\n\n`@zuke/cli` answers the same question with one more step — a compiled global\n`zuke` falls back to the launchers' bootstrap directory when `PATH` has no\nDeno — because it is the command a user installs on a machine that may have\nno Deno at all. That fallback is the CLI's, and this is the decision the two\nshare.\n",
           "signature": "function denoExecutable(standalone?: boolean): string",
           "deprecated": false
         },
         {
           "name": "describeCli",
           "kind": "function",
-          "doc": "Describe a build's full CLI surface — reserved commands, option flags, targets\n(with descriptions and dependencies), and declared parameters — as a plain\nobject ready for JSON. This is the same data `zuke --list --json` prints, made\navailable to tooling and agents that introspect a build in code.\n\n```ts\nimport { describeCli } from \"jsr:@zuke/core\";\nconst surface = describeCli(new MyBuild());\nconsole.log(surface.targets.map((t) => t.name));\n```\n\nPass `{ omitSecrets: true }` to drop `.secret()` parameters from the result —\nthe posture the build registry uses, so a secret never becomes a spawnable\nMCP input or crosses the run boundary (`zuke register` writes this form).",
+          "doc": "Describe a build's full CLI surface — reserved commands, option flags, targets\n(with descriptions and dependencies), and declared parameters — as a plain\nobject ready for JSON. This is the same data `zuke --list --json` prints, made\navailable to tooling and agents that introspect a build in code.\n\n```ts\nimport { describeCli } from \"@zuke/core\";\nconst surface = describeCli(new MyBuild());\nconsole.log(surface.targets.map((t) => t.name));\n```\n\nPass `{ omitSecrets: true }` to drop `.secret()` parameters from the result —\nthe posture the build registry uses, so a secret never becomes a spawnable\nMCP input or crosses the run boundary (`zuke register` writes this form).",
           "signature": "function describeCli(build: Build, options?: DescribeCliOptions): CliDescription",
           "deprecated": false
         },
@@ -5054,7 +5054,7 @@
         {
           "name": "operatingSystem",
           "kind": "function",
-          "doc": "The operating system as a Zuke {@link OperatingSystem}: `darwin` becomes\n`macos`, `windows` stays `windows`, and every other Unix (`linux`, the BSDs,\n`solaris`, …) is reported as `linux`. Pass a raw `Deno.build.os` value to\nnormalise it; defaults to the running host — the platform analogue of\n{@link isCI}.\n\n```ts\nimport { operatingSystem } from \"jsr:@zuke/core\";\nif (operatingSystem() === \"macos\") { ... }\n```",
+          "doc": "The operating system as a Zuke {@link OperatingSystem}: `darwin` becomes\n`macos`, `windows` stays `windows`, and every other Unix (`linux`, the BSDs,\n`solaris`, …) is reported as `linux`. Pass a raw `Deno.build.os` value to\nnormalise it; defaults to the running host — the platform analogue of\n{@link isCI}.\n\n```ts\nimport { operatingSystem } from \"@zuke/core\";\nif (operatingSystem() === \"macos\") { ... }\n```",
           "signature": "function operatingSystem(os?: Deno.build.os): OperatingSystem",
           "deprecated": false
         },
@@ -5470,7 +5470,7 @@
         {
           "name": "protectedResource",
           "kind": "function",
-          "doc": "Begin a protected-resource declaration for `resource`, the canonical URI of\nthis MCP endpoint (`https://build.example.com/mcp`).\n\n```ts\nimport { Build, protectedResource } from \"jsr:@zuke/core\";\n\nclass CI extends Build {\n  override mcpProtectedResource() {\n    return protectedResource(\"https://build.example.com/mcp\")\n      .authorizationServer(\"https://acme.eu.auth0.com\")\n      .scopes(\"zuke:run\")\n      .name(\"Acme build server\");\n  }\n}\n```",
+          "doc": "Begin a protected-resource declaration for `resource`, the canonical URI of\nthis MCP endpoint (`https://build.example.com/mcp`).\n\n```ts\nimport { Build, protectedResource } from \"@zuke/core\";\n\nclass CI extends Build {\n  override mcpProtectedResource() {\n    return protectedResource(\"https://build.example.com/mcp\")\n      .authorizationServer(\"https://acme.eu.auth0.com\")\n      .scopes(\"zuke:run\")\n      .name(\"Acme build server\");\n  }\n}\n```",
           "signature": "function protectedResource(resource: string): ProtectedResourceSettings",
           "deprecated": false
         },
@@ -42724,7 +42724,7 @@
         {
           "name": "otel",
           "kind": "function",
-          "doc": "Create the OpenTelemetry export plugin. Register it on a run and every\nrun/target transition is exported as OTLP/HTTP JSON:\n\n```ts\nimport { run } from \"jsr:@zuke/core\";\nimport { otel } from \"jsr:@zuke/otel\";\n\nawait run(MyBuild, {\n  plugins: [otel((s) => s.endpoint(\"http://localhost:4318\").serviceName(\"ci\"))],\n});\n```\n\nWith no argument it reads the standard `OTEL_EXPORTER_OTLP_ENDPOINT` /\n`OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_HEADERS` environment variables. If\nno endpoint is configured by either route the plugin is inert, so it is safe\nto register unconditionally. Telemetry needs a state store (the plugin's\nrecords come from durable run state); a store-less build exports nothing.",
+          "doc": "Create the OpenTelemetry export plugin. Register it on a run and every\nrun/target transition is exported as OTLP/HTTP JSON:\n\n```ts\nimport { run } from \"@zuke/core\";\nimport { otel } from \"@zuke/otel\";\n\nawait run(MyBuild, {\n  plugins: [otel((s) => s.endpoint(\"http://localhost:4318\").serviceName(\"ci\"))],\n});\n```\n\nWith no argument it reads the standard `OTEL_EXPORTER_OTLP_ENDPOINT` /\n`OTEL_SERVICE_NAME` / `OTEL_EXPORTER_OTLP_HEADERS` environment variables. If\nno endpoint is configured by either route the plugin is inert, so it is safe\nto register unconditionally. Telemetry needs a state store (the plugin's\nrecords come from durable run state); a store-less build exports nothing.",
           "signature": "function otel(configure?: Configure<OtelSettings>): Plugin",
           "deprecated": false
         },
