@@ -15408,13 +15408,6 @@
           ]
         },
         {
-          "name": "resolveDocSpec",
-          "kind": "function",
-          "doc": "Resolve a `zuke doc` argument to the specifier `deno doc` is given: a bare\nname (`core`) becomes `jsr:@zuke/core`, a scoped name (`@scope/pkg`) becomes\n`jsr:@scope/pkg`, a path is joined to `cwd`, and a specifier that already\ncarries a URL scheme or is absolute is returned untouched.\n\nThis is a copy of `resolveDocSpec` in `@zuke/core`, and deliberately a\ntemporary one. The build's reserved `doc` command and this one answer the\nsame question, and they used to answer it differently: `zuke doc core` found\nthe package, while `./zuke doc core` looked for a file of that name and\nreported it missing. Core owns the rule now, but this package cannot import\nit yet — the floor check type-checks against the exact minimum of the\ndeclared core range, and the export is not in a published core. The drift\ntest holds the two in step until it is; then this copy goes and core's is\nimported, the same two-step the wordmark took.",
-          "signature": "function resolveDocSpec(spec: string, cwd: string): string",
-          "deprecated": false
-        },
-        {
           "name": "SetupFlags",
           "kind": "interface",
           "doc": "Flags accepted by `zuke setup`.",
