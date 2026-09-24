@@ -43211,6 +43211,226 @@
           ]
         }
       ]
+    },
+    {
+      "name": "@zuke/qr",
+      "dir": "qr",
+      "summary": "`@zuke/qr` — QR codes for any data, from a Zuke build, with no dependency.",
+      "symbols": [
+        {
+          "name": "ErrorCorrectionLevel",
+          "kind": "typeAlias",
+          "doc": "A QR error-correction level, from `\"L\"` (~7% recoverable) to `\"H\"` (~30%).",
+          "signature": "type ErrorCorrectionLevel = L | M | Q | H",
+          "deprecated": false
+        },
+        {
+          "name": "MAX_QUIET_ZONE",
+          "kind": "variable",
+          "doc": "The widest quiet zone accepted; the specification asks for 4.",
+          "signature": "const MAX_QUIET_ZONE: 16",
+          "deprecated": false
+        },
+        {
+          "name": "QrCapacityError",
+          "kind": "class",
+          "doc": "Thrown when the text does not fit the largest symbol at the requested level.",
+          "signature": "class QrCapacityError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error's class name, for `instanceof`-free identification."
+            }
+          ]
+        },
+        {
+          "name": "QrCode",
+          "kind": "interface",
+          "doc": "A finished QR code, as the caller sees it.",
+          "signature": "interface QrCode",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: number",
+              "doc": "The symbol version (1–40)."
+            },
+            {
+              "name": "size",
+              "kind": "property",
+              "optional": false,
+              "signature": "size: number",
+              "doc": "The side length in modules (`version * 4 + 17`)."
+            },
+            {
+              "name": "errorCorrection",
+              "kind": "property",
+              "optional": false,
+              "signature": "errorCorrection: ErrorCorrectionLevel",
+              "doc": "The error-correction level actually used (boosting can raise the requested one)."
+            },
+            {
+              "name": "mask",
+              "kind": "property",
+              "optional": false,
+              "signature": "mask: number",
+              "doc": "The mask pattern (0–7) the penalty score selected."
+            },
+            {
+              "name": "modules",
+              "kind": "property",
+              "optional": false,
+              "signature": "modules: unknown",
+              "doc": "The modules, `modules[y][x]`, `true` for dark."
+            }
+          ]
+        },
+        {
+          "name": "QrPrintOptions",
+          "kind": "interface",
+          "doc": "Options for {@link QrTasks.print} beyond the settings lambda.",
+          "signature": "interface QrPrintOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "write",
+              "kind": "property",
+              "optional": true,
+              "signature": "write?: unknown",
+              "doc": "Where each rendered line goes (default `console.log`)."
+            }
+          ]
+        },
+        {
+          "name": "QrSettings",
+          "kind": "class",
+          "doc": "Configuration for encoding and rendering a QR code, set through a lambda\npassed to a `QrTasks` method. Every setter returns `this` so calls chain.",
+          "signature": "class QrSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "errorCorrection",
+              "kind": "method",
+              "optional": false,
+              "signature": "errorCorrection(level: ErrorCorrectionLevel): this",
+              "doc": "Set the error-correction level: `\"L\"` (~7%), `\"M\"` (~15%), `\"Q\"` (~25%) or `\"H\"` (~30%)."
+            },
+            {
+              "name": "boostErrorCorrection",
+              "kind": "method",
+              "optional": false,
+              "signature": "boostErrorCorrection(enabled?: boolean): this",
+              "doc": "Whether to raise the error-correction level when a higher one fits the\nsame version. On by default; turn it off to get exactly the level asked for."
+            },
+            {
+              "name": "quietZone",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietZone(modules: number): this",
+              "doc": "Set the width of the light border around the symbol, in modules (0 to {@link MAX_QUIET_ZONE})."
+            },
+            {
+              "name": "invert",
+              "kind": "method",
+              "optional": false,
+              "signature": "invert(enabled?: boolean): this",
+              "doc": "Swap the colours: light modules become blocks and dark ones spaces. Use it\non a terminal whose text is light on dark, where the default rendering\nshows the code with dark and light exchanged."
+            },
+            {
+              "name": "compact",
+              "kind": "method",
+              "optional": false,
+              "signature": "compact(enabled?: boolean): this",
+              "doc": "Whether to draw two module rows per line with `▀`/`▄`/`█` (the default,\nwhich keeps a version-3 code under 20 lines) or one row per line with a\ntwo-character `██` cell per module."
+            },
+            {
+              "name": "errorCorrection_",
+              "kind": "property",
+              "optional": false,
+              "signature": "errorCorrection_: ErrorCorrectionLevel",
+              "doc": "The requested error-correction level (default `\"M\"`)."
+            },
+            {
+              "name": "boostErrorCorrection_",
+              "kind": "property",
+              "optional": false,
+              "signature": "boostErrorCorrection_: boolean",
+              "doc": "Raise the level for free when the chosen version has room (default `true`)."
+            },
+            {
+              "name": "quietZone_",
+              "kind": "property",
+              "optional": false,
+              "signature": "quietZone_: number",
+              "doc": "Light modules drawn around the symbol, in modules (default 2; the spec asks for 4)."
+            },
+            {
+              "name": "invert_",
+              "kind": "property",
+              "optional": false,
+              "signature": "invert_: boolean",
+              "doc": "Draw dark modules as spaces and light ones as blocks (default `false`)."
+            },
+            {
+              "name": "compact_",
+              "kind": "property",
+              "optional": false,
+              "signature": "compact_: boolean",
+              "doc": "Pack two module rows into one text line with half-block characters (default `true`)."
+            }
+          ]
+        },
+        {
+          "name": "QrTasks",
+          "kind": "variable",
+          "doc": "Task-shaped QR code operations. Each method takes the text to encode (a URL,\nusually) and an optional settings lambda:\n\n```ts\nimport { QrTasks } from \"@zuke/qr\";\n\nQrTasks.print(\"https://zuke.build\", (s) => s.errorCorrection(\"Q\"));\n```",
+          "signature": "const QrTasks: QrTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "QrTasksApi",
+          "kind": "interface",
+          "doc": "The surface of {@link QrTasks}.",
+          "signature": "interface QrTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "encode",
+              "kind": "method",
+              "optional": false,
+              "signature": "encode(text: string, configure?: Configure<QrSettings>): QrCode",
+              "doc": "Encode `text` (as UTF-8, byte mode) into a {@link QrCode} matrix."
+            },
+            {
+              "name": "renderLines",
+              "kind": "method",
+              "optional": false,
+              "signature": "renderLines(text: string, configure?: Configure<QrSettings>): string[]",
+              "doc": "Encode `text` and render it as terminal lines (see {@link QrSettings.compact})."
+            },
+            {
+              "name": "render",
+              "kind": "method",
+              "optional": false,
+              "signature": "render(text: string, configure?: Configure<QrSettings>): string",
+              "doc": "Encode `text` and render it as one newline-joined string."
+            },
+            {
+              "name": "print",
+              "kind": "method",
+              "optional": false,
+              "signature": "print(text: string, configure?: Configure<QrSettings>, options?: QrPrintOptions): void",
+              "doc": "Encode `text` and write each rendered line through `options.write` (default `console.log`)."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
