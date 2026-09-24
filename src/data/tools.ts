@@ -142,6 +142,7 @@ export const corePackages = [
   { name: "@zuke/cmd", desc: "the typed process layer the wrappers are built on" },
   { name: "@zuke/console", desc: "markup, rules, boxes & tables — the levelled logger behind Zuke's output" },
   { name: "@zuke/otel", desc: "OpenTelemetry export plugin — run & target spans over OTLP, joined across resume" },
+  { name: "@zuke/qr", desc: "QR codes for any data — a dependency-free encoder, terminal renderer & raw matrix" },
 ];
 
 /** Total distinct @zuke package count, for display (some packages, e.g.
