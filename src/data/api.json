@@ -15256,6 +15256,13 @@
               "optional": false,
               "signature": "frozen: boolean",
               "doc": "Whether a `deno.lock` sits at the root, so the run passes `--frozen`."
+            },
+            {
+              "name": "launcher",
+              "kind": "property",
+              "optional": false,
+              "signature": "launcher: string | null",
+              "doc": "The absolute path of the executable `zuke` launcher at the root, run in\nplace of `deno run` — or `null` when there is none, or the platform\nreports no file mode to tell (Windows)."
             }
           ]
         },
@@ -15281,6 +15288,13 @@
               "doc": "The owner and mode of what a path resolves to, or `null` when nothing is\nthere."
             },
             {
+              "name": "realPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "realPath(path: string): Promise<string>",
+              "doc": "The path with every link resolved, as the launcher is spawned by it."
+            },
+            {
               "name": "uid",
               "kind": "method",
               "optional": false,
@@ -15292,7 +15306,7 @@
         {
           "name": "BuildRunner",
           "kind": "typeAlias",
-          "doc": "Runs `deno <denoArgs>` from `root` and resolves to its exit code — the\ninjectable subprocess seam, so the forwarding is testable without a build.",
+          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path — and resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.",
           "signature": "type BuildRunner = unknown",
           "deprecated": false
         },
