@@ -1081,7 +1081,7 @@
               "kind": "property",
               "optional": true,
               "signature": "error?: unknown",
-              "doc": "The error that aborted the run, if any."
+              "doc": "The error that aborted the run, if any. On a run a target's\n`.onFailure(...)` cancelled, it is that target's error, set alongside\n{@link cancelled}."
             },
             {
               "name": "suspended",
@@ -1095,7 +1095,7 @@
               "kind": "property",
               "optional": true,
               "signature": "cancelled?: boolean",
-              "doc": "True when the run was **cancelled** (via `options.signal` / Ctrl-C, or by\nanother process running `zuke cancel`) rather than failing on its own.\nIts compensations have run and the record is `cancelled`. `ok` is `false`."
+              "doc": "True when the run was **cancelled** — via `options.signal` / Ctrl-C, by\nanother process running `zuke cancel`, or by a failed target whose\n`.onFailure(...)` cancels the run (then {@link error} holds that failure).\nIts compensations have run and the record is `cancelled`. `ok` is `false`."
             },
             {
               "name": "runId",
@@ -5073,6 +5073,13 @@
           "deprecated": false
         },
         {
+          "name": "OnFailure",
+          "kind": "typeAlias",
+          "doc": "What a target does when it fails — resolved from {@link TargetBuilder.onFailure}.\n`\"fail\"` (the default) fails the run as usual; `\"cancel-run\"` cancels it,\nrunning the compensations of every target that succeeded; a thunk returning a\nsibling target runs that target as a compensation first, then cancels.\n\nThe same shape as {@link OnTimeout} by design — the two are the failure and\ndeadline halves of one disposition vocabulary — so it is an alias, not a copy.",
+          "signature": "type OnFailure = OnTimeout",
+          "deprecated": false
+        },
+        {
           "name": "OnTimeout",
           "kind": "typeAlias",
           "doc": "What a timed-out wait does — resolved from {@link WaitSettings.onTimeout}.",
@@ -7612,6 +7619,13 @@
               "doc": "Register a **compensation** target that undoes this target's effect when the\nrun is later cancelled (via `zuke cancel <run-id>`, an MCP `cancel_run`, or a\ntimed-out wait). The compensation runs **iff this target succeeded** — a\ntarget that never ran, was skipped, or failed has nothing to undo. On\ncancellation, compensations run in **reverse order** of the targets that\nsucceeded, so later work is unwound before the work it built on.\n\n`compensation` is a sibling target, or a thunk returning one (use the thunk\nform to reference a target declared *below* this one — class fields\ninitialise top-to-bottom). The compensation body receives a normal\n{@link TargetContext} whose `state` exposes **this target's** persisted\nmetadata, so a deploy that recorded `{ slot: \"sit-7\" }` in `ctx.state` can be\nrolled back from exactly that slot. Compensation failures are recorded but do\nnot stop the walk (cleanup is maximal). Requires a state store.\n\nOn a {@link forEach} **sub-target**, the compensation is per item: cancel\nruns it for every item that had succeeded (or was still in-flight), each with\nits own item-scoped context — see the fan-out section of\n`docs/orchestration.md`.\n\n```ts\ndeploy = target()\n  .executes((ctx) => ctx.state.set({ slot: \"sit-7\" }))\n  .onCancel(() => this.rollback);\nrollback = target()\n  .executes((ctx) => tearDown(ctx.state.get().slot)); // reads deploy's meta\n```"
             },
             {
+              "name": "onFailure",
+              "kind": "method",
+              "optional": false,
+              "signature": "onFailure(disposition: OnFailure): this",
+              "doc": "Decide what this target's **failure** does to the run. By default\n(`\"fail\"`) a failed target fails the run, and nothing is undone. With\n`\"cancel-run\"` the failure **cancels** the run instead: every target that\nhad succeeded has its {@link onCancel} compensation run, in reverse order —\nthe same walk `zuke cancel`, Ctrl-C and a timed-out wait take. A thunk\nreturning a sibling target runs that target as a compensation first (its\n`ctx.state` holds **this** target's persisted metadata), then cancels.\n\nThe disposition applies once retries and remediations are exhausted, to the\ntarget's final failure. A run that is already being cancelled is not\ncancelled twice, and in-flight siblings are stopped as on any cancellation.\nA named target is an extra step before the walk, not a replacement: the\nfailed target itself is never compensated, so name a cleanup for *its*\npartial work, not a predecessor's rollback (which would then run twice).\n\nThe thunk is evaluated once, before the run starts. One that throws,\nreturns anything but `\"fail\"`, `\"cancel-run\"` or a target declared on the\nbuild, names this target itself, or cancels on a target that is also\n{@link proceedAfterFailure} refuses the run with a message naming the target.\nThe run settles `cancelled` with the target's error, so the record says both\nthat it was rolled back and why. Requires a state store, which a build using\nit enables by default, exactly as for {@link onCancel}.\n\nIt is the counterpart of {@link WaitSettings.onTimeout}: a deploy chain\nwhose health check fails should unwind through the same rollback as an\noperator's cancel, not through a second copy of it.\n\n```ts\ndeploy = target()\n  .executes((ctx) => ctx.state.set({ revision: \"api-00042\" }))\n  .onCancel(() => this.rollback);\nverify = target()\n  .dependsOn(this.deploy)\n  .executes(() => checkHealth())\n  .onFailure(() => \"cancel-run\"); // a failed check rolls the deploy back\nrollback = target().executes((ctx) => undo(ctx.state.get().revision));\n```"
+            },
+            {
               "name": "forEach",
               "kind": "method",
               "optional": false,
@@ -7848,6 +7862,13 @@
               "optional": true,
               "signature": "onCancel_?: unknown",
               "doc": "Compensation thunk, set by {@link onCancel}: runs on cancel iff this target succeeded."
+            },
+            {
+              "name": "onFailure_",
+              "kind": "property",
+              "optional": true,
+              "signature": "onFailure_?: OnFailure",
+              "doc": "Failure disposition thunk, set by {@link onFailure}: what this target's failure does to the run."
             }
           ]
         },
