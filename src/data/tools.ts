@@ -104,6 +104,7 @@ export const toolGroups: ToolGroup[] = [
       { name: "kubectl", pkg: "@zuke/kubectl", desc: "apply, get, rollout, logs" },
       { name: "Helm", pkg: "@zuke/helm", desc: "install, upgrade, template, lint" },
       { name: "Kustomize", pkg: "@zuke/kustomize", desc: "build, editSetImage" },
+      { name: "Argo Rollouts", pkg: "@zuke/argo-rollouts", desc: "setImage, promote, abort, status" },
     ],
   },
   {
