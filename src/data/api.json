@@ -3211,6 +3211,13 @@
               "doc": "Plan only: resolve and print every target that *would* run (honouring\n`--skip` and `onlyWhen` conditions) without executing any body or touching\nthe cache (CLI `--dry-run`)."
             },
             {
+              "name": "preflightOnly",
+              "kind": "property",
+              "optional": true,
+              "signature": "preflightOnly?: boolean",
+              "doc": "Run only the preflight phase — every planned validation's\n{@link Validation.preflight} — and stop, executing no target (CLI\n`--preflight`). The result is ok when every preflight passed. Missing or\ninvalid parameters do not fail it: the step that asks is meant to run\nwithout the secrets they come from."
+            },
+            {
               "name": "affected",
               "kind": "property",
               "optional": true,
@@ -8901,6 +8908,13 @@
               "doc": "Run the check; throw to fail the target. May be async."
             },
             {
+              "name": "preflight",
+              "kind": "method",
+              "optional": true,
+              "signature": "preflight?(context: ValidationContext): void | Promise<void>",
+              "doc": "Decide whether the run may happen at all — called once per run, for every\nvalidation in the plan, **before any target starts**, its dependencies\nincluded. Throw to refuse the run: nothing executes, and no run record is\nopened. Optional; most validations have nothing to decide this early. It\nis the seam for a check that must stand in front of everything, such as\nwho may start a comment-triggered run. `zuke <target> --preflight` runs\nonly this phase. Skipped by a dry run, which executes nothing to guard."
+            },
+            {
               "name": "name",
               "kind": "property",
               "optional": true,
@@ -8936,6 +8950,13 @@
               "optional": true,
               "signature": "signal?: AbortSignal",
               "doc": "Set only for a `.validateDuring(...)` check: aborted when the target ends\nor the run is cancelled, so a check that waits on the network — a metrics\nquery, a health probe — should pass it on (`fetch(url, { signal })`). A\n`$` command the check runs is bound to it already."
+            },
+            {
+              "name": "runId",
+              "kind": "property",
+              "optional": true,
+              "signature": "runId?: string",
+              "doc": "The identity of the run the validation belongs to — the same id the run\nrecord and `zuke runs` show, kept across a resume. Lets validations that\ncoordinate with each other (the `@zuke/ai` reviewers sharing their\nreactions on a pull request) scope that to one run, even in a process\nthat executes several, such as `zuke mcp`. Set by the scheduler; absent\nwhen a caller drives `validate(...)` directly."
             }
           ]
         },
@@ -15379,351 +15400,6 @@
           "doc": "The Zuke wordmark in FIGlet's ANSI-shadow style. Solid `█` blocks form the\nletters; box-drawing characters draw the shadow.",
           "signature": "const ZUKE_LOGO: ███████╗██╗   ██╗██╗  ██╗███████╗\n╚══███╔╝██║   ██║██║ ██╔╝██╔════╝\n  ███╔╝ ██║   ██║█████╔╝ █████╗\n ███╔╝  ██║   ██║██╔═██╗ ██╔══╝\n███████╗╚██████╔╝██║  ██╗███████╗\n╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝",
           "deprecated": false
-        }
-      ]
-    },
-    {
-      "name": "@zuke/cli",
-      "dir": "cli",
-      "summary": "`@zuke/cli` — the `zuke` command. Install it globally with",
-      "symbols": [
-        {
-          "name": "BuildLocation",
-          "kind": "interface",
-          "doc": "Where a forwarded command runs, and how.",
-          "signature": "interface BuildLocation",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "root",
-              "kind": "property",
-              "optional": false,
-              "signature": "root: string",
-              "doc": "The absolute repository root: the directory holding `zuke.json`."
-            },
-            {
-              "name": "frozen",
-              "kind": "property",
-              "optional": false,
-              "signature": "frozen: boolean",
-              "doc": "Whether a `deno.lock` sits at the root, so the run passes `--frozen`."
-            },
-            {
-              "name": "launcher",
-              "kind": "property",
-              "optional": false,
-              "signature": "launcher: string | null",
-              "doc": "The absolute path of the executable `zuke` launcher at the root, run in\nplace of `deno run` — or `null` when there is none, or the platform\nreports no file mode to tell (Windows)."
-            }
-          ]
-        },
-        {
-          "name": "BuildProbe",
-          "kind": "interface",
-          "doc": "The filesystem questions discovery asks, injectable so the walk and its\ntrust gate are testable without a filesystem or a second user.",
-          "signature": "interface BuildProbe",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "exists",
-              "kind": "method",
-              "optional": false,
-              "signature": "exists(path: string): Promise<boolean>",
-              "doc": "Whether a path exists (the link itself, not its target)."
-            },
-            {
-              "name": "ownership",
-              "kind": "method",
-              "optional": false,
-              "signature": "ownership(path: string): Promise<Ownership | null>",
-              "doc": "The owner and mode of what a path resolves to, or `null` when nothing is\nthere."
-            },
-            {
-              "name": "realPath",
-              "kind": "method",
-              "optional": false,
-              "signature": "realPath(path: string): Promise<string>",
-              "doc": "The path with every link resolved, as the launcher is spawned by it."
-            },
-            {
-              "name": "uid",
-              "kind": "method",
-              "optional": false,
-              "signature": "uid(): number | null",
-              "doc": "The current user's numeric id, or `null` where the platform has none."
-            }
-          ]
-        },
-        {
-          "name": "BuildRunner",
-          "kind": "typeAlias",
-          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path — and resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.",
-          "signature": "type BuildRunner = unknown",
-          "deprecated": false
-        },
-        {
-          "name": "defaultPrompter",
-          "kind": "variable",
-          "doc": "The real {@link Prompter}, backed by Deno's `prompt`/`confirm`.",
-          "signature": "const defaultPrompter: Prompter",
-          "deprecated": false
-        },
-        {
-          "name": "DocRunner",
-          "kind": "typeAlias",
-          "doc": "Runs `deno doc <args>` — the injectable subprocess seam for\n{@link commandDoc}, so the command is testable without spawning `deno`.",
-          "signature": "type DocRunner = unknown",
-          "deprecated": false
-        },
-        {
-          "name": "ImportFlags",
-          "kind": "interface",
-          "doc": "Flags accepted by `zuke import` — the setup flags plus `--from`.",
-          "signature": "interface ImportFlags",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "from",
-              "kind": "property",
-              "optional": true,
-              "signature": "from?: ImportSource",
-              "doc": "Force a source (`package.json` or `makefile`); auto-detected when unset."
-            }
-          ]
-        },
-        {
-          "name": "ImportSource",
-          "kind": "typeAlias",
-          "doc": "The kinds of project `zuke import` can read.",
-          "signature": "type ImportSource = package.json | Makefile",
-          "deprecated": false
-        },
-        {
-          "name": "main",
-          "kind": "function",
-          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, and `buildProbe` are injectable\nfor testing.",
-          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe): Promise<number>",
-          "deprecated": false
-        },
-        {
-          "name": "Ownership",
-          "kind": "interface",
-          "doc": "What the trust gate needs to know about a filesystem entry.",
-          "signature": "interface Ownership",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "uid",
-              "kind": "property",
-              "optional": false,
-              "signature": "uid: number | null",
-              "doc": "The numeric owner, or `null` where the platform reports none (Windows)."
-            },
-            {
-              "name": "mode",
-              "kind": "property",
-              "optional": false,
-              "signature": "mode: number | null",
-              "doc": "The permission bits, or `null` where the platform reports none."
-            }
-          ]
-        },
-        {
-          "name": "parseImportFlags",
-          "kind": "function",
-          "doc": "Parse the argument list following `zuke import`.",
-          "signature": "function parseImportFlags(args: string[]): ImportFlags",
-          "deprecated": false
-        },
-        {
-          "name": "parseSetupFlags",
-          "kind": "function",
-          "doc": "Parse the argument list following `zuke setup`.",
-          "signature": "function parseSetupFlags(args: string[]): SetupFlags",
-          "deprecated": false
-        },
-        {
-          "name": "Prompter",
-          "kind": "interface",
-          "doc": "The interactive surface, injectable so the wizard is testable without a TTY.",
-          "signature": "interface Prompter",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "interactive",
-              "kind": "method",
-              "optional": false,
-              "signature": "interactive(): boolean",
-              "doc": "Whether prompts should be shown (i.e. stdin is a terminal)."
-            },
-            {
-              "name": "ask",
-              "kind": "method",
-              "optional": false,
-              "signature": "ask(question: string, fallback: string): string",
-              "doc": "Ask a free-text question, returning `fallback` if unanswered."
-            },
-            {
-              "name": "confirm",
-              "kind": "method",
-              "optional": false,
-              "signature": "confirm(question: string): boolean",
-              "doc": "Ask a yes/no question."
-            }
-          ]
-        },
-        {
-          "name": "SetupFlags",
-          "kind": "interface",
-          "doc": "Flags accepted by `zuke setup`.",
-          "signature": "interface SetupFlags",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "force",
-              "kind": "property",
-              "optional": false,
-              "signature": "force: boolean",
-              "doc": "Overwrite existing files."
-            },
-            {
-              "name": "yes",
-              "kind": "property",
-              "optional": false,
-              "signature": "yes: boolean",
-              "doc": "Skip prompts and accept defaults."
-            },
-            {
-              "name": "name",
-              "kind": "property",
-              "optional": true,
-              "signature": "name?: string",
-              "doc": "Build class name for the starter `zuke.ts`."
-            },
-            {
-              "name": "dir",
-              "kind": "property",
-              "optional": true,
-              "signature": "dir?: string",
-              "doc": "Directory to scaffold into (defaults to the current directory)."
-            },
-            {
-              "name": "launcherName",
-              "kind": "property",
-              "optional": true,
-              "signature": "launcherName?: string",
-              "doc": "Base name for the launcher scripts, when `zuke` is taken by a directory."
-            },
-            {
-              "name": "mcp",
-              "kind": "property",
-              "optional": false,
-              "signature": "mcp: boolean",
-              "doc": "Also write `.mcp.json`, registering the build's MCP server for agent clients."
-            },
-            {
-              "name": "allowRun",
-              "kind": "property",
-              "optional": false,
-              "signature": "allowRun: boolean",
-              "doc": "Register that server with `--allow-run`, so the agent may execute targets. Implies `mcp`."
-            },
-            {
-              "name": "bootstrapDeno",
-              "kind": "property",
-              "optional": true,
-              "signature": "bootstrapDeno?: boolean",
-              "doc": "Which launchers to scaffold: `true` (`--bootstrap-deno`) for ones that\ninstall a pinned, checksum-verified Deno when none is on `PATH`, `false`\n(`--no-bootstrap-deno`) for ones that require it and fail closed. Unset:\nask when interactive, else take the default (bootstrap)."
-            }
-          ]
-        },
-        {
-          "name": "SetupHost",
-          "kind": "interface",
-          "doc": "Injected side effects, so {@link runSetup} is unit-testable.",
-          "signature": "interface SetupHost",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "exists",
-              "kind": "method",
-              "optional": false,
-              "signature": "exists(path: string): Promise<boolean>",
-              "doc": "Whether a path exists."
-            },
-            {
-              "name": "isDirectory",
-              "kind": "method",
-              "optional": false,
-              "signature": "isDirectory(path: string): Promise<boolean>",
-              "doc": "Whether a path exists and is a directory (a reserved-name collision)."
-            },
-            {
-              "name": "isSymlink",
-              "kind": "method",
-              "optional": false,
-              "signature": "isSymlink(path: string): Promise<boolean>",
-              "doc": "Whether a path is a symbolic link, without following it. Scaffolding\nrefuses to write through one: the writes below follow links, so a link\nplanted at a scaffold name by the very repository being set up would\nredirect them outside the target directory.\n\nThe guard covers the names scaffolding chooses, which is where the hazard\nis — the caller never asked for `.gitignore` to be written, so a repository\nredirecting it is a decision nobody made. It reports what is there when it\nruns, and a link planted after it would escape it; that is why\n{@link SetupHost.writeText} does not write through a link either, so the\nrefusal is the friendly answer rather than the only defence.\n\nTwo things stay out of scope. The directory the caller names with `--dir`\nis the caller's to name, symlink or not. And a **hard** link is\nindistinguishable from the file it shares, so no probe can see one; git\ncannot check one out either, which is what keeps it out of the threat this\nguards."
-            },
-            {
-              "name": "readText",
-              "kind": "method",
-              "optional": false,
-              "signature": "readText(path: string): Promise<string>",
-              "doc": "Read a file as UTF-8 text."
-            },
-            {
-              "name": "writeText",
-              "kind": "method",
-              "optional": false,
-              "signature": "writeText(path: string, content: string): Promise<void>",
-              "doc": "Write UTF-8 text to a file, creating or replacing it.\n\nAn implementation must not write *through* a symbolic link standing at\n`path`: the scaffolder's confinement to its target directory rests on this,\nand the pre-write {@link SetupHost.isSymlink} check alone cannot carry it,\nsince a link can appear after the check."
-            },
-            {
-              "name": "chmod",
-              "kind": "method",
-              "optional": false,
-              "signature": "chmod(path: string, mode: number): Promise<void>",
-              "doc": "Set a file's permission bits (may be unsupported on some platforms)."
-            },
-            {
-              "name": "log",
-              "kind": "method",
-              "optional": false,
-              "signature": "log(message: string): void",
-              "doc": "Emit a line of progress output."
-            }
-          ]
-        },
-        {
-          "name": "StarActions",
-          "kind": "interface",
-          "doc": "The side effects behind {@link promptStar}, injectable so tests never spawn\n`gh` or a browser.",
-          "signature": "interface StarActions",
-          "deprecated": false,
-          "members": [
-            {
-              "name": "ghAuthenticated",
-              "kind": "method",
-              "optional": false,
-              "signature": "ghAuthenticated(): Promise<boolean>",
-              "doc": "Whether the `gh` CLI is installed and holds a login."
-            },
-            {
-              "name": "starWithGh",
-              "kind": "method",
-              "optional": false,
-              "signature": "starWithGh(): Promise<void>",
-              "doc": "Star the Zuke repository through `gh api`."
-            },
-            {
-              "name": "openBrowser",
-              "kind": "method",
-              "optional": false,
-              "signature": "openBrowser(url: string): Promise<boolean>",
-              "doc": "Open `url` in the default browser; `false` when it could not launch."
-            }
-          ]
         }
       ]
     },
@@ -34684,6 +34360,124 @@
           "deprecated": false
         },
         {
+          "name": "GhCollaboratorApi",
+          "kind": "interface",
+          "doc": "The collaborator operation {@link GhTasks} exposes.",
+          "signature": "interface GhCollaboratorApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "collaboratorPermission",
+              "kind": "method",
+              "optional": false,
+              "signature": "collaboratorPermission(configure?: unknown): Promise<GhCollaboratorPermission>",
+              "doc": "The standing of `.login(...)` on the repository. Throws when GitHub\nrefuses or the account is unknown, so a caller deciding trust on it fails\nclosed."
+            }
+          ]
+        },
+        {
+          "name": "GhCollaboratorPermission",
+          "kind": "interface",
+          "doc": "A collaborator's standing, as `GET /collaborators/<login>/permission` reports it.",
+          "signature": "interface GhCollaboratorPermission",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "permission",
+              "kind": "property",
+              "optional": false,
+              "signature": "permission: string",
+              "doc": "The base permission level: `admin`, `write`, `read` or `none`. A custom\nrole reports the level it is built on here."
+            },
+            {
+              "name": "roleName",
+              "kind": "property",
+              "optional": false,
+              "signature": "roleName: string",
+              "doc": "The role's name: `admin`, `maintain`, `write`, `triage`, `read` — or a\ncustom role's own name."
+            }
+          ]
+        },
+        {
+          "name": "GhCollaboratorSettings",
+          "kind": "class",
+          "doc": "Settings for {@link GhCollaboratorApi.collaboratorPermission}.",
+          "signature": "class GhCollaboratorSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "login",
+              "kind": "method",
+              "optional": false,
+              "signature": "login(value: string): this",
+              "doc": "The account to look up."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "login_",
+              "kind": "property",
+              "optional": true,
+              "signature": "login_?: string",
+              "doc": "The account to look up. Set by {@link login}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
           "name": "GhCommandSettings",
           "kind": "class",
           "doc": "Base for a typed `gh` subcommand: it contributes the command path (the\ngroup, the verb, and any operand) and its own flags, and inherits\neverything else from {@link \"./settings.ts\".GhSettings}.",
@@ -36343,6 +36137,201 @@
               "doc": "The `fetch` implementation. Set by {@link fetch}."
             }
           ]
+        },
+        {
+          "name": "GhReaction",
+          "kind": "interface",
+          "doc": "One reaction on a subject.",
+          "signature": "interface GhReaction",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": false,
+              "signature": "id: number",
+              "doc": "Its id — what {@link GhReactionApi.deleteReaction} takes."
+            },
+            {
+              "name": "content",
+              "kind": "property",
+              "optional": false,
+              "signature": "content: string",
+              "doc": "What it is."
+            },
+            {
+              "name": "login",
+              "kind": "property",
+              "optional": true,
+              "signature": "login?: string",
+              "doc": "The login of the account that gave it, when GitHub said."
+            }
+          ]
+        },
+        {
+          "name": "GhReactionApi",
+          "kind": "interface",
+          "doc": "The reaction operations {@link GhTasks} exposes.",
+          "signature": "interface GhReactionApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "react",
+              "kind": "method",
+              "optional": false,
+              "signature": "react(configure?: unknown): Promise<GhReaction>",
+              "doc": "React with `.content(...)` on the subject. GitHub keeps one reaction of\neach content per account, so reacting twice answers the reaction already\nthere rather than adding another."
+            },
+            {
+              "name": "listReactions",
+              "kind": "method",
+              "optional": false,
+              "signature": "listReactions(configure?: unknown): Promise<GhReaction[]>",
+              "doc": "The subject's reactions — only `.content(...)`'s when it is set."
+            },
+            {
+              "name": "deleteReaction",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteReaction(configure?: unknown): Promise<void>",
+              "doc": "Delete reaction `.id(...)` from the subject. GitHub lets an account\ndelete only its own."
+            }
+          ]
+        },
+        {
+          "name": "GhReactionContent",
+          "kind": "typeAlias",
+          "doc": "A reaction, as GitHub spells its content: 👍 👎 😄 😕 ❤️ 🎉 🚀 👀.",
+          "signature": "type GhReactionContent = +1 | -1 | laugh | confused | heart | hooray | rocket | eyes",
+          "deprecated": false
+        },
+        {
+          "name": "GhReactionSettings",
+          "kind": "class",
+          "doc": "Settings for the reaction tasks: the subject, the content, and — for a\ndeletion — the reaction's id. `owner/repo` and the token fall back to the\nActions environment.",
+          "signature": "class GhReactionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "issue",
+              "kind": "method",
+              "optional": false,
+              "signature": "issue(number: number): this",
+              "doc": "An issue — or a pull request, whose description is its issue body."
+            },
+            {
+              "name": "issueComment",
+              "kind": "method",
+              "optional": false,
+              "signature": "issueComment(id: number): this",
+              "doc": "A conversation comment on an issue or pull request."
+            },
+            {
+              "name": "reviewComment",
+              "kind": "method",
+              "optional": false,
+              "signature": "reviewComment(id: number): this",
+              "doc": "A comment in a pull request's review thread."
+            },
+            {
+              "name": "content",
+              "kind": "method",
+              "optional": false,
+              "signature": "content(value: GhReactionContent): this",
+              "doc": "The reaction to give, or — when listing — the only one to list."
+            },
+            {
+              "name": "id",
+              "kind": "method",
+              "optional": false,
+              "signature": "id(value: number): this",
+              "doc": "The id of the reaction to delete."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "subject_",
+              "kind": "property",
+              "optional": true,
+              "signature": "subject_?: GhReactionSubject",
+              "doc": "What the reaction is on. Set by {@link issue}, {@link issueComment} or {@link reviewComment}."
+            },
+            {
+              "name": "content_",
+              "kind": "property",
+              "optional": true,
+              "signature": "content_?: GhReactionContent",
+              "doc": "The reaction's content. Set by {@link content}."
+            },
+            {
+              "name": "id_",
+              "kind": "property",
+              "optional": true,
+              "signature": "id_?: number",
+              "doc": "The reaction to delete. Set by {@link id}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
+          "name": "GhReactionSubject",
+          "kind": "typeAlias",
+          "doc": "What a reaction is on, as the REST paths address it: an issue (or a pull\nrequest's description), a conversation comment, or a review comment.",
+          "signature": "type GhReactionSubject = unknown | unknown | unknown",
+          "deprecated": false
         },
         {
           "name": "GhReadSettings",
@@ -39659,6 +39648,13 @@
           ]
         },
         {
+          "name": "GITHUB_LOGIN",
+          "kind": "variable",
+          "doc": "The characters a GitHub login can contain — letters, digits and hyphens.\nThe guard a login passes before it is put in a request path, shared so a\ncaller deciding trust on a login checks it the same way.",
+          "signature": "const GITHUB_LOGIN: RegExp",
+          "deprecated": false
+        },
+        {
           "name": "githubWorkflow",
           "kind": "function",
           "doc": "A {@link \"@zuke/core\".WaitTrigger} that dispatches a GitHub Actions workflow,\nsuspends the run until it finishes, and records its per-job conclusions to the\nawaiting target's state (read them with {@link readWorkflowResult}). See the\nmodule docs for the `run-name` correlation requirement and auth.\n\n```ts\ngithubWorkflow((g) => g.repo(\"acme/app\").workflow(\"e2e.yml\").ref(\"main\"))\n```",
@@ -39999,6 +39995,351 @@
               "optional": false,
               "signature": "jobs: WorkflowJob[]",
               "doc": "Each job's conclusion, so a build can branch on which suite failed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@zuke/cli",
+      "dir": "cli",
+      "summary": "`@zuke/cli` — the `zuke` command. Install it globally with",
+      "symbols": [
+        {
+          "name": "BuildLocation",
+          "kind": "interface",
+          "doc": "Where a forwarded command runs, and how.",
+          "signature": "interface BuildLocation",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "root",
+              "kind": "property",
+              "optional": false,
+              "signature": "root: string",
+              "doc": "The absolute repository root: the directory holding `zuke.json`."
+            },
+            {
+              "name": "frozen",
+              "kind": "property",
+              "optional": false,
+              "signature": "frozen: boolean",
+              "doc": "Whether a `deno.lock` sits at the root, so the run passes `--frozen`."
+            },
+            {
+              "name": "launcher",
+              "kind": "property",
+              "optional": false,
+              "signature": "launcher: string | null",
+              "doc": "The absolute path of the executable `zuke` launcher at the root, run in\nplace of `deno run` — or `null` when there is none, or the platform\nreports no file mode to tell (Windows)."
+            }
+          ]
+        },
+        {
+          "name": "BuildProbe",
+          "kind": "interface",
+          "doc": "The filesystem questions discovery asks, injectable so the walk and its\ntrust gate are testable without a filesystem or a second user.",
+          "signature": "interface BuildProbe",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "exists",
+              "kind": "method",
+              "optional": false,
+              "signature": "exists(path: string): Promise<boolean>",
+              "doc": "Whether a path exists (the link itself, not its target)."
+            },
+            {
+              "name": "ownership",
+              "kind": "method",
+              "optional": false,
+              "signature": "ownership(path: string): Promise<Ownership | null>",
+              "doc": "The owner and mode of what a path resolves to, or `null` when nothing is\nthere."
+            },
+            {
+              "name": "realPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "realPath(path: string): Promise<string>",
+              "doc": "The path with every link resolved, as the launcher is spawned by it."
+            },
+            {
+              "name": "uid",
+              "kind": "method",
+              "optional": false,
+              "signature": "uid(): number | null",
+              "doc": "The current user's numeric id, or `null` where the platform has none."
+            }
+          ]
+        },
+        {
+          "name": "BuildRunner",
+          "kind": "typeAlias",
+          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path — and resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.",
+          "signature": "type BuildRunner = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "defaultPrompter",
+          "kind": "variable",
+          "doc": "The real {@link Prompter}, backed by Deno's `prompt`/`confirm`.",
+          "signature": "const defaultPrompter: Prompter",
+          "deprecated": false
+        },
+        {
+          "name": "DocRunner",
+          "kind": "typeAlias",
+          "doc": "Runs `deno doc <args>` — the injectable subprocess seam for\n{@link commandDoc}, so the command is testable without spawning `deno`.",
+          "signature": "type DocRunner = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "ImportFlags",
+          "kind": "interface",
+          "doc": "Flags accepted by `zuke import` — the setup flags plus `--from`.",
+          "signature": "interface ImportFlags",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "from",
+              "kind": "property",
+              "optional": true,
+              "signature": "from?: ImportSource",
+              "doc": "Force a source (`package.json` or `makefile`); auto-detected when unset."
+            }
+          ]
+        },
+        {
+          "name": "ImportSource",
+          "kind": "typeAlias",
+          "doc": "The kinds of project `zuke import` can read.",
+          "signature": "type ImportSource = package.json | Makefile",
+          "deprecated": false
+        },
+        {
+          "name": "main",
+          "kind": "function",
+          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, and `buildProbe` are injectable\nfor testing.",
+          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe): Promise<number>",
+          "deprecated": false
+        },
+        {
+          "name": "Ownership",
+          "kind": "interface",
+          "doc": "What the trust gate needs to know about a filesystem entry.",
+          "signature": "interface Ownership",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "uid",
+              "kind": "property",
+              "optional": false,
+              "signature": "uid: number | null",
+              "doc": "The numeric owner, or `null` where the platform reports none (Windows)."
+            },
+            {
+              "name": "mode",
+              "kind": "property",
+              "optional": false,
+              "signature": "mode: number | null",
+              "doc": "The permission bits, or `null` where the platform reports none."
+            }
+          ]
+        },
+        {
+          "name": "parseImportFlags",
+          "kind": "function",
+          "doc": "Parse the argument list following `zuke import`.",
+          "signature": "function parseImportFlags(args: string[]): ImportFlags",
+          "deprecated": false
+        },
+        {
+          "name": "parseSetupFlags",
+          "kind": "function",
+          "doc": "Parse the argument list following `zuke setup`.",
+          "signature": "function parseSetupFlags(args: string[]): SetupFlags",
+          "deprecated": false
+        },
+        {
+          "name": "Prompter",
+          "kind": "interface",
+          "doc": "The interactive surface, injectable so the wizard is testable without a TTY.",
+          "signature": "interface Prompter",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "interactive",
+              "kind": "method",
+              "optional": false,
+              "signature": "interactive(): boolean",
+              "doc": "Whether prompts should be shown (i.e. stdin is a terminal)."
+            },
+            {
+              "name": "ask",
+              "kind": "method",
+              "optional": false,
+              "signature": "ask(question: string, fallback: string): string",
+              "doc": "Ask a free-text question, returning `fallback` if unanswered."
+            },
+            {
+              "name": "confirm",
+              "kind": "method",
+              "optional": false,
+              "signature": "confirm(question: string): boolean",
+              "doc": "Ask a yes/no question."
+            }
+          ]
+        },
+        {
+          "name": "SetupFlags",
+          "kind": "interface",
+          "doc": "Flags accepted by `zuke setup`.",
+          "signature": "interface SetupFlags",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "force",
+              "kind": "property",
+              "optional": false,
+              "signature": "force: boolean",
+              "doc": "Overwrite existing files."
+            },
+            {
+              "name": "yes",
+              "kind": "property",
+              "optional": false,
+              "signature": "yes: boolean",
+              "doc": "Skip prompts and accept defaults."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "Build class name for the starter `zuke.ts`."
+            },
+            {
+              "name": "dir",
+              "kind": "property",
+              "optional": true,
+              "signature": "dir?: string",
+              "doc": "Directory to scaffold into (defaults to the current directory)."
+            },
+            {
+              "name": "launcherName",
+              "kind": "property",
+              "optional": true,
+              "signature": "launcherName?: string",
+              "doc": "Base name for the launcher scripts, when `zuke` is taken by a directory."
+            },
+            {
+              "name": "mcp",
+              "kind": "property",
+              "optional": false,
+              "signature": "mcp: boolean",
+              "doc": "Also write `.mcp.json`, registering the build's MCP server for agent clients."
+            },
+            {
+              "name": "allowRun",
+              "kind": "property",
+              "optional": false,
+              "signature": "allowRun: boolean",
+              "doc": "Register that server with `--allow-run`, so the agent may execute targets. Implies `mcp`."
+            },
+            {
+              "name": "bootstrapDeno",
+              "kind": "property",
+              "optional": true,
+              "signature": "bootstrapDeno?: boolean",
+              "doc": "Which launchers to scaffold: `true` (`--bootstrap-deno`) for ones that\ninstall a pinned, checksum-verified Deno when none is on `PATH`, `false`\n(`--no-bootstrap-deno`) for ones that require it and fail closed. Unset:\nask when interactive, else take the default (bootstrap)."
+            }
+          ]
+        },
+        {
+          "name": "SetupHost",
+          "kind": "interface",
+          "doc": "Injected side effects, so {@link runSetup} is unit-testable.",
+          "signature": "interface SetupHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "exists",
+              "kind": "method",
+              "optional": false,
+              "signature": "exists(path: string): Promise<boolean>",
+              "doc": "Whether a path exists."
+            },
+            {
+              "name": "isDirectory",
+              "kind": "method",
+              "optional": false,
+              "signature": "isDirectory(path: string): Promise<boolean>",
+              "doc": "Whether a path exists and is a directory (a reserved-name collision)."
+            },
+            {
+              "name": "isSymlink",
+              "kind": "method",
+              "optional": false,
+              "signature": "isSymlink(path: string): Promise<boolean>",
+              "doc": "Whether a path is a symbolic link, without following it. Scaffolding\nrefuses to write through one: the writes below follow links, so a link\nplanted at a scaffold name by the very repository being set up would\nredirect them outside the target directory.\n\nThe guard covers the names scaffolding chooses, which is where the hazard\nis — the caller never asked for `.gitignore` to be written, so a repository\nredirecting it is a decision nobody made. It reports what is there when it\nruns, and a link planted after it would escape it; that is why\n{@link SetupHost.writeText} does not write through a link either, so the\nrefusal is the friendly answer rather than the only defence.\n\nTwo things stay out of scope. The directory the caller names with `--dir`\nis the caller's to name, symlink or not. And a **hard** link is\nindistinguishable from the file it shares, so no probe can see one; git\ncannot check one out either, which is what keeps it out of the threat this\nguards."
+            },
+            {
+              "name": "readText",
+              "kind": "method",
+              "optional": false,
+              "signature": "readText(path: string): Promise<string>",
+              "doc": "Read a file as UTF-8 text."
+            },
+            {
+              "name": "writeText",
+              "kind": "method",
+              "optional": false,
+              "signature": "writeText(path: string, content: string): Promise<void>",
+              "doc": "Write UTF-8 text to a file, creating or replacing it.\n\nAn implementation must not write *through* a symbolic link standing at\n`path`: the scaffolder's confinement to its target directory rests on this,\nand the pre-write {@link SetupHost.isSymlink} check alone cannot carry it,\nsince a link can appear after the check."
+            },
+            {
+              "name": "chmod",
+              "kind": "method",
+              "optional": false,
+              "signature": "chmod(path: string, mode: number): Promise<void>",
+              "doc": "Set a file's permission bits (may be unsupported on some platforms)."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(message: string): void",
+              "doc": "Emit a line of progress output."
+            }
+          ]
+        },
+        {
+          "name": "StarActions",
+          "kind": "interface",
+          "doc": "The side effects behind {@link promptStar}, injectable so tests never spawn\n`gh` or a browser.",
+          "signature": "interface StarActions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ghAuthenticated",
+              "kind": "method",
+              "optional": false,
+              "signature": "ghAuthenticated(): Promise<boolean>",
+              "doc": "Whether the `gh` CLI is installed and holds a login."
+            },
+            {
+              "name": "starWithGh",
+              "kind": "method",
+              "optional": false,
+              "signature": "starWithGh(): Promise<void>",
+              "doc": "Star the Zuke repository through `gh api`."
+            },
+            {
+              "name": "openBrowser",
+              "kind": "method",
+              "optional": false,
+              "signature": "openBrowser(url: string): Promise<boolean>",
+              "doc": "Open `url` in the default browser; `false` when it could not launch."
             }
           ]
         }
@@ -42876,7 +43217,7 @@
         {
           "name": "CommandRole",
           "kind": "typeAlias",
-          "doc": "A repository role a commenter may hold, as GitHub's collaborators API\nreports it (`role_name`) — see {@link ReviewCommandSettings.role}.",
+          "doc": "A repository role a commenter may hold, as GitHub's collaborators API\nreports it (`role_name`) — see `ReviewCommandSettings.role`.",
           "signature": "type CommandRole = read | triage | write | maintain | admin",
           "deprecated": false
         },
@@ -43365,7 +43706,7 @@
         {
           "name": "ReviewCommandSettings",
           "kind": "class",
-          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command} — and derived from the reviewers\nwithout it: a reviewer that takes commands (`.discussion((d) =>\nd.commands(\"@acme-bot\"))`) names the mention, and the job it needs is\ngenerated with `<mention> review` and `<mention> accept`, so the Commands\npanel the reviewer posts is true by construction. The lambda refines the\njob: who may start a run, which secrets it holds, or a command text of its\nown.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets. Its `if:` fires only when the comment is on a pull\nrequest, starts with one of the commands, and was written by a human (not a\nbot account); the comment body is matched in the expression and never\ninterpolated into a `run:` line. The access control is the job's first\nstep: it asks the collaborators API what role the commenter holds, and\nevery later step is skipped unless it is at or above {@link role} or the\nlogin is among {@link users}. The event's `author_association` is\ndeliberately not consulted — it reports a private organisation member as\n`CONTRIBUTOR`, and `MEMBER` and `COLLABORATOR` admit read-only accounts, so\nit can neither admit nor refuse anyone correctly.\n\nThe command is also how a maintainer who contested a finding in its review\nthread, and pushed nothing, gets an answer: the run it starts reads every\nthread, adjudicates the rebuttals, and replies in the threads.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
+          "doc": "The comment command that runs the review on demand, configured through\n{@link AiReviewWorkflowSpec.command} — and derived from the reviewers\nwithout it: a reviewer that takes commands (`.discussion((d) =>\nd.commands(\"@acme-bot\"))`) names the mention, and the job it needs is\ngenerated with `<mention> review` and `<mention> accept`, so the Commands\npanel the reviewer posts is true by construction. The lambda refines the\njob: who may start a run, which secrets it holds, or a command text of its\nown.\n\nThe job it adds runs on `issue_comment`, which GitHub delivers for comments on\npull requests too, always from the **default branch** and always with the\nrepository's secrets. Its `if:` fires only when the comment is on a pull\nrequest, starts with one of the commands, and was written by a human (not a\nbot account); the comment body is matched in the expression and never\ninterpolated into a `run:` line. The access control runs inside the build,\nnot the workflow file: the job passes the commenter's login, {@link role}\nand {@link users} as env, and each reviewer asks the collaborators API —\nthrough `GhTasks` — what role the commenter holds, starting only when it is\nat or above {@link role} or the login is among {@link users} (see\n`callers.ts`). A refused commenter's run ends having spent nothing, with a\n😕 on their comment. The event's `author_association` is\ndeliberately not consulted — it reports a private organisation member as\n`CONTRIBUTOR`, and `MEMBER` and `COLLABORATOR` admit read-only accounts, so\nit can neither admit nor refuse anyone correctly.\n\nThe command is also how a maintainer who contested a finding in its review\nthread, and pushed nothing, gets an answer: the run it starts reads every\nthread, adjudicates the rebuttals, and replies in the threads.\n\nWhat runs is the default branch's build, never the pull request's: the job\npasses `ZUKE_REVIEW_PR`, and the reviewers fetch that pull request's merge\nas data and diff it. That is what makes the flow safe for a fork — the code\nunder review is read, not executed — and it is why a pull request cannot\nchange the rules it is judged by from this flow: its `zuke.ts`, suppressions\nand criteria never load. The maintainer's comment is the human gate, as it\nis for Dependabot's `@dependabot` commands.",
           "signature": "class ReviewCommandSettings",
           "deprecated": false,
           "members": [
@@ -43596,6 +43937,13 @@
               "doc": "Backwards-compatible alias for {@link commentToken}."
             },
             {
+              "name": "reactions",
+              "kind": "method",
+              "optional": false,
+              "signature": "reactions(enabled: boolean): this",
+              "doc": "Whether the reviewer reacts on the pull request to show its progress (on\nby default, whenever `.comment()` is set). On the description: 👀 while\nit runs, then 👍 when it passes clean, 🎉 when it passes clean where the\nprevious run failed, 🤏 when it has findings under the failing threshold\n(😕 on GitHub, whose reaction set has no 🤏), 👎 when it fails. On the\ncomment that started a comment-started run: 👍 as it starts, 😕 when the\nrun could not review. On a trusted maintainer's reply: 👀 once read, ❤️\nwhen it decided a finding. The reviewers on one pull request share the\nreactions, so the verdict shown is the worst of a run's. GitHub and\nGitLab have the reactions; on Azure DevOps and Bitbucket this is a no-op.\n`false` turns all of it off, as does `.quiet()`, under which the reviewer\ndoes not speak on the pull request."
+            },
+            {
               "name": "quiet",
               "kind": "method",
               "optional": false,
@@ -43678,6 +44026,13 @@
               "optional": false,
               "signature": "discussion(configure?: Configure<DiscussionSettings>): this",
               "doc": "Engage with the pull-request discussion instead of repeating findings: the\nreviewer reads the PR's comments, and when a **trusted** commenter (by the\nhost's own author metadata — see {@link DiscussionSettings}) contests a\nfinding by quoting its ID, an adjudication pass weighs the rebuttal on\ntechnical merit and either upholds the finding (with the gap named) or\ndismisses it. Dismissals persist across runs in a state block inside the\nreviewer's own PR comment, so a dismissed finding — or a rewording of it —\ndoes not resurface without new evidence. Requires {@link comment} (the\ncomment is where state lives) and a host that can list comments (GitHub\ncurrently); elsewhere the discussion is skipped with a console note.\n\nUntrusted comments are dropped in code before any prompt is built — the\nmodel never sees them, so a drive-by \"the maintainer approved this\"\ncomment cannot influence the review."
+            },
+            {
+              "name": "preflight",
+              "kind": "method",
+              "optional": false,
+              "signature": "preflight(context: ValidationContext): Promise<void>",
+              "doc": "The run's preflight: on a comment-started run, refuse a commenter who may\nnot start a review before any target — a dependency included — has\nstarted (see {@link Validation.preflight}). A no-op on any other run."
             },
             {
               "name": "validate",
