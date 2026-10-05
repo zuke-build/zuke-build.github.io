@@ -8957,6 +8957,13 @@
               "optional": true,
               "signature": "runId?: string",
               "doc": "The identity of the run the validation belongs to — the same id the run\nrecord and `zuke runs` show, kept across a resume. Lets validations that\ncoordinate with each other (the `@zuke/ai` reviewers sharing their\nreactions on a pull request) scope that to one run, even in a process\nthat executes several, such as `zuke mcp`. Set by the scheduler; absent\nwhen a caller drives `validate(...)` directly."
+            },
+            {
+              "name": "peers",
+              "kind": "property",
+              "optional": true,
+              "signature": "peers?: unknown",
+              "doc": "The validations attached beside this one: the whole list it was given in\n— one `.validateBefore(...)` or `.validateAfter(...)` — in the order they\nrun, itself included. Lets validations that publish together find each\nother without the build wiring them up: the `@zuke/ai` reviewers of one\ntarget post one combined pull-request comment rather than one each, and\nthe last of them is the one that knows it is last. Set by the scheduler\nfor the before and after lists; absent for a `.validateDuring(...)` check\nand when a caller drives `validate(...)` directly, where a validation\nacts alone."
             }
           ]
         },
@@ -27144,6 +27151,194 @@
           "deprecated": false
         },
         {
+          "name": "cloudRunCanary",
+          "kind": "function",
+          "doc": "A Cloud Run service as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(cloudRunCanary((r) =>\n  r.service(\"api\").region(\"europe-west1\").image(this.image.value)\n    .gcloud((g) => g.project(\"my-project\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters.\n\n- **stage** — `run services update <service> --image <image> --tag canary\n  --no-traffic`, then records the new revision.\n- **expose** — `run services update-traffic <service> --to-tags canary=<n>`.\n- **promote** — checks the latest revision is still the candidate, then\n  `update-traffic --to-latest`.\n- **abort** — `update-traffic --to-tags canary=0` mid-rollout; run by hand,\n  `--to-revisions <stable>=100` to the revision set with `.stable(...)`.",
+          "signature": "function cloudRunCanary(configure: Configure<CloudRunCanarySettings>): CloudRunCanary",
+          "deprecated": false
+        },
+        {
+          "name": "CloudRunCanary",
+          "kind": "class",
+          "doc": "A Cloud Run service as a canary platform. Create one with\n{@link cloudRunCanary}; hand it to `@zuke/canary`'s `c.platform(...)`.\n\nExposure is a share of requests, set exactly, in whole percents.",
+          "signature": "class CloudRunCanary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(): string",
+              "doc": "`\"Cloud Run service api\"`, for the build summary."
+            },
+            {
+              "name": "stage",
+              "kind": "method",
+              "optional": false,
+              "signature": "stage(ctx: CloudRunCanaryContext): Promise<void>",
+              "doc": "Deploy the candidate image as a new revision carrying the tag and no\ntraffic, then record which revision that is. `services update` never\ncreates a service, so a misspelt name fails here rather than standing up a\nsecond service."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(percent: number): Promise<number>",
+              "doc": "Send `percent` of the requests to the candidate, through its tag. gcloud\nspreads the rest over the revisions already serving, in proportion and in\nwhole percents, so a split the service had before the canary keeps its\nshape only approximately — a revision whose share rounds to 0 drops out."
+            },
+            {
+              "name": "promote",
+              "kind": "method",
+              "optional": false,
+              "signature": "promote(ctx: CloudRunCanaryContext): Promise<void>",
+              "doc": "Send all traffic to the latest revision — after checking that it is\nstill the candidate this rollout staged, so a revision someone deployed in\nthe meantime is not promoted in its place. The check and the traffic move\nare two gcloud calls, so a deploy landing in the seconds between them is\nnot caught. Idempotent."
+            },
+            {
+              "name": "abort",
+              "kind": "method",
+              "optional": false,
+              "signature": "abort(ctx: CloudRunCanaryContext): Promise<void>",
+              "doc": "Take the candidate's traffic back. Idempotent. What it does depends on\nwhat this rollout recorded:\n\n- **The candidate is tagged** (a rollback mid-rollout): the tag goes to\n  0 % and gcloud returns that share to the revisions already serving. The\n  candidate revision stays, with no traffic.\n- **`stage` failed before tagging it**: nothing has any traffic to take\n  back, so nothing runs.\n- **Nothing recorded** (`rollout.abort` run by hand, a fresh run): all\n  traffic goes to the revision set with\n  {@link CloudRunCanarySettings.stable}. Without one this refuses, since\n  claiming a rollback it cannot do would be worse."
+            },
+            {
+              "name": "exposure",
+              "kind": "property",
+              "optional": false,
+              "signature": "exposure: traffic",
+              "doc": "Cloud Run splits requests, so exposure is a traffic share."
+            }
+          ]
+        },
+        {
+          "name": "CloudRunCanaryContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the Cloud Run platform uses: the\nrollout's durable state, where the staged revision is recorded, and the\nbuild summary. The engine hands a richer context; this is the narrow view.",
+          "signature": "interface CloudRunCanaryContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "reportSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "reportSummary(pairs: SummaryPairs): void",
+              "doc": "Add key/value pairs to the calling target's row in the build summary."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: TargetStateHandle",
+              "doc": "The rollout's durable platform state, shared by every call."
+            }
+          ]
+        },
+        {
+          "name": "CloudRunCanarySettings",
+          "kind": "class",
+          "doc": "How {@link cloudRunCanary} reaches the service, configured through its\nlambda.",
+          "signature": "class CloudRunCanarySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The Cloud Run service to roll out to. It must already exist."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(value: string): this",
+              "doc": "The region the service runs in (`--region`)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The candidate's container image, deployed by `stage`."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: string): this",
+              "doc": "The tag the candidate revision carries, and that every traffic move routes\nthrough (default `canary`). Lowercase letters, digits and hyphens,\nstarting with a letter."
+            },
+            {
+              "name": "stable",
+              "kind": "method",
+              "optional": false,
+              "signature": "stable(revision: string): this",
+              "doc": "The revision to send all traffic back to when `rollout.abort` is run by\nhand. Such a run is fresh, with no record of a rollout, so it has nothing\nelse to go on — and the release it is undoing has usually been promoted\nalready. A rollback the engine runs mid-rollout does not use it: that one\ntakes the candidate's tag back to 0 % instead."
+            },
+            {
+              "name": "gcloud",
+              "kind": "method",
+              "optional": false,
+              "signature": "gcloud(configure: Configure<GcloudSettings>): this",
+              "doc": "Global flags for every gcloud command the platform runs —\n`(g) => g.project(\"p\").account(\"deploy@p.iam.gserviceaccount.com\")`, or a\n`.toolPath(...)` to a specific gcloud."
+            },
+            {
+              "name": "runner",
+              "kind": "method",
+              "optional": false,
+              "signature": "runner(run: GcloudSettingsRunner): this",
+              "doc": "Replace how each prepared command is run. The default runs it; this is\nfor a test, or for a build that executes gcloud through something else."
+            },
+            {
+              "name": "service_",
+              "kind": "property",
+              "optional": true,
+              "signature": "service_?: string",
+              "doc": "The Cloud Run service (set by {@link service})."
+            },
+            {
+              "name": "region_",
+              "kind": "property",
+              "optional": true,
+              "signature": "region_?: string",
+              "doc": "The region the service runs in (set by {@link region})."
+            },
+            {
+              "name": "image_",
+              "kind": "property",
+              "optional": true,
+              "signature": "image_?: string",
+              "doc": "The candidate's container image (set by {@link image})."
+            },
+            {
+              "name": "tag_",
+              "kind": "property",
+              "optional": false,
+              "signature": "tag_: string",
+              "doc": "The tag that routes the candidate's traffic (set by {@link tag})."
+            },
+            {
+              "name": "stable_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stable_?: string",
+              "doc": "The revision a hand-run rollback returns to (set by {@link stable})."
+            },
+            {
+              "name": "gcloud_",
+              "kind": "property",
+              "optional": true,
+              "signature": "gcloud_?: Configure<GcloudSettings>",
+              "doc": "Global gcloud flags for every command (set by {@link gcloud})."
+            },
+            {
+              "name": "runner_",
+              "kind": "property",
+              "optional": false,
+              "signature": "runner_: GcloudSettingsRunner",
+              "doc": "How each command is run (set by {@link runner})."
+            }
+          ]
+        },
+        {
           "name": "gcloudAccessToken",
           "kind": "function",
           "doc": "The default {@link AccessTokenProvider}: the trimmed stdout of\n`gcloud auth print-access-token`, run with `--quiet` so the token never\nstreams to the build log. `run` defaults to {@link \"./gcloud.ts\".GcloudTasks}\n`.run` and is injectable for tests.",
@@ -28350,6 +28545,13 @@
               "doc": "Disable interactive prompts, accepting defaults (gcloud's `--quiet`). Named\n`noPrompt` to avoid clashing with the base `.quiet()`, which suppresses\nZuke's own output streaming."
             }
           ]
+        },
+        {
+          "name": "GcloudSettingsRunner",
+          "kind": "typeAlias",
+          "doc": "Runs one prepared `gcloud` command and returns its output. The default runs\nit; a test or a build that executes gcloud some other way injects its own\nwith {@link CloudRunCanarySettings.runner}.",
+          "signature": "type GcloudSettingsRunner = unknown",
+          "deprecated": false
         },
         {
           "name": "GcloudStorageCpSettings",
@@ -43920,7 +44122,7 @@
               "kind": "method",
               "optional": false,
               "signature": "comment(mode?: update | append): this",
-              "doc": "Also post the review to the pull/merge request as a comment. Works on\nevery supported CI host — GitHub Actions, GitLab CI, Azure Pipelines,\nBitbucket Pipelines — dispatched at runtime by {@link detectCiHost}. A\nno-op outside a PR context (e.g. local runs). On each host the workflow\nmust grant the right scope: GitHub `pull-requests: write`, GitLab a token\nwith the `api` scope, Azure `System.AccessToken`, Bitbucket an app\npassword.\n\n`mode` chooses how re-runs post: `\"update\"` (default) keeps a single\ncomment per reviewer, edited in place; `\"append\"` posts a fresh comment\nevery run, so earlier assessments — and their finding ids — stay on the\nthread as history. The discussion feature works with both: its state block\nrides on every comment, and the newest one is read back."
+              "doc": "Also post the review to the pull/merge request as a comment. Works on\nevery supported CI host — GitHub Actions, GitLab CI, Azure Pipelines,\nBitbucket Pipelines — dispatched at runtime by {@link detectCiHost}. A\nno-op outside a PR context (e.g. local runs). On each host the workflow\nmust grant the right scope: GitHub `pull-requests: write`, GitLab a token\nwith the `api` scope, Azure `System.AccessToken`, Bitbucket an app\npassword.\n\n`mode` chooses how re-runs post: `\"update\"` (default) keeps a single\ncomment per reviewer, edited in place; `\"append\"` posts a fresh comment\nevery run, so earlier assessments — and their finding ids — stay on the\nthread as history. The discussion feature works with both: its state block\nrides on every comment, and the newest one is read back.\n\nReviewers attached side by side to one target —\n`.validateBefore(security, quality)` — post **one** comment between them\nrather than one each: a table of every reviewer's verdict, the findings of\nall of them in one table with a column naming the reviewer (and its\n{@link badge}) that raised each, and each reviewer's full report folded\nunderneath. Every one of them runs even when an earlier one fails its\ngate; the target then fails with all of their reasons. The comment is\nposted by the last of them, with its token, and appended when any of\nthem appends. Each reviewer's discussion state rides in it under the\nreviewer's name, and a reviewer that used to post alone still reads its\nold comment. Another validation between two reviewers splits them, and a\nreviewer alone posts its own comment as before."
             },
             {
               "name": "commentToken",
@@ -43942,6 +44144,13 @@
               "optional": false,
               "signature": "reactions(enabled: boolean): this",
               "doc": "Whether the reviewer reacts on the pull request to show its progress (on\nby default, whenever `.comment()` is set). On the description: 👀 while\nit runs, then 👍 when it passes clean, 🎉 when it passes clean where the\nprevious run failed, 🤏 when it has findings under the failing threshold\n(😕 on GitHub, whose reaction set has no 🤏), 👎 when it fails. On the\ncomment that started a comment-started run: 👍 as it starts, 😕 when the\nrun could not review. On a trusted maintainer's reply: 👀 once read, ❤️\nwhen it decided a finding. The reviewers on one pull request share the\nreactions, so the verdict shown is the worst of a run's. GitHub and\nGitLab have the reactions; on Azure DevOps and Bitbucket this is a no-op.\n`false` turns all of it off, as does `.quiet()`, under which the reviewer\ndoes not speak on the pull request."
+            },
+            {
+              "name": "badge",
+              "kind": "method",
+              "optional": false,
+              "signature": "badge(emoji: string): this",
+              "doc": "The emoji that marks this reviewer's findings — in the combined comment\nthe reviewers of one target share (see {@link comment}), and on the review\nthreads it opens. Defaults by kind: 🛡️ security, 🧹 code quality\n(`genericReviewer`), 🔑 secrets, 🐛 correctness, ⚖️ license. Set one when\ntwo reviewers of a kind review side by side — and give one of them a\n{@link name} of its own, which is what the comment tells them apart by."
             },
             {
               "name": "quiet",
