@@ -5686,6 +5686,20 @@
           ]
         },
         {
+          "name": "redactUrl",
+          "kind": "function",
+          "doc": "Strip userinfo (`user:pass@`) and mask every credential-bearing parameter so\na URL is safe to put in an error message or a log:\n\n```ts\nredactUrl(\"https://ci:hunter2@host.example/x?token=abc&page=2\");\n// \"https://host.example/x?token=REDACTED&page=2\"\n```\n\nParameters are masked in the query and in the fragment, including\n`;`-separated ones. A parameter whose value carries a credential of its own —\na `redirect_uri` with userinfo or a token, encoded up to three times, or any\nvalue with an `@` in it — is masked **whole**, since only its whole value is\ncertain to hide it. Input the URL parser rejects is scrubbed by the same rules\ntextually rather than returned as it came: the function fails closed, never\nthrows, and costs time linear in its input.\n\nA parsed URL is re-serialised, which can change its spelling (a lowercased\nhost, a percent-encoded path). Run a build's secret redactor over text\n**before** this, while a declared secret still reads as written. See the\nmodule documentation for what it does not recognise.",
+          "signature": "function redactUrl(raw: string): string",
+          "deprecated": false
+        },
+        {
+          "name": "redactUrls",
+          "kind": "function",
+          "doc": "`text` with every URL in it passed through {@link redactUrl} — for a message\nthat quotes a URL, such as a failed request's error. A URL starts at its\nscheme — `https://`, `postgres://`, `https:\\\\`, or a web scheme the URL\nparser also reads without slashes (`https:host`) — and runs to the next URL\nor whitespace, less any closing punctuation (`).,\"`) the sentence put after\nit. Everything outside a URL is left as written.",
+          "signature": "function redactUrls(text: string): string",
+          "deprecated": false
+        },
+        {
           "name": "Remediation",
           "kind": "interface",
           "doc": "A recovery step plugged into a target with {@link TargetBuilder.recoverWith}.\nIt runs **only after the target body fails**, receives the failure, and may\nattempt to repair it — returning `{ retry: true }` to ask the executor to\nre-run the body (the real build command is the verifier). Implemented, for\nexample, by the AI fixer in `@zuke/ai`, but any object with a `remediate`\nmethod qualifies.",
