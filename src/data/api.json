@@ -4763,6 +4763,13 @@
               "doc": "Render the guidance shown to a run that loses the lock. Receives the\ncurrent {@link \"./state/lock.ts\".LockHolder}; the returned string becomes\nthe failure message. Defaults to a generic \"held by … then retry\" line."
             },
             {
+              "name": "holdForRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "holdForRun(): this",
+              "doc": "Hold the lock for the rest of the **run**, not just while this target's\nbody runs: it is released when the run settles — succeeded, failed or\ncancelled — and kept while the run is parked at a `.waitsFor(...)` gate.\nUse it for a resource a whole multi-step run must own, such as one rollout\nof a service at a time, where a target-scoped lock would free itself the\nmoment the first step ends.\n\nThe lock is recorded on the run record, so a resumed process renews it and\nevery path that settles the run releases it. While the run is parked no\nprocess heartbeats it, so {@link withTtl} is how long a parked run keeps\nthe lock with no process touching it; each `zuke resume --check` that\nre-parks the run renews it. A resume that finds the lock lapsed and taken\nby another run refuses to continue and leaves the run suspended. A\n`zuke cancel` of a run still working leaves the lock with that run's\nprocess until its body stops, rather than freeing it beside a running\ndeploy.\n\nAny later target in the same run declaring the same key — run-held or\nnot, sequentially or in parallel — reuses the held lock rather than\nconflicting with the run itself. The lock is taken where a lock is: just\nbefore the body, so a target the incremental cache skips, a `.waitsFor`\ngate or a `.forEach` fan-out takes none — put it on a step that always\nruns. Requires a state store, like any lock."
+            },
+            {
               "name": "key_",
               "kind": "property",
               "optional": true,
@@ -4796,6 +4803,13 @@
               "optional": true,
               "signature": "pollEvery_?: string | number",
               "doc": "How often to retry while waiting; set by {@link pollEvery}."
+            },
+            {
+              "name": "holdForRun_",
+              "kind": "property",
+              "optional": false,
+              "signature": "holdForRun_: boolean",
+              "doc": "Hold the lock until the run settles; set by {@link holdForRun}."
             }
           ]
         },
@@ -6355,6 +6369,43 @@
           ]
         },
         {
+          "name": "RunLock",
+          "kind": "interface",
+          "doc": "One run-held lock on a {@link RunRecord}: the key, the store's ownership\ntoken for it, the TTL it is renewed with, and the target that took it.",
+          "signature": "interface RunLock",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "property",
+              "optional": false,
+              "signature": "key: string",
+              "doc": "The lock key, as it was acquired."
+            },
+            {
+              "name": "token",
+              "kind": "property",
+              "optional": false,
+              "signature": "token: string",
+              "doc": "The store's ownership token, which renewal and release present."
+            },
+            {
+              "name": "ttlMs",
+              "kind": "property",
+              "optional": false,
+              "signature": "ttlMs: number",
+              "doc": "The TTL, in milliseconds, the lock is renewed with."
+            },
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": false,
+              "signature": "target: string",
+              "doc": "The dotted name of the target whose `.lock(...)` took it."
+            }
+          ]
+        },
+        {
           "name": "RunningService",
           "kind": "interface",
           "doc": "A started service the executor holds until it tears it down.",
@@ -6622,6 +6673,13 @@
               "optional": true,
               "signature": "intendedTerminal?: RunStatus",
               "doc": "The terminal status the process that moved this run to `cancelling` means\nto leave it in. Absent means `cancelled`, which is what an ordinary\n`zuke cancel` intends and what every record written before this field\nexisted meant.\n\nRecorded rather than inferred, because the settlement can be finished by a\n*different* process than the one that began it: a canceller that crashes\nleaves the run `cancelling`, and whoever recovers it has no other way to\nknow whether an operator was cancelling the run or a sweep was failing an\nabandoned one."
+            },
+            {
+              "name": "locks",
+              "kind": "property",
+              "optional": true,
+              "signature": "locks?: RunLock[]",
+              "doc": "The run-held locks this run owns (see\n{@link \"../target.ts\".LockSettings.holdForRun}), in acquisition order.\nAbsent when it holds none, and removed when the run settles.\n\nRecorded so the lock outlives the process that took it: a resumed process\nrenews each one with its token, and whatever settles the run — the executor,\n`zuke cancel`, a timed-out wait, a reaping sweep — releases them. The token\nproves ownership of the lock to the state store, so it is masked wherever a\nrecord is shown — `zuke runs show` and the MCP `show_run` tool — as a lock\nlisting never includes it either."
             }
           ]
         },
@@ -7584,6 +7642,13 @@
               "doc": "Run one or more {@link Validation}s *after* the target body completes\nsuccessfully. Each runs in declaration order; the first to throw fails the\ntarget. Repeatable."
             },
             {
+              "name": "validateDuring",
+              "kind": "method",
+              "optional": false,
+              "signature": "validateDuring(configure: Configure<ValidateDuringSettings>): this",
+              "doc": "Run {@link Validation}s on an interval **while the body runs**, so a long\nbody — a canary bake, a soak test — stops as soon as a check goes red\ninstead of reporting the failure at the end.\n\n```ts\nbake = target()\n  .executes((ctx) => soak(ctx.signal))\n  .validateDuring((s) => s.every(\"1m\").check(errorRate, healthProbe));\n```\n\nEach round runs the checks in order with the context the other\nvalidations get, the run's redactor included, plus a `signal` that aborts\nwhen the target ends or the run is cancelled. The first check to throw\nfails the target with its error: the body's `ctx.signal` fires and its\nshell commands are stopped, and the target does not wait for a body that\nignores the signal. That failure is the target's failure like any other, so\n`.onFailure(...)` sees it and retries do not repeat it. No round starts\nonce the body settles; after a body that succeeded, a round still running\nis awaited and its verdict counts. The checks never run under a dry run. The lambda runs when\nthe target starts, so it may read `this.<param>.value`."
+            },
+            {
               "name": "recoverWith",
               "kind": "method",
               "optional": false,
@@ -7820,6 +7885,13 @@
               "optional": false,
               "signature": "validateAfter_: Validation[]",
               "doc": "Validations run after the body (set by {@link validateAfter})."
+            },
+            {
+              "name": "validateDuring_",
+              "kind": "property",
+              "optional": true,
+              "signature": "validateDuring_?: Configure<ValidateDuringSettings>",
+              "doc": "Validations run on an interval while the body runs (set by {@link validateDuring})."
             },
             {
               "name": "recoverWith_",
@@ -8757,6 +8829,43 @@
           "deprecated": false
         },
         {
+          "name": "ValidateDuringSettings",
+          "kind": "class",
+          "doc": "Fluent configuration for {@link TargetBuilder.validateDuring}: how often to\nrun the checks while the body runs, and which {@link Validation}s they are —\n`.validateDuring((s) => s.every(\"1m\").check(errorRate, probe))`.",
+          "signature": "class ValidateDuringSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "every",
+              "kind": "method",
+              "optional": false,
+              "signature": "every(interval: string | number): this",
+              "doc": "Run a round of checks this often while the body runs — a duration string\nlike `\"1m\"` or raw milliseconds (required). The first round runs one\ninterval after the body starts, and a round still running when the next is\ndue delays it rather than overlapping it."
+            },
+            {
+              "name": "check",
+              "kind": "method",
+              "optional": false,
+              "signature": "check(...validations: Validation[]): this",
+              "doc": "The validations each round runs, in declaration order; repeatable, at least one."
+            },
+            {
+              "name": "every_",
+              "kind": "property",
+              "optional": true,
+              "signature": "every_?: string | number",
+              "doc": "The interval between rounds of checks; set by {@link every}."
+            },
+            {
+              "name": "checks_",
+              "kind": "property",
+              "optional": false,
+              "signature": "checks_: Validation[]",
+              "doc": "The validations each round runs, in order; set by {@link check}."
+            }
+          ]
+        },
+        {
           "name": "validateGraph",
           "kind": "function",
           "doc": "Validate the whole graph: unknown references first, then cycles.\n",
@@ -8806,6 +8915,13 @@
               "optional": false,
               "signature": "target: string",
               "doc": "The name of the target the validation is attached to."
+            },
+            {
+              "name": "signal",
+              "kind": "property",
+              "optional": true,
+              "signature": "signal?: AbortSignal",
+              "doc": "Set only for a `.validateDuring(...)` check: aborted when the target ends\nor the run is cancelled, so a check that waits on the network — a metrics\nquery, a health probe — should pass it on (`fetch(url, { signal })`). A\n`$` command the check runs is bound to it already."
             }
           ]
         },
