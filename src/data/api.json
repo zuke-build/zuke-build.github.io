@@ -44160,6 +44160,742 @@
           ]
         }
       ]
+    },
+    {
+      "name": "@zuke/canary",
+      "dir": "canary",
+      "summary": "Canary releases for Zuke builds. `canary(...)` turns a settings lambda into",
+      "symbols": [
+        {
+          "name": "canary",
+          "kind": "function",
+          "doc": "Declare a canary rollout. The lambda runs when the build is constructed and\ndecides which targets exist; a misconfigured one throws there, naming the\nfix.\n\n```ts\nclass Deploy extends Build {\n  rollout = canary((c) =>\n    c.platform(myPlatform)\n      .steps(10, 50)\n      .bake(\"10m\")\n      .analysis(httpProbe((h) => h.url(\"https://api.example.com/healthz\")))\n      .lock((l) => l.lockKey(\"deploy\", \"api\").withTtl(\"24h\"))\n  );\n  ship = target().dependsOn(this.rollout.promote).executes(() => {});\n}\n```",
+          "signature": "function canary(configure: Configure<CanarySettings>): Canary",
+          "deprecated": false
+        },
+        {
+          "name": "Canary",
+          "kind": "interface",
+          "doc": "The targets `canary(...)` creates. Assigned to a build field — `rollout =\ncanary(…)` — they are named under it: `rollout.stage`, `rollout.step1.expose`,\n`rollout.promote`, `rollout.abort`. Depend on `this.rollout.promote` to run\nafter a successful rollout.",
+          "signature": "interface Canary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "stage",
+              "kind": "property",
+              "optional": false,
+              "signature": "stage: TargetBuilder",
+              "doc": "Puts the candidate in place at 0 % and takes the rollout's lock."
+            },
+            {
+              "name": "approve",
+              "kind": "property",
+              "optional": true,
+              "signature": "approve?: TargetBuilder",
+              "doc": "The external-signal gate before promotion, when one is configured."
+            },
+            {
+              "name": "promote",
+              "kind": "property",
+              "optional": false,
+              "signature": "promote: TargetBuilder",
+              "doc": "Sends all traffic to the candidate. Re-driven by a resume."
+            },
+            {
+              "name": "abort",
+              "kind": "property",
+              "optional": false,
+              "signature": "abort: TargetBuilder",
+              "doc": "The rollback: every failure path runs it, and it can be run by hand."
+            },
+            {
+              "name": "soak",
+              "kind": "property",
+              "optional": true,
+              "signature": "soak?: CanaryPhaseTargets",
+              "doc": "The single phase of a canary with no steps, when it bakes or analyses."
+            }
+          ]
+        },
+        {
+          "name": "CanaryAnalysis",
+          "kind": "interface",
+          "doc": "A health check run against a canary: throw to fail it, which rolls the\nrollout back. Any core `Validation` is one, since a function that accepts a\nplain {@link ValidationContext} accepts this richer context too.",
+          "signature": "interface CanaryAnalysis",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "validate",
+              "kind": "method",
+              "optional": false,
+              "signature": "validate(context: CanaryAnalysisContext): void | Promise<void>",
+              "doc": "Run the check; throw to fail it."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "A name for diagnostics (optional)."
+            }
+          ]
+        },
+        {
+          "name": "CanaryAnalysisContext",
+          "kind": "interface",
+          "doc": "What an analysis is handed: everything a core\n{@link ValidationContext} carries — the target's name, the run's redactor,\nand a `signal` — plus where the rollout stands.",
+          "signature": "interface CanaryAnalysisContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "step",
+              "kind": "property",
+              "optional": false,
+              "signature": "step: number",
+              "doc": "The 1-based step being analysed; `0` for a canary with no steps."
+            },
+            {
+              "name": "requested",
+              "kind": "property",
+              "optional": false,
+              "signature": "requested: number",
+              "doc": "The exposure this step asked for, in percent."
+            },
+            {
+              "name": "exposure",
+              "kind": "property",
+              "optional": false,
+              "signature": "exposure: number",
+              "doc": "The exposure the platform reported achieving, in percent."
+            }
+          ]
+        },
+        {
+          "name": "CanaryContext",
+          "kind": "interface",
+          "doc": "What the engine hands a {@link CanaryPlatform} on each call.\n\n`state` is the one place a platform keeps the handles a later call needs —\nthe revision it staged, the stable one to return to. Every call of one\nrollout gets the **same** durable state, so `abort` can read what `stage`\nwrote, even in another process after a resume. Never put a secret in it: it\nis persisted in plain JSON and shown by `zuke runs show`.",
+          "signature": "interface CanaryContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "reportSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "reportSummary(pairs: SummaryPairs): void",
+              "doc": "Add key/value pairs to the calling target's row in the build summary."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: TargetStateHandle",
+              "doc": "The rollout's durable platform state, shared by every call."
+            },
+            {
+              "name": "signal",
+              "kind": "property",
+              "optional": false,
+              "signature": "signal: AbortSignal",
+              "doc": "Aborted when the run is cancelled. Pass it to any network call. A\ncompensation (`abort` during a rollback) is handed one that never aborts:\nthe rollback is finished, not interrupted."
+            }
+          ]
+        },
+        {
+          "name": "CanaryPhaseTargets",
+          "kind": "interface",
+          "doc": "The targets of one phase of a rollout.",
+          "signature": "interface CanaryPhaseTargets",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "expose",
+              "kind": "property",
+              "optional": true,
+              "signature": "expose?: TargetBuilder",
+              "doc": "Sets the step's exposure; absent for the soak of a canary with no steps."
+            },
+            {
+              "name": "bake",
+              "kind": "property",
+              "optional": true,
+              "signature": "bake?: TargetBuilder",
+              "doc": "Waits out the bake; absent when the phase does not bake."
+            },
+            {
+              "name": "analyze",
+              "kind": "property",
+              "optional": true,
+              "signature": "analyze?: TargetBuilder",
+              "doc": "Runs the analyses once at the end; absent when there are none."
+            }
+          ]
+        },
+        {
+          "name": "CanaryPlatform",
+          "kind": "interface",
+          "doc": "A place a canary runs. The engine stages the candidate, moves its exposure\nstep by step, and then promotes it or aborts it — through these calls only.\n\nRules the engine relies on:\n\n- `expose` is **absolute** (set exposure to `percent`, not add to it) and\n  returns the exposure actually achieved, which may differ on a `\"replicas\"`\n  platform. A repeated call with the same value is harmless — a resumed run\n  repeats one that was interrupted.\n- `promote` and `abort` are **idempotent**: either can run twice.\n- `abort` must also work with **empty** state. A rollback reads the state\n  `stage` wrote, but `zuke <rollout>.abort` run by hand is a fresh run that\n  has none, so `abort` falls back to what its own configuration says the\n  stable version is.",
+          "signature": "interface CanaryPlatform",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(): string",
+              "doc": "A short description for the build summary (`\"Cloud Run service api\"`)."
+            },
+            {
+              "name": "stage",
+              "kind": "method",
+              "optional": false,
+              "signature": "stage(ctx: CanaryContext): Promise<void>",
+              "doc": "Put the candidate in place at 0 % exposure; record handles in `ctx.state`."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(percent: number, ctx: CanaryContext): Promise<number>",
+              "doc": "Set exposure to `percent` (0–100) and return the exposure achieved."
+            },
+            {
+              "name": "promote",
+              "kind": "method",
+              "optional": false,
+              "signature": "promote(ctx: CanaryContext): Promise<void>",
+              "doc": "Send all traffic to the candidate and retire the old version."
+            },
+            {
+              "name": "abort",
+              "kind": "method",
+              "optional": false,
+              "signature": "abort(ctx: CanaryContext): Promise<void>",
+              "doc": "Return all traffic to the stable version and remove the candidate."
+            },
+            {
+              "name": "exposure",
+              "kind": "property",
+              "optional": false,
+              "signature": "exposure: ExposureKind",
+              "doc": "How this platform measures exposure."
+            }
+          ]
+        },
+        {
+          "name": "CanarySettings",
+          "kind": "class",
+          "doc": "How a canary rolls out, configured through `canary((c) => …)`:\n\n```ts\nrollout = canary((c) =>\n  c.platform(myPlatform)\n    .steps(10, 25, 50)\n    .bake(\"10m\")\n    .analysis(httpProbe((h) => h.url(HEALTH_URL)))\n    .approval(\"canary-approved\")\n    .lock((l) => l.lockKey(\"deploy\", \"api\").withTtl(\"24h\"))\n);\n```\n\nThe lambda runs once, when the build is constructed, because it decides\nwhich targets exist. Anything that reads a parameter — an image tag, a URL —\nbelongs inside the platform's or the analysis's own lambda, which runs when\nthe target does.",
+          "signature": "class CanarySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(platform: CanaryPlatform): this",
+              "doc": "Where the canary runs: a platform adapter, or a hand-written object."
+            },
+            {
+              "name": "steps",
+              "kind": "method",
+              "optional": false,
+              "signature": "steps(...percents: number[]): this",
+              "doc": "The exposure after each step, in percent and increasing — `steps(10, 25,\n50)` exposes 10 %, then 25 %, then 50 %, and promotion takes it to 100 %.\nA `\"channel\"` platform has no percentage and declares no steps."
+            },
+            {
+              "name": "bake",
+              "kind": "method",
+              "optional": false,
+              "signature": "bake(duration: string | number): this",
+              "doc": "How long every step bakes before its final analysis (`\"10m\"`, or ms)."
+            },
+            {
+              "name": "bakeStep",
+              "kind": "method",
+              "optional": false,
+              "signature": "bakeStep(step: number, duration: string | number): this",
+              "doc": "How long one step (1-based) bakes, overriding {@link bake} for it."
+            },
+            {
+              "name": "analysis",
+              "kind": "method",
+              "optional": false,
+              "signature": "analysis(...analyses: CanaryAnalysis[]): this",
+              "doc": "Health checks run against each step: on an interval while it bakes (inline\nbakes only) and once when it ends. Any core `Validation` works."
+            },
+            {
+              "name": "analysisInterval",
+              "kind": "method",
+              "optional": false,
+              "signature": "analysisInterval(duration: string | number): this",
+              "doc": "How often an inline bake runs its analyses (default `\"1m\"`)."
+            },
+            {
+              "name": "approval",
+              "kind": "method",
+              "optional": false,
+              "signature": "approval(signal: string): this",
+              "doc": "Wait for an external signal before promoting —\n`zuke resume <run-id> --signal <name>` delivers it."
+            },
+            {
+              "name": "approvalTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "approvalTimeout(duration: string | number): this",
+              "doc": "How long the approval gate waits before rolling the canary back."
+            },
+            {
+              "name": "lock",
+              "kind": "method",
+              "optional": false,
+              "signature": "lock(configure: Configure<LockSettings>): this",
+              "doc": "Lock the rollout for the whole run, from staging to promotion or rollback\n— a core lock settings lambda, held with `holdForRun()`. Set its TTL to\ncover the longest the run can stay parked at a gate."
+            },
+            {
+              "name": "durable",
+              "kind": "method",
+              "optional": false,
+              "signature": "durable(): this",
+              "doc": "Bake by suspending the run instead of sleeping in the process: each bake\nbecomes a gate that `zuke resume --check` reopens once its time is up.\nNeeds a state store. In-flight analyses do not run (no process is there to\nrun them); each step's final analysis does."
+            },
+            {
+              "name": "platform_",
+              "kind": "property",
+              "optional": true,
+              "signature": "platform_?: CanaryPlatform",
+              "doc": "Where the canary runs (set by {@link platform})."
+            },
+            {
+              "name": "steps_",
+              "kind": "property",
+              "optional": false,
+              "signature": "steps_: number[]",
+              "doc": "The exposure after each step, in percent (set by {@link steps})."
+            },
+            {
+              "name": "bake_",
+              "kind": "property",
+              "optional": true,
+              "signature": "bake_?: string | number",
+              "doc": "How long each step bakes by default (set by {@link bake})."
+            },
+            {
+              "name": "bakeAt_",
+              "kind": "property",
+              "optional": false,
+              "signature": "bakeAt_: Map<number, string | number>",
+              "doc": "Per-step bake overrides, by 1-based step (set by {@link bakeStep})."
+            },
+            {
+              "name": "analyses_",
+              "kind": "property",
+              "optional": false,
+              "signature": "analyses_: CanaryAnalysis[]",
+              "doc": "The analyses each step runs (set by {@link analysis})."
+            },
+            {
+              "name": "analysisInterval_",
+              "kind": "property",
+              "optional": true,
+              "signature": "analysisInterval_?: string | number",
+              "doc": "How often a bake runs its analyses in flight (set by {@link analysisInterval})."
+            },
+            {
+              "name": "approval_",
+              "kind": "property",
+              "optional": true,
+              "signature": "approval_?: string",
+              "doc": "The signal the approval gate waits for (set by {@link approval})."
+            },
+            {
+              "name": "approvalTimeout_",
+              "kind": "property",
+              "optional": true,
+              "signature": "approvalTimeout_?: string | number",
+              "doc": "How long the approval gate waits (set by {@link approvalTimeout})."
+            },
+            {
+              "name": "lock_",
+              "kind": "property",
+              "optional": true,
+              "signature": "lock_?: Configure<LockSettings>",
+              "doc": "The rollout's lock, held for the whole run (set by {@link lock})."
+            },
+            {
+              "name": "durable_",
+              "kind": "property",
+              "optional": false,
+              "signature": "durable_: boolean",
+              "doc": "Whether bakes suspend the run instead of sleeping (set by {@link durable})."
+            }
+          ]
+        },
+        {
+          "name": "ExposureKind",
+          "kind": "typeAlias",
+          "doc": "How a platform exposes a candidate:\n\n- `\"traffic\"` — a share of requests, set exactly (a traffic split).\n- `\"replicas\"` — a share of instances, quantised to whole replicas, so the\n  achieved exposure can differ from the one requested.\n- `\"channel\"` — a release channel (a dist-tag, a pre-release); there is no\n  percentage, so a canary on it declares no steps.",
+          "signature": "type ExposureKind = traffic | replicas | channel",
+          "deprecated": false
+        },
+        {
+          "name": "httpProbe",
+          "kind": "function",
+          "doc": "An analysis that requests a URL a number of times and fails the canary when\nmore than `maxFailures` of them fail — a status outside the expected ones, a\ntimeout, or a connection error:\n\n```ts\nhttpProbe((h) => h.url(\"https://api.example.com/healthz\").samples(30))\n```\n\nThe lambda runs on each check, so it may read resolved parameters. The\nfailure message passes through the run's redactor.",
+          "signature": "function httpProbe(configure: Configure<HttpProbeSettings>): CanaryAnalysis",
+          "deprecated": false
+        },
+        {
+          "name": "HttpProbeSettings",
+          "kind": "class",
+          "doc": "Settings for {@link httpProbe}: what to request, how often, how strictly.",
+          "signature": "class HttpProbeSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "url",
+              "kind": "method",
+              "optional": false,
+              "signature": "url(url: string): this",
+              "doc": "The URL to request."
+            },
+            {
+              "name": "samples",
+              "kind": "method",
+              "optional": false,
+              "signature": "samples(count: number): this",
+              "doc": "How many requests to make (default 10)."
+            },
+            {
+              "name": "maxFailures",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxFailures(count: number): this",
+              "doc": "How many failed requests are tolerated before the probe fails (default 0)."
+            },
+            {
+              "name": "expectStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "expectStatus(...statuses: number[]): this",
+              "doc": "The statuses that count as healthy; any 2xx when none are set."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string | number): this",
+              "doc": "How long one request may take (`\"5s\"`, or ms; default 5 s)."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(duration: string | number): this",
+              "doc": "The pause between requests (`\"1s\"`, or ms; default 1 s)."
+            },
+            {
+              "name": "header",
+              "kind": "method",
+              "optional": false,
+              "signature": "header(name: string, value: string): this",
+              "doc": "Add a request header."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fetcher: fetch): this",
+              "doc": "The `fetch` to use — the seam a test answers requests through."
+            },
+            {
+              "name": "url_",
+              "kind": "property",
+              "optional": true,
+              "signature": "url_?: string",
+              "doc": "The URL to request (set by {@link url})."
+            },
+            {
+              "name": "samples_",
+              "kind": "property",
+              "optional": false,
+              "signature": "samples_: number",
+              "doc": "How many requests to make (set by {@link samples})."
+            },
+            {
+              "name": "maxFailures_",
+              "kind": "property",
+              "optional": false,
+              "signature": "maxFailures_: number",
+              "doc": "How many failed requests are tolerated (set by {@link maxFailures})."
+            },
+            {
+              "name": "expectStatus_",
+              "kind": "property",
+              "optional": false,
+              "signature": "expectStatus_: number[]",
+              "doc": "The statuses that count as healthy; any 2xx when empty (set by {@link expectStatus})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeout_: number",
+              "doc": "How long one request may take, in ms (set by {@link timeout})."
+            },
+            {
+              "name": "interval_",
+              "kind": "property",
+              "optional": false,
+              "signature": "interval_: number",
+              "doc": "The pause between requests, in ms (set by {@link interval})."
+            },
+            {
+              "name": "headers_",
+              "kind": "property",
+              "optional": false,
+              "signature": "headers_: Record<string, string>",
+              "doc": "Request headers (set by {@link header})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` to use (set by {@link fetch}); the global one by default."
+            }
+          ]
+        },
+        {
+          "name": "MetricReader",
+          "kind": "typeAlias",
+          "doc": "Reads the metric a {@link metricThreshold} judges.",
+          "signature": "type MetricReader = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "metricThreshold",
+          "kind": "function",
+          "doc": "An analysis that reads a number and fails the canary when it is out of\nbounds:\n\n```ts\nmetricThreshold((m) =>\n  m.name(\"error ratio\").read(() => readErrorRatio()).max(0.01)\n)\n```\n\nThe lambda runs on each check, so a reader may use resolved parameters.",
+          "signature": "function metricThreshold(configure: Configure<MetricThresholdSettings>): CanaryAnalysis",
+          "deprecated": false
+        },
+        {
+          "name": "MetricThresholdSettings",
+          "kind": "class",
+          "doc": "Settings for {@link metricThreshold}: a name, a reader, and the bounds the\nvalue must stay within.",
+          "signature": "class MetricThresholdSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "What to call the metric when it is out of bounds."
+            },
+            {
+              "name": "read",
+              "kind": "method",
+              "optional": false,
+              "signature": "read(reader: MetricReader): this",
+              "doc": "How to read the value — handed where the rollout stands."
+            },
+            {
+              "name": "min",
+              "kind": "method",
+              "optional": false,
+              "signature": "min(value: number): this",
+              "doc": "Fail when the value is below `value`."
+            },
+            {
+              "name": "max",
+              "kind": "method",
+              "optional": false,
+              "signature": "max(value: number): this",
+              "doc": "Fail when the value is above `value`."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": false,
+              "signature": "name_: string",
+              "doc": "What the metric is called in a failure (set by {@link name})."
+            },
+            {
+              "name": "read_",
+              "kind": "property",
+              "optional": true,
+              "signature": "read_?: MetricReader",
+              "doc": "How to read the value (set by {@link read})."
+            },
+            {
+              "name": "min_",
+              "kind": "property",
+              "optional": true,
+              "signature": "min_?: number",
+              "doc": "The lowest acceptable value (set by {@link min})."
+            },
+            {
+              "name": "max_",
+              "kind": "property",
+              "optional": true,
+              "signature": "max_?: number",
+              "doc": "The highest acceptable value (set by {@link max})."
+            }
+          ]
+        },
+        {
+          "name": "prometheus",
+          "kind": "function",
+          "doc": "An analysis that runs an instant PromQL query and fails the canary when any\nsample is out of bounds:\n\n```ts\nprometheus((p) =>\n  p.url(\"https://prometheus.internal\")\n    .query('sum(rate(http_errors_total{rev=\"canary\"}[5m])) or vector(0)')\n    .max(0.01)\n)\n```\n\nThe lambda runs on each check, so it may read resolved parameters. Failure\nmessages pass through the run's redactor, so a secret parameter in the URL\nor the query is masked.",
+          "signature": "function prometheus(configure: Configure<PrometheusSettings>): CanaryAnalysis",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusSettings",
+          "kind": "class",
+          "doc": "Settings for {@link prometheus}: where, what to ask, and the bounds.",
+          "signature": "class PrometheusSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "What to call the query when it fails."
+            },
+            {
+              "name": "url",
+              "kind": "method",
+              "optional": false,
+              "signature": "url(url: string): this",
+              "doc": "The Prometheus base URL, such as `https://prometheus.internal`."
+            },
+            {
+              "name": "query",
+              "kind": "method",
+              "optional": false,
+              "signature": "query(promql: string): this",
+              "doc": "The PromQL expression. It must return a vector or a scalar; an empty\nvector fails, so write `… or vector(0)` when no data means healthy."
+            },
+            {
+              "name": "min",
+              "kind": "method",
+              "optional": false,
+              "signature": "min(value: number): this",
+              "doc": "Fail when any sample is below `value`."
+            },
+            {
+              "name": "max",
+              "kind": "method",
+              "optional": false,
+              "signature": "max(value: number): this",
+              "doc": "Fail when any sample is above `value`."
+            },
+            {
+              "name": "header",
+              "kind": "method",
+              "optional": false,
+              "signature": "header(name: string, value: string): this",
+              "doc": "Add a request header — `header(\"Authorization\", `Bearer ${token}`)`."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string | number): this",
+              "doc": "How long the query may take (`\"10s\"`, or ms; default 30 s)."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fetcher: fetch): this",
+              "doc": "The `fetch` to use — the seam a test answers queries through."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": false,
+              "signature": "name_: string",
+              "doc": "What the query is called in a failure (set by {@link name})."
+            },
+            {
+              "name": "url_",
+              "kind": "property",
+              "optional": true,
+              "signature": "url_?: string",
+              "doc": "The Prometheus base URL (set by {@link url})."
+            },
+            {
+              "name": "query_",
+              "kind": "property",
+              "optional": true,
+              "signature": "query_?: string",
+              "doc": "The PromQL expression (set by {@link query})."
+            },
+            {
+              "name": "min_",
+              "kind": "property",
+              "optional": true,
+              "signature": "min_?: number",
+              "doc": "The lowest acceptable sample (set by {@link min})."
+            },
+            {
+              "name": "max_",
+              "kind": "property",
+              "optional": true,
+              "signature": "max_?: number",
+              "doc": "The highest acceptable sample (set by {@link max})."
+            },
+            {
+              "name": "headers_",
+              "kind": "property",
+              "optional": false,
+              "signature": "headers_: Record<string, string>",
+              "doc": "Request headers, such as `Authorization` (set by {@link header})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeout_: number",
+              "doc": "The request timeout in ms (set by {@link timeout})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` to use (set by {@link fetch}); the global one by default."
+            }
+          ]
+        },
+        {
+          "name": "ThresholdBounds",
+          "kind": "interface",
+          "doc": "Inclusive bounds a metric must stay within; either side may be open.",
+          "signature": "interface ThresholdBounds",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "min",
+              "kind": "property",
+              "optional": true,
+              "signature": "min?: number",
+              "doc": "The lowest acceptable value, if any."
+            },
+            {
+              "name": "max",
+              "kind": "property",
+              "optional": true,
+              "signature": "max?: number",
+              "doc": "The highest acceptable value, if any."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
