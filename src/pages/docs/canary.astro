@@ -1,0 +1,464 @@
+---
+import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const GUIDE = "https://github.com/zuke-build/zuke/blob/master/docs/canary.md";
+
+const toc = [
+  { id: "overview", label: "A rollout in one declaration" },
+  { id: "targets", label: "The targets" },
+  { id: "state-store", label: "Requires a state store" },
+  { id: "platforms", label: "Platforms" },
+  { id: "custom-platform", label: "Your own platform" },
+  { id: "bakes", label: "Bakes: inline or durable" },
+  { id: "analyses", label: "Analyses" },
+  { id: "approval", label: "The approval gate" },
+  { id: "lock", label: "The lock" },
+  { id: "rollback", label: "Rolling back" },
+];
+
+const overviewSnippet = `import { Build, run, target } from "jsr:@zuke/core";
+import { canary, httpProbe, prometheus } from "jsr:@zuke/canary";
+
+class Deploy extends Build {
+  rollout = canary((c) =>
+    c.platform(cloudRun) // anything implementing CanaryPlatform
+      .steps(10, 25, 50) // exposure after each step; promotion is the 100 %
+      .bake("10m") // per step; .bakeStep(3, "30m") overrides one
+      .analysis(
+        httpProbe((h) => h.url(HEALTH_URL).samples(30).maxFailures(0)),
+        prometheus((p) => p.url(PROMETHEUS).query(ERROR_RATIO).max(0.01)),
+      )
+      .approval("canary-approved") // optional gate before promotion
+      .approvalTimeout("24h") // and how long it waits
+      .lock((l) => l.lockKey("deploy", "api").withTtl("24h"))
+  );
+
+  ship = target().dependsOn(this.rollout.promote).executes(() => {});
+}
+
+await run(Deploy);`;
+
+const cloudRunSnippet = `import { cloudRunCanary } from "jsr:@zuke/gcloud";
+
+c.platform(
+  cloudRunCanary((r) =>
+    r.service("api").region("europe-west1").image(this.image.value)
+      .gcloud((g) => g.project("my-project"))
+  ),
+)`;
+
+const kubectlSnippet = `import { kubectlCanary } from "jsr:@zuke/kubectl";
+
+c.platform(
+  kubectlCanary((k) =>
+    k.stable("api").canary("api-canary").container("api")
+      .image(this.image.value).replicas(10).namespace("prod")
+      .kubectl((s) => s.context("prod"))
+  ),
+)`;
+
+const helmSnippet = `import { helmCanary } from "jsr:@zuke/helm";
+
+c.platform(
+  helmCanary((h) =>
+    h.chart("./charts/api").stableRelease("api").namespace("prod")
+      .image(this.tag.value).replicas(10).values("values-prod.yaml")
+      .helm((s) => s.kubeContext("prod"))
+  ),
+)`;
+
+const composeSnippet = `import { dockerComposeCanary } from "jsr:@zuke/docker-compose";
+
+c.platform(
+  dockerComposeCanary((d) =>
+    d.service("app").canaryService("app-canary").replicas(4)
+      .image(this.image.value)
+      .stableImageVariable("APP_IMAGE")
+      .canaryImageVariable("APP_CANARY_IMAGE")
+      .compose((s) => s.file("compose.yml").projectName("shop"))
+  ),
+)`;
+
+const customSnippet = `import { Build, run, target } from "jsr:@zuke/core";
+import { $ } from "jsr:@zuke/core/shell";
+import { canary, type CanaryPlatform, httpProbe } from "jsr:@zuke/canary";
+
+// Two Docker Compose services behind a weighted proxy, scripted by hand.
+const compose: CanaryPlatform = {
+  exposure: "replicas",
+  describe: () => "compose service api",
+  async stage(ctx) {
+    await $\`docker compose up -d --scale api-canary=1 api-canary\`;
+    await ctx.state.set({ stable: "api", candidate: "api-canary" });
+  },
+  async expose(percent) {
+    const canaries = Math.round(percent / 25);
+    await $\`docker compose up -d --scale api-canary=\${canaries} api-canary\`;
+    return canaries * 25;
+  },
+  async promote() {
+    await $\`docker compose up -d api\`;
+    await $\`docker compose rm -sf api-canary\`;
+  },
+  async abort() {
+    // Needs no state: the stable service is fixed by configuration.
+    await $\`docker compose rm -sf api-canary\`;
+  },
+};
+
+class Deploy extends Build {
+  rollout = canary((c) =>
+    c.platform(compose)
+      .steps(25, 50)
+      .bake("5m")
+      .analysis(httpProbe((h) => h.url("http://localhost:8080/healthz")))
+  );
+  ship = target().dependsOn(this.rollout.promote).executes(() => {});
+}
+
+await run(Deploy);`;
+
+const durableSnippet = `rollout = canary((c) =>
+  c.platform(cloudRun)
+    .steps(10, 25, 50)
+    .bake("6h")
+    .durable() // each bake suspends the run; no process stays alive
+);`;
+
+const resumeSnippet = `# from a cron: reopen every parked gate whose time is up
+zuke resume --check`;
+
+const thresholdSnippet = `metricThreshold((m) =>
+  m.name("p99").read(async (ctx) => readP99(ctx.exposure)).max(0.5)
+)`;
+
+const approveSnippet = `zuke resume <run-id> --signal canary-approved`;
+---
+
+<DocsLayout
+  title="Canary releases"
+  description="Zuke's @zuke/canary: stage a candidate beside stable, widen its share of traffic step by step, bake each step under HTTP, Prometheus and custom analyses, gate the promotion on an approval, and roll back through one rollout.abort — on Cloud Run, Kubernetes, Helm, Docker Compose or your own platform."
+  toc={toc}
+>
+  <p class="lead">
+    A canary release puts a new version beside the stable one, exposes it to a
+    small share of traffic, watches it, and either widens the exposure step by
+    step until it is promoted or rolls it back. <code>@zuke/canary</code>
+    builds that whole chain from one settings lambda &mdash; and every way the
+    rollout can go wrong runs <strong>one</strong> rollback.
+  </p>
+
+  <h2 id="overview">A rollout in one declaration</h2>
+  <p>
+    <code>canary(...)</code> is a component:
+    assign it to a field and its targets appear under that field's name. The
+    rest of the build depends on them like any other target &mdash; here,
+    <code>ship</code> runs only once the release is promoted.
+  </p>
+  <CopyCode code={overviewSnippet} lang="ts" />
+  <p>
+    A failed analysis, a failed step, an approval that times out, and
+    <code>zuke cancel</code> all end in the same place: <code>rollout.abort</code>,
+    which returns every user to the stable version.
+  </p>
+
+  <h2 id="targets">The targets</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th>Target</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>rollout.stage</code></td>
+        <td>Puts the candidate in place at 0&nbsp;%. Takes the lock for the whole run. A stage that fails part-way, or is cancelled, rolls back what it left before it fails.</td>
+      </tr>
+      <tr>
+        <td><code>rollout.stepN.expose</code></td>
+        <td>Sets the exposure of step N. Exposure is absolute, and the summary shows what the platform achieved: <code>Exposure: 12.5% (requested 10%)</code>.</td>
+      </tr>
+      <tr>
+        <td><code>rollout.stepN.bake</code></td>
+        <td>Waits out the step's bake. Inline bakes run the analyses on an interval while they wait; durable ones suspend the run.</td>
+      </tr>
+      <tr>
+        <td><code>rollout.stepN.analyze</code></td>
+        <td>Runs every analysis once more at the end of the step.</td>
+      </tr>
+      <tr>
+        <td><code>rollout.approve</code></td>
+        <td>Waits for the approval signal. A timeout rolls the canary back.</td>
+      </tr>
+      <tr>
+        <td><code>rollout.promote</code></td>
+        <td>Sends everything to the candidate. It is a <a href="/docs/run-context#effects">crash-durable effect</a>, so a resume re-drives one that was interrupted.</td>
+      </tr>
+      <tr>
+        <td><code>rollout.abort</code></td>
+        <td>The rollback. It runs as <code>stage</code>'s compensation whenever the run is cancelled or a step fails with <code>cancel-run</code>, unless the release was already promoted. It can be run by hand.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    A target only exists when it has something to do: a step with no bake has
+    no <code>bake</code>, and a canary with no analyses has no
+    <code>analyze</code>. A canary with no steps &mdash; on a release-channel
+    platform, for example &mdash; gets a single <code>rollout.soak</code> phase
+    when it bakes or analyses.
+  </p>
+
+  <h2 id="state-store">Requires a state store</h2>
+  <div class="note">
+    <p>
+      Rolling back means knowing which targets succeeded, and the platform's
+      handles have to survive a suspend, so a canary needs a
+      <a href="/docs/state">state store</a>. A build with state disabled is
+      refused when the rollout starts.
+    </p>
+  </div>
+
+  <h2 id="platforms">Platforms</h2>
+  <p>
+    The engine never talks to Cloud Run, Kubernetes or anything else directly.
+    It calls a <code>CanaryPlatform</code>, and the adapters for specific
+    platforms live in their tool's wrapper package. Each adapter's lambda runs
+    on every call, so it may read resolved parameters.
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Platform</th><th>Adapter</th><th>Exposure</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cloud Run</td>
+        <td><code>cloudRunCanary</code> from <code>@zuke/gcloud</code></td>
+        <td>An exact traffic split through the candidate revision's tag, in whole percents.</td>
+      </tr>
+      <tr>
+        <td>Kubernetes</td>
+        <td><code>kubectlCanary</code> from <code>@zuke/kubectl</code></td>
+        <td>A stable and a canary Deployment behind one Service; the canary's share of replicas. The canary grows and is ready before stable shrinks.</td>
+      </tr>
+      <tr>
+        <td>Helm</td>
+        <td><code>helmCanary</code> from <code>@zuke/helm</code></td>
+        <td>The candidate as a second release; its share of the replicas.</td>
+      </tr>
+      <tr>
+        <td>Docker Compose</td>
+        <td><code>dockerComposeCanary</code> from <code>@zuke/docker-compose</code></td>
+        <td>A stable and a canary service behind a balancing proxy; the canary's share of a fixed replica total.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Cloud Run</h3>
+  <Code code={cloudRunSnippet} lang="ts" theme="night-owl" />
+  <p>
+    <code>stage</code> deploys the image as a new revision with no traffic and
+    the <code>canary</code> tag; each step moves the tag's share with
+    <code>update-traffic</code>; <code>promote</code> sends everything to the
+    latest revision after checking it is still the staged one.
+  </p>
+
+  <h3>Kubernetes</h3>
+  <Code code={kubectlSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Give the two Deployments a shared label that one Service selects. A Service
+    balances <strong>connections</strong>, not requests, so with keep-alive or
+    HTTP/2 clients the real share can differ from the replica share &mdash; use
+    a traffic platform when you need an exact request split. Suspend any
+    HorizontalPodAutoscaler or GitOps self-heal that owns either Deployment
+    during a rollout.
+  </p>
+
+  <h3>Helm</h3>
+  <Code code={helmSnippet} lang="ts" theme="night-owl" />
+  <p>
+    The candidate runs as <code>&lt;stable&gt;-canary</code> unless you name it
+    with <code>.canaryRelease(...)</code>. A rollback returns the stable release
+    to the revision <code>stage</code> recorded and uninstalls the canary.
+  </p>
+
+  <h3>Docker Compose</h3>
+  <Code code={composeSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Compose has no command that sets a service's image, so each service's
+    <code>image:</code> must be a whole variable that the platform sets on
+    every command it runs.
+  </p>
+  <p>
+    Every adapter records what it staged, and later calls refuse &mdash;
+    changing nothing &mdash; when the configuration no longer matches. The
+    <a href={GUIDE} target="_blank" rel="noopener noreferrer">full canary guide</a>
+    lists each adapter's exact commands, the checks it runs, and how to recover
+    from a refusal.
+  </p>
+
+  <h2 id="custom-platform">Your own platform</h2>
+  <p>
+    Until an adapter exists for yours, a platform is a plain object in the
+    build:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Member</th><th>Contract</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>exposure</code></td>
+        <td><code>"traffic"</code> (an exact split), <code>"replicas"</code> (quantised to whole instances) or <code>"channel"</code> (a release channel, no steps).</td>
+      </tr>
+      <tr><td><code>describe()</code></td><td>A short name for the summary.</td></tr>
+      <tr><td><code>stage(ctx)</code></td><td>Candidate in place at 0&nbsp;%. Record what a rollback needs in <code>ctx.state</code>.</td></tr>
+      <tr><td><code>expose(percent, ctx)</code></td><td>Set exposure to <code>percent</code> (absolute) and return the exposure achieved. Repeating it is harmless.</td></tr>
+      <tr><td><code>promote(ctx)</code></td><td>Send everything to the candidate. Idempotent.</td></tr>
+      <tr><td><code>abort(ctx)</code></td><td>Return everything to the stable version. Idempotent, and must cope with empty state.</td></tr>
+    </tbody>
+  </table>
+  <CopyCode code={customSnippet} lang="ts" />
+  <div class="note">
+    <p>
+      Every call gets the same <code>ctx.state</code>, so <code>abort</code> can
+      read what <code>stage</code> wrote even in another process after a resume.
+      <strong>Never put a secret in it</strong>: it is persisted as plain JSON
+      and shown by <code>zuke runs show</code>. <code>ctx.signal</code> aborts
+      when the run is cancelled &mdash; pass it to network calls.
+    </p>
+  </div>
+
+  <h2 id="bakes">Bakes: inline or durable</h2>
+  <p>
+    By default a bake is <strong>inline</strong>: the bake target sleeps in the
+    process while the analyses run every <code>.analysisInterval(...)</code>
+    (default <code>"1m"</code>). The first failing check stops the bake at once
+    and rolls back; <code>zuke cancel</code> or Ctrl-C ends it too. An inline
+    bake is a timer, so it can be at most about 24 days.
+  </p>
+  <p>
+    <code>.durable()</code> makes each bake a <strong>gate</strong> instead. The
+    run suspends at it, so no process is alive during the bake, and
+    <code>zuke resume --check</code> reopens it once the time is up. A durable
+    bake runs no in-flight analyses, since nothing is there to run them; each
+    step's final <code>analyze</code> still runs in whichever process resumes
+    the run. Use durable bakes when a bake is long, or when the CI job that
+    started the rollout should not stay alive for it.
+  </p>
+  <CopyCode code={durableSnippet} lang="ts" />
+  <CopyCode code={resumeSnippet} lang="bash" />
+
+  <h2 id="analyses">Analyses</h2>
+  <p>
+    An analysis is anything with a <code>validate(ctx)</code> that throws to
+    fail, so any core <code>Validation</code> works unchanged &mdash; an
+    <a href="/docs/ai-review"><code>@zuke/ai</code> review</a> included. A
+    canary-aware one also reads where the rollout stands:
+    <code>ctx.step</code>, <code>ctx.requested</code> and
+    <code>ctx.exposure</code>. The package ships three, all over plain HTTP:
+  </p>
+  <table class="dtable">
+    <thead>
+      <tr><th>Analysis</th><th>Fails when</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>httpProbe((h) =&gt; h.url(u).samples(30).maxFailures(1))</code></td>
+        <td>More than <code>maxFailures</code> of <code>samples</code> requests fail: a status outside <code>expectStatus(...)</code> (any 2xx by default), a timeout, or a connection error.</td>
+      </tr>
+      <tr>
+        <td><code>prometheus((p) =&gt; p.url(u).query(q).max(0.01))</code></td>
+        <td>Any sample of the instant query is out of bounds, or the query cannot be read. An empty result fails: append <code>or vector(0)</code> when no data means healthy.</td>
+      </tr>
+      <tr>
+        <td><code>metricThreshold((m) =&gt; m.name("p99").read(fn).max(0.5))</code></td>
+        <td>The number your reader returns is out of bounds.</td>
+      </tr>
+    </tbody>
+  </table>
+  <Code code={thresholdSnippet} lang="ts" theme="night-owl" />
+  <p>
+    Failure messages pass through the run's redactor, so a
+    <a href="/docs/secrets">secret parameter</a> in a URL or a query is masked
+    before it reaches a log. A ratio query over a window with no traffic is
+    <code>0/0</code>, which Prometheus reports as <code>NaN</code> &mdash; and a
+    <code>NaN</code> sample fails. Guard such a query so quiet means healthy.
+  </p>
+
+  <h2 id="approval">The approval gate</h2>
+  <p>
+    <code>.approval("canary-approved")</code> adds <code>rollout.approve</code>
+    before the promotion: the run suspends until the signal arrives, and
+    <code>.approvalTimeout("24h")</code> bounds the wait &mdash; a timeout rolls
+    the canary back.
+  </p>
+  <CopyCode code={approveSnippet} lang="bash" />
+
+  <h2 id="lock">The lock</h2>
+  <p>
+    <code>.lock((l) =&gt; l.lockKey("deploy", "api").withTtl("24h"))</code>
+    takes a <a href="/docs/locks">core lock</a> held from staging until the run
+    settles, across every bake and approval wait, so a second rollout of the
+    same service is refused until the first is promoted or rolled back. Set the
+    TTL to cover the longest the run can stay parked: it is how long a parked
+    rollout keeps the lock with no process alive.
+  </p>
+
+  <h2 id="rollback">Rolling back</h2>
+  <p>There is one rollback, <code>rollout.abort</code>, and every path reaches it:</p>
+  <table class="dtable">
+    <thead>
+      <tr><th>What happened</th><th>How it reaches <code>abort</code></th></tr>
+    </thead>
+    <tbody>
+      <tr><td>An analysis or an in-flight check failed</td><td>the step's <code>.onFailure("cancel-run")</code> cancels the run</td></tr>
+      <tr><td><code>expose</code> or <code>promote</code> failed</td><td>the same</td></tr>
+      <tr><td><code>stage</code> failed part-way, or was cancelled</td><td><code>stage</code> calls the platform's <code>abort</code> itself before it fails</td></tr>
+      <tr><td>The approval timed out</td><td>the gate's <code>.onTimeout("cancel-run")</code></td></tr>
+      <tr><td><code>zuke cancel &lt;run-id&gt;</code></td><td>the cancellation walk runs <code>stage</code>'s compensation</td></tr>
+    </tbody>
+  </table>
+  <p>Two cases deliberately <strong>do not</strong> roll back:</p>
+  <ul>
+    <li>
+      <strong>Another rollout lost the lock.</strong> It fails before its
+      <code>stage</code> body runs, so it touches nothing; the candidate belongs
+      to the rollout holding the lock.
+    </li>
+    <li>
+      <strong>The release was already promoted.</strong> A cancellation later in
+      the same run leaves the promoted release alone instead of returning
+      traffic to a version promotion already retired.
+    </li>
+  </ul>
+  <div class="note">
+    <p>
+      <strong>Running <code>zuke rollout.abort</code> by hand is different.</strong>
+      It starts a fresh run with no recorded state, so each adapter needs the
+      version to go back to from its own configuration &mdash;
+      <code>.stable(...)</code>, <code>.stableImage(...)</code> or
+      <code>.stableRevision(...)</code> &mdash; and refuses without one. To stop
+      a rollout that is still running or parked, use
+      <code>zuke cancel &lt;run-id&gt;</code> instead: it rolls back with the
+      recorded state and releases the rollout's lock.
+    </p>
+  </div>
+</DocsLayout>
+
+<style>
+  .dtable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; }
+</style>

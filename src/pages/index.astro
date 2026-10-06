@@ -340,6 +340,65 @@ const hardeningIcons: Record<string, string> = {
   chain: `<path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.3-2.3a4 4 0 0 0-5.7-5.7L11.5 6.8"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.3 2.3a4 4 0 0 0 5.7 5.7l1.3-1.3"/>`,
 };
 
+// ░░ Canary releases (@zuke/canary) ░░
+// Mirrors the Cloud Run example in the Zuke repo's docs/canary.md.
+const canarySnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { canary, httpProbe, prometheus } from "jsr:@zuke/canary";
+import { cloudRunCanary } from "jsr:@zuke/gcloud";
+
+const PROM = "https://prometheus.example.com";
+const ERROR_RATIO = "sum(rate(http_errors_total[5m])) / sum(rate(http_requests_total[5m]))";
+
+class Deploy extends Build {
+  image = parameter("Container image to roll out").required();
+
+  rollout = canary((c) =>
+    c.platform(
+      cloudRunCanary((r) =>
+        r.service("api").region("europe-west1").image(this.image.value)
+      ),
+    )
+      .steps(10, 25, 50)  // % of traffic, then promote
+      .bake("10m")        // checks run while it bakes
+      .analysis(
+        httpProbe((h) => h.url("https://api.example.com/healthz").samples(30)),
+        prometheus((p) => p.url(PROM).query(ERROR_RATIO).max(0.01)),
+      )
+      .approval("canary-approved") // optional human gate
+      .lock((l) => l.lockKey("deploy", "api").withTtl("24h"))
+  );
+
+  ship = target().dependsOn(this.rollout.promote).executes(() => {});
+}
+
+await run(Deploy);`;
+
+// The rollout ladder: one row per phase of the rollout above. `fail` is the
+// same row when the error ratio spikes during step 2's bake.
+type CanaryRow = {
+  target: string;
+  pct: number;
+  ok: string;
+  fail?: string;
+  state?: "fail" | "skip";
+};
+const canaryRows: CanaryRow[] = [
+  { target: "stage", pct: 0, ok: "candidate deployed beside stable · lock taken" },
+  { target: "step1", pct: 10, ok: "baked 10m · probes ✓ · error ratio 0.002" },
+  { target: "step2", pct: 25, ok: "baked 10m · probes ✓ · error ratio 0.003", fail: "error ratio 0.034 > 0.01 — check failed", state: "fail" },
+  { target: "step3", pct: 50, ok: "baked 10m · probes ✓ · error ratio 0.002", fail: "never reached", state: "skip" },
+  { target: "approve", pct: 50, ok: "signal canary-approved received", fail: "never reached", state: "skip" },
+  { target: "promote", pct: 100, ok: "all traffic on the candidate", fail: "never reached", state: "skip" },
+];
+
+// Where a rollout can run. Each adapter lives in its tool's wrapper package.
+const canaryPlatforms = [
+  { name: "Cloud Run", fn: "cloudRunCanary", pkg: "@zuke/gcloud" },
+  { name: "Kubernetes", fn: "kubectlCanary", pkg: "@zuke/kubectl" },
+  { name: "Helm", fn: "helmCanary", pkg: "@zuke/helm" },
+  { name: "Docker Compose", fn: "dockerComposeCanary", pkg: "@zuke/docker-compose" },
+];
+
 // Supporting enterprise features shown as a compact pair below the band.
 const cdMore = [
   {
@@ -1396,6 +1455,179 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
       ))}
     </div>
   </section>
+
+  <!-- ░░ CANARY RELEASES ░░ -->
+  <section class="section sec-canary" id="canary">
+    <div class="container">
+      <header class="sec-head">
+        <span class="eyebrow">Canary releases · @zuke/canary</span>
+        <h2>Ship to 10% first. Let the metrics decide the rest.</h2>
+        <p class="lead sec-head__lead">
+          A canary release runs the new version beside the one already serving,
+          gives it a small slice of real traffic, and watches it. Healthy, and the
+          slice grows step by step until it takes everything. Unhealthy, and all
+          traffic goes straight back to the version that was working. Zuke builds
+          that whole rollout from one typed declaration.
+        </p>
+      </header>
+    </div>
+
+    <div class="container canary-grid">
+      <div data-reveal>
+        <h3>How a rollout plays out</h3>
+        <ol class="canary-how">
+          <li>
+            <strong>Stage.</strong> The candidate starts next to stable with
+            <strong>0%</strong> of the traffic, and the rollout takes a lock so a
+            second one can&rsquo;t start on the same service.
+          </li>
+          <li>
+            <strong>Step up.</strong> It gets a growing share &mdash; 10%, then 25%,
+            then 50% &mdash; and each step <strong>bakes</strong> for a while so
+            problems have time to surface.
+          </li>
+          <li>
+            <strong>Check.</strong> While it bakes, HTTP probes and Prometheus
+            queries watch the candidate. One failed check ends the rollout.
+          </li>
+          <li>
+            <strong>Promote.</strong> Healthy at every step (and approved, if you
+            ask for a human gate), it takes 100% and stable retires.
+          </li>
+        </ol>
+        <p class="canary-callout">
+          <span class="canary-callout__glyph" aria-hidden="true">↩</span>
+          <span>
+            <strong>Anything goes wrong?</strong> One rollback puts every user back
+            on stable. Only the canary&rsquo;s slice ever saw the bad build.
+          </span>
+        </p>
+      </div>
+
+      <figure class="canary panel" data-mode="ok" data-reveal>
+        <div class="canary__head">
+          <div class="canary__modes" role="group" aria-label="Rollout outcome">
+            <button class="canary__mode is-active" type="button" data-mode="ok" aria-pressed="true">
+              Healthy release
+            </button>
+            <button class="canary__mode" type="button" data-mode="fail" aria-pressed="false">
+              Error spike at 25%
+            </button>
+          </div>
+          <ul class="canary__legend">
+            <li><span class="canary__swatch canary__swatch--stable" aria-hidden="true"></span>stable v1.7</li>
+            <li><span class="canary__swatch canary__swatch--cand" aria-hidden="true"></span>candidate v1.8</li>
+          </ul>
+        </div>
+
+        <ol class="canary__rows">
+          {canaryRows.map((r) => (
+            <li class:list={["crow", r.state && `crow--${r.state}`]}>
+              <code class="crow__target">rollout.{r.target}</code>
+              <span class="crow__pct">
+                <span class="when-ok">{r.pct}%</span>
+                <span class="when-fail">{r.state === "skip" ? "—" : `${r.pct}%`}</span>
+              </span>
+              <span class="cbar" aria-hidden="true">
+                <span class="cbar__cand" style={`--p: ${r.pct}%`}></span>
+              </span>
+              <span class="crow__note">
+                <span class="when-ok">{r.ok}</span>
+                <span class="when-fail">{r.fail ?? r.ok}</span>
+              </span>
+            </li>
+          ))}
+          <li class="crow crow--abort when-fail">
+            <code class="crow__target">rollout.abort</code>
+            <span class="crow__pct">0%</span>
+            <span class="cbar" aria-hidden="true"><span class="cbar__cand" style="--p: 0%"></span></span>
+            <span class="crow__note">every user back on stable · lock released</span>
+          </li>
+        </ol>
+
+        <figcaption class="canary__verdict" aria-live="polite">
+          <span class="when-ok"><span class="canary__ok">✔ Promoted.</span> v1.8 serves all traffic; v1.7 is retired.</span>
+          <span class="when-fail"><span class="canary__err">↩ Rolled back at 25%.</span> 75% of users never saw v1.8.</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="container cd-grid cd-grid--rev">
+      <div class="cd-visual" data-reveal>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">zuke.ts</span>
+          </div>
+          <CopyCode code={canarySnippet} lang="ts" />
+        </div>
+        <div class="codecard panel">
+          <div class="codecard__bar">
+            <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
+            <span class="codecard__name">error spike → rollback</span>
+          </div>
+<pre class="term"><span class="t-cmd">$ ./zuke ship --image api:1.8.0</span>
+<span class="t-ok">✔</span> rollout.stage          <span class="t-dim">candidate at 0%</span>
+<span class="t-ok">✔</span> rollout.step1.expose   <span class="t-dim">Exposure: 10%</span>
+<span class="t-ok">✔</span> rollout.step1.bake     <span class="t-dim">10m · 10 checks passed</span>
+<span class="t-ok">✔</span> rollout.step1.analyze  <span class="t-dim">probes 30/30</span>
+<span class="t-ok">✔</span> rollout.step2.expose   <span class="t-dim">Exposure: 25%</span>
+<span class="t-err">✘</span> rollout.step2.bake     <span class="t-err">error ratio 0.034 &gt; 0.01</span>
+<span class="t-info">↩</span> rollout.abort          <span class="t-dim">traffic back to stable</span>
+<span class="t-err">✘</span> run cancelled <span class="t-dim">· lock released</span></pre>
+        </div>
+      </div>
+      <div data-reveal>
+        <span class="eyebrow">One declaration · one rollback</span>
+        <h3>Every way it can fail ends in the same undo.</h3>
+        <p class="lead">
+          <code>canary()</code> is a component: one settings lambda becomes real,
+          typed targets &mdash; <code>rollout.stage</code>,
+          <code>rollout.step1.bake</code>, &hellip; <code>rollout.promote</code>
+          &mdash; that the rest of your build depends on like any other. A failed
+          analysis, a failed step, an approval that times out, or
+          <code>zuke cancel</code> all run the one <code>rollout.abort</code>,
+          which reads exactly what <code>stage</code> recorded.
+        </p>
+        <ul class="ticks">
+          <li>Long bakes don&rsquo;t hold a CI job open: <code>.durable()</code> suspends the run at each bake, and <code>zuke resume --check</code> from a cron reopens it when time is up.</li>
+          <li>The lock is held from stage until the run settles &mdash; across every bake and approval wait &mdash; so a second rollout of the service is refused.</li>
+          <li>Exposure is reported, not assumed: a platform that splits by whole replicas shows <code>Exposure: 12.5% (requested 10%)</code>.</li>
+          <li>Bring any check: HTTP probes, Prometheus queries, your own metric reader, or any core <code>Validation</code> &mdash; an <code>@zuke/ai</code> review included.</li>
+        </ul>
+        <div class="canary-platforms">
+          <span class="canary-platforms__label">Runs on</span>
+          <ul>
+            {canaryPlatforms.map((p) => (
+              <li title={`${p.fn} from ${p.pkg}`}>{p.name}</li>
+            ))}
+            <li class="canary-platforms__own">your own <code>CanaryPlatform</code></li>
+          </ul>
+        </div>
+        <div class="cd-links">
+          <a class="btn btn-ghost" href="/docs/canary">Read the canary guide →</a>
+          <a class="btn btn-ghost" href="/examples#canary">See the Kubernetes example →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Canary ladder: switch between the healthy and the rolled-back outcome.
+    // With no JS the healthy outcome shows and the toggle does nothing.
+    const ladder = document.querySelector<HTMLElement>(".canary");
+    const modes = Array.from(document.querySelectorAll<HTMLButtonElement>(".canary__mode"));
+    modes.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (ladder) ladder.dataset.mode = btn.dataset.mode;
+        modes.forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle("is-active", on);
+          b.setAttribute("aria-pressed", String(on));
+        });
+      });
+    });
+  </script>
 
   <!-- ░░ SECURITY ░░ -->
   <section class="section sec-harden" id="security">
@@ -2481,6 +2713,203 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     .cd-grid { grid-template-columns: 1fr; gap: 30px; }
     .cd-grid--rev .cd-visual { order: 2; }
     .cd-more { grid-template-columns: 1fr; }
+  }
+
+  /* canary releases — a how-it-works list beside the rollout ladder */
+  .canary-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 48px;
+    align-items: center;
+  }
+  .canary-grid > * { min-width: 0; }
+  .canary-grid h3 { font-size: clamp(1.4rem, 2.6vw, 1.85rem); margin-bottom: 18px; }
+  .canary-how { list-style: none; counter-reset: how; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .canary-how li {
+    counter-increment: how;
+    position: relative;
+    padding-left: 40px;
+    color: var(--ink-dim);
+  }
+  .canary-how li::before {
+    content: counter(how);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    border: 1px solid var(--accent);
+    background: var(--gradient-soft);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .canary-how strong, .canary-callout strong { color: var(--ink); }
+  .canary-callout {
+    display: flex;
+    gap: 12px;
+    margin: 22px 0 0;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in oklch, var(--err) 40%, var(--border));
+    border-radius: var(--radius);
+    background: color-mix(in oklch, var(--err) 7%, transparent);
+    color: var(--ink-dim);
+    font-size: 0.95rem;
+  }
+  .canary-callout__glyph { color: var(--err); font-weight: 700; }
+
+  /* the ladder: one row per rollout target, its bar the candidate's share */
+  .canary {
+    --stable-fill: color-mix(in oklch, var(--ink-faint) 28%, transparent);
+    margin: 0;
+    padding: 18px 18px 16px;
+  }
+  .canary__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    margin-bottom: 14px;
+  }
+  .canary__modes {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+  .canary__mode {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink-dim);
+    background: transparent;
+    border: 0;
+    padding: 6px 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .canary__mode:hover { color: var(--ink); }
+  .canary__mode.is-active { color: var(--accent-ink); background: var(--accent); }
+  .canary__mode[data-mode="fail"].is-active { background: var(--err); }
+  .canary__legend {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--ink-dim);
+  }
+  .canary__legend li { display: inline-flex; align-items: center; gap: 6px; }
+  .canary__swatch { width: 12px; height: 12px; border-radius: 3px; }
+  .canary__swatch--stable { background: var(--stable-fill); }
+  .canary__swatch--cand { background: var(--accent); }
+
+  .canary__rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .crow {
+    display: grid;
+    grid-template-columns: 9.2rem 1fr 3rem;
+    grid-template-areas: "target bar pct" ". note note";
+    align-items: center;
+    gap: 3px 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+  }
+  .crow__target { grid-area: target; font-size: 0.8rem; color: var(--ink); }
+  .crow__pct {
+    grid-area: pct;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+  }
+  .cbar {
+    grid-area: bar;
+    height: 10px;
+    border-radius: 99px;
+    background: var(--stable-fill);
+    overflow: hidden;
+  }
+  .cbar__cand {
+    display: block;
+    height: 100%;
+    width: var(--p);
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s ease;
+  }
+  .crow__note { grid-area: note; font-size: 0.8rem; color: var(--ink-dim); line-height: 1.4; }
+
+  /* outcome toggle — healthy rows by default, the rollback when switched */
+  .canary .when-fail { display: none; }
+  .canary[data-mode="fail"] .when-ok { display: none; }
+  .canary[data-mode="fail"] span.when-fail { display: inline; }
+  .canary[data-mode="fail"] .crow.when-fail { display: grid; }
+  .canary[data-mode="fail"] .crow--fail { background: color-mix(in oklch, var(--err) 10%, transparent); }
+  .canary[data-mode="fail"] .crow--fail .cbar__cand { background: var(--err); }
+  .canary[data-mode="fail"] .crow--fail .crow__pct,
+  .canary[data-mode="fail"] .crow--fail .crow__note { color: var(--err); }
+  .canary[data-mode="fail"] .crow--skip .cbar__cand { width: 0; }
+  .canary[data-mode="fail"] .crow--skip .crow__target,
+  .canary[data-mode="fail"] .crow--skip .crow__pct,
+  .canary[data-mode="fail"] .crow--skip .crow__note { color: var(--ink-faint); }
+  .canary[data-mode="fail"] .crow--skip .crow__target { text-decoration: line-through; }
+  .crow--abort { background: color-mix(in oklch, var(--accent) 9%, transparent); }
+  .crow--abort .crow__pct { color: var(--ink); }
+
+  .canary__verdict {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+    color: var(--ink-dim);
+  }
+  .canary__ok { color: var(--ok); font-weight: 700; }
+  .canary__err { color: var(--err); font-weight: 700; }
+
+  .canary-platforms {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    margin: 22px 0 24px;
+  }
+  .canary-platforms__label { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-faint); }
+  .canary-platforms ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+  .canary-platforms li {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: 99px;
+    color: var(--ink);
+  }
+  .canary-platforms .canary-platforms__own { border-style: dashed; color: var(--ink-dim); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cbar__cand, .crow, .canary__mode { transition: none; }
+  }
+  @media (max-width: 940px) {
+    .canary-grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+  @media (max-width: 560px) {
+    .canary { padding: 14px 12px; }
+    .crow {
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "target pct" "bar bar" "note note";
+      gap: 6px 10px;
+    }
   }
 
   /* security posture — the adversarial-review band */
