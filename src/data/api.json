@@ -17613,6 +17613,222 @@
           ]
         },
         {
+          "name": "dockerComposeCanary",
+          "kind": "function",
+          "doc": "A Compose project as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(dockerComposeCanary((d) =>\n  d.service(\"app\").canaryService(\"app-canary\").replicas(4)\n    .image(this.image.value)\n    .stableImageVariable(\"APP_IMAGE\")\n    .canaryImageVariable(\"APP_CANARY_IMAGE\")\n    .compose((s) => s.file(\"compose.yml\").projectName(\"shop\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters; after\n`stage`, the services, replicas and variables are the ones it recorded, and\nevery call refuses unless `d.compose(...)` gives the global flags `stage`\nrecorded and Compose reports the two services in the project `stage` saw.\nEvery move is `up -d --no-deps --scale <service>=<n> <service>` (with\n`--wait` when `n` is not 0), run with the image variables set:\n\n- **stage** — `ps --format {{.Image}} <stable>` reads the stable image,\n  `images --quiet <stable>` its ID and `ps --format {{.Project}} <stable>`\n  its one project, `pull --policy missing <canary>`,\n  the rollout is recorded, then the stable service to every replica\n  (`--no-recreate`) and the canary service to none. From here on, the\n  stable variable is the recorded `sha256:<id>` on every command that may\n  create a stable replica, and every move that sets an ID adds\n  `--pull never`, since an ID cannot be pulled.\n- **expose, promote, abort with a record** — first\n  `ps --format {{.Project}} <stable> <canary>`, which must report exactly\n  the recorded project.\n- **expose** — the canary service (`--no-recreate`) to its share and the\n  stable service (`--no-recreate`) to the rest, the growing one first;\n  `ps` checks the canary runs the candidate and `images --quiet` pins its\n  ID on the first step, which later steps and promote then use.\n- **promote** — the canary service to every replica, the stable service\n  recreated on the pinned candidate ID and checked with `images --quiet`,\n  the canary service to none. Not durable until the candidate is written\n  where the stable variable comes from.\n- **abort** — `images --quiet` reads the stable replicas' IDs (run by\n  hand, `ps` their references). If they are all on the stable image, the\n  stable service back to every replica (`--no-recreate`); otherwise the\n  canary service to every replica on the stable image, the stable service\n  recreated on it. The stable replicas are then read again and must be\n  on the stable image, before the canary service goes to none. Run by\n  hand, the stable image is the one set with `.stable(...)`.\n\nThe stable service's `scale:` in the Compose file must equal\n`.replicas(...)`, and Compose v2 (`docker compose`) is required.",
+          "signature": "function dockerComposeCanary(configure: Configure<DockerComposeCanarySettings>): DockerComposeCanary",
+          "deprecated": false
+        },
+        {
+          "name": "DockerComposeCanary",
+          "kind": "class",
+          "doc": "A Compose project as a canary platform. Create one with\n{@link dockerComposeCanary}; hand it to `@zuke/canary`'s `c.platform(...)`.\n\nExposure is the canary's share of the replicas, so it is quantised.",
+          "signature": "class DockerComposeCanary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(): string",
+              "doc": "`\"Compose service app\"`, for the build summary."
+            },
+            {
+              "name": "stage",
+              "kind": "method",
+              "optional": false,
+              "signature": "stage(ctx: DockerComposeCanaryContext): Promise<void>",
+              "doc": "Read the image the stable replicas run, make sure the candidate image is\navailable (pulled unless it is already present), record the rollout — the\ntwo services, the replicas, the two variables, the two images and the\nstable replicas' image ID (`images --quiet`), which every later call acts\non whatever the lambda says then, and the project — its global flags\nand the project Compose reports the stable replicas in, which every\nlater call refuses to run without — and bring the\nproject to exactly 0 %: the stable service at every replica, the canary\nservice at none. The stable replicas are only added or removed, never\nrecreated.\n\nEach call runs `d.compose(...)` once to resolve the global flags, and\nthen once per command; a command it gives any other flags (a lambda that\nreads a clock, or changes what it closes over) is refused before it runs.\nA stage always starts afresh, so a re-run one records the flags it runs\nwith.\n\nThe Docker daemon the commands reach is not recorded. The recorded image\nIDs are only a partial guard against another one: after `stage` every\nmove passes `--pull never`, so one that creates a container fails on a\ndaemon that lacks its image — the recorded stable ID, or the candidate —\nwhile one that only removes containers needs no image and goes ahead;\nand the reads compare IDs, so a rollback finds stable replicas on\nanother image and a later step a canary on another candidate. A daemon\nor context that runs the same project name, with the same services on\nthe same images, is not told apart. Nor is a change that keeps the\nproject but changes the services' definitions — another `COMPOSE_FILE`,\nor an env file that changes what they interpolate — since only the\nproject is compared."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(percent: number, ctx: DockerComposeCanaryContext): Promise<number>",
+              "doc": "Run the canary service at `percent` of the replicas and the stable\nservice at the rest, and return the share actually reached. Any share\nbetween 0 and 100 exclusive keeps at least one replica on each side, so a\nstep never rounds to an untested 0 % or a premature 100 %. Whichever\nservice grows is scaled first, so the total never dips below the\nreplicas. Once the canary service has replicas, `ps` must show every one\nof them on the candidate — a canary whose `image:` does not read its\nvariable is refused rather than analysed — and `images --quiet` must\nresolve them to one image ID. The first step records that ID, as the\nimage the analysis judges; every later step and promote set the canary\nvariable to it rather than the tag, and refuse a canary that resolves to\nanother. The stable replicas are never recreated. The services and\nreplicas are the ones `stage` recorded, and the call refuses before any\ncommand unless `d.compose(...)` still gives the global flags `stage`\nrecorded, and before any other unless `ps --format {{.Project}}` reports\nthe two services in the project `stage` saw."
+            },
+            {
+              "name": "promote",
+              "kind": "method",
+              "optional": false,
+              "signature": "promote(ctx: DockerComposeCanaryContext): Promise<void>",
+              "doc": "Hand the stable service to the candidate: the canary service goes to\nevery replica, the stable service is recreated with the stable variable\nset to the candidate's recorded image ID — the image the analysis judged,\nwhatever the candidate tag names by now — `images --quiet` must then\nresolve every stable replica to that ID — or the call refuses, before it\nis recorded as promoted, since a stable `image:` that does not read the\nvariable would have changed nothing — and the canary service goes back\nto none. The\ntotal never dips below the replicas; for a moment it is twice that.\nIdempotent. Like every call after `stage`, it refuses before any command\nunless `d.compose(...)` still gives the global flags `stage` recorded,\nand before any other unless `ps --format {{.Project}}` reports the two\nservices in the project `stage` saw.\n\n**This is not durable on its own.** Compose has no state of its own to\nchange: the variable is set for these commands only. Until the\ncandidate is written where the stable variable comes from — the `.env`\nfile, or the environment of whatever runs `docker compose up` next — a\nplain `docker compose up` puts the stable service back on the image that\nsource still names, and at the replica count its `scale:` names, which\nis why that must equal {@link DockerComposeCanarySettings.replicas}. The\nbuild summary says so: `Persist: set APP_IMAGE=<candidate> (which must\nresolve to sha256:<id>) and keep scale: <replicas>`."
+            },
+            {
+              "name": "abort",
+              "kind": "method",
+              "optional": false,
+              "signature": "abort(ctx: DockerComposeCanaryContext): Promise<void>",
+              "doc": "Put every replica back on the stable image, in the stable service, with\nthe canary service at none. Idempotent. Which image, services and\nreplicas depends on what this rollout recorded:\n\n- **`stage` recorded them** (a rollback mid-rollout, or after a\n  promotion that failed part-way): the ones `stage` saw, whatever the\n  lambda says now — in the project `stage` saw, too: unless\n  `d.compose(...)` still gives the global flags `stage` recorded, this\n  refuses before any command, and unless `ps --format {{.Project}}`\n  then reports the two services in the project `stage` saw, before any\n  other. Since the engine then leaves the run cancelled, the refusal\n  names the recovery: the configuration and environment set back, and\n  `rollout.abort` run by hand with\n  `d.stable('sha256:<the recorded stable image ID>')`.\n- **`stage` failed before recording them**: nothing had changed, so\n  nothing runs — and the settings are not even read.\n- **Nothing recorded** (`rollout.abort` run by hand, a fresh run): the\n  settings, with the image set by\n  {@link DockerComposeCanarySettings.stable}. Without one this refuses,\n  since claiming a rollback it cannot do would be worse.\n\nEvery command sets the stable variable to the image ID `stage` recorded,\nnot to the reference, so a tag moved since cannot bring in an image\nnobody analysed; run by hand, there is only the reference.\n\nFirst it reads what the stable replicas run: on a recorded rollout,\n`images --quiet` must resolve them to exactly the recorded ID — a tag\n`ps` shows means whatever the tag names now, so it is not evidence; run\nby hand, `ps` must show every one on the `.stable(...)` reference. When\nthey do — mid-rollout they do — the stable service is only\nscaled back to every replica (`--no-recreate`). Otherwise — after a\npromotion, run by hand or part-way — the stable replicas must be\nrecreated, which Compose does to all of them at once, so the rollback\nmirrors a promotion: the canary service first goes to every replica on\nthe stable image, then the stable service is recreated on it, then the\ncanary service goes to none. Capacity never dips. Either way, before\nthe canary goes to none, the stable replicas are read again — by ID on a\nrecorded rollout, by reference run by hand — and a stable `image:` that\ndoes not read its variable is refused, leaving the canary serving,\nrather than reported as rolled back.\n\nLike a promotion, the image is an override for these commands, so it\nlasts until a plain `docker compose up` reads the variable from wherever\nthe project keeps it. A hand-run rollback — the one that undoes a\npromotion someone persisted — says so in the build summary, as promote\ndoes: `Persist: set APP_IMAGE=<stable> and keep scale: <replicas>`."
+            },
+            {
+              "name": "exposure",
+              "kind": "property",
+              "optional": false,
+              "signature": "exposure: replicas",
+              "doc": "Compose runs replicas, so exposure is a share of instances."
+            }
+          ]
+        },
+        {
+          "name": "DockerComposeCanaryContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the Compose platform uses: the\nrollout's durable state, where the images are recorded, and the build\nsummary. The engine hands a richer context; this is the narrow view.",
+          "signature": "interface DockerComposeCanaryContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "reportSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "reportSummary(pairs: SummaryPairs): void",
+              "doc": "Add key/value pairs to the calling target's row in the build summary."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: TargetStateHandle",
+              "doc": "The rollout's durable platform state, shared by every call."
+            }
+          ]
+        },
+        {
+          "name": "DockerComposeCanarySettings",
+          "kind": "class",
+          "doc": "How {@link dockerComposeCanary} reaches the project, configured through its\nlambda.",
+          "signature": "class DockerComposeCanarySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The service that serves the stable release, e.g. `app`. It must already\nbe running: `stage` reads the image its replicas run, which is what a\nrollback returns them to."
+            },
+            {
+              "name": "canaryService",
+              "kind": "method",
+              "optional": false,
+              "signature": "canaryService(name: string): this",
+              "doc": "The service that runs the candidate, e.g. `app-canary` — a second\nservice in the same project, behind the same proxy, whose `image:` is\n`${<canaryImageVariable>}`. Give it `scale: 0` in the Compose file so a\nplain `docker compose up` does not start it."
+            },
+            {
+              "name": "replicas",
+              "kind": "method",
+              "optional": false,
+              "signature": "replicas(total: number): this",
+              "doc": "How many replicas the stable and canary services share between them. A\nstep sets the canary to its share of this and the stable service to the\nrest; `stage` and a rollback set the stable service to all of it. From 2\nto 10000. Give the stable service the same `scale:` in the Compose file:\na plain `docker compose up` sets every service back to its `scale:`."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(reference: string): this",
+              "doc": "The candidate's image reference, which `stage` puts on the canary service."
+            },
+            {
+              "name": "stableImageVariable",
+              "kind": "method",
+              "optional": false,
+              "signature": "stableImageVariable(name: string): this",
+              "doc": "The environment variable the stable service's `image:` is — the whole\nreference, as in `image: ${APP_IMAGE}`, not just a tag. Every command the\nplatform runs sets it, so the project's `.env` need not: to the image the\nstable replicas ran when `stage` looked, to the candidate on promotion.\nNot a name Docker, Compose or the process reads as a setting —\n`DOCKER_*`, `COMPOSE_*`, `BUILDKIT_*`, `BUILDX_*`, `XDG_*`, `LD_*`,\n`DYLD_*`, `*_PROXY`, `PATH`, `PATHEXT`, `HOME`, `USERPROFILE`,\n`SystemRoot`, `TMPDIR`, `TEMP`, `TMP`, `SSH_AUTH_SOCK`, `SSL_CERT_FILE`\nor `SSL_CERT_DIR`, in any case — and not the canary's variable in\nanother case."
+            },
+            {
+              "name": "canaryImageVariable",
+              "kind": "method",
+              "optional": false,
+              "signature": "canaryImageVariable(name: string): this",
+              "doc": "The environment variable the canary service's `image:` is, as in\n`image: ${APP_CANARY_IMAGE:-${APP_IMAGE}}`. Every command that brings up\nthe canary sets it to the candidate."
+            },
+            {
+              "name": "stable",
+              "kind": "method",
+              "optional": false,
+              "signature": "stable(image: string): this",
+              "doc": "The image to put the stable service back on when `rollout.abort` is run\nby hand — a reference with no whitespace or control characters. Such a\nrun is fresh, with no record of a rollout, so it has nothing else to go\non — and the release it is undoing has usually been promoted already. A\nrollback the engine runs mid-rollout does not use it: that one returns to\nthe image ID `stage` saw the stable replicas running."
+            },
+            {
+              "name": "compose",
+              "kind": "method",
+              "optional": false,
+              "signature": "compose(configure: Configure<DockerComposeSettings>): this",
+              "doc": "Global flags for every Compose command the platform runs —\n`(s) => s.file(\"compose.yml\").projectName(\"shop\")`, or `.usePlugin()` to\nskip detection. Compose v2 (`docker compose`) is required: the v1\n`docker-compose` binary has no `--wait`, `pull --policy` or\n`ps --format`. Trailing `.args(...)` are refused, since they would land\nafter the service each command names — a guard against an accident, not\na security boundary: this lambda is the build's own code and can run\nCompose however it likes. A non-zero exit fails the call even with\n`.noThrow()`.\n\nThe flags it gives select the project, so `stage` records them (as argv:\nwhat `.env(...)` passes is never recorded) and every later call refuses\nunless they are the same, in the same order. It also records the\nproject Compose reports the stable replicas in, and every later call\nrefuses unless Compose still reports the services there — which covers\nwhatever else resolves the project: `COMPOSE_PROJECT_NAME` in the\nenvironment, a `.env` or `--env-file`, `.env(...)` and `.cwd(...)` here,\nthe working directory. Not covered: a Docker context, `DOCKER_HOST` or\n`.toolPath(...)` that reaches another daemon running the same project\nwith the same services on the same images, and a `COMPOSE_FILE` or env\nfile that keeps the project but changes the services' definitions."
+            },
+            {
+              "name": "runner",
+              "kind": "method",
+              "optional": false,
+              "signature": "runner(run: DockerComposeSettingsRunner): this",
+              "doc": "Replace how each prepared command is run. The default runs it; this is\nfor a test, or for a build that executes Compose through something else."
+            },
+            {
+              "name": "service_",
+              "kind": "property",
+              "optional": true,
+              "signature": "service_?: string",
+              "doc": "The service that serves the stable release (set by {@link service})."
+            },
+            {
+              "name": "canaryService_",
+              "kind": "property",
+              "optional": true,
+              "signature": "canaryService_?: string",
+              "doc": "The service that runs the candidate (set by {@link canaryService})."
+            },
+            {
+              "name": "replicas_",
+              "kind": "property",
+              "optional": true,
+              "signature": "replicas_?: number",
+              "doc": "The replicas the two services share (set by {@link replicas})."
+            },
+            {
+              "name": "image_",
+              "kind": "property",
+              "optional": true,
+              "signature": "image_?: string",
+              "doc": "The candidate's image (set by {@link image})."
+            },
+            {
+              "name": "stableImageVariable_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stableImageVariable_?: string",
+              "doc": "The variable the stable service's image reads (set by {@link stableImageVariable})."
+            },
+            {
+              "name": "canaryImageVariable_",
+              "kind": "property",
+              "optional": true,
+              "signature": "canaryImageVariable_?: string",
+              "doc": "The variable the canary service's image reads (set by {@link canaryImageVariable})."
+            },
+            {
+              "name": "stable_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stable_?: string",
+              "doc": "The image a hand-run rollback returns to (set by {@link stable})."
+            },
+            {
+              "name": "compose_",
+              "kind": "property",
+              "optional": true,
+              "signature": "compose_?: Configure<DockerComposeSettings>",
+              "doc": "Global Compose flags for every command (set by {@link compose})."
+            },
+            {
+              "name": "runner_",
+              "kind": "property",
+              "optional": false,
+              "signature": "runner_: DockerComposeSettingsRunner",
+              "doc": "How each command is run (set by {@link runner})."
+            }
+          ]
+        },
+        {
           "name": "DockerComposeCommitSettings",
           "kind": "class",
           "doc": "Settings for `compose commit`.",
@@ -18216,6 +18432,13 @@
               "doc": "Display services instead of containers (`--services`)."
             },
             {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(value: string): this",
+              "doc": "Output format (`--format`): `table`, `json`, or a Go template such as\n`{{.Image}}`, which prints one line per container."
+            },
+            {
               "name": "services",
               "kind": "method",
               "optional": false,
@@ -18244,6 +18467,13 @@
               "optional": false,
               "signature": "ignorePullFailures(): this",
               "doc": "Continue past services whose pull fails (`--ignore-pull-failures`)."
+            },
+            {
+              "name": "policy",
+              "kind": "method",
+              "optional": false,
+              "signature": "policy(value: Exclude<DockerComposePullPolicy, never>): this",
+              "doc": "Which images to pull (`--policy`): `missing` skips an image already\npresent locally — so a locally built image is not looked up in a\nregistry — and `always` fetches every one."
             },
             {
               "name": "quietOutput",
@@ -18505,6 +18735,13 @@
               "doc": "Resolve the invocation prefix (unless pinned) and run, so the same build\nworks against either the v2 plugin or the v1 standalone binary."
             }
           ]
+        },
+        {
+          "name": "DockerComposeSettingsRunner",
+          "kind": "typeAlias",
+          "doc": "Runs one prepared Compose command and returns its output. `env` holds the\nimage variables the platform already applied to `settings` — handed over\nas well so a runner that executes Compose some other way, or a test, sees\nthem. The default runs the settings; inject another with\n{@link DockerComposeCanarySettings.runner}. An output with a non-zero exit\ncode fails the call, as a rejection does.",
+          "signature": "type DockerComposeSettingsRunner = unknown",
+          "deprecated": false
         },
         {
           "name": "DockerComposeStartSettings",
@@ -18843,6 +19080,13 @@
               "optional": false,
               "signature": "forceRecreate(): this",
               "doc": "Recreate containers even if unchanged (`--force-recreate`)."
+            },
+            {
+              "name": "noRecreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRecreate(): this",
+              "doc": "Leave containers that already exist as they are, even when their\nconfiguration changed (`--no-recreate`). Scaling a service with it only\nadds or removes replicas; the ones already running keep their image."
             },
             {
               "name": "removeOrphans",
