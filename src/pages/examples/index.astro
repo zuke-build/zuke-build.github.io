@@ -324,6 +324,64 @@ class Deploy extends Build {
 await run(Deploy);`,
   },
   {
+    id: "canary",
+    tag: "Canary release",
+    title: "Roll out to Kubernetes 10% at a time — and back in one step",
+    desc: "canary() from @zuke/canary turns one settings lambda into a rollout: rollout.stage puts the candidate beside stable at 0%, each step widens its share and bakes while HTTP probes, a Prometheus query and your own metric reader check it, and rollout.promote sends it everything. kubectlCanary drives a stable and a canary Deployment, exposing by replica count — the canary grows and is ready before stable shrinks, so no step drops capacity. .durable() parks the run at each bake instead of holding a CI job open; zuke resume --check from a cron picks it back up. A failed check, a failed step, an approval that times out, or zuke cancel all run the one rollout.abort.",
+    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
+import { canary, httpProbe, metricThreshold, prometheus } from "jsr:@zuke/canary";
+import { kubectlCanary } from "jsr:@zuke/kubectl";
+
+const PROM = "https://prometheus.example.com";
+
+class Deploy extends Build {
+  image = parameter("Container image to roll out").required();
+
+  rollout = canary((c) =>
+    c.platform(
+      // One Service selects the pods of both Deployments; exposure is the
+      // canary's share of 10 replicas, so 10/30/50 % land exactly.
+      kubectlCanary((k) =>
+        k.stable("api").canary("api-canary").container("api")
+          .image(this.image.value).replicas(10).namespace("prod")
+          .kubectl((s) => s.context("prod"))
+      ),
+    )
+      .steps(10, 30, 50)
+      .bake("30m")
+      .bakeStep(3, "2h")      // soak longest at the widest step
+      .durable()              // park between steps; no CI job kept alive
+      .analysis(
+        httpProbe((h) => h.url("https://api.example.com/healthz").samples(30).maxFailures(0)),
+        prometheus((p) =>
+          p.name("error ratio").url(PROM).max(0.01).query(
+            'sum(rate(http_requests_total{app="api-canary",code=~"5.."}[5m]))' +
+              ' / sum(rate(http_requests_total{app="api-canary"}[5m])) or vector(0)',
+          )
+        ),
+        metricThreshold((m) => m.name("p99 seconds").read(readP99).max(0.5)),
+      )
+      .approval("canary-approved")   // zuke resume <run-id> --signal canary-approved
+      .approvalTimeout("24h")        // no answer in a day → roll back
+      .lock((l) => l.lockKey("deploy", "api").withTtl("72h"))
+  );
+
+  // Anything after the promotion depends on it like any other target.
+  ship = target().dependsOn(this.rollout.promote).executes(() => {});
+}
+
+// Your own reader: any number, from any source.
+async function readP99(): Promise<number> {
+  const res = await fetch(\`\${PROM}/api/v1/query?query=\${encodeURIComponent(
+    'histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{app="api-canary"}[5m])))',
+  )}\`);
+  const body = await res.json();
+  return Number(body.data.result[0]?.value[1] ?? 0);
+}
+
+await run(Deploy);`,
+  },
+  {
     id: "fan-out",
     tag: "Fan-out",
     title: "Deploy a batch of repos with per-item isolation",
