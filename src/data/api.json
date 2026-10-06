@@ -21761,6 +21761,320 @@
       "summary": "`@zuke/helm` — typed `HelmTasks` wrappers for the [Helm](https://helm.sh) CLI,",
       "symbols": [
         {
+          "name": "helmCanary",
+          "kind": "function",
+          "doc": "Two Helm releases of one chart as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(helmCanary((h) =>\n  h.chart(\"./charts/api\").stableRelease(\"api\").namespace(\"prod\")\n    .image(this.tag.value).replicas(10).values(\"values-prod.yaml\")\n    .helm((s) => s.kubeContext(\"prod\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters; the\nimage, replica count, charts, versions, values files and keys are fixed by\n`stage`. Every upgrade passes\n`--reset-then-reuse-values`, and every command on the stable release\n`--history-max 0`.\n\n- **stage** — reads the stable release's revision, status and\n  first-deployed time, checks no canary release exists, then `upgrade\n  <stable>-canary <chart> --set replicaCount=0 --set-string\n  image.tag=<image> --install --wait`.\n- **expose** — `upgrade --set replicaCount=<n>` on the canary release\n  (waiting), then on the stable release with the remainder.\n- **promote** — `upgrade <stable> --set replicaCount=<total> --set-string\n  image.tag=<image> --wait`, then `uninstall <canary> --ignore-not-found`.\n- **abort** — `rollback <stable> <recorded revision> --wait`, then the same\n  uninstall; run by hand, the revision set with `.stableRevision(...)`.\n\nEvery call after `stage` that has its record first reads the stable\nrelease's first-deployed time again and refuses, changing nothing, unless\nit is the one `stage` recorded — so a release reinstalled under the same\nname, or another cluster's reached through a changed kube context, is never\nupgraded or rolled back.",
+          "signature": "function helmCanary(configure: Configure<HelmCanarySettings>): HelmCanary",
+          "deprecated": false
+        },
+        {
+          "name": "HelmCanary",
+          "kind": "class",
+          "doc": "Two Helm releases of one chart as a canary platform. Create one with\n{@link helmCanary}; hand it to `@zuke/canary`'s `c.platform(...)`.\n\nExposure is the canary release's share of the replicas, so it is quantised.",
+          "signature": "class HelmCanary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(): string",
+              "doc": "`\"Helm release api in prod\"`, for the build summary."
+            },
+            {
+              "name": "stage",
+              "kind": "method",
+              "optional": false,
+              "signature": "stage(ctx: HelmCanaryContext): Promise<void>",
+              "doc": "Check the stable release is deployed and record its revision and\nfirst-deployed time, check no canary release is left over, then install\nthe candidate as the canary release with no replicas: `upgrade <canary>\n<chart> --set <replicasKey>=0 --set-string <imageKey>=<image> --install\n--wait`. The image, replica count, charts, versions, values files and\nkeys are recorded, and every later call uses those, not a configuration\nthat may have changed since. A stage resumed after an earlier attempt\nrecorded the stable release refuses, before writing anything, unless the\nrelease it reads now was first deployed at the recorded time."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(percent: number, ctx: HelmCanaryContext): Promise<number>",
+              "doc": "Give the canary release `percent` of the staged replica count — rounded,\nand at least one for any share above 0 — scaling it up (waiting) before\nthe stable release down (not waiting). Returns the share achieved.\nRefuses, changing nothing, unless the stable release was first deployed\nat the time `stage` recorded."
+            },
+            {
+              "name": "promote",
+              "kind": "method",
+              "optional": false,
+              "signature": "promote(ctx: HelmCanaryContext): Promise<void>",
+              "doc": "Upgrade the stable release to the staged chart and image at the staged\nreplica count, waiting for it, then uninstall the canary release.\nIdempotent. Refuses, changing nothing, unless the stable release was\nfirst deployed at the time `stage` recorded."
+            },
+            {
+              "name": "abort",
+              "kind": "method",
+              "optional": false,
+              "signature": "abort(ctx: HelmCanaryContext): Promise<void>",
+              "doc": "Return the stable release to where it was and remove the canary release.\nIdempotent. What it does depends on what this rollout recorded:\n\n- **Staged** (a rollback mid-rollout, or after a promotion that failed):\n  `helm rollback <stable> <revision> --wait` to the revision `stage`\n  recorded, then `helm uninstall <canary> --ignore-not-found`.\n- **The canary install was under way**: the stable release was never\n  touched, so only the canary release is uninstalled.\n- **Stage failed before the canary install**: nothing changed; nothing\n  runs.\n- **Nothing recorded** (`rollout.abort` run by hand, a fresh run): the\n  rollback goes to {@link HelmCanarySettings.stableRevision}. Without one\n  this refuses, since claiming a rollback it cannot do would be worse.\n- **A record it does not recognise**: refuses.\n\nStaged, or with the install under way, it first reads when the stable\nrelease was first deployed and refuses, changing nothing, unless that is\nthe time `stage` recorded — a release reinstalled under the same name, or\nanother cluster's through a changed kube context, is not this rollout's to\nroll back. A hand-run abort has no recorded time to compare with."
+            },
+            {
+              "name": "exposure",
+              "kind": "property",
+              "optional": false,
+              "signature": "exposure: replicas",
+              "doc": "Exposure is a share of replicas, quantised to whole pods."
+            }
+          ]
+        },
+        {
+          "name": "HelmCanaryContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the Helm platform uses: the\nrollout's durable state, where the stable release's revision and the staged\ncandidate are recorded, and the build summary. The engine hands a richer\ncontext; this is the narrow view.",
+          "signature": "interface HelmCanaryContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "reportSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "reportSummary(pairs: SummaryPairs): void",
+              "doc": "Add key/value pairs to the calling target's row in the build summary."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: TargetStateHandle",
+              "doc": "The rollout's durable platform state, shared by every call."
+            }
+          ]
+        },
+        {
+          "name": "HelmCanarySettings",
+          "kind": "class",
+          "doc": "How `helmCanary` reaches the releases, configured through its lambda.",
+          "signature": "class HelmCanarySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "chart",
+              "kind": "method",
+              "optional": false,
+              "signature": "chart(ref: string): this",
+              "doc": "The chart the candidate is rendered from — a path, `repo/name` or an\n`oci://` reference. The canary release and the promotion use it; the\nstable release's replica moves use it too unless {@link stableChart}\nnames the chart the stable release runs. Pin a repository chart with\n{@link version}: a chart that is not a local path (one starting with\n`.` or `/`, or a Windows drive path) is refused without one. A local\nchart is recorded by its path, not its content, so leave it unchanged\nuntil the rollout finishes."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The candidate chart's version (`--version`)."
+            },
+            {
+              "name": "stableChart",
+              "kind": "method",
+              "optional": false,
+              "signature": "stableChart(ref: string): this",
+              "doc": "The chart the stable release runs today, for the replica moves on it\nwhile the canary runs. Without it they render {@link chart}, so a\ncandidate that changes the chart changes every stable pod's templates at\nthe first step. A chart that is not a local path (one starting with `.`\nor `/`, or a Windows drive path) must be pinned with {@link stableVersion}, or each move would\nrender whatever the repository serves as latest."
+            },
+            {
+              "name": "stableVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "stableVersion(value: string): this",
+              "doc": "The stable chart's version (`--version` on the stable release's replica\nmoves). Defaults to {@link version} when {@link stableChart} is not set,\nand is required when it names a repository or `oci://` chart."
+            },
+            {
+              "name": "stableRelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "stableRelease(name: string): this",
+              "doc": "The release serving today. It must already exist; the canary amends it."
+            },
+            {
+              "name": "canaryRelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "canaryRelease(name: string): this",
+              "doc": "The release the candidate runs as (default `<stable>-canary`)."
+            },
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(name: string): this",
+              "doc": "The namespace both releases live in (`--namespace`)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(value: string): this",
+              "doc": "The candidate's image, as the chart reads it at {@link imageKey}. With\nthe default key, `image.tag`, that is the tag alone (`1.4.2`, or\n`1.4.2@sha256:…`), as the chart `helm create` scaffolds expects; point\n{@link imageKey} at a key that takes a full reference to pass one. Set\nwith `--set-string`, so a tag like `1.10` is not turned into a number."
+            },
+            {
+              "name": "imageKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageKey(path: string): this",
+              "doc": "The values path the image is set on (default `image.tag`)."
+            },
+            {
+              "name": "replicasKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "replicasKey(path: string): this",
+              "doc": "The values path the replica count is set on (default `replicaCount`, as\n`helm create` scaffolds). The chart must honour it — an enabled\nautoscaler that ignores it makes the exposure meaningless."
+            },
+            {
+              "name": "replicas",
+              "kind": "method",
+              "optional": false,
+              "signature": "replicas(total: number): this",
+              "doc": "The total replica count, split between the two releases while the\ncanary runs and given to the stable release by the promotion."
+            },
+            {
+              "name": "values",
+              "kind": "method",
+              "optional": false,
+              "signature": "values(...files: PathLike[]): this",
+              "doc": "Values files (`--values`) the canary release is installed with, and that\nthe promotion merges into the stable release's values. The canary\nrelease inherits nothing from the stable one, so these must carry its\nwhole configuration."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string): this",
+              "doc": "How long each command that waits may take, e.g. `10m` (`--timeout`)."
+            },
+            {
+              "name": "stableRevision",
+              "kind": "method",
+              "optional": false,
+              "signature": "stableRevision(revision: number): this",
+              "doc": "The stable release's revision to roll back to when `rollout.abort` is run\nby hand — the one `helm history <stable>` lists from before the rollout.\nSuch a run is fresh, with no record of a rollout, so it has nothing else\nto go on. A rollback the engine runs mid-rollout does not use it: that one\nreturns to the revision `stage` recorded."
+            },
+            {
+              "name": "helm",
+              "kind": "method",
+              "optional": false,
+              "signature": "helm(configure: Configure<HelmSettings>): this",
+              "doc": "Global flags for every helm command the platform runs —\n`(s) => s.kubeContext(\"prod\").kubeconfig(\"~/.kube/prod\")`, or a\n`.toolPath(...)` to a specific helm. The kube context and kubeconfig must\nnot change mid-rollout: the rollout records its release names and\nnamespace and refuses a change to those, but cannot record these. A\ncontext that now points at another cluster is refused all the same, since\nthat cluster's stable release was not first deployed at the time `stage`\nrecorded — a strong check, not a proof."
+            },
+            {
+              "name": "runner",
+              "kind": "method",
+              "optional": false,
+              "signature": "runner(run: HelmSettingsRunner): this",
+              "doc": "Replace how each prepared command is run. The default runs it; this is\nfor a test, or for a build that executes helm through something else."
+            },
+            {
+              "name": "chart_",
+              "kind": "property",
+              "optional": true,
+              "signature": "chart_?: string",
+              "doc": "The chart the candidate is rendered from (set by {@link chart})."
+            },
+            {
+              "name": "version_",
+              "kind": "property",
+              "optional": true,
+              "signature": "version_?: string",
+              "doc": "The candidate chart's version (set by {@link version})."
+            },
+            {
+              "name": "stableChart_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stableChart_?: string",
+              "doc": "The chart the stable release runs (set by {@link stableChart})."
+            },
+            {
+              "name": "stableVersion_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stableVersion_?: string",
+              "doc": "The stable chart's version (set by {@link stableVersion})."
+            },
+            {
+              "name": "stableRelease_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stableRelease_?: string",
+              "doc": "The release serving today (set by {@link stableRelease})."
+            },
+            {
+              "name": "canaryRelease_",
+              "kind": "property",
+              "optional": true,
+              "signature": "canaryRelease_?: string",
+              "doc": "The release the candidate runs as (set by {@link canaryRelease})."
+            },
+            {
+              "name": "namespace_",
+              "kind": "property",
+              "optional": true,
+              "signature": "namespace_?: string",
+              "doc": "The namespace both releases live in (set by {@link namespace})."
+            },
+            {
+              "name": "image_",
+              "kind": "property",
+              "optional": true,
+              "signature": "image_?: string",
+              "doc": "The candidate's image value (set by {@link image})."
+            },
+            {
+              "name": "imageKey_",
+              "kind": "property",
+              "optional": false,
+              "signature": "imageKey_: string",
+              "doc": "The values path the image is set on (set by {@link imageKey})."
+            },
+            {
+              "name": "replicasKey_",
+              "kind": "property",
+              "optional": false,
+              "signature": "replicasKey_: string",
+              "doc": "The values path the replica count is set on (set by {@link replicasKey})."
+            },
+            {
+              "name": "replicas_",
+              "kind": "property",
+              "optional": true,
+              "signature": "replicas_?: number",
+              "doc": "The total replica count across both releases (set by {@link replicas})."
+            },
+            {
+              "name": "values_",
+              "kind": "property",
+              "optional": false,
+              "signature": "values_: string[]",
+              "doc": "Values files for the canary release and the promotion (set by {@link values})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": true,
+              "signature": "timeout_?: string",
+              "doc": "How long each waiting command may take (set by {@link timeout})."
+            },
+            {
+              "name": "stableRevision_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stableRevision_?: number",
+              "doc": "The revision a hand-run rollback returns to (set by {@link stableRevision})."
+            },
+            {
+              "name": "helm_",
+              "kind": "property",
+              "optional": true,
+              "signature": "helm_?: Configure<HelmSettings>",
+              "doc": "Global helm flags for every command (set by {@link helm})."
+            },
+            {
+              "name": "runner_",
+              "kind": "property",
+              "optional": false,
+              "signature": "runner_: HelmSettingsRunner",
+              "doc": "How each command is run (set by {@link runner})."
+            }
+          ]
+        },
+        {
           "name": "HelmDependencyUpdateSettings",
           "kind": "class",
           "doc": "Settings for `helm dependency update`.",
@@ -21773,6 +22087,36 @@
               "optional": false,
               "signature": "chart(path: PathLike): this",
               "doc": "The chart path whose dependencies to update (required)."
+            }
+          ]
+        },
+        {
+          "name": "HelmGetAllSettings",
+          "kind": "class",
+          "doc": "Settings for `helm get all` (everything recorded about a release).",
+          "signature": "class HelmGetAllSettings extends HelmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "release",
+              "kind": "method",
+              "optional": false,
+              "signature": "release(name: string): this",
+              "doc": "The release to read (required)."
+            },
+            {
+              "name": "revision",
+              "kind": "method",
+              "optional": false,
+              "signature": "revision(number: number): this",
+              "doc": "Read a specific revision instead of the latest (`--revision`). A whole\nnumber from 1 up."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(value: string): this",
+              "doc": "Format the output with a Go template over `.Release` (`--template`) —\ne.g. `{{.Release.Version}}` prints just the current revision."
             }
           ]
         },
@@ -21925,6 +22269,50 @@
           ]
         },
         {
+          "name": "HelmRollbackSettings",
+          "kind": "class",
+          "doc": "Settings for `helm rollback`.",
+          "signature": "class HelmRollbackSettings extends HelmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "release",
+              "kind": "method",
+              "optional": false,
+              "signature": "release(name: string): this",
+              "doc": "The release to roll back (required)."
+            },
+            {
+              "name": "revision",
+              "kind": "method",
+              "optional": false,
+              "signature": "revision(number: number): this",
+              "doc": "The revision to roll back to. Without one, helm rolls back to the\nprevious revision. A whole number from 1 up."
+            },
+            {
+              "name": "wait",
+              "kind": "method",
+              "optional": false,
+              "signature": "wait(): this",
+              "doc": "Wait until resources are ready (`--wait`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string): this",
+              "doc": "Operation timeout, e.g. `5m` (`--timeout`)."
+            },
+            {
+              "name": "historyMax",
+              "kind": "method",
+              "optional": false,
+              "signature": "historyMax(count: number): this",
+              "doc": "Keep at most `count` revisions of the release; `0` keeps them all\n(`--history-max`). A whole number from 0 up."
+            }
+          ]
+        },
+        {
           "name": "HelmSettings",
           "kind": "class",
           "doc": "Base for all `helm` subcommand settings: the binary is `helm`, and the\ncluster-targeting flags (`--namespace`, `--kube-context`, `--kubeconfig`) are\nshared by every subcommand.",
@@ -21953,6 +22341,13 @@
               "doc": "Use an explicit kubeconfig file (`--kubeconfig`)."
             }
           ]
+        },
+        {
+          "name": "HelmSettingsRunner",
+          "kind": "typeAlias",
+          "doc": "Runs one prepared `helm` command and returns its output. The default runs\nit; a test or a build that executes helm some other way injects its own\nwith {@link HelmCanarySettings.runner}.",
+          "signature": "type HelmSettingsRunner = unknown",
+          "deprecated": false
         },
         {
           "name": "HelmTasks",
@@ -21988,6 +22383,20 @@
               "optional": false,
               "signature": "uninstall(configure?: Configure<HelmUninstallSettings>): Promise<CommandOutput>",
               "doc": "Uninstall a release: `helm uninstall`."
+            },
+            {
+              "name": "rollback",
+              "kind": "method",
+              "optional": false,
+              "signature": "rollback(configure?: Configure<HelmRollbackSettings>): Promise<CommandOutput>",
+              "doc": "Roll a release back to an earlier revision: `helm rollback`."
+            },
+            {
+              "name": "getAll",
+              "kind": "method",
+              "optional": false,
+              "signature": "getAll(configure?: Configure<HelmGetAllSettings>): Promise<CommandOutput>",
+              "doc": "Read everything recorded about a release: `helm get all`."
             },
             {
               "name": "template",
@@ -22078,6 +22487,13 @@
               "doc": "Retain release history (`--keep-history`)."
             },
             {
+              "name": "ignoreNotFound",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreNotFound(): this",
+              "doc": "Treat \"release not found\" as a successful uninstall\n(`--ignore-not-found`, Helm 3.13 and later)."
+            },
+            {
               "name": "wait",
               "kind": "method",
               "optional": false,
@@ -22113,6 +22529,27 @@
               "optional": false,
               "signature": "install(): this",
               "doc": "Install the release if it does not exist (`--install`)."
+            },
+            {
+              "name": "reuseValues",
+              "kind": "method",
+              "optional": false,
+              "signature": "reuseValues(): this",
+              "doc": "Reuse the last release's values and merge the command line's `--set` and\n`--values` over them (`--reuse-values`)."
+            },
+            {
+              "name": "resetThenReuseValues",
+              "kind": "method",
+              "optional": false,
+              "signature": "resetThenReuseValues(): this",
+              "doc": "Reset to the new chart's default values, apply the last release's values\nover them, then the command line's (`--reset-then-reuse-values`, Helm\n3.14 and later). Unlike {@link reuseValues}, a default the new chart\nchanged is picked up."
+            },
+            {
+              "name": "historyMax",
+              "kind": "method",
+              "optional": false,
+              "signature": "historyMax(count: number): this",
+              "doc": "Keep at most `count` revisions of the release; `0` keeps them all\n(`--history-max`). A whole number from 0 up."
             },
             {
               "name": "createNamespace",
@@ -22164,6 +22601,13 @@
               "optional": false,
               "signature": "set(name: string, value: string): this",
               "doc": "Override a single value (`--set name=value`); repeatable."
+            },
+            {
+              "name": "setString",
+              "kind": "method",
+              "optional": false,
+              "signature": "setString(name: string, value: string): this",
+              "doc": "Override a single value as a string (`--set-string name=value`);\nrepeatable. Unlike `--set`, helm does not infer a type, so a tag such as\n`1.10` or `2024` stays a string."
             },
             {
               "name": "version",
