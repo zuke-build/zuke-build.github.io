@@ -28078,7 +28078,7 @@
         {
           "name": "cloudRunCanary",
           "kind": "function",
-          "doc": "A Cloud Run service as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(cloudRunCanary((r) =>\n  r.service(\"api\").region(\"europe-west1\").image(this.image.value)\n    .gcloud((g) => g.project(\"my-project\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters.\n\n- **stage** — `run services update <service> --image <image> --tag canary\n  --no-traffic`, then records the new revision.\n- **expose** — `run services update-traffic <service> --to-tags canary=<n>`.\n- **promote** — checks the latest revision is still the candidate, then\n  `update-traffic --to-latest`.\n- **abort** — `update-traffic --to-tags canary=0` mid-rollout; run by hand,\n  `--to-revisions <stable>=100` to the revision set with `.stable(...)`.",
+          "doc": "A Cloud Run service as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(cloudRunCanary((r) =>\n  r.service(\"api\").region(\"europe-west1\").image(this.image.value)\n    .gcloud((g) => g.project(\"my-project\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters.\n\n- **stage** — reads the service's `metadata.uid`, runs `run services update\n  <service> --image <image> --tag canary --no-traffic`, then records the\n  service, region, tag, gcloud flags and uid, and the new revision.\n- **expose** — `run services update-traffic <service> --to-tags canary=<n>`.\n- **promote** — checks the latest revision is still the candidate, then\n  `update-traffic --to-latest`.\n- **abort** — `update-traffic --to-tags canary=0` mid-rollout; run by hand,\n  `--to-revisions <stable>=100` to the revision set with `.stable(...)`.\n\nEvery call after `stage` that has its record — expose, promote, and abort\nmid-rollout — first compares the configured service, region, tag and\ngcloud flags with the record, then reads the service's uid again, and\nrefuses on any difference before changing anything. A hand-run abort has no\nrecord and uses the configuration as it is.",
           "signature": "function cloudRunCanary(configure: Configure<CloudRunCanarySettings>): CloudRunCanary",
           "deprecated": false
         },
@@ -28101,28 +28101,28 @@
               "kind": "method",
               "optional": false,
               "signature": "stage(ctx: CloudRunCanaryContext): Promise<void>",
-              "doc": "Deploy the candidate image as a new revision carrying the tag and no\ntraffic, then record which revision that is. `services update` never\ncreates a service, so a misspelt name fails here rather than standing up a\nsecond service."
+              "doc": "Read the service's uid, deploy the candidate image as a new revision\ncarrying the tag and no traffic, then record the service, region, tag,\ngcloud flags and uid every later call is checked against, and which\nrevision the candidate is. `services update` never creates a service, so a\nmisspelt name fails here rather than standing up a second service. A stage\nrun again over a record that shows the candidate tagged is checked against\nthat record first, as every later call is."
             },
             {
               "name": "expose",
               "kind": "method",
               "optional": false,
-              "signature": "expose(percent: number): Promise<number>",
-              "doc": "Send `percent` of the requests to the candidate, through its tag. gcloud\nspreads the rest over the revisions already serving, in proportion and in\nwhole percents, so a split the service had before the canary keeps its\nshape only approximately — a revision whose share rounds to 0 drops out."
+              "signature": "expose(percent: number, ctx: CloudRunCanaryContext): Promise<number>",
+              "doc": "Send `percent` of the requests to the candidate, through its tag. gcloud\nspreads the rest over the revisions already serving, in proportion and in\nwhole percents, so a split the service had before the canary keeps its\nshape only approximately — a revision whose share rounds to 0 drops out.\nFirst the configuration is compared with what `stage` recorded, then the\nservice's uid is read again; on any difference this refuses, changing\nnothing."
             },
             {
               "name": "promote",
               "kind": "method",
               "optional": false,
               "signature": "promote(ctx: CloudRunCanaryContext): Promise<void>",
-              "doc": "Send all traffic to the latest revision — after checking that it is\nstill the candidate this rollout staged, so a revision someone deployed in\nthe meantime is not promoted in its place. The check and the traffic move\nare two gcloud calls, so a deploy landing in the seconds between them is\nnot caught. Idempotent."
+              "doc": "Send all traffic to the latest revision — after checking that it is\nstill the candidate this rollout staged, so a revision someone deployed in\nthe meantime is not promoted in its place. The check and the traffic move\nare two gcloud calls, so a deploy landing in the seconds between them is\nnot caught. Before either, the configuration is compared with what\n`stage` recorded and the service's uid is read again; on any difference\nthis refuses, changing nothing. Idempotent."
             },
             {
               "name": "abort",
               "kind": "method",
               "optional": false,
               "signature": "abort(ctx: CloudRunCanaryContext): Promise<void>",
-              "doc": "Take the candidate's traffic back. Idempotent. What it does depends on\nwhat this rollout recorded:\n\n- **The candidate is tagged** (a rollback mid-rollout): the tag goes to\n  0 % and gcloud returns that share to the revisions already serving. The\n  candidate revision stays, with no traffic.\n- **`stage` failed before tagging it**: nothing has any traffic to take\n  back, so nothing runs.\n- **Nothing recorded** (`rollout.abort` run by hand, a fresh run): all\n  traffic goes to the revision set with\n  {@link CloudRunCanarySettings.stable}. Without one this refuses, since\n  claiming a rollback it cannot do would be worse."
+              "doc": "Take the candidate's traffic back. Idempotent. What it does depends on\nwhat this rollout recorded:\n\n- **The candidate is tagged** (a rollback mid-rollout): once the\n  configuration and the service's uid match what `stage` recorded, the\n  tag goes to 0 % and gcloud returns that share to the revisions already\n  serving. The candidate revision stays, with no traffic. On a mismatch\n  this refuses, changing nothing.\n- **`stage` failed before tagging it**: nothing has any traffic to take\n  back, so nothing runs.\n- **Any other stage marker**: the record is damaged, and this refuses.\n- **Nothing recorded** (`rollout.abort` run by hand, a fresh run): all\n  traffic goes to the revision set with\n  {@link CloudRunCanarySettings.stable}. Without one this refuses, since\n  claiming a rollback it cannot do would be worse."
             },
             {
               "name": "exposure",
