@@ -145,6 +145,13 @@
           "deprecated": false
         },
         {
+          "name": "ALLOW_INSECURE_ENV",
+          "kind": "variable",
+          "doc": "The environment variable that opts a deployment out of {@link\nassertSecureBackendUrl}'s `https:` requirement, for a plaintext endpoint on a\nnetwork the operator has decided to trust.",
+          "signature": "const ALLOW_INSECURE_ENV: ZUKE_ALLOW_INSECURE_URL",
+          "deprecated": false
+        },
+        {
           "name": "AlreadyResumedError",
           "kind": "class",
           "doc": "Raised when a run has already been resumed by another process.",
@@ -629,6 +636,13 @@
           "kind": "function",
           "doc": "Reject a symlink whose target would resolve outside the destination directory\n— an absolute target, or a relative one that climbs (with `..`) above the\nextraction root once resolved against the link's own directory. A file entry's\nname is bounded by {@link assertSafeEntryName}; a symlink adds a second escape\nvector (its target), so a poisoned tarball can't plant `bin/x -> ../../etc`.",
           "signature": "function assertSafeLinkTarget(entryName: string, target: string): void",
+          "deprecated": false
+        },
+        {
+          "name": "assertSecureBackendUrl",
+          "kind": "function",
+          "doc": "Refuse a plaintext URL for a backend Zuke both authenticates to and *trusts\nthe answers from* — the state service, the build registry, and the remote\ncache.\n\nConfidentiality is the obvious half: a bearer token sent over `http:` is\nreadable by anyone on the path, and that token can forge run records, the\naudit trail, and the cross-run locks two deploys rely on being exclusive.\n\n**Integrity is the half that matters more**, and it does not need a token at\nall. A registry descriptor is a launch command the MCP host will spawn, and a\ncache artifact is a file tree restored into the workspace — so an on-path\nattacker who can answer a plaintext request reaches code execution without\nstealing anything. That is why this refuses `http:` whether or not a\ncredential is configured.\n\nLoopback is exempt: there is no path to sit on, and a local dev service on\n`http://localhost` is the ordinary way to work on one. A deliberate plaintext\nendpoint elsewhere is still reachable by setting {@link ALLOW_INSECURE_ENV},\nwhich is an explicit decision rather than a silent default.\n\nThis guards the **environment** path — the `ZUKE_*_URL` variables, which are\nset by whoever configures the CI job or the shell. Constructing a store in\ncode (`new HttpStateStore({ url })`, a `stateStore()` override) is deliberately\nleft alone: that URL is first-party source in the build file, so writing it is\nitself the trust decision, and a build author who means to talk plaintext to a\nservice on their own network should not have to also set an env var.\n\nExported so a package that sends a credential to a service it reads answers\nfrom applies this same rule rather than a second loopback check of its own:\n`@zuke/prometheus` runs every URL that will carry a credential through it.\n",
+          "signature": "function assertSecureBackendUrl(raw: string, what: string, readEnv: unknown): void",
           "deprecated": false
         },
         {
@@ -4364,6 +4378,29 @@
           "deprecated": false
         },
         {
+          "name": "InsecureBackendUrlError",
+          "kind": "class",
+          "doc": "Raised by {@link assertSecureBackendUrl} when a backend is configured with a\nplaintext URL. A distinct type so the CLI can report it as the configuration\nmistake it is — a named message and exit code 1 — rather than letting a stack\ntrace escape as if the build had crashed.",
+          "signature": "class InsecureBackendUrlError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "setting",
+              "kind": "property",
+              "optional": false,
+              "signature": "setting: string",
+              "doc": "The environment variable (or setting) carrying the plaintext URL."
+            }
+          ]
+        },
+        {
           "name": "installNpmTool",
           "kind": "function",
           "doc": "Provision an npm-registry package as a version-pinned, cached tool and return\nthe installed bin's {@link AbsolutePath} — hand it straight to a wrapper's\n`.toolPath(...)`.\n\nThe package installs under `<destDir>/npm/<name>@<version>` via\n`npm install --prefix <dir> --no-save <name>@<version>`; a marker file records\nthe pinned `{ name, version }`, so a later run whose marker matches and whose\nbin is still present is reused without invoking npm again. `npm` must be on\n`PATH` (it resolves and downloads the package).\n\nThrows — without recording a marker — if `spec` is malformed (an unsafe name,\nversion, or bin), if npm fails, or if npm succeeds but the expected bin is\nabsent (a typo'd `bin`, or a package that ships no executable), so a bad\ninstall fails loudly here instead of at a later `.toolPath(...)`.\n\nThe marker is written only after the bin is verified present, so a matching\nmarker always has its bin — a reader never sees a half-written install.\nConcurrent installs of the same pin into the same directory are not isolated;\nthey just do redundant work (the documented ceiling — a build resolves its\ntoolchain once, and distinct pins use distinct directories).",
@@ -5653,6 +5690,13 @@
           "kind": "typeAlias",
           "doc": "The result of a {@link StateStore.putRun} compare-and-swap write.",
           "signature": "type PutResult = unknown | unknown",
+          "deprecated": false
+        },
+        {
+          "name": "readBytesBounded",
+          "kind": "function",
+          "doc": "Read `body` into memory, or return `null` once it exceeds `limit` bytes.\n\nReads incrementally and abandons the stream at the cap, so an oversized\nstream — a chunked HTTP body that declares no `content-length`, or a small\narchive that decompresses to gigabytes — is never buffered whole just to be\nrejected. A `null` body reads as empty.",
+          "signature": "async function readBytesBounded(body: ReadableStream<Uint8Array> | null, limit: number): Promise<Uint8Array | null>",
           "deprecated": false
         },
         {
@@ -7031,6 +7075,13 @@
               "doc": "ISO-8601 timestamp when the signal was recorded."
             }
           ]
+        },
+        {
+          "name": "signJwtRs256",
+          "kind": "function",
+          "doc": "Sign `claims` as a compact RS256 JWT with a PEM RSA private key —\n`BEGIN RSA PRIVATE KEY` (PKCS#1) or `BEGIN PRIVATE KEY` (PKCS#8).\n\nThe header is `{\"alg\":\"RS256\",\"typ\":\"JWT\"}`, plus `\"kid\"` when `keyId` is\ngiven (a Google service-account key's `private_key_id`). The claims are\nserialised as given: the caller sets `iat`, `exp` and the rest.\n\n```ts\nconst jwt = await signJwtRs256(pem, { iss: \"1234\", iat, exp: iat + 540 });\n```\n",
+          "signature": "async function signJwtRs256(privateKeyPem: string, claims: Readonly<Record<string, unknown>>, keyId?: string): Promise<string>",
+          "deprecated": false
         },
         {
           "name": "SlackAnnouncementSettings",
