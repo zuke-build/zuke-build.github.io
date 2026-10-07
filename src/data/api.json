@@ -30311,6 +30311,2980 @@
       ]
     },
     {
+      "name": "@zuke/aws",
+      "dir": "aws",
+      "summary": "`@zuke/aws` — typed AWS CLI tasks for Zuke builds, readers and a canary analysis.",
+      "symbols": [
+        {
+          "name": "AwsCloudformationDeleteStackSettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudformation delete-stack`.",
+          "signature": "class AwsCloudformationDeleteStackSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "stackName",
+              "kind": "method",
+              "optional": false,
+              "signature": "stackName(name: string): this",
+              "doc": "The stack to delete (`--stack-name`)."
+            },
+            {
+              "name": "roleArn",
+              "kind": "method",
+              "optional": false,
+              "signature": "roleArn(arn: string): this",
+              "doc": "The role CloudFormation assumes to delete (`--role-arn`)."
+            },
+            {
+              "name": "retainResources",
+              "kind": "method",
+              "optional": false,
+              "signature": "retainResources(...ids: string[]): this",
+              "doc": "Logical ids to keep when a delete is retried (`--retain-resources`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudformationDeploySettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudformation deploy`.",
+          "signature": "class AwsCloudformationDeploySettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "templateFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "templateFile(path: string): this",
+              "doc": "The template to deploy (`--template-file`)."
+            },
+            {
+              "name": "stackName",
+              "kind": "method",
+              "optional": false,
+              "signature": "stackName(name: string): this",
+              "doc": "The stack to create or update (`--stack-name`)."
+            },
+            {
+              "name": "parameterOverride",
+              "kind": "method",
+              "optional": false,
+              "signature": "parameterOverride(key: string, value: string): this",
+              "doc": "Set a template parameter (`--parameter-overrides Key=Value`); repeatable."
+            },
+            {
+              "name": "capabilities",
+              "kind": "method",
+              "optional": false,
+              "signature": "capabilities(...values: string[]): this",
+              "doc": "Acknowledge what the template creates (`--capabilities`), e.g. `\"CAPABILITY_IAM\"`."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(key: string, value: string): this",
+              "doc": "Tag the stack and its resources (`--tags Key=Value`); repeatable."
+            },
+            {
+              "name": "noExecuteChangeset",
+              "kind": "method",
+              "optional": false,
+              "signature": "noExecuteChangeset(): this",
+              "doc": "Create the change set without executing it (`--no-execute-changeset`)."
+            },
+            {
+              "name": "noFailOnEmptyChangeset",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFailOnEmptyChangeset(): this",
+              "doc": "Exit 0 when there is nothing to change (`--no-fail-on-empty-changeset`)."
+            },
+            {
+              "name": "roleArn",
+              "kind": "method",
+              "optional": false,
+              "signature": "roleArn(arn: string): this",
+              "doc": "The role CloudFormation assumes to deploy (`--role-arn`)."
+            },
+            {
+              "name": "s3Bucket",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Bucket(name: string): this",
+              "doc": "The bucket a large template is uploaded to (`--s3-bucket`)."
+            },
+            {
+              "name": "s3Prefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Prefix(prefix: string): this",
+              "doc": "The key prefix for that upload (`--s3-prefix`)."
+            },
+            {
+              "name": "kmsKeyId",
+              "kind": "method",
+              "optional": false,
+              "signature": "kmsKeyId(id: string): this",
+              "doc": "The KMS key that encrypts that upload (`--kms-key-id`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudformationDescribeStacksSettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudformation describe-stacks`.",
+          "signature": "class AwsCloudformationDescribeStacksSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "stackName",
+              "kind": "method",
+              "optional": false,
+              "signature": "stackName(name: string): this",
+              "doc": "The stack to describe (`--stack-name`); every stack when omitted."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudformationStackWaiter",
+          "kind": "typeAlias",
+          "doc": "The waiters `aws cloudformation wait` offers for a stack.",
+          "signature": "type AwsCloudformationStackWaiter = stack-create-complete | stack-update-complete | stack-delete-complete | stack-import-complete | stack-rollback-complete | stack-exists",
+          "deprecated": false
+        },
+        {
+          "name": "AwsCloudformationWaitSettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudformation wait <waiter>`: block until the stack\nreaches the waiter's state. The CLI polls every 30 seconds and exits\nnon-zero after 120 attempts, or as soon as the stack lands in a failed\nstate — which surfaces as a `CommandError`.",
+          "signature": "class AwsCloudformationWaitSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "waiter",
+              "kind": "method",
+              "optional": false,
+              "signature": "waiter(name: AwsCloudformationStackWaiter): this",
+              "doc": "The state to wait for, e.g. `\"stack-update-complete\"`."
+            },
+            {
+              "name": "stackName",
+              "kind": "method",
+              "optional": false,
+              "signature": "stackName(name: string): this",
+              "doc": "The stack to wait on (`--stack-name`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchAggregate",
+          "kind": "typeAlias",
+          "doc": "How {@link AwsCloudwatchMetricValueSettings} turns a series into one number:\nits newest datapoint, or the sum, average, maximum or minimum of all of\nthem.",
+          "signature": "type AwsCloudwatchAggregate = latest | sum | average | maximum | minimum",
+          "deprecated": false
+        },
+        {
+          "name": "AwsCloudwatchAlarmState",
+          "kind": "typeAlias",
+          "doc": "The states a CloudWatch alarm can be in.",
+          "signature": "type AwsCloudwatchAlarmState = OK | ALARM | INSUFFICIENT_DATA",
+          "deprecated": false
+        },
+        {
+          "name": "AwsCloudwatchAlarmType",
+          "kind": "typeAlias",
+          "doc": "The kinds of alarm `describe-alarms` can return.",
+          "signature": "type AwsCloudwatchAlarmType = MetricAlarm | CompositeAlarm | LogAlarm",
+          "deprecated": false
+        },
+        {
+          "name": "AwsCloudwatchAnalysis",
+          "kind": "interface",
+          "doc": "A health check run against a canary, in the shape `@zuke/canary`'s\n`c.analysis(...)` accepts: throw to fail it, which rolls the rollout back.",
+          "signature": "interface AwsCloudwatchAnalysis",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "validate",
+              "kind": "method",
+              "optional": false,
+              "signature": "validate(context: AwsCloudwatchAnalysisContext): Promise<void>",
+              "doc": "Read the metric and throw when a datapoint is out of bounds."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "`\"cloudwatch\"`, for diagnostics."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchAnalysisContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the analysis uses: the run's\nredactor, applied to every failure message. The engine hands a richer\ncontext; this is the narrow view.",
+          "signature": "interface AwsCloudwatchAnalysisContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "redact",
+              "kind": "method",
+              "optional": false,
+              "signature": "redact(text: string): string",
+              "doc": "Mask every resolved `secret` parameter in `text`."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchAnalysisSettings",
+          "kind": "class",
+          "doc": "Settings for {@link cloudwatch}: the metric, the window and the bounds.\n\nThe metric itself — `namespace`, `metricName`, `dimension`, `stat`,\n`period`, `unit` — is set with the same setters as a `get-metric-data`\nquery, which these settings extend; it is queried as `m1`.",
+          "signature": "class AwsCloudwatchAnalysisSettings extends AwsCloudwatchMetricStatSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "What to call the metric when it is out of bounds."
+            },
+            {
+              "name": "metricStat",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricStat(id: string, configure: Configure<AwsCloudwatchMetricStatSettings>): this",
+              "doc": "Add a metric for {@link expression} to read, under `id`. The metric set\nwith {@link namespace} and {@link metricName} is `m1`."
+            },
+            {
+              "name": "expression",
+              "kind": "method",
+              "optional": false,
+              "signature": "expression(expression: string): this",
+              "doc": "Judge a metric-math expression over the metrics instead of a metric —\n`\"100 * errors / requests\"`, with `errors` and `requests` added by\n{@link metricStat}."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number): this",
+              "doc": "How far back to read (`\"10m\"`, or ms; default 5 minutes). The window\nends at the last period boundary, so the period still being written is\nnot judged.\n\nCloudWatch publishes a datapoint a little after its period ends, so the\nnewest period in the window may still be short of some data. That only\nlowers a `Sum` or a `SampleCount`: harmless for a `max`, but a `min` on\nsuch a statistic can fail on a lag rather than on the candidate."
+            },
+            {
+              "name": "min",
+              "kind": "method",
+              "optional": false,
+              "signature": "min(value: number): this",
+              "doc": "Fail when any datapoint is below `value`."
+            },
+            {
+              "name": "max",
+              "kind": "method",
+              "optional": false,
+              "signature": "max(value: number): this",
+              "doc": "Fail when any datapoint is above `value`."
+            },
+            {
+              "name": "missingDataAs",
+              "kind": "method",
+              "optional": false,
+              "signature": "missingDataAs(value: number): this",
+              "doc": "Judge `value` when the window has no datapoints, instead of failing.\nCloudWatch publishes nothing for a period with no events, so for a count\nof errors no data means `0`; for a latency it usually means the metric or\nits dimensions are wrong, which is why that is a failure by default."
+            },
+            {
+              "name": "aws",
+              "kind": "method",
+              "optional": false,
+              "signature": "aws(configure: Configure<AwsSettings>): this",
+              "doc": "Global options for the `get-metric-data` command —\n`(a) => a.profile(\"prod\").region(\"eu-west-1\")`, a `.toolPath(...)`, or a\n`.runner(...)`, the seam a test answers through. `--output` and `--query`\nare the analysis's own and are set after it."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "The clock the window is read against — the seam a test pins it with."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "What the metric is called in a failure (set by {@link name})."
+            },
+            {
+              "name": "metricStats_",
+              "kind": "property",
+              "optional": false,
+              "signature": "metricStats_: Array<unknown>",
+              "doc": "Further metrics an expression reads, by id (set by {@link metricStat})."
+            },
+            {
+              "name": "expression_",
+              "kind": "property",
+              "optional": true,
+              "signature": "expression_?: string",
+              "doc": "The metric-math expression judged instead of the metric (set by {@link expression})."
+            },
+            {
+              "name": "window_",
+              "kind": "property",
+              "optional": false,
+              "signature": "window_: number",
+              "doc": "How far back to read, in ms (set by {@link window})."
+            },
+            {
+              "name": "min_",
+              "kind": "property",
+              "optional": true,
+              "signature": "min_?: number",
+              "doc": "The lowest acceptable value (set by {@link min})."
+            },
+            {
+              "name": "max_",
+              "kind": "property",
+              "optional": true,
+              "signature": "max_?: number",
+              "doc": "The highest acceptable value (set by {@link max})."
+            },
+            {
+              "name": "missingData_",
+              "kind": "property",
+              "optional": true,
+              "signature": "missingData_?: number",
+              "doc": "The value to judge when there are no datapoints (set by {@link missingDataAs})."
+            },
+            {
+              "name": "aws_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aws_: Configure<AwsSettings>",
+              "doc": "Global options for the command (set by {@link aws})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock the window is read against (set by {@link now})."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchDescribeAlarmsSettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudwatch describe-alarms`.",
+          "signature": "class AwsCloudwatchDescribeAlarmsSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "alarmNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "alarmNames(...names: string[]): this",
+              "doc": "Only these alarms (`--alarm-names`); repeatable."
+            },
+            {
+              "name": "alarmNamePrefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "alarmNamePrefix(prefix: string): this",
+              "doc": "Only alarms whose name starts with this (`--alarm-name-prefix`)."
+            },
+            {
+              "name": "stateValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "stateValue(state: AwsCloudwatchAlarmState): this",
+              "doc": "Only alarms in this state (`--state-value`)."
+            },
+            {
+              "name": "alarmTypes",
+              "kind": "method",
+              "optional": false,
+              "signature": "alarmTypes(...types: AwsCloudwatchAlarmType[]): this",
+              "doc": "The kinds of alarm to return (`--alarm-types`): metric, composite or log\nalarms; replaces any set before. Without it the CLI returns metric\nalarms only."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchExpressionSettings",
+          "kind": "class",
+          "doc": "Settings for one metric-math expression in a `get-metric-data` request.",
+          "signature": "class AwsCloudwatchExpressionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(text: string): this",
+              "doc": "A label for the series in the response."
+            },
+            {
+              "name": "period",
+              "kind": "method",
+              "optional": false,
+              "signature": "period(seconds: number): this",
+              "doc": "The period in seconds, for an expression that has no metric to take it from."
+            },
+            {
+              "name": "returnData",
+              "kind": "method",
+              "optional": false,
+              "signature": "returnData(value: boolean): this",
+              "doc": "Whether the response carries this series (default `true`)."
+            },
+            {
+              "name": "label_",
+              "kind": "property",
+              "optional": true,
+              "signature": "label_?: string",
+              "doc": "A label for the series (set by {@link label})."
+            },
+            {
+              "name": "period_",
+              "kind": "property",
+              "optional": true,
+              "signature": "period_?: number",
+              "doc": "The period in seconds, for an expression that needs one (set by {@link period})."
+            },
+            {
+              "name": "returnData_",
+              "kind": "property",
+              "optional": false,
+              "signature": "returnData_: boolean",
+              "doc": "Whether the response carries this series (set by {@link returnData})."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchGetMetricDataSettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudwatch get-metric-data`.",
+          "signature": "class AwsCloudwatchGetMetricDataSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metricStat",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricStat(id: string, configure: Configure<AwsCloudwatchMetricStatSettings>): this",
+              "doc": "Add a metric to the request, under `id`, configured by `configure`."
+            },
+            {
+              "name": "expression",
+              "kind": "method",
+              "optional": false,
+              "signature": "expression(id: string, expression: string, configure?: Configure<AwsCloudwatchExpressionSettings>): this",
+              "doc": "Add a metric-math expression over the request's other ids, e.g.\n`(\"ratio\", \"100 * errors / requests\")`."
+            },
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: AwsTime): this",
+              "doc": "The start of the range (`--start-time`)."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: AwsTime): this",
+              "doc": "The end of the range (`--end-time`)."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number, end?: Date): this",
+              "doc": "The `duration` (`\"15m\"`, or milliseconds) up to `end` — now, unless\ngiven — as `--start-time` and `--end-time`."
+            },
+            {
+              "name": "scanBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "scanBy(order: TimestampDescending | TimestampAscending): this",
+              "doc": "The order of the datapoints (`--scan-by`); newest first by default."
+            },
+            {
+              "name": "maxDatapoints",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxDatapoints(count: number): this",
+              "doc": "The most datapoints to return (`--max-datapoints`). Setting it turns off\nthe CLI's automatic pagination — the CLI treats it as a page size and\nreturns one page with a `NextToken` — so the answer may hold only part\nof the window. `AwsTasks.metricValue` refuses it for that reason."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchGetMetricStatisticsSettings",
+          "kind": "class",
+          "doc": "Settings for `aws cloudwatch get-metric-statistics`.",
+          "signature": "class AwsCloudwatchGetMetricStatisticsSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(value: string): this",
+              "doc": "The metric's namespace (`--namespace`)."
+            },
+            {
+              "name": "metricName",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricName(value: string): this",
+              "doc": "The metric's name (`--metric-name`)."
+            },
+            {
+              "name": "dimension",
+              "kind": "method",
+              "optional": false,
+              "signature": "dimension(name: string, value: string): this",
+              "doc": "A dimension that picks the series (`--dimensions`); repeatable."
+            },
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: AwsTime): this",
+              "doc": "The start of the range (`--start-time`)."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: AwsTime): this",
+              "doc": "The end of the range (`--end-time`)."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number, end?: Date): this",
+              "doc": "The `duration` up to `end` — now, unless given — as the time range."
+            },
+            {
+              "name": "period",
+              "kind": "method",
+              "optional": false,
+              "signature": "period(seconds: number): this",
+              "doc": "The aggregation period in seconds (`--period`)."
+            },
+            {
+              "name": "statistics",
+              "kind": "method",
+              "optional": false,
+              "signature": "statistics(...values: Array<SampleCount | Average | Sum | Minimum | Maximum>): this",
+              "doc": "The basic statistics to return (`--statistics`), e.g. `\"Sum\"`."
+            },
+            {
+              "name": "extendedStatistics",
+              "kind": "method",
+              "optional": false,
+              "signature": "extendedStatistics(...values: string[]): this",
+              "doc": "Percentiles and other extended statistics (`--extended-statistics`), e.g. `\"p99\"`."
+            },
+            {
+              "name": "unit",
+              "kind": "method",
+              "optional": false,
+              "signature": "unit(value: string): this",
+              "doc": "Only datapoints published in this unit (`--unit`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchMetricStatSettings",
+          "kind": "class",
+          "doc": "Settings for one metric in a `get-metric-data` request (a `MetricStat` query).",
+          "signature": "class AwsCloudwatchMetricStatSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(value: string): this",
+              "doc": "The metric's namespace, e.g. `\"AWS/ApplicationELB\"`."
+            },
+            {
+              "name": "metricName",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricName(value: string): this",
+              "doc": "The metric's name, e.g. `\"HTTPCode_Target_5XX_Count\"`."
+            },
+            {
+              "name": "dimension",
+              "kind": "method",
+              "optional": false,
+              "signature": "dimension(name: string, value: string): this",
+              "doc": "A dimension that picks the series, e.g. `(\"LoadBalancer\", \"app/web/1f2e\")`; repeatable."
+            },
+            {
+              "name": "period",
+              "kind": "method",
+              "optional": false,
+              "signature": "period(seconds: number): this",
+              "doc": "The aggregation period in seconds (default 60). CloudWatch accepts 1, 5,\n10, 20, 30, or a multiple of 60."
+            },
+            {
+              "name": "stat",
+              "kind": "method",
+              "optional": false,
+              "signature": "stat(value: AwsCloudwatchStatistic): this",
+              "doc": "The statistic: `\"Sum\"`, `\"Average\"`, `\"Maximum\"`, `\"p99\"`, …"
+            },
+            {
+              "name": "unit",
+              "kind": "method",
+              "optional": false,
+              "signature": "unit(value: string): this",
+              "doc": "Only datapoints published in this unit, e.g. `\"Count\"`."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(text: string): this",
+              "doc": "A label for the series in the response."
+            },
+            {
+              "name": "returnData",
+              "kind": "method",
+              "optional": false,
+              "signature": "returnData(value: boolean): this",
+              "doc": "Whether the response carries this series (default `true`). Pass `false`\nfor a metric that only feeds an expression."
+            },
+            {
+              "name": "namespace_",
+              "kind": "property",
+              "optional": true,
+              "signature": "namespace_?: string",
+              "doc": "The metric's namespace, e.g. `AWS/ApplicationELB` (set by {@link namespace})."
+            },
+            {
+              "name": "metricName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "metricName_?: string",
+              "doc": "The metric's name (set by {@link metricName})."
+            },
+            {
+              "name": "dimensions_",
+              "kind": "property",
+              "optional": false,
+              "signature": "dimensions_: Array<unknown>",
+              "doc": "The dimensions that pick the series, in order (set by {@link dimension})."
+            },
+            {
+              "name": "period_",
+              "kind": "property",
+              "optional": false,
+              "signature": "period_: number",
+              "doc": "The aggregation period in seconds (set by {@link period})."
+            },
+            {
+              "name": "stat_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stat_?: AwsCloudwatchStatistic",
+              "doc": "The statistic (set by {@link stat})."
+            },
+            {
+              "name": "unit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "unit_?: string",
+              "doc": "The unit to filter on (set by {@link unit})."
+            },
+            {
+              "name": "label_",
+              "kind": "property",
+              "optional": true,
+              "signature": "label_?: string",
+              "doc": "A label for the series (set by {@link label})."
+            },
+            {
+              "name": "returnData_",
+              "kind": "property",
+              "optional": false,
+              "signature": "returnData_: boolean",
+              "doc": "Whether the response carries this series (set by {@link returnData})."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchMetricValueSettings",
+          "kind": "class",
+          "doc": "Settings for `AwsTasks.metricValue`: a `get-metric-data` request, and how to read it.",
+          "signature": "class AwsCloudwatchMetricValueSettings extends AwsCloudwatchGetMetricDataSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "method",
+              "optional": false,
+              "signature": "id(queryId: string): this",
+              "doc": "The series to read, by query id. Needed only when the request returns\nmore than one — hide the inputs of an expression with\n`.returnData(false)` and it is not."
+            },
+            {
+              "name": "aggregate",
+              "kind": "method",
+              "optional": false,
+              "signature": "aggregate(how: AwsCloudwatchAggregate): this",
+              "doc": "How to turn the series into one number (default `\"latest\"`, the newest\ndatapoint). An aggregate combines the datapoints the window holds: a\n`\"sum\"` of per-minute `Sum`s is the window's total."
+            },
+            {
+              "name": "missingDataAs",
+              "kind": "method",
+              "optional": false,
+              "signature": "missingDataAs(value: number): this",
+              "doc": "Return `value` when the series has no datapoints, instead of failing.\nCloudWatch publishes nothing for a period with no events, so for a count\nof errors, no data does mean `0`; for a latency or a CPU reading it\nusually means the query is looking in the wrong place."
+            },
+            {
+              "name": "id_",
+              "kind": "property",
+              "optional": true,
+              "signature": "id_?: string",
+              "doc": "The series to read (set by {@link id}); the only one when unset."
+            },
+            {
+              "name": "aggregate_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aggregate_: AwsCloudwatchAggregate",
+              "doc": "How to turn the series into one number (set by {@link aggregate})."
+            },
+            {
+              "name": "missingData_",
+              "kind": "property",
+              "optional": true,
+              "signature": "missingData_?: number",
+              "doc": "The value to return when the series is empty (set by {@link missingDataAs})."
+            }
+          ]
+        },
+        {
+          "name": "AwsCloudwatchStatistic",
+          "kind": "typeAlias",
+          "doc": "A CloudWatch statistic: one of the five basic statistics, the interquartile\nmean `IQM`, or a percentile (`p99`, `p99.9`) or other extended statistic\n(`tm90`, `TM(10%:90%)`, `PR(100:2000)`, …).",
+          "signature": "type AwsCloudwatchStatistic = SampleCount | Average | Sum | Minimum | Maximum | IQM | p${number} | ${\"tm\" | \"wm\" | \"tc\" | \"ts\"}${string} | ${\"TM\" | \"WM\" | \"TC\" | \"TS\" | \"PR\"}(${string})",
+          "deprecated": false
+        },
+        {
+          "name": "AwsConfigureGetSettings",
+          "kind": "class",
+          "doc": "Settings for `aws configure get`.\n\nReading a credential — `aws_secret_access_key`, `aws_session_token`, in any\nprofile — runs quietly and registers what it printed with the run's\nredactor.",
+          "signature": "class AwsConfigureGetSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "varname",
+              "kind": "method",
+              "optional": false,
+              "signature": "varname(name: string): this",
+              "doc": "The setting to read (positional), e.g. `\"region\"`."
+            }
+          ]
+        },
+        {
+          "name": "AwsConfigureSetSettings",
+          "kind": "class",
+          "doc": "Settings for `aws configure set`.\n\n`aws configure set` takes the value on its command line, where every user\non the host can read it from the process table. Setting\n`aws_secret_access_key` or `aws_session_token` this way registers the value\nwith the run's redactor so Zuke's own output masks it, but that does not\nhide it from the process table — prefer the `AWS_*` environment variables\nor a role for credentials.",
+          "signature": "class AwsConfigureSetSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "varname",
+              "kind": "method",
+              "optional": false,
+              "signature": "varname(name: string): this",
+              "doc": "The setting to write (positional), e.g. `\"region\"`."
+            },
+            {
+              "name": "value",
+              "kind": "method",
+              "optional": false,
+              "signature": "value(text: string): this",
+              "doc": "The value to write (positional)."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcrBatchDeleteImageSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecr batch-delete-image`.",
+          "signature": "class AwsEcrBatchDeleteImageSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repositoryName",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositoryName(name: string): this",
+              "doc": "The repository to delete from (`--repository-name`)."
+            },
+            {
+              "name": "registryId",
+              "kind": "method",
+              "optional": false,
+              "signature": "registryId(id: string): this",
+              "doc": "The registry's account id, when not the caller's (`--registry-id`)."
+            },
+            {
+              "name": "imageTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageTag(tag: string): this",
+              "doc": "Delete the image with this tag (`--image-ids`); repeatable."
+            },
+            {
+              "name": "imageDigest",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageDigest(digest: string): this",
+              "doc": "Delete the image with this digest (`--image-ids`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcrDescribeImagesSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecr describe-images`.",
+          "signature": "class AwsEcrDescribeImagesSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repositoryName",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositoryName(name: string): this",
+              "doc": "The repository to describe (`--repository-name`)."
+            },
+            {
+              "name": "registryId",
+              "kind": "method",
+              "optional": false,
+              "signature": "registryId(id: string): this",
+              "doc": "The registry's account id, when not the caller's (`--registry-id`)."
+            },
+            {
+              "name": "imageTag",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageTag(tag: string): this",
+              "doc": "Describe the image with this tag (`--image-ids`); repeatable."
+            },
+            {
+              "name": "imageDigest",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageDigest(digest: string): this",
+              "doc": "Describe the image with this digest (`--image-ids`); repeatable."
+            },
+            {
+              "name": "tagStatus",
+              "kind": "method",
+              "optional": false,
+              "signature": "tagStatus(status: TAGGED | UNTAGGED | ANY): this",
+              "doc": "Only images with this tag status (`--filter tagStatus=…`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcrDescribeRepositoriesSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecr describe-repositories`.",
+          "signature": "class AwsEcrDescribeRepositoriesSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repositoryNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositoryNames(...names: string[]): this",
+              "doc": "Only these repositories (`--repository-names`); all when omitted."
+            },
+            {
+              "name": "registryId",
+              "kind": "method",
+              "optional": false,
+              "signature": "registryId(id: string): this",
+              "doc": "The registry's account id, when not the caller's (`--registry-id`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcrGetLoginPasswordSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecr get-login-password`.\n\nThe password is a registry credential, so the command always runs quietly\nand the password is registered with the run's redactor once it returns.\nHand it to `docker login --password-stdin` (`DockerTasks.login` with\n`.passwordStdin(...)`), never to `-p`.",
+          "signature": "class AwsEcrGetLoginPasswordSettings extends AwsSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AwsEcsDescribeServicesSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecs describe-services`.",
+          "signature": "class AwsEcsDescribeServicesSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster the services run in (`--cluster`)."
+            },
+            {
+              "name": "services",
+              "kind": "method",
+              "optional": false,
+              "signature": "services(...names: string[]): this",
+              "doc": "The services to describe (`--services`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcsRegisterTaskDefinitionSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecs register-task-definition`.\n\nEither hand the whole definition over with {@link cliInputJson} — the usual\nform, a `file://` path to a JSON document — or set the family and its\ncontainer definitions. Environment values in a container definition land\non the command line; keep secrets in the definition's `secrets` (Secrets\nManager or SSM references) rather than its `environment`.",
+          "signature": "class AwsEcsRegisterTaskDefinitionSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cliInputJson",
+              "kind": "method",
+              "optional": false,
+              "signature": "cliInputJson(value: string): this",
+              "doc": "The whole request as JSON (`--cli-input-json`): a `file://` path to the\ndocument, or the document itself."
+            },
+            {
+              "name": "family",
+              "kind": "method",
+              "optional": false,
+              "signature": "family(name: string): this",
+              "doc": "The task definition family (`--family`)."
+            },
+            {
+              "name": "containerDefinitions",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerDefinitions(json: string): this",
+              "doc": "The container definitions, as a JSON array or a `file://` path (`--container-definitions`)."
+            },
+            {
+              "name": "taskRoleArn",
+              "kind": "method",
+              "optional": false,
+              "signature": "taskRoleArn(arn: string): this",
+              "doc": "The role the task's containers assume (`--task-role-arn`)."
+            },
+            {
+              "name": "executionRoleArn",
+              "kind": "method",
+              "optional": false,
+              "signature": "executionRoleArn(arn: string): this",
+              "doc": "The role ECS uses to pull images and read secrets (`--execution-role-arn`)."
+            },
+            {
+              "name": "networkMode",
+              "kind": "method",
+              "optional": false,
+              "signature": "networkMode(mode: string): this",
+              "doc": "The Docker networking mode (`--network-mode`), e.g. `\"awsvpc\"`."
+            },
+            {
+              "name": "requiresCompatibilities",
+              "kind": "method",
+              "optional": false,
+              "signature": "requiresCompatibilities(...types: string[]): this",
+              "doc": "The launch types the definition must suit (`--requires-compatibilities`)."
+            },
+            {
+              "name": "cpu",
+              "kind": "method",
+              "optional": false,
+              "signature": "cpu(value: string): this",
+              "doc": "CPU units for the task (`--cpu`), e.g. `\"256\"`."
+            },
+            {
+              "name": "memory",
+              "kind": "method",
+              "optional": false,
+              "signature": "memory(value: string): this",
+              "doc": "Memory for the task in MiB (`--memory`), e.g. `\"512\"`."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcsRunTaskSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecs run-task`.",
+          "signature": "class AwsEcsRunTaskSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster to run the task in (`--cluster`)."
+            },
+            {
+              "name": "taskDefinition",
+              "kind": "method",
+              "optional": false,
+              "signature": "taskDefinition(value: string): this",
+              "doc": "The task definition to run (`--task-definition`)."
+            },
+            {
+              "name": "count",
+              "kind": "method",
+              "optional": false,
+              "signature": "count(value: number): this",
+              "doc": "How many copies to start (`--count`)."
+            },
+            {
+              "name": "launchType",
+              "kind": "method",
+              "optional": false,
+              "signature": "launchType(value: string): this",
+              "doc": "The launch type (`--launch-type`): `\"FARGATE\"`, `\"EC2\"` or `\"EXTERNAL\"`."
+            },
+            {
+              "name": "networkConfiguration",
+              "kind": "method",
+              "optional": false,
+              "signature": "networkConfiguration(json: string): this",
+              "doc": "The `awsvpc` network configuration, as JSON (`--network-configuration`)."
+            },
+            {
+              "name": "overrides",
+              "kind": "method",
+              "optional": false,
+              "signature": "overrides(json: string): this",
+              "doc": "Container overrides, as JSON (`--overrides`)."
+            },
+            {
+              "name": "startedBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "startedBy(value: string): this",
+              "doc": "A label for who started the task (`--started-by`)."
+            },
+            {
+              "name": "group",
+              "kind": "method",
+              "optional": false,
+              "signature": "group(name: string): this",
+              "doc": "The task group name (`--group`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcsUpdateServiceSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecs update-service`.",
+          "signature": "class AwsEcsUpdateServiceSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster the service runs in (`--cluster`); the default cluster when omitted."
+            },
+            {
+              "name": "service",
+              "kind": "method",
+              "optional": false,
+              "signature": "service(name: string): this",
+              "doc": "The service to update (`--service`)."
+            },
+            {
+              "name": "taskDefinition",
+              "kind": "method",
+              "optional": false,
+              "signature": "taskDefinition(value: string): this",
+              "doc": "The task definition to run, as `family:revision` or an ARN (`--task-definition`)."
+            },
+            {
+              "name": "desiredCount",
+              "kind": "method",
+              "optional": false,
+              "signature": "desiredCount(count: number): this",
+              "doc": "How many tasks to keep running (`--desired-count`)."
+            },
+            {
+              "name": "forceNewDeployment",
+              "kind": "method",
+              "optional": false,
+              "signature": "forceNewDeployment(): this",
+              "doc": "Start a new deployment even when nothing changed (`--force-new-deployment`)."
+            },
+            {
+              "name": "healthCheckGracePeriodSeconds",
+              "kind": "method",
+              "optional": false,
+              "signature": "healthCheckGracePeriodSeconds(seconds: number): this",
+              "doc": "Seconds to ignore failing health checks after a task starts (`--health-check-grace-period-seconds`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsEcsWaitServicesStableSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ecs wait services-stable`: block until every named\nservice has its desired count running on one deployment. The CLI polls\nevery 15 seconds and gives up after 40 attempts with a non-zero exit, which\nsurfaces as a `CommandError`.",
+          "signature": "class AwsEcsWaitServicesStableSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "cluster(name: string): this",
+              "doc": "The cluster the services run in (`--cluster`)."
+            },
+            {
+              "name": "services",
+              "kind": "method",
+              "optional": false,
+              "signature": "services(...names: string[]): this",
+              "doc": "The services to wait for (`--services`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AwsEksDescribeClusterSettings",
+          "kind": "class",
+          "doc": "Settings for `aws eks describe-cluster`.",
+          "signature": "class AwsEksDescribeClusterSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(cluster: string): this",
+              "doc": "The cluster (`--name`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsEksUpdateKubeconfigSettings",
+          "kind": "class",
+          "doc": "Settings for `aws eks update-kubeconfig`.",
+          "signature": "class AwsEksUpdateKubeconfigSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(cluster: string): this",
+              "doc": "The cluster (`--name`)."
+            },
+            {
+              "name": "kubeconfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "kubeconfig(path: string): this",
+              "doc": "The kubeconfig file to write (`--kubeconfig`); `~/.kube/config` by default."
+            },
+            {
+              "name": "alias",
+              "kind": "method",
+              "optional": false,
+              "signature": "alias(name: string): this",
+              "doc": "The context's name (`--alias`); the cluster ARN by default."
+            },
+            {
+              "name": "userAlias",
+              "kind": "method",
+              "optional": false,
+              "signature": "userAlias(name: string): this",
+              "doc": "The user entry's name (`--user-alias`)."
+            },
+            {
+              "name": "roleArn",
+              "kind": "method",
+              "optional": false,
+              "signature": "roleArn(arn: string): this",
+              "doc": "A role to assume when authenticating to the cluster (`--role-arn`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Print the configuration instead of writing it (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaGetFunctionSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda get-function`.",
+          "signature": "class AwsLambdaGetFunctionSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "qualifier",
+              "kind": "method",
+              "optional": false,
+              "signature": "qualifier(value: string): this",
+              "doc": "A version or alias to describe instead of `$LATEST` (`--qualifier`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaInvokeSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda invoke`.\n\nThe function's response is written to the {@link outfile}; what the CLI\nprints is the invocation's status. A function that throws still exits 0:\nthe CLI reports it in the printed `FunctionError` field, so read that (or\nthe outfile) before treating an invocation as a success.",
+          "signature": "class AwsLambdaInvokeSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "payload",
+              "kind": "method",
+              "optional": false,
+              "signature": "payload(json: string): this",
+              "doc": "The event to send, as JSON text (`--payload`). AWS CLI v2 reads a payload\nas base64 unless told otherwise, so this also passes\n`--cli-binary-format raw-in-base64-out` to send the text as it is."
+            },
+            {
+              "name": "invocationType",
+              "kind": "method",
+              "optional": false,
+              "signature": "invocationType(value: RequestResponse | Event | DryRun): this",
+              "doc": "Wait for the response, queue the event, or only check access (`--invocation-type`)."
+            },
+            {
+              "name": "logType",
+              "kind": "method",
+              "optional": false,
+              "signature": "logType(value: None | Tail): this",
+              "doc": "`\"Tail\"` returns the last 4 KB of the execution log, base64-encoded (`--log-type`)."
+            },
+            {
+              "name": "qualifier",
+              "kind": "method",
+              "optional": false,
+              "signature": "qualifier(value: string): this",
+              "doc": "A version or alias to invoke (`--qualifier`)."
+            },
+            {
+              "name": "outfile",
+              "kind": "method",
+              "optional": false,
+              "signature": "outfile(path: string): this",
+              "doc": "The file the function's response is written to (positional)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaPublishVersionSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda publish-version`.",
+          "signature": "class AwsLambdaPublishVersionSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "A description of the version (`--description`)."
+            },
+            {
+              "name": "codeSha256",
+              "kind": "method",
+              "optional": false,
+              "signature": "codeSha256(hash: string): this",
+              "doc": "Publish only if the code still has this SHA-256 (`--code-sha256`)."
+            },
+            {
+              "name": "revisionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "revisionId(id: string): this",
+              "doc": "Publish only if the function is still at this revision (`--revision-id`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaUpdateAliasSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda update-alias`.",
+          "signature": "class AwsLambdaUpdateAliasSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(alias: string): this",
+              "doc": "The alias to move (`--name`), e.g. `\"live\"`."
+            },
+            {
+              "name": "functionVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionVersion(version: string): this",
+              "doc": "The version the alias points at (`--function-version`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "A description of the alias (`--description`)."
+            },
+            {
+              "name": "additionalVersionWeight",
+              "kind": "method",
+              "optional": false,
+              "signature": "additionalVersionWeight(version: string, weight: number): this",
+              "doc": "Send a share of the alias's traffic to another version\n(`--routing-config AdditionalVersionWeights`), as a fraction from 0 to 1;\nrepeatable. The rest goes to {@link functionVersion}."
+            },
+            {
+              "name": "clearRouting",
+              "kind": "method",
+              "optional": false,
+              "signature": "clearRouting(): this",
+              "doc": "Clear the alias's weighted routing, sending all traffic to its version\n(`--routing-config` with no additional weights)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaUpdateFunctionCodeSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda update-function-code`.",
+          "signature": "class AwsLambdaUpdateFunctionCodeSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "zipFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "zipFile(path: string): this",
+              "doc": "The deployment package on disk (`--zip-file`). The CLI reads the file\nwhen the path carries its `fileb://` prefix, which this adds unless the\npath already has it."
+            },
+            {
+              "name": "s3Bucket",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Bucket(name: string): this",
+              "doc": "The bucket holding the deployment package (`--s3-bucket`)."
+            },
+            {
+              "name": "s3Key",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Key(key: string): this",
+              "doc": "The package's key in that bucket (`--s3-key`)."
+            },
+            {
+              "name": "s3ObjectVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3ObjectVersion(version: string): this",
+              "doc": "The package object's version (`--s3-object-version`)."
+            },
+            {
+              "name": "imageUri",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageUri(uri: string): this",
+              "doc": "The container image, for an image-packaged function (`--image-uri`)."
+            },
+            {
+              "name": "publish",
+              "kind": "method",
+              "optional": false,
+              "signature": "publish(): this",
+              "doc": "Publish a new version once the code is updated (`--publish`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Validate the request without updating the function (`--dry-run`)."
+            },
+            {
+              "name": "revisionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "revisionId(id: string): this",
+              "doc": "Update only if the function is still at this revision (`--revision-id`)."
+            },
+            {
+              "name": "architectures",
+              "kind": "method",
+              "optional": false,
+              "signature": "architectures(...values: string[]): this",
+              "doc": "The instruction set architectures (`--architectures`), e.g. `\"arm64\"`."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaUpdateFunctionConfigurationSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda update-function-configuration`.",
+          "signature": "class AwsLambdaUpdateFunctionConfigurationSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(variables: Record<string, string>): this",
+              "doc": "The function's environment variables (`--environment`). This **replaces**\nthe whole set — a variable left out is removed — and the values travel on\nthe command line, so keep secrets in Secrets Manager or SSM and pass their\nnames instead."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(seconds: number): this",
+              "doc": "The longest an invocation may run, in seconds (`--timeout`)."
+            },
+            {
+              "name": "memorySize",
+              "kind": "method",
+              "optional": false,
+              "signature": "memorySize(mib: number): this",
+              "doc": "Memory for the function in MiB (`--memory-size`)."
+            },
+            {
+              "name": "handler",
+              "kind": "method",
+              "optional": false,
+              "signature": "handler(name: string): this",
+              "doc": "The handler entry point (`--handler`), e.g. `\"index.handler\"`."
+            },
+            {
+              "name": "runtime",
+              "kind": "method",
+              "optional": false,
+              "signature": "runtime(name: string): this",
+              "doc": "The runtime (`--runtime`), e.g. `\"nodejs22.x\"`."
+            },
+            {
+              "name": "role",
+              "kind": "method",
+              "optional": false,
+              "signature": "role(arn: string): this",
+              "doc": "The execution role's ARN (`--role`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "A description of the function (`--description`)."
+            },
+            {
+              "name": "layers",
+              "kind": "method",
+              "optional": false,
+              "signature": "layers(...arns: string[]): this",
+              "doc": "The layers to attach, by version ARN (`--layers`); replaces the set."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsFilterLogEventsSettings",
+          "kind": "class",
+          "doc": "Settings for `aws logs filter-log-events`.",
+          "signature": "class AwsLogsFilterLogEventsSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "logGroupName",
+              "kind": "method",
+              "optional": false,
+              "signature": "logGroupName(name: string): this",
+              "doc": "The log group to search (`--log-group-name`)."
+            },
+            {
+              "name": "logStreamNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "logStreamNames(...names: string[]): this",
+              "doc": "Only these streams (`--log-stream-names`); repeatable."
+            },
+            {
+              "name": "logStreamNamePrefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "logStreamNamePrefix(prefix: string): this",
+              "doc": "Only streams whose name starts with this (`--log-stream-name-prefix`)."
+            },
+            {
+              "name": "filterPattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "filterPattern(pattern: string): this",
+              "doc": "A CloudWatch Logs filter pattern (`--filter-pattern`), e.g. `\"ERROR\"`."
+            },
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: Date): this",
+              "doc": "The start of the range (`--start-time`, sent as epoch milliseconds)."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: Date): this",
+              "doc": "The end of the range (`--end-time`, sent as epoch milliseconds)."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number, end?: Date): this",
+              "doc": "The `duration` up to `end` — now, unless given — as the time range."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsGetQueryResultsSettings",
+          "kind": "class",
+          "doc": "Settings for `aws logs get-query-results`.",
+          "signature": "class AwsLogsGetQueryResultsSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "queryId",
+              "kind": "method",
+              "optional": false,
+              "signature": "queryId(id: string): this",
+              "doc": "The id `start-query` returned (`--query-id`)."
+            },
+            {
+              "name": "nextToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "nextToken(token: string): this",
+              "doc": "The page after the one that returned this token (`--next-token`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsInsightsQuerySettings",
+          "kind": "class",
+          "doc": "Settings for `AwsTasks.logsInsightsQuery`: the query, and how long to wait for it.",
+          "signature": "class AwsLogsInsightsQuerySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "logGroupNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "logGroupNames(...names: string[]): this",
+              "doc": "The log groups to query (`--log-group-names`); repeatable."
+            },
+            {
+              "name": "queryString",
+              "kind": "method",
+              "optional": false,
+              "signature": "queryString(query: string): this",
+              "doc": "The Logs Insights query (`--query-string`)."
+            },
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: Date): this",
+              "doc": "The start of the range."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: Date): this",
+              "doc": "The end of the range."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number, end?: Date): this",
+              "doc": "The `duration` up to `end` — now, unless given — as the time range."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(rows: number): this",
+              "doc": "The most rows to return (`--limit`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string | number): this",
+              "doc": "How long to wait for the query to finish (`\"2m\"`, or ms; default 5\nminutes). A query still running then is stopped, and the reader fails."
+            },
+            {
+              "name": "pollInterval",
+              "kind": "method",
+              "optional": false,
+              "signature": "pollInterval(duration: string | number): this",
+              "doc": "The pause between polls for the results (`\"2s\"`, or ms; default 1 second)."
+            },
+            {
+              "name": "aws",
+              "kind": "method",
+              "optional": false,
+              "signature": "aws(configure: Configure<AwsSettings>): this",
+              "doc": "Global options for every command the query runs —\n`(a) => a.profile(\"prod\").region(\"eu-west-1\")`, a `.toolPath(...)`, or a\n`.runner(...)`."
+            },
+            {
+              "name": "signal",
+              "kind": "method",
+              "optional": false,
+              "signature": "signal(signal: AbortSignal): this",
+              "doc": "Cancel the query with `signal`: the poll stops at once, the query is\nstopped, and the reader fails with the signal's reason. Pass a target's\n`ctx.signal` here — core's own run signal reaches each `aws` command\nalready, but not the pause between two polls."
+            },
+            {
+              "name": "logGroupNames_",
+              "kind": "property",
+              "optional": false,
+              "signature": "logGroupNames_: string[]",
+              "doc": "The log groups to query (set by {@link logGroupNames})."
+            },
+            {
+              "name": "queryString_",
+              "kind": "property",
+              "optional": true,
+              "signature": "queryString_?: string",
+              "doc": "The Logs Insights query (set by {@link queryString})."
+            },
+            {
+              "name": "start_",
+              "kind": "property",
+              "optional": true,
+              "signature": "start_?: Date",
+              "doc": "The start of the range (set by {@link startTime} or {@link window})."
+            },
+            {
+              "name": "end_",
+              "kind": "property",
+              "optional": true,
+              "signature": "end_?: Date",
+              "doc": "The end of the range (set by {@link endTime} or {@link window})."
+            },
+            {
+              "name": "limit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "limit_?: number",
+              "doc": "The most rows to return (set by {@link limit})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeout_: number",
+              "doc": "How long to wait for the query, in ms (set by {@link timeout})."
+            },
+            {
+              "name": "pollInterval_",
+              "kind": "property",
+              "optional": false,
+              "signature": "pollInterval_: number",
+              "doc": "The pause between polls, in ms (set by {@link pollInterval})."
+            },
+            {
+              "name": "aws_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aws_: Configure<AwsSettings>",
+              "doc": "Global options for every command (set by {@link aws})."
+            },
+            {
+              "name": "signal_",
+              "kind": "property",
+              "optional": true,
+              "signature": "signal_?: AbortSignal",
+              "doc": "Cancels the wait and stops the query (set by {@link signal})."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsInsightsRow",
+          "kind": "typeAlias",
+          "doc": "One row of a Logs Insights result: each field the query returned, by name.",
+          "signature": "type AwsLogsInsightsRow = Record<string, string>",
+          "deprecated": false
+        },
+        {
+          "name": "AwsLogsQueryError",
+          "kind": "class",
+          "doc": "A CloudWatch Logs Insights query did not complete: the service reported it\n`Failed`, `Cancelled` or `Timeout`, or it was still running when the\nreader's own timeout ran out.",
+          "signature": "class AwsLogsQueryError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsStartQuerySettings",
+          "kind": "class",
+          "doc": "Settings for `aws logs start-query`.",
+          "signature": "class AwsLogsStartQuerySettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "logGroupNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "logGroupNames(...names: string[]): this",
+              "doc": "The log groups to query (`--log-group-names`); repeatable."
+            },
+            {
+              "name": "queryString",
+              "kind": "method",
+              "optional": false,
+              "signature": "queryString(query: string): this",
+              "doc": "The Logs Insights query (`--query-string`)."
+            },
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: Date): this",
+              "doc": "The start of the range (`--start-time`, sent as epoch seconds)."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: Date): this",
+              "doc": "The end of the range (`--end-time`, sent as epoch seconds)."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number, end?: Date): this",
+              "doc": "The `duration` up to `end` — now, unless given — as the time range."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(rows: number): this",
+              "doc": "The most rows to return (`--limit`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsStopQuerySettings",
+          "kind": "class",
+          "doc": "Settings for `aws logs stop-query`.",
+          "signature": "class AwsLogsStopQuerySettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "queryId",
+              "kind": "method",
+              "optional": false,
+              "signature": "queryId(id: string): this",
+              "doc": "The id `start-query` returned (`--query-id`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsLogsTailSettings",
+          "kind": "class",
+          "doc": "Settings for `aws logs tail`. With {@link follow} the command never ends on\nits own — bound it with `.killAfter(ms)`.",
+          "signature": "class AwsLogsTailSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "groupName",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupName(name: string): this",
+              "doc": "The log group to tail (positional)."
+            },
+            {
+              "name": "since",
+              "kind": "method",
+              "optional": false,
+              "signature": "since(value: string): this",
+              "doc": "How far back to start (`--since`), e.g. `\"10m\"` or an ISO timestamp."
+            },
+            {
+              "name": "follow",
+              "kind": "method",
+              "optional": false,
+              "signature": "follow(): this",
+              "doc": "Keep printing new events as they arrive (`--follow`)."
+            },
+            {
+              "name": "filterPattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "filterPattern(pattern: string): this",
+              "doc": "A CloudWatch Logs filter pattern (`--filter-pattern`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(value: detailed | short | json): this",
+              "doc": "How each event is printed (`--format`)."
+            },
+            {
+              "name": "logStreamNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "logStreamNames(...names: string[]): this",
+              "doc": "Only these streams (`--log-stream-names`); repeatable."
+            },
+            {
+              "name": "logStreamNamePrefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "logStreamNamePrefix(prefix: string): this",
+              "doc": "Only streams whose name starts with this (`--log-stream-name-prefix`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsOutputError",
+          "kind": "class",
+          "doc": "The AWS CLI succeeded but printed something a reader cannot use: output\nthat is not JSON, JSON of an unexpected shape, an empty or multi-line answer\nwhere one value was expected, or a capture that was truncated.\n\nThe message never quotes the output itself. Several readers return\ncredentials and secret payloads, and an error that echoed what the CLI\nprinted would put the secret in the build log it was read to stay out of.",
+          "signature": "class AwsOutputError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "AwsOutputFormat",
+          "kind": "typeAlias",
+          "doc": "The values the AWS CLI's `--output` option accepts.",
+          "signature": "type AwsOutputFormat = json | text | table | yaml | yaml-stream | off",
+          "deprecated": false
+        },
+        {
+          "name": "AwsS3CpSettings",
+          "kind": "class",
+          "doc": "Settings for `aws s3 cp`.",
+          "signature": "class AwsS3CpSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "The local path or `s3://` URI to copy from (positional)."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(path: string): this",
+              "doc": "The local path or `s3://` URI to copy to (positional)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Copy every file under a directory or prefix (`--recursive`)."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(pattern: string): this",
+              "doc": "Skip files matching the pattern (`--exclude`); repeatable, order kept."
+            },
+            {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(pattern: string): this",
+              "doc": "Copy files matching the pattern despite an earlier exclude (`--include`)."
+            },
+            {
+              "name": "dryrun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryrun(): this",
+              "doc": "Print what would be copied without copying it (`--dryrun`)."
+            },
+            {
+              "name": "acl",
+              "kind": "method",
+              "optional": false,
+              "signature": "acl(value: string): this",
+              "doc": "A canned ACL for the uploaded objects (`--acl`), e.g. `\"private\"`."
+            },
+            {
+              "name": "contentType",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentType(value: string): this",
+              "doc": "The uploaded objects' content type (`--content-type`)."
+            },
+            {
+              "name": "cacheControl",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheControl(value: string): this",
+              "doc": "The uploaded objects' `Cache-Control` (`--cache-control`)."
+            },
+            {
+              "name": "storageClass",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageClass(value: string): this",
+              "doc": "The storage class for the uploaded objects (`--storage-class`)."
+            },
+            {
+              "name": "sse",
+              "kind": "method",
+              "optional": false,
+              "signature": "sse(value: string): this",
+              "doc": "Server-side encryption (`--sse`): `\"AES256\"` or `\"aws:kms\"`."
+            },
+            {
+              "name": "sseKmsKeyId",
+              "kind": "method",
+              "optional": false,
+              "signature": "sseKmsKeyId(id: string): this",
+              "doc": "The KMS key for `aws:kms` server-side encryption (`--sse-kms-key-id`)."
+            },
+            {
+              "name": "onlyShowErrors",
+              "kind": "method",
+              "optional": false,
+              "signature": "onlyShowErrors(): this",
+              "doc": "Print only errors and warnings (`--only-show-errors`)."
+            },
+            {
+              "name": "noProgress",
+              "kind": "method",
+              "optional": false,
+              "signature": "noProgress(): this",
+              "doc": "Leave out the file-transfer progress lines (`--no-progress`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsS3LsSettings",
+          "kind": "class",
+          "doc": "Settings for `aws s3 ls`.",
+          "signature": "class AwsS3LsSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(uri: string): this",
+              "doc": "The `s3://` URI to list (positional); the buckets when omitted."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "List every object under the prefix (`--recursive`)."
+            },
+            {
+              "name": "humanReadable",
+              "kind": "method",
+              "optional": false,
+              "signature": "humanReadable(): this",
+              "doc": "Print sizes as KiB, MiB, … (`--human-readable`)."
+            },
+            {
+              "name": "summarize",
+              "kind": "method",
+              "optional": false,
+              "signature": "summarize(): this",
+              "doc": "Print the object count and total size (`--summarize`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsS3MbSettings",
+          "kind": "class",
+          "doc": "Settings for `aws s3 mb`.",
+          "signature": "class AwsS3MbSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "bucket",
+              "kind": "method",
+              "optional": false,
+              "signature": "bucket(uri: string): this",
+              "doc": "The bucket to make, as an `s3://` URI (positional)."
+            }
+          ]
+        },
+        {
+          "name": "AwsS3PresignSettings",
+          "kind": "class",
+          "doc": "Settings for `aws s3 presign`.\n\nA presigned URL is a bearer credential for the object until it expires:\nanyone holding it can read the object, and when the build runs on\ntemporary credentials it also carries the session token itself\n(`X-Amz-Security-Token`), which is good for far more than one object. So\nthe command always runs quietly — the URL is captured, never streamed — and\nthe URL and that token are registered with the run's redactor.",
+          "signature": "class AwsS3PresignSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(uri: string): this",
+              "doc": "The `s3://` object to presign (positional)."
+            },
+            {
+              "name": "expiresIn",
+              "kind": "method",
+              "optional": false,
+              "signature": "expiresIn(seconds: number): this",
+              "doc": "How long the URL stays valid, in seconds (`--expires-in`; default 3600)."
+            }
+          ]
+        },
+        {
+          "name": "AwsS3RmSettings",
+          "kind": "class",
+          "doc": "Settings for `aws s3 rm`.",
+          "signature": "class AwsS3RmSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(uri: string): this",
+              "doc": "The `s3://` object or prefix to remove (positional)."
+            },
+            {
+              "name": "recursive",
+              "kind": "method",
+              "optional": false,
+              "signature": "recursive(): this",
+              "doc": "Remove every object under the prefix (`--recursive`)."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(pattern: string): this",
+              "doc": "Keep objects matching the pattern (`--exclude`); repeatable, order kept."
+            },
+            {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(pattern: string): this",
+              "doc": "Remove objects matching the pattern despite an earlier exclude (`--include`)."
+            },
+            {
+              "name": "dryrun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryrun(): this",
+              "doc": "Print what would be removed without removing it (`--dryrun`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsS3SyncSettings",
+          "kind": "class",
+          "doc": "Settings for `aws s3 sync`.",
+          "signature": "class AwsS3SyncSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "The local directory or `s3://` prefix to sync from (positional)."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(path: string): this",
+              "doc": "The local directory or `s3://` prefix to sync to (positional)."
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete(): this",
+              "doc": "Delete files at the destination that the source does not have\n(`--delete`), which makes the destination a mirror rather than a superset."
+            },
+            {
+              "name": "exclude",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude(pattern: string): this",
+              "doc": "Skip files matching the pattern (`--exclude`); repeatable, order kept."
+            },
+            {
+              "name": "include",
+              "kind": "method",
+              "optional": false,
+              "signature": "include(pattern: string): this",
+              "doc": "Sync files matching the pattern despite an earlier exclude (`--include`)."
+            },
+            {
+              "name": "dryrun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryrun(): this",
+              "doc": "Print what would change without changing it (`--dryrun`)."
+            },
+            {
+              "name": "exactTimestamps",
+              "kind": "method",
+              "optional": false,
+              "signature": "exactTimestamps(): this",
+              "doc": "Treat same-size files with different timestamps as changed (`--exact-timestamps`)."
+            },
+            {
+              "name": "sizeOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "sizeOnly(): this",
+              "doc": "Compare by size alone, ignoring timestamps (`--size-only`)."
+            },
+            {
+              "name": "acl",
+              "kind": "method",
+              "optional": false,
+              "signature": "acl(value: string): this",
+              "doc": "A canned ACL for the uploaded objects (`--acl`)."
+            },
+            {
+              "name": "contentType",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentType(value: string): this",
+              "doc": "The uploaded objects' content type (`--content-type`)."
+            },
+            {
+              "name": "cacheControl",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheControl(value: string): this",
+              "doc": "The uploaded objects' `Cache-Control` (`--cache-control`)."
+            },
+            {
+              "name": "storageClass",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageClass(value: string): this",
+              "doc": "The storage class for the uploaded objects (`--storage-class`)."
+            },
+            {
+              "name": "onlyShowErrors",
+              "kind": "method",
+              "optional": false,
+              "signature": "onlyShowErrors(): this",
+              "doc": "Print only errors and warnings (`--only-show-errors`)."
+            },
+            {
+              "name": "noProgress",
+              "kind": "method",
+              "optional": false,
+              "signature": "noProgress(): this",
+              "doc": "Leave out the file-transfer progress lines (`--no-progress`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsSecretsmanagerGetSecretValueSettings",
+          "kind": "class",
+          "doc": "Settings for `aws secretsmanager get-secret-value`.\n\nThe response is the secret, so the command always runs quietly — captured,\nnever streamed — with `--output json` pinned, and the `SecretString` or\n`SecretBinary` it returns is registered with the run's redactor.",
+          "signature": "class AwsSecretsmanagerGetSecretValueSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "secretId",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretId(id: string): this",
+              "doc": "The secret's name or ARN (`--secret-id`)."
+            },
+            {
+              "name": "versionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "versionId(id: string): this",
+              "doc": "A specific version, by id (`--version-id`)."
+            },
+            {
+              "name": "versionStage",
+              "kind": "method",
+              "optional": false,
+              "signature": "versionStage(label: string): this",
+              "doc": "A specific version, by staging label (`--version-stage`); `AWSCURRENT` by default."
+            }
+          ]
+        },
+        {
+          "name": "AwsSettings",
+          "kind": "class",
+          "doc": "Settings for an `aws` invocation.\n\nEvery instance sets two variables in the child's environment so the CLI\ncan never sit waiting for a keypress in a build: `AWS_PAGER` to the empty\nstring (CLI v2 pipes output through `less` by default) and\n`AWS_CLI_AUTO_PROMPT` to `off` (a profile's `cli_auto_prompt` would\notherwise open the interactive prompt). Setting them there keeps the argv\nexactly what the settings say; override either with `.env({...})`, or add\nthe explicit flag with {@link noCliPager}.",
+          "signature": "class AwsSettings extends SubcommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "profile",
+              "kind": "method",
+              "optional": false,
+              "signature": "profile(name: string): this",
+              "doc": "The named profile from the shared config and credentials files (`--profile`)."
+            },
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(name: string): this",
+              "doc": "The AWS Region to send the request to (`--region`), e.g. `\"eu-west-1\"`."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: AwsOutputFormat): this",
+              "doc": "The output format (`--output`): `json`, `text`, `table`, `yaml` or `yaml-stream`."
+            },
+            {
+              "name": "query",
+              "kind": "method",
+              "optional": false,
+              "signature": "query(expression: string): this",
+              "doc": "A JMESPath expression that filters the response (`--query`)."
+            },
+            {
+              "name": "endpointUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "endpointUrl(url: string): this",
+              "doc": "Send the request to this URL instead of the service's default endpoint (`--endpoint-url`)."
+            },
+            {
+              "name": "noCliPager",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCliPager(): this",
+              "doc": "Pass `--no-cli-pager` explicitly. The pager is already off through\n`AWS_PAGER` (see {@link AwsSettings}); the flag is for a build that wants\nit on the command line as well. AWS CLI v2 only."
+            },
+            {
+              "name": "noVerifySsl",
+              "kind": "method",
+              "optional": false,
+              "signature": "noVerifySsl(): this",
+              "doc": "Skip TLS certificate verification (`--no-verify-ssl`). This disables the\ncheck that the endpoint is who it claims to be — meant for a local\nemulator, never for a real account; prefer {@link caBundle}."
+            },
+            {
+              "name": "noSignRequest",
+              "kind": "method",
+              "optional": false,
+              "signature": "noSignRequest(): this",
+              "doc": "Send the request unsigned, without loading credentials (`--no-sign-request`)."
+            },
+            {
+              "name": "caBundle",
+              "kind": "method",
+              "optional": false,
+              "signature": "caBundle(path: string): this",
+              "doc": "The CA certificate bundle to verify TLS against (`--ca-bundle`)."
+            },
+            {
+              "name": "cliReadTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "cliReadTimeout(seconds: number): this",
+              "doc": "The socket read timeout in seconds; `0` blocks forever (`--cli-read-timeout`)."
+            },
+            {
+              "name": "cliConnectTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "cliConnectTimeout(seconds: number): this",
+              "doc": "The socket connect timeout in seconds; `0` blocks forever (`--cli-connect-timeout`)."
+            },
+            {
+              "name": "debug",
+              "kind": "method",
+              "optional": false,
+              "signature": "debug(): this",
+              "doc": "Turn on the CLI's debug logging (`--debug`), written to stderr.\n\n**The debug log carries credentials**: request headers with the session\ntoken, and response bodies — a secret's value among them. The access key,\nsecret key and session token in the environment are registered with the\nrun's redactor when this is called, but a credential the CLI loads from a\nprofile, an SSO cache or a role is not known here and is not masked. Keep\nit for a local investigation, never a shared CI log."
+            },
+            {
+              "name": "flag",
+              "kind": "method",
+              "optional": false,
+              "signature": "flag(name: string, value?: string | number): this",
+              "doc": "Add an arbitrary option: `--name value`, or the bare `--name`.\n\nTwo hazards come with the escape hatch, which the typed setters guard and\nthis does not: a value that starts with `-` is read by the CLI as the next\noption, and a value that starts with `file://` or `fileb://` is replaced\nby that file's contents — which then leave the machine in the request.\nNever pass an untrusted value here."
+            },
+            {
+              "name": "runner",
+              "kind": "method",
+              "optional": false,
+              "signature": "runner(run: AwsSettingsRunner): this",
+              "doc": "Replace how this command is run. The default spawns the CLI; this is the\nseam a test answers commands through, and the way a build executes `aws`\nthrough something else. The runner reads the argv from the settings it is\nhanded and must not call their `run()` — that is the call it replaces."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(): Promise<CommandOutput>",
+              "doc": "Run the command — through the {@link runner} when one is set, otherwise\nby spawning the CLI. Either way the output is reported to the settings'\noutput hook and a non-zero exit throws a `CommandError` unless\n`.noThrow()` was called."
+            }
+          ]
+        },
+        {
+          "name": "AwsSettingsRunner",
+          "kind": "typeAlias",
+          "doc": "Runs one prepared `aws` command and returns what the process produced. The\ndefault spawns the CLI; a test, or a build that executes the CLI some other\nway, injects its own with {@link AwsSettings.runner}. The runner only\nproduces the output: the exit code is judged afterwards exactly as for a\nspawned process, so a non-zero `code` still raises a `CommandError` unless\nthe settings say `.noThrow()`.",
+          "signature": "type AwsSettingsRunner = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "AwsSsmGetParameterSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ssm get-parameter`.\n\nA parameter may be a `SecureString`, so the command always runs quietly —\ncaptured, never streamed — with `--output json` pinned, and the value it\nreturns is registered with the run's redactor.",
+          "signature": "class AwsSsmGetParameterSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The parameter's name or ARN (`--name`)."
+            },
+            {
+              "name": "withDecryption",
+              "kind": "method",
+              "optional": false,
+              "signature": "withDecryption(): this",
+              "doc": "Return a `SecureString` decrypted (`--with-decryption`). Without it, a\n`SecureString` comes back as ciphertext."
+            }
+          ]
+        },
+        {
+          "name": "AwsSsmParameterType",
+          "kind": "typeAlias",
+          "doc": "The kinds of parameter Parameter Store keeps.",
+          "signature": "type AwsSsmParameterType = String | StringList | SecureString",
+          "deprecated": false
+        },
+        {
+          "name": "AwsSsmPutParameterSettings",
+          "kind": "class",
+          "doc": "Settings for `aws ssm put-parameter`.\n\n`--value` is a command-line argument, which every user on the host can read\nfrom the process table. For a `SecureString`, write the value to a file\nwith owner-only permissions and use {@link valueFile}: the CLI reads it, so\nit never appears in the argv. A literal {@link value} given to a\n`SecureString` is registered with the run's redactor, which masks Zuke's\nown output but not the process table.",
+          "signature": "class AwsSsmPutParameterSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The parameter's name (`--name`)."
+            },
+            {
+              "name": "value",
+              "kind": "method",
+              "optional": false,
+              "signature": "value(text: string): this",
+              "doc": "The value, given literally (`--value`). Refuses a value starting with\n`file://` or `fileb://`: the CLI would read the named file rather than\nstore the text — use {@link valueFile} when that is the intent."
+            },
+            {
+              "name": "valueFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "valueFile(path: string): this",
+              "doc": "Read the value from a file (`--value=file://<path>`), which keeps it off\nthe command line. The CLI stores the file's contents exactly, trailing\nnewline included."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(value: AwsSsmParameterType): this",
+              "doc": "The parameter's type (`--type`)."
+            },
+            {
+              "name": "overwrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwrite(): this",
+              "doc": "Replace an existing parameter (`--overwrite`)."
+            },
+            {
+              "name": "keyId",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyId(id: string): this",
+              "doc": "The KMS key that encrypts a `SecureString` (`--key-id`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "A description of the parameter (`--description`)."
+            },
+            {
+              "name": "tier",
+              "kind": "method",
+              "optional": false,
+              "signature": "tier(value: Standard | Advanced | Intelligent-Tiering): this",
+              "doc": "The storage tier (`--tier`)."
+            },
+            {
+              "name": "dataType",
+              "kind": "method",
+              "optional": false,
+              "signature": "dataType(value: string): this",
+              "doc": "The data type (`--data-type`), e.g. `\"aws:ec2:image\"`."
+            }
+          ]
+        },
+        {
+          "name": "AwsStsAssumeRoleSettings",
+          "kind": "class",
+          "doc": "Settings for `aws sts assume-role`.\n\nThe response carries a secret access key and a session token, so the\ncommand always runs quietly — its output is captured, never streamed — with\n`--output json` pinned whatever the settings or the user's config say, and\nboth values are registered with the run's redactor once it returns.",
+          "signature": "class AwsStsAssumeRoleSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "roleArn",
+              "kind": "method",
+              "optional": false,
+              "signature": "roleArn(arn: string): this",
+              "doc": "The role to assume (`--role-arn`)."
+            },
+            {
+              "name": "roleSessionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "roleSessionName(name: string): this",
+              "doc": "An identifier for the session, shown in CloudTrail (`--role-session-name`)."
+            },
+            {
+              "name": "durationSeconds",
+              "kind": "method",
+              "optional": false,
+              "signature": "durationSeconds(seconds: number): this",
+              "doc": "How long the credentials last, in seconds (`--duration-seconds`)."
+            },
+            {
+              "name": "externalId",
+              "kind": "method",
+              "optional": false,
+              "signature": "externalId(id: string): this",
+              "doc": "The external id the role's trust policy requires (`--external-id`)."
+            },
+            {
+              "name": "policy",
+              "kind": "method",
+              "optional": false,
+              "signature": "policy(json: string): this",
+              "doc": "An inline session policy, as a JSON document (`--policy`)."
+            },
+            {
+              "name": "serialNumber",
+              "kind": "method",
+              "optional": false,
+              "signature": "serialNumber(serial: string): this",
+              "doc": "The MFA device's serial number or ARN (`--serial-number`)."
+            },
+            {
+              "name": "tokenCode",
+              "kind": "method",
+              "optional": false,
+              "signature": "tokenCode(code: string): this",
+              "doc": "The code the MFA device shows (`--token-code`)."
+            }
+          ]
+        },
+        {
+          "name": "AwsStsGetCallerIdentitySettings",
+          "kind": "class",
+          "doc": "Settings for `aws sts get-caller-identity`.",
+          "signature": "class AwsStsGetCallerIdentitySettings extends AwsSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AwsTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the `aws` CLI.",
+          "signature": "const AwsTasks: AwsTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "AwsTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link AwsTasks}.",
+          "signature": "interface AwsTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<AwsSettings>): Promise<CommandOutput>",
+              "doc": "Run any `aws` command, built with `.command(service, operation, …)`."
+            },
+            {
+              "name": "stsGetCallerIdentity",
+              "kind": "method",
+              "optional": false,
+              "signature": "stsGetCallerIdentity(configure?: Configure<AwsStsGetCallerIdentitySettings>): Promise<CommandOutput>",
+              "doc": "Who the build runs as: `aws sts get-caller-identity`."
+            },
+            {
+              "name": "accountId",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountId(configure?: Configure<AwsStsGetCallerIdentitySettings>): Promise<string>",
+              "doc": "The AWS account id the build runs as, read back as a string. Pins\n`--query Account --output text`."
+            },
+            {
+              "name": "stsAssumeRole",
+              "kind": "method",
+              "optional": false,
+              "signature": "stsAssumeRole(configure?: Configure<AwsStsAssumeRoleSettings>): Promise<CommandOutput>",
+              "doc": "Take on a role's temporary credentials: `aws sts assume-role` (captured, never streamed)."
+            },
+            {
+              "name": "configureGet",
+              "kind": "method",
+              "optional": false,
+              "signature": "configureGet(configure?: Configure<AwsConfigureGetSettings>): Promise<CommandOutput>",
+              "doc": "Read a CLI setting: `aws configure get`."
+            },
+            {
+              "name": "configureSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "configureSet(configure?: Configure<AwsConfigureSetSettings>): Promise<CommandOutput>",
+              "doc": "Write a CLI setting: `aws configure set`."
+            },
+            {
+              "name": "s3Cp",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Cp(configure?: Configure<AwsS3CpSettings>): Promise<CommandOutput>",
+              "doc": "Copy a file or tree to, from or within S3: `aws s3 cp`."
+            },
+            {
+              "name": "s3Sync",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Sync(configure?: Configure<AwsS3SyncSettings>): Promise<CommandOutput>",
+              "doc": "Sync a tree to, from or within S3: `aws s3 sync`."
+            },
+            {
+              "name": "s3Ls",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Ls(configure?: Configure<AwsS3LsSettings>): Promise<CommandOutput>",
+              "doc": "List buckets or objects: `aws s3 ls`."
+            },
+            {
+              "name": "s3Rm",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Rm(configure?: Configure<AwsS3RmSettings>): Promise<CommandOutput>",
+              "doc": "Remove objects: `aws s3 rm`."
+            },
+            {
+              "name": "s3Mb",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Mb(configure?: Configure<AwsS3MbSettings>): Promise<CommandOutput>",
+              "doc": "Make a bucket: `aws s3 mb`."
+            },
+            {
+              "name": "s3Presign",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Presign(configure?: Configure<AwsS3PresignSettings>): Promise<CommandOutput>",
+              "doc": "Print a presigned URL for an object: `aws s3 presign`."
+            },
+            {
+              "name": "ecrGetLoginPassword",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecrGetLoginPassword(configure?: Configure<AwsEcrGetLoginPasswordSettings>): Promise<CommandOutput>",
+              "doc": "Print a registry password: `aws ecr get-login-password` (captured, never streamed)."
+            },
+            {
+              "name": "ecrLoginPassword",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecrLoginPassword(configure?: Configure<AwsEcrGetLoginPasswordSettings>): Promise<string>",
+              "doc": "The ECR registry password, read back as a string, for\n`docker login --password-stdin`."
+            },
+            {
+              "name": "ecrDescribeImages",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecrDescribeImages(configure?: Configure<AwsEcrDescribeImagesSettings>): Promise<CommandOutput>",
+              "doc": "Describe a repository's images: `aws ecr describe-images`."
+            },
+            {
+              "name": "ecrDescribeRepositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecrDescribeRepositories(configure?: Configure<AwsEcrDescribeRepositoriesSettings>): Promise<CommandOutput>",
+              "doc": "Describe repositories: `aws ecr describe-repositories`."
+            },
+            {
+              "name": "ecrBatchDeleteImage",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecrBatchDeleteImage(configure?: Configure<AwsEcrBatchDeleteImageSettings>): Promise<CommandOutput>",
+              "doc": "Delete images: `aws ecr batch-delete-image`."
+            },
+            {
+              "name": "ecsUpdateService",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecsUpdateService(configure?: Configure<AwsEcsUpdateServiceSettings>): Promise<CommandOutput>",
+              "doc": "Roll a service onto a task definition: `aws ecs update-service`."
+            },
+            {
+              "name": "ecsDescribeServices",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecsDescribeServices(configure?: Configure<AwsEcsDescribeServicesSettings>): Promise<CommandOutput>",
+              "doc": "Describe services: `aws ecs describe-services`."
+            },
+            {
+              "name": "ecsWaitServicesStable",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecsWaitServicesStable(configure?: Configure<AwsEcsWaitServicesStableSettings>): Promise<CommandOutput>",
+              "doc": "Block until services are stable: `aws ecs wait services-stable`."
+            },
+            {
+              "name": "ecsRegisterTaskDefinition",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecsRegisterTaskDefinition(configure?: Configure<AwsEcsRegisterTaskDefinitionSettings>): Promise<CommandOutput>",
+              "doc": "Register a task definition: `aws ecs register-task-definition`."
+            },
+            {
+              "name": "ecsRunTask",
+              "kind": "method",
+              "optional": false,
+              "signature": "ecsRunTask(configure?: Configure<AwsEcsRunTaskSettings>): Promise<CommandOutput>",
+              "doc": "Start a one-off task: `aws ecs run-task`."
+            },
+            {
+              "name": "lambdaUpdateFunctionCode",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaUpdateFunctionCode(configure?: Configure<AwsLambdaUpdateFunctionCodeSettings>): Promise<CommandOutput>",
+              "doc": "Ship new code: `aws lambda update-function-code`."
+            },
+            {
+              "name": "lambdaUpdateFunctionConfiguration",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaUpdateFunctionConfiguration(configure?: Configure<AwsLambdaUpdateFunctionConfigurationSettings>): Promise<CommandOutput>",
+              "doc": "Change a function's settings: `aws lambda update-function-configuration`."
+            },
+            {
+              "name": "lambdaPublishVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaPublishVersion(configure?: Configure<AwsLambdaPublishVersionSettings>): Promise<CommandOutput>",
+              "doc": "Publish a version: `aws lambda publish-version`."
+            },
+            {
+              "name": "lambdaPublishedVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaPublishedVersion(configure?: Configure<AwsLambdaPublishVersionSettings>): Promise<string>",
+              "doc": "**Publish** a new version of the function — `aws lambda publish-version`,\nwhich changes the account — and return the number it was given. Pins\n`--query Version --output text`. Not a lookup: every call publishes."
+            },
+            {
+              "name": "lambdaUpdateAlias",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaUpdateAlias(configure?: Configure<AwsLambdaUpdateAliasSettings>): Promise<CommandOutput>",
+              "doc": "Move an alias: `aws lambda update-alias`."
+            },
+            {
+              "name": "lambdaGetFunction",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaGetFunction(configure?: Configure<AwsLambdaGetFunctionSettings>): Promise<CommandOutput>",
+              "doc": "Describe a function: `aws lambda get-function`."
+            },
+            {
+              "name": "lambdaInvoke",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaInvoke(configure?: Configure<AwsLambdaInvokeSettings>): Promise<CommandOutput>",
+              "doc": "Invoke a function: `aws lambda invoke`."
+            },
+            {
+              "name": "cloudformationDeploy",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudformationDeploy(configure?: Configure<AwsCloudformationDeploySettings>): Promise<CommandOutput>",
+              "doc": "Create or update a stack: `aws cloudformation deploy`."
+            },
+            {
+              "name": "cloudformationDescribeStacks",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudformationDescribeStacks(configure?: Configure<AwsCloudformationDescribeStacksSettings>): Promise<CommandOutput>",
+              "doc": "Describe stacks: `aws cloudformation describe-stacks`."
+            },
+            {
+              "name": "stackOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "stackOutput(stack: string, key: string, configure?: Configure<AwsCloudformationDescribeStacksSettings>): Promise<string>",
+              "doc": "One output of a stack, read back as a string. Pins a `--query` projecting\nthat output and `--output json`; fails when the stack has no such output."
+            },
+            {
+              "name": "cloudformationDeleteStack",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudformationDeleteStack(configure?: Configure<AwsCloudformationDeleteStackSettings>): Promise<CommandOutput>",
+              "doc": "Delete a stack: `aws cloudformation delete-stack`."
+            },
+            {
+              "name": "cloudformationWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudformationWait(configure?: Configure<AwsCloudformationWaitSettings>): Promise<CommandOutput>",
+              "doc": "Block until a stack reaches a state: `aws cloudformation wait <waiter>`."
+            },
+            {
+              "name": "secretsmanagerGetSecretValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretsmanagerGetSecretValue(configure?: Configure<AwsSecretsmanagerGetSecretValueSettings>): Promise<CommandOutput>",
+              "doc": "Read a secret: `aws secretsmanager get-secret-value` (captured, never streamed)."
+            },
+            {
+              "name": "secretString",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretString(configure?: Configure<AwsSecretsmanagerGetSecretValueSettings>): Promise<string>",
+              "doc": "A secret's `SecretString`, read back exactly — multi-line values and\nsurrounding whitespace included. Pins `--query SecretString --output\njson`; fails for a binary secret."
+            },
+            {
+              "name": "ssmGetParameter",
+              "kind": "method",
+              "optional": false,
+              "signature": "ssmGetParameter(configure?: Configure<AwsSsmGetParameterSettings>): Promise<CommandOutput>",
+              "doc": "Read a parameter: `aws ssm get-parameter` (captured, never streamed)."
+            },
+            {
+              "name": "parameterValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "parameterValue(configure?: Configure<AwsSsmGetParameterSettings>): Promise<string>",
+              "doc": "A parameter's value, read back exactly. Pins `--query Parameter.Value\n--output json`; add `.withDecryption()` for a `SecureString`."
+            },
+            {
+              "name": "ssmPutParameter",
+              "kind": "method",
+              "optional": false,
+              "signature": "ssmPutParameter(configure?: Configure<AwsSsmPutParameterSettings>): Promise<CommandOutput>",
+              "doc": "Write a parameter: `aws ssm put-parameter`."
+            },
+            {
+              "name": "eksUpdateKubeconfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "eksUpdateKubeconfig(configure?: Configure<AwsEksUpdateKubeconfigSettings>): Promise<CommandOutput>",
+              "doc": "Write a kubeconfig entry for a cluster: `aws eks update-kubeconfig`."
+            },
+            {
+              "name": "eksDescribeCluster",
+              "kind": "method",
+              "optional": false,
+              "signature": "eksDescribeCluster(configure?: Configure<AwsEksDescribeClusterSettings>): Promise<CommandOutput>",
+              "doc": "Describe a cluster: `aws eks describe-cluster`."
+            },
+            {
+              "name": "cloudwatchGetMetricData",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudwatchGetMetricData(configure?: Configure<AwsCloudwatchGetMetricDataSettings>): Promise<CommandOutput>",
+              "doc": "Read metric datapoints: `aws cloudwatch get-metric-data`."
+            },
+            {
+              "name": "metricValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricValue(configure: Configure<AwsCloudwatchMetricValueSettings>): Promise<number>",
+              "doc": "One number from CloudWatch: the latest datapoint of a series, or an\naggregate over the window. Pins `--query MetricDataResults --output\njson`; fails on no data unless `.missingDataAs(value)` says what it\nmeans."
+            },
+            {
+              "name": "cloudwatchGetMetricStatistics",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudwatchGetMetricStatistics(configure?: Configure<AwsCloudwatchGetMetricStatisticsSettings>): Promise<CommandOutput>",
+              "doc": "Read metric statistics: `aws cloudwatch get-metric-statistics`."
+            },
+            {
+              "name": "cloudwatchDescribeAlarms",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudwatchDescribeAlarms(configure?: Configure<AwsCloudwatchDescribeAlarmsSettings>): Promise<CommandOutput>",
+              "doc": "Describe alarms: `aws cloudwatch describe-alarms`."
+            },
+            {
+              "name": "alarmState",
+              "kind": "method",
+              "optional": false,
+              "signature": "alarmState(name: string, configure?: Configure<AwsCloudwatchDescribeAlarmsSettings>): Promise<AwsCloudwatchAlarmState>",
+              "doc": "The state of one metric, composite or log alarm: `OK`, `ALARM` or `INSUFFICIENT_DATA`."
+            },
+            {
+              "name": "logsStartQuery",
+              "kind": "method",
+              "optional": false,
+              "signature": "logsStartQuery(configure?: Configure<AwsLogsStartQuerySettings>): Promise<CommandOutput>",
+              "doc": "Start a Logs Insights query: `aws logs start-query`."
+            },
+            {
+              "name": "logsGetQueryResults",
+              "kind": "method",
+              "optional": false,
+              "signature": "logsGetQueryResults(configure?: Configure<AwsLogsGetQueryResultsSettings>): Promise<CommandOutput>",
+              "doc": "Read a Logs Insights query's results: `aws logs get-query-results`."
+            },
+            {
+              "name": "logsStopQuery",
+              "kind": "method",
+              "optional": false,
+              "signature": "logsStopQuery(configure?: Configure<AwsLogsStopQuerySettings>): Promise<CommandOutput>",
+              "doc": "Stop a running Logs Insights query: `aws logs stop-query`."
+            },
+            {
+              "name": "logsInsightsQuery",
+              "kind": "method",
+              "optional": false,
+              "signature": "logsInsightsQuery(configure: Configure<AwsLogsInsightsQuerySettings>): Promise<AwsLogsInsightsRow[]>",
+              "doc": "Run a Logs Insights query to the end and return its rows: start it, poll\n`get-query-results` until it is `Complete`, and fail with an\n`AwsLogsQueryError` when it ends otherwise or outlasts the timeout."
+            },
+            {
+              "name": "logsFilterLogEvents",
+              "kind": "method",
+              "optional": false,
+              "signature": "logsFilterLogEvents(configure?: Configure<AwsLogsFilterLogEventsSettings>): Promise<CommandOutput>",
+              "doc": "Search a log group's events: `aws logs filter-log-events`."
+            },
+            {
+              "name": "logsTail",
+              "kind": "method",
+              "optional": false,
+              "signature": "logsTail(configure?: Configure<AwsLogsTailSettings>): Promise<CommandOutput>",
+              "doc": "Print a log group's recent events: `aws logs tail`."
+            }
+          ]
+        },
+        {
+          "name": "AwsTime",
+          "kind": "typeAlias",
+          "doc": "A time given as a `Date` or as a string the CLI parses (ISO 8601).",
+          "signature": "type AwsTime = Date | string",
+          "deprecated": false
+        },
+        {
+          "name": "cloudwatch",
+          "kind": "function",
+          "doc": "An analysis that reads a CloudWatch metric over a recent window and fails\nthe canary when any datapoint is out of bounds — or when there is no data,\nunless {@link AwsCloudwatchAnalysisSettings.missingDataAs} says what no\ndata means. Each datapoint covers one period, so a `.max(5)` on a\nper-minute `Sum` means \"no minute with more than five\".\n\nThe lambda runs on each check, so it may read resolved parameters, and\nevery failure message — one from the lambda included — passes through the\nrun's redactor.",
+          "signature": "function cloudwatch(configure: Configure<AwsCloudwatchAnalysisSettings>): AwsCloudwatchAnalysis",
+          "deprecated": false
+        }
+      ]
+    },
+    {
       "name": "@zuke/git",
       "dir": "git",
       "summary": "`@zuke/git` — typed `git` task wrappers for Zuke builds.",

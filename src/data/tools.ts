@@ -112,6 +112,7 @@ export const toolGroups: ToolGroup[] = [
     blurb: "Provision and deploy with infra-as-code, typed end to end.",
     tools: [
       { name: "gcloud", pkg: "@zuke/gcloud", desc: "auth, builds, Cloud Run, Artifact Registry, GKE, storage" },
+      { name: "AWS CLI", pkg: "@zuke/aws", desc: "S3, ECR, ECS, Lambda, CloudFormation, CloudWatch, secrets" },
       { name: "Terraform", pkg: "@zuke/terraform", desc: "init, plan, apply, destroy" },
       { name: "OpenTofu", pkg: "@zuke/tofu", desc: "open-source Terraform" },
     ],
