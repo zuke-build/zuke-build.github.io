@@ -143,6 +143,7 @@ export const corePackages = [
   { name: "@zuke/cmd", desc: "the typed process layer the wrappers are built on" },
   { name: "@zuke/console", desc: "markup, rules, boxes & tables — the levelled logger behind Zuke's output" },
   { name: "@zuke/otel", desc: "OpenTelemetry export plugin — run & target spans over OTLP, joined across resume" },
+  { name: "@zuke/prometheus", desc: "typed Prometheus HTTP API client — queries, metadata, rules, probes, pluggable auth" },
   { name: "@zuke/canary", desc: "canary releases — stage, step up, bake under analysis, promote, one rollback" },
   { name: "@zuke/qr", desc: "QR codes for any data — a dependency-free encoder, terminal renderer & raw matrix" },
 ];
