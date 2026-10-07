@@ -41297,8 +41297,8 @@
         {
           "name": "main",
           "kind": "function",
-          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, and `buildProbe` are injectable\nfor testing.",
-          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe): Promise<number>",
+          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, `buildProbe`, and `upgradeHost`\nare injectable for testing.",
+          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe, upgradeHost?: UpgradeHost): Promise<number>",
           "deprecated": false
         },
         {
@@ -41518,6 +41518,57 @@
               "optional": false,
               "signature": "openBrowser(url: string): Promise<boolean>",
               "doc": "Open `url` in the default browser; `false` when it could not launch."
+            }
+          ]
+        },
+        {
+          "name": "UpgradeHost",
+          "kind": "interface",
+          "doc": "What `zuke upgrade` reaches outside the process, injectable so the\ncommand is testable without the network or a real reinstall.",
+          "signature": "interface UpgradeHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "mainModule",
+              "kind": "method",
+              "optional": false,
+              "signature": "mainModule(): string",
+              "doc": "The running CLI's main module (`Deno.mainModule`). Deno reports a JSR\nprogram by its specifier, `jsr:@zuke/cli` or `jsr:@zuke/cli@<version>`."
+            },
+            {
+              "name": "binDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "binDir(): string | undefined",
+              "doc": "The directory `deno install -g` installs into (`<root>/bin`):\n`DENO_INSTALL_ROOT`, else `~/.deno`, as Deno resolves it. `undefined`\nwhen the environment names neither as an absolute path."
+            },
+            {
+              "name": "exists",
+              "kind": "method",
+              "optional": false,
+              "signature": "exists(path: string): Promise<boolean>",
+              "doc": "Whether `path` exists."
+            },
+            {
+              "name": "windows",
+              "kind": "method",
+              "optional": false,
+              "signature": "windows(): boolean",
+              "doc": "Whether this is Windows, where the running shim is a `.cmd` file."
+            },
+            {
+              "name": "meta",
+              "kind": "method",
+              "optional": false,
+              "signature": "meta(): Promise<unknown>",
+              "doc": "Fetch and parse `@zuke/cli`'s JSR `meta.json`."
+            },
+            {
+              "name": "install",
+              "kind": "method",
+              "optional": false,
+              "signature": "install(denoArgs: string[]): Promise<number>",
+              "doc": "Run `deno <denoArgs>` to reinstall, returning its exit code."
             }
           ]
         }
