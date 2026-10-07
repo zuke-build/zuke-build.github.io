@@ -41392,7 +41392,7 @@
         {
           "name": "BuildRunner",
           "kind": "typeAlias",
-          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path — and resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.",
+          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path — and resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.\n`env` adds variables to the environment the child inherits.",
           "signature": "type BuildRunner = unknown",
           "deprecated": false
         },
@@ -41606,6 +41606,13 @@
               "optional": false,
               "signature": "readText(path: string): Promise<string>",
               "doc": "Read a file as UTF-8 text."
+            },
+            {
+              "name": "isTerminal",
+              "kind": "method",
+              "optional": true,
+              "signature": "isTerminal?(): boolean",
+              "doc": "Whether stdout is an interactive terminal, which decides whether the\nCLI's own output is rich. Optional: an implementation without it is\nasked through Deno, the way every other process decides."
             },
             {
               "name": "writeText",
