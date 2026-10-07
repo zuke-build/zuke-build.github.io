@@ -33392,6 +33392,2557 @@
       ]
     },
     {
+      "name": "@zuke/az",
+      "dir": "az",
+      "summary": "`@zuke/az` — typed Azure CLI tasks for Zuke builds, readers and a canary analysis.",
+      "symbols": [
+        {
+          "name": "AzAccessTokenResourceType",
+          "kind": "typeAlias",
+          "doc": "The well-known resources `get-access-token --resource-type` accepts.",
+          "signature": "type AzAccessTokenResourceType = oss-rdbms | arm | aad-graph | ms-graph | batch | media | data-lake",
+          "deprecated": false
+        },
+        {
+          "name": "AzAccountGetAccessTokenSettings",
+          "kind": "class",
+          "doc": "Settings for `az account get-access-token`.\n\nThe answer is a bearer token, so the command always runs quietly —\ncaptured, never streamed — with `--output json` pinned whatever the\nsettings or the user's config say, and the token is registered with the\nrun's redactor once it returns.",
+          "signature": "class AzAccountGetAccessTokenSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(uri: string): this",
+              "doc": "The resource the token is for, as a Microsoft Entra v1.0 endpoint (`--resource`)."
+            },
+            {
+              "name": "resourceType",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceType(type: AzAccessTokenResourceType): this",
+              "doc": "A well-known resource the token is for (`--resource-type`)."
+            },
+            {
+              "name": "scope",
+              "kind": "method",
+              "optional": false,
+              "signature": "scope(...scopes: string[]): this",
+              "doc": "Microsoft Entra v2.0 scopes for the token (`--scope`); repeatable."
+            },
+            {
+              "name": "tenant",
+              "kind": "method",
+              "optional": false,
+              "signature": "tenant(tenant: string): this",
+              "doc": "The tenant to get the token from (`--tenant`)."
+            }
+          ]
+        },
+        {
+          "name": "AzAccountListSettings",
+          "kind": "class",
+          "doc": "Settings for `az account list`.",
+          "signature": "class AzAccountListSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Include subscriptions from every cloud and in every state (`--all`)."
+            },
+            {
+              "name": "refresh",
+              "kind": "method",
+              "optional": false,
+              "signature": "refresh(): this",
+              "doc": "Read the subscriptions from the server, not the cache (`--refresh`)."
+            }
+          ]
+        },
+        {
+          "name": "AzAccountSetSettings",
+          "kind": "class",
+          "doc": "Settings for `az account set`: make a subscription the default. Name it\nwith the global `.subscription(nameOrId)`, which `account set` requires.",
+          "signature": "class AzAccountSetSettings extends AzSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AzAccountShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az account show`: the current (or the given) subscription.",
+          "signature": "class AzAccountShowSettings extends AzSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AzAcrBuildSettings",
+          "kind": "class",
+          "doc": "Settings for `az acr build`: build an image in the registry from a local\ndirectory, a git URL or a tarball, and push it.\n\n`--build-arg` values are visible to the ACR team for debugging, as the CLI\nwarns; pass a credential with {@link secretBuildArg}, whose value is also\nregistered with the run's redactor.",
+          "signature": "class AzAcrBuildSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "registry",
+              "kind": "method",
+              "optional": false,
+              "signature": "registry(name: string): this",
+              "doc": "The registry to build in (`--registry`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(location: string): this",
+              "doc": "The build context: a directory, a git URL or a tarball URL (the positional source)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(nameAndTag: string): this",
+              "doc": "A `name:tag` to give the image (`--image`); repeatable."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: string): this",
+              "doc": "The Dockerfile, relative to the source (`--file`)."
+            },
+            {
+              "name": "buildArg",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildArg(name: string, value: string): this",
+              "doc": "A build argument (`--build-arg name=value`); repeatable. Never a credential."
+            },
+            {
+              "name": "secretBuildArg",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretBuildArg(name: string, value: string): this",
+              "doc": "A build argument the ACR team does not see (`--secret-build-arg\nname=value`); repeatable. The value is registered with the run's\nredactor; it is still part of the argv."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(platform: string): this",
+              "doc": "The platform to build for (`--platform`), e.g. `\"linux/arm64\"`."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(stage: string): this",
+              "doc": "The Dockerfile stage to build (`--target`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(seconds: number): this",
+              "doc": "The build's timeout in seconds (`--timeout`)."
+            },
+            {
+              "name": "resourceGroup",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceGroup(name: string): this",
+              "doc": "The registry's resource group (`--resource-group`)."
+            },
+            {
+              "name": "noPush",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPush(): this",
+              "doc": "Build without pushing (`--no-push`)."
+            },
+            {
+              "name": "noLogs",
+              "kind": "method",
+              "optional": false,
+              "signature": "noLogs(): this",
+              "doc": "Do not stream the build's logs (`--no-logs`)."
+            },
+            {
+              "name": "noWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "noWait(): this",
+              "doc": "Return once the build is queued (`--no-wait`)."
+            }
+          ]
+        },
+        {
+          "name": "AzAcrLoginSettings",
+          "kind": "class",
+          "doc": "Settings for `az acr login`.\n\nWithout {@link exposeToken} the CLI logs the local Docker client in itself.\nWith it, the CLI prints a registry refresh token instead — for\n`docker login` with the user `00000000-0000-0000-0000-000000000000` — so the\ncommand always runs quietly with `--output json` pinned, and the token is\nregistered with the run's redactor once it returns.",
+          "signature": "class AzAcrLoginSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The registry's name (`--name`)."
+            },
+            {
+              "name": "exposeToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "exposeToken(): this",
+              "doc": "Print a token instead of logging Docker in (`--expose-token`)."
+            },
+            {
+              "name": "username",
+              "kind": "method",
+              "optional": false,
+              "signature": "username(name: string): this",
+              "doc": "A registry user, instead of the signed-in identity (`--username`)."
+            },
+            {
+              "name": "password",
+              "kind": "method",
+              "optional": false,
+              "signature": "password(secret: string): this",
+              "doc": "The registry user's password (`--password`), sent on standard input as\n`--password=@-` so it never enters the argv, and registered with the\nrun's redactor."
+            },
+            {
+              "name": "suffix",
+              "kind": "method",
+              "optional": false,
+              "signature": "suffix(suffix: string): this",
+              "doc": "The tenant suffix of the registry's login server (`--suffix`)."
+            }
+          ]
+        },
+        {
+          "name": "AzAcrRepositoryDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `az acr repository delete`: one image, by tag or digest, or a\nwhole repository. The CLI asks for confirmation unless {@link yes} is set.",
+          "signature": "class AzAcrRepositoryDeleteSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The registry's name (`--name`)."
+            },
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(image: string): this",
+              "doc": "The image to delete, `repo:tag` or `repo@digest` (`--image`)."
+            },
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(name: string): this",
+              "doc": "Delete the whole repository, every tag in it (`--repository`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Delete without asking (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "AzAcrRepositoryShowTagsSettings",
+          "kind": "class",
+          "doc": "Settings for `az acr repository show-tags`.",
+          "signature": "class AzAcrRepositoryShowTagsSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The registry's name (`--name`)."
+            },
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(name: string): this",
+              "doc": "The repository whose tags to list (`--repository`)."
+            },
+            {
+              "name": "top",
+              "kind": "method",
+              "optional": false,
+              "signature": "top(count: number): this",
+              "doc": "At most this many tags (`--top`)."
+            },
+            {
+              "name": "orderby",
+              "kind": "method",
+              "optional": false,
+              "signature": "orderby(order: time_asc | time_desc): this",
+              "doc": "Order by time, oldest or newest first (`--orderby`); by name otherwise."
+            },
+            {
+              "name": "detail",
+              "kind": "method",
+              "optional": false,
+              "signature": "detail(): this",
+              "doc": "Each tag's details, not only its name (`--detail`)."
+            }
+          ]
+        },
+        {
+          "name": "AzAksGetCredentialsSettings",
+          "kind": "class",
+          "doc": "Settings for `az aks get-credentials`. The credentials go to a file —\n`~/.kube/config` unless {@link file} says otherwise. Printing them\n(`--file -`) would put a cluster credential in the build log, so a `-` is\nrefused.",
+          "signature": "class AzAksGetCredentialsSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "admin",
+              "kind": "method",
+              "optional": false,
+              "signature": "admin(): this",
+              "doc": "Get the cluster-admin credentials (`--admin`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: string): this",
+              "doc": "The kubeconfig file to write (`--file`); `~/.kube/config` by default."
+            },
+            {
+              "name": "overwriteExisting",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwriteExisting(): this",
+              "doc": "Replace an existing entry of the same name (`--overwrite-existing`)."
+            },
+            {
+              "name": "context",
+              "kind": "method",
+              "optional": false,
+              "signature": "context(name: string): this",
+              "doc": "The context name to write, instead of the cluster's (`--context`)."
+            },
+            {
+              "name": "publicFqdn",
+              "kind": "method",
+              "optional": false,
+              "signature": "publicFqdn(): this",
+              "doc": "Point the kubeconfig at the cluster's public FQDN (`--public-fqdn`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(format: azure | exec): this",
+              "doc": "The credential format (`--format`): `azure` or `exec` (kubelogin)."
+            }
+          ]
+        },
+        {
+          "name": "AzAksShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az aks show`.",
+          "signature": "class AzAksShowSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AzContainerappIngressTrafficSetSettings",
+          "kind": "class",
+          "doc": "Settings for `az containerapp ingress traffic set`: the share of traffic\neach revision — or each label — receives. The weights must add up to 100;\nthe CLI checks.",
+          "signature": "class AzContainerappIngressTrafficSetSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "revisionWeight",
+              "kind": "method",
+              "optional": false,
+              "signature": "revisionWeight(revision: string, weight: number): this",
+              "doc": "A revision's share of traffic, in percent (`--revision-weight\nrevision=weight`); repeatable. `\"latest\"` is the newest revision."
+            },
+            {
+              "name": "labelWeight",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelWeight(label: string, weight: number): this",
+              "doc": "A label's share of traffic, in percent (`--label-weight label=weight`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AzContainerappRevisionListSettings",
+          "kind": "class",
+          "doc": "Settings for `az containerapp revision list`.",
+          "signature": "class AzContainerappRevisionListSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all(): this",
+              "doc": "Include inactive revisions (`--all`)."
+            }
+          ]
+        },
+        {
+          "name": "AzContainerappRevisionSettings",
+          "kind": "class",
+          "doc": "Settings for `az containerapp revision activate` and `deactivate`: the\napp, and the revision to switch.",
+          "signature": "class AzContainerappRevisionSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "revision",
+              "kind": "method",
+              "optional": false,
+              "signature": "revision(name: string): this",
+              "doc": "The revision to activate or deactivate (`--revision`)."
+            }
+          ]
+        },
+        {
+          "name": "AzContainerappShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az containerapp show`. Secrets stay out: `--show-secrets` is not typed.",
+          "signature": "class AzContainerappShowSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AzContainerappUpdateSettings",
+          "kind": "class",
+          "doc": "Settings for `az containerapp update`: a new image, environment or scale,\nwhich makes a new revision.",
+          "signature": "class AzContainerappUpdateSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "image",
+              "kind": "method",
+              "optional": false,
+              "signature": "image(image: string): this",
+              "doc": "The container image (`--image`), e.g. `\"myregistry.azurecr.io/api:1.4.0\"`."
+            },
+            {
+              "name": "containerName",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerName(name: string): this",
+              "doc": "The container to update, when the app has several (`--container-name`)."
+            },
+            {
+              "name": "revisionSuffix",
+              "kind": "method",
+              "optional": false,
+              "signature": "revisionSuffix(suffix: string): this",
+              "doc": "A suffix for the new revision's name (`--revision-suffix`)."
+            },
+            {
+              "name": "setEnvVar",
+              "kind": "method",
+              "optional": false,
+              "signature": "setEnvVar(name: string, value: string): this",
+              "doc": "Add or update an environment variable (`--set-env-vars name=value`);\nrepeatable. A value of `secretref:<secret>` reads one of the app's\nsecrets."
+            },
+            {
+              "name": "removeEnvVars",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeEnvVars(...names: string[]): this",
+              "doc": "Remove environment variables (`--remove-env-vars`); repeatable."
+            },
+            {
+              "name": "cpu",
+              "kind": "method",
+              "optional": false,
+              "signature": "cpu(cores: number): this",
+              "doc": "CPU cores for the container (`--cpu`), e.g. `0.5`."
+            },
+            {
+              "name": "memory",
+              "kind": "method",
+              "optional": false,
+              "signature": "memory(amount: string): this",
+              "doc": "Memory for the container (`--memory`), e.g. `\"1.0Gi\"`."
+            },
+            {
+              "name": "minReplicas",
+              "kind": "method",
+              "optional": false,
+              "signature": "minReplicas(count: number): this",
+              "doc": "The fewest replicas (`--min-replicas`)."
+            },
+            {
+              "name": "maxReplicas",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxReplicas(count: number): this",
+              "doc": "The most replicas (`--max-replicas`)."
+            },
+            {
+              "name": "yaml",
+              "kind": "method",
+              "optional": false,
+              "signature": "yaml(path: string): this",
+              "doc": "Take the whole configuration from a YAML file (`--yaml`); other options are ignored."
+            }
+          ]
+        },
+        {
+          "name": "AzDeploymentGroupCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `az deployment group create`.",
+          "signature": "class AzDeploymentGroupCreateSettings extends AzDeploymentGroupTemplateSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "noWait(): this",
+              "doc": "Return once the deployment has started (`--no-wait`)."
+            }
+          ]
+        },
+        {
+          "name": "AzDeploymentGroupShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az deployment group show`.",
+          "signature": "class AzDeploymentGroupShowSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AzDeploymentGroupTemplateSettings",
+          "kind": "class",
+          "doc": "The template, parameters and mode a deploying `deployment group` command\nshares — `create` and `what-if` read them identically. The deployment's\n`--name` is optional here; the CLI defaults it to the template file's name.",
+          "signature": "class AzDeploymentGroupTemplateSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "templateFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "templateFile(path: string): this",
+              "doc": "A local ARM template or Bicep file (`--template-file`)."
+            },
+            {
+              "name": "templateUri",
+              "kind": "method",
+              "optional": false,
+              "signature": "templateUri(uri: string): this",
+              "doc": "A template at a URL (`--template-uri`)."
+            },
+            {
+              "name": "templateSpec",
+              "kind": "method",
+              "optional": false,
+              "signature": "templateSpec(id: string): this",
+              "doc": "A template spec, by resource id (`--template-spec`)."
+            },
+            {
+              "name": "parametersFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "parametersFile(path: string): this",
+              "doc": "A parameters file — JSON or `.bicepparam` (`--parameters <path>`);\nrepeatable, later values winning."
+            },
+            {
+              "name": "parameter",
+              "kind": "method",
+              "optional": false,
+              "signature": "parameter(name: string, value: string | number | boolean): this",
+              "doc": "One parameter (`--parameters name=value`); repeatable. The value is\nconverted to the type the template declares. It is part of the argv, so a\nsecure value belongs in a parameters file or a Key Vault reference."
+            },
+            {
+              "name": "mode",
+              "kind": "method",
+              "optional": false,
+              "signature": "mode(mode: AzDeploymentMode): this",
+              "doc": "`Incremental` (the default) or `Complete`, which deletes what the template omits (`--mode`)."
+            }
+          ]
+        },
+        {
+          "name": "AzDeploymentGroupWhatIfSettings",
+          "kind": "class",
+          "doc": "Settings for `az deployment group what-if`: what a deployment would change.",
+          "signature": "class AzDeploymentGroupWhatIfSettings extends AzDeploymentGroupTemplateSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resultFormat",
+              "kind": "method",
+              "optional": false,
+              "signature": "resultFormat(format: FullResourcePayloads | ResourceIdOnly): this",
+              "doc": "How much of each change to show (`--result-format`)."
+            },
+            {
+              "name": "excludeChangeTypes",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeChangeTypes(...types: AzWhatIfChangeType[]): this",
+              "doc": "Leave these kinds of change out (`--exclude-change-types`); repeatable."
+            },
+            {
+              "name": "noPrettyPrint",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPrettyPrint(): this",
+              "doc": "Print the result as JSON rather than the formatted diff (`--no-pretty-print`)."
+            }
+          ]
+        },
+        {
+          "name": "AzDeploymentMode",
+          "kind": "typeAlias",
+          "doc": "How a deployment treats resources the template does not mention (`--mode`).",
+          "signature": "type AzDeploymentMode = Incremental | Complete",
+          "deprecated": false
+        },
+        {
+          "name": "AzForceDeletionType",
+          "kind": "typeAlias",
+          "doc": "The resource types `group delete --force-deletion-types` accepts.",
+          "signature": "type AzForceDeletionType = Microsoft.Compute/virtualMachines | Microsoft.Compute/virtualMachineScaleSets | Microsoft.Databricks/workspaces",
+          "deprecated": false
+        },
+        {
+          "name": "AzFunctionappDeploymentSourceConfigZipSettings",
+          "kind": "class",
+          "doc": "Settings for `az functionapp deployment source config-zip`: deploy a zip\npackage to a function app. This is the generally available command;\n`az functionapp deploy` is still in preview.",
+          "signature": "class AzFunctionappDeploymentSourceConfigZipSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "src",
+              "kind": "method",
+              "optional": false,
+              "signature": "src(path: string): this",
+              "doc": "The zip package (`--src`)."
+            },
+            {
+              "name": "buildRemote",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildRemote(value: boolean): this",
+              "doc": "Build the package on the service — install dependencies there (`--build-remote`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(seconds: number): this",
+              "doc": "How long to wait for the deployment's status, in seconds (`--timeout`)."
+            },
+            {
+              "name": "slot",
+              "kind": "method",
+              "optional": false,
+              "signature": "slot(name: string): this",
+              "doc": "A slot instead of production (`--slot`)."
+            }
+          ]
+        },
+        {
+          "name": "AzGroupCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `az group create`.",
+          "signature": "class AzGroupCreateSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The resource group's name (`--name`)."
+            },
+            {
+              "name": "location",
+              "kind": "method",
+              "optional": false,
+              "signature": "location(location: string): this",
+              "doc": "The region to create it in (`--location`), e.g. `\"westeurope\"`."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(key: string, value: string): this",
+              "doc": "A tag (`--tags key=value`); repeatable."
+            },
+            {
+              "name": "managedBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "managedBy(id: string): this",
+              "doc": "The id of the resource that manages the group (`--managed-by`)."
+            }
+          ]
+        },
+        {
+          "name": "AzGroupDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `az group delete`. The CLI asks for confirmation unless\n{@link yes} is set — and fails, without a terminal to ask on.",
+          "signature": "class AzGroupDeleteSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The resource group's name (`--name`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Delete without asking (`--yes`)."
+            },
+            {
+              "name": "noWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "noWait(): this",
+              "doc": "Return once the deletion has started (`--no-wait`)."
+            },
+            {
+              "name": "forceDeletionTypes",
+              "kind": "method",
+              "optional": false,
+              "signature": "forceDeletionTypes(type: AzForceDeletionType): this",
+              "doc": "Force-delete the group's resources of this type (`--force-deletion-types`)."
+            }
+          ]
+        },
+        {
+          "name": "AzGroupExistsSettings",
+          "kind": "class",
+          "doc": "Settings for `az group exists`, which prints `true` or `false`.",
+          "signature": "class AzGroupExistsSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The resource group's name (`--name`)."
+            }
+          ]
+        },
+        {
+          "name": "AzGroupShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az group show`.",
+          "signature": "class AzGroupShowSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The resource group's name (`--name`)."
+            }
+          ]
+        },
+        {
+          "name": "AzKeyvaultSecretEncoding",
+          "kind": "typeAlias",
+          "doc": "The encodings `keyvault secret set --encoding` accepts for a file.",
+          "signature": "type AzKeyvaultSecretEncoding = utf-8 | utf-16le | utf-16be | ascii | base64 | hex",
+          "deprecated": false
+        },
+        {
+          "name": "AzKeyvaultSecretSetSettings",
+          "kind": "class",
+          "doc": "Settings for `az keyvault secret set`.\n\nThe value comes from a {@link file} — read exactly, with its\n{@link encoding} — or from {@link value}, which is sent on standard input\nas `--value=@-` so it never enters the argv. The CLI strips trailing line\nbreaks from what it reads that way; use a file for a value that must keep\nthem.",
+          "signature": "class AzKeyvaultSecretSetSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "vaultName",
+              "kind": "method",
+              "optional": false,
+              "signature": "vaultName(name: string): this",
+              "doc": "The vault's name (`--vault-name`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The secret's name (`--name`)."
+            },
+            {
+              "name": "value",
+              "kind": "method",
+              "optional": false,
+              "signature": "value(secret: string): this",
+              "doc": "The value, sent on standard input as `--value=@-` and registered with the\nrun's redactor."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: string): this",
+              "doc": "Read the value from a file (`--file`) — the way to keep it exact."
+            },
+            {
+              "name": "encoding",
+              "kind": "method",
+              "optional": false,
+              "signature": "encoding(encoding: AzKeyvaultSecretEncoding): this",
+              "doc": "How the {@link file} is encoded (`--encoding`); `utf-8` by default.\nRefused without a file: the CLI saves it as a `file-encoding` tag that\n`keyvault secret download` later decodes with."
+            },
+            {
+              "name": "contentType",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentType(type: string): this",
+              "doc": "What the value is, e.g. `\"password\"` (`--content-type`)."
+            },
+            {
+              "name": "expires",
+              "kind": "method",
+              "optional": false,
+              "signature": "expires(time: AzTime): this",
+              "doc": "When the secret expires (`--expires`): a `Date`, or a string such as\n`2027-01-01T00:00:00Z` — the CLI takes UTC to the second, no fractions."
+            },
+            {
+              "name": "notBefore",
+              "kind": "method",
+              "optional": false,
+              "signature": "notBefore(time: AzTime): this",
+              "doc": "When the secret becomes usable (`--not-before`), in the same form as {@link expires}."
+            },
+            {
+              "name": "disabled",
+              "kind": "method",
+              "optional": false,
+              "signature": "disabled(value: boolean): this",
+              "doc": "Create the secret disabled, or enabled (`--disabled`)."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(key: string, value: string): this",
+              "doc": "A tag (`--tags key=value`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AzKeyvaultSecretShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az keyvault secret show`.",
+          "signature": "class AzKeyvaultSecretShowSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "vaultName",
+              "kind": "method",
+              "optional": false,
+              "signature": "vaultName(name: string): this",
+              "doc": "The vault's name (`--vault-name`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The secret's name (`--name`)."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(version: string): this",
+              "doc": "A specific version; the latest when omitted (`--version`)."
+            },
+            {
+              "name": "id",
+              "kind": "method",
+              "optional": false,
+              "signature": "id(identifier: string): this",
+              "doc": "The secret's full identifier, instead of vault and name (`--id`)."
+            }
+          ]
+        },
+        {
+          "name": "AzLogAnalyticsRow",
+          "kind": "typeAlias",
+          "doc": "One row of a Log Analytics answer: `TableName`, and each column by name.",
+          "signature": "type AzLogAnalyticsRow = Record<string, string>",
+          "deprecated": false
+        },
+        {
+          "name": "AzLoginSettings",
+          "kind": "class",
+          "doc": "Settings for `az login`, for the non-interactive forms a build uses. The\ninteractive browser and device-code forms are left to `.command(\"login\")`.\n\nExactly one credential is sent: a secret ({@link password}), a\n{@link certificate} or a {@link federatedToken} for a service principal,\nor {@link identity} for a managed identity. A service principal without\none would make the CLI prompt for a password, so it is refused here.\n\n`az login` reads the global `.subscription(...)` as the subscription to\nmake the default once it has signed in. Its output lists the account's\nsubscriptions — no credential — so it is not masked.",
+          "signature": "class AzLoginSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "servicePrincipal",
+              "kind": "method",
+              "optional": false,
+              "signature": "servicePrincipal(): this",
+              "doc": "Log in as a service principal (`--service-principal`)."
+            },
+            {
+              "name": "username",
+              "kind": "method",
+              "optional": false,
+              "signature": "username(clientId: string): this",
+              "doc": "The service principal's client id (`--username`)."
+            },
+            {
+              "name": "tenant",
+              "kind": "method",
+              "optional": false,
+              "signature": "tenant(tenant: string): this",
+              "doc": "The Microsoft Entra tenant, required for a service principal (`--tenant`)."
+            },
+            {
+              "name": "password",
+              "kind": "method",
+              "optional": false,
+              "signature": "password(secret: string): this",
+              "doc": "The service principal's client secret (`--password`), sent on standard\ninput as `--password=@-` so it never enters the argv, and registered with\nthe run's redactor. Prefer {@link federatedToken} (no long-lived secret)\nor {@link certificate}."
+            },
+            {
+              "name": "federatedToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "federatedToken(token: string): this",
+              "doc": "A federated token (OIDC) to exchange for the service principal's access\n(`--federated-token`), sent on standard input as `--federated-token=@-`\nand registered with the run's redactor."
+            },
+            {
+              "name": "certificate",
+              "kind": "method",
+              "optional": false,
+              "signature": "certificate(path: string): this",
+              "doc": "A PEM file with the service principal's key and certificate (`--certificate`)."
+            },
+            {
+              "name": "useCertSnIssuer",
+              "kind": "method",
+              "optional": false,
+              "signature": "useCertSnIssuer(): this",
+              "doc": "Authenticate with Subject Name + Issuer, for automatic certificate\nrolls (`--use-cert-sn-issuer`)."
+            },
+            {
+              "name": "identity",
+              "kind": "method",
+              "optional": false,
+              "signature": "identity(): this",
+              "doc": "Log in with the managed identity of the machine the build runs on (`--identity`)."
+            },
+            {
+              "name": "clientId",
+              "kind": "method",
+              "optional": false,
+              "signature": "clientId(id: string): this",
+              "doc": "A user-assigned managed identity, by client id (`--client-id`)."
+            },
+            {
+              "name": "objectId",
+              "kind": "method",
+              "optional": false,
+              "signature": "objectId(id: string): this",
+              "doc": "A user-assigned managed identity, by object id (`--object-id`)."
+            },
+            {
+              "name": "resourceId",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceId(id: string): this",
+              "doc": "A user-assigned managed identity, by resource id (`--resource-id`)."
+            },
+            {
+              "name": "allowNoSubscriptions",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowNoSubscriptions(): this",
+              "doc": "Succeed for a tenant with no subscriptions (`--allow-no-subscriptions`)."
+            }
+          ]
+        },
+        {
+          "name": "AzLogoutSettings",
+          "kind": "class",
+          "doc": "Settings for `az logout`.",
+          "signature": "class AzLogoutSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "username",
+              "kind": "method",
+              "optional": false,
+              "signature": "username(name: string): this",
+              "doc": "The account to log out; the active one when omitted (`--username`)."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorActivityLogListSettings",
+          "kind": "class",
+          "doc": "Settings for `az monitor activity-log list`: the control-plane events of a\nsubscription, resource group or resource. The CLI returns at most\n{@link maxEvents} — 50 unless told otherwise.",
+          "signature": "class AzMonitorActivityLogListSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: AzTime): this",
+              "doc": "The start of the range (`--start-time`)."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: AzTime): this",
+              "doc": "The end of the range (`--end-time`); now by default."
+            },
+            {
+              "name": "offset",
+              "kind": "method",
+              "optional": false,
+              "signature": "offset(duration: string | number): this",
+              "doc": "The length of the range when only one end is given (`--offset`); six hours by default."
+            },
+            {
+              "name": "resourceGroup",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceGroup(name: string): this",
+              "doc": "Only events in this resource group (`--resource-group`)."
+            },
+            {
+              "name": "resourceId",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceId(id: string): this",
+              "doc": "Only events on this resource (`--resource-id`)."
+            },
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(namespace: string): this",
+              "doc": "Only events from this resource provider (`--namespace`)."
+            },
+            {
+              "name": "caller",
+              "kind": "method",
+              "optional": false,
+              "signature": "caller(caller: string): this",
+              "doc": "Only events by this caller (`--caller`)."
+            },
+            {
+              "name": "status",
+              "kind": "method",
+              "optional": false,
+              "signature": "status(status: string): this",
+              "doc": "Only events with this status, e.g. `\"Failed\"` (`--status`)."
+            },
+            {
+              "name": "correlationId",
+              "kind": "method",
+              "optional": false,
+              "signature": "correlationId(id: string): this",
+              "doc": "Only the events of this operation (`--correlation-id`)."
+            },
+            {
+              "name": "maxEvents",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxEvents(count: number): this",
+              "doc": "The most events to return (`--max-events`); 50 by default."
+            },
+            {
+              "name": "select",
+              "kind": "method",
+              "optional": false,
+              "signature": "select(...properties: string[]): this",
+              "doc": "Only these properties of each event (`--select`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorAggregate",
+          "kind": "typeAlias",
+          "doc": "How {@link AzMonitorMetricValueSettings} turns the datapoints into one\nnumber: the newest, or the sum, average, maximum or minimum of all of them.",
+          "signature": "type AzMonitorAggregate = latest | sum | average | maximum | minimum",
+          "deprecated": false
+        },
+        {
+          "name": "AzMonitorAggregation",
+          "kind": "typeAlias",
+          "doc": "The aggregations Azure Monitor computes per interval (`--aggregation`).",
+          "signature": "type AzMonitorAggregation = Average | Count | Maximum | Minimum | Total",
+          "deprecated": false
+        },
+        {
+          "name": "AzMonitorAnalysis",
+          "kind": "interface",
+          "doc": "A health check run against a canary, in the shape `@zuke/canary`'s\n`c.analysis(...)` accepts: throw to fail it, which rolls the rollout back.",
+          "signature": "interface AzMonitorAnalysis",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "validate",
+              "kind": "method",
+              "optional": false,
+              "signature": "validate(context: AzMonitorAnalysisContext): Promise<void>",
+              "doc": "Read the metric and throw when a datapoint is out of bounds."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "`\"azureMonitor\"`, for diagnostics."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorAnalysisContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the analysis uses: the run's\nredactor, applied to every failure message. The engine hands a richer\ncontext; this is the narrow view.",
+          "signature": "interface AzMonitorAnalysisContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "redact",
+              "kind": "method",
+              "optional": false,
+              "signature": "redact(text: string): string",
+              "doc": "Mask every resolved `secret` parameter in `text`."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorAnalysisSettings",
+          "kind": "class",
+          "doc": "Settings for {@link azureMonitor}: the metric or query, the window and the bounds.",
+          "signature": "class AzMonitorAnalysisSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "What to call the metric when it is out of bounds."
+            },
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(id: string): this",
+              "doc": "The resource whose metric is read, by full resource id (`--resource`)."
+            },
+            {
+              "name": "metric",
+              "kind": "method",
+              "optional": false,
+              "signature": "metric(name: string): this",
+              "doc": "The metric to judge, by name (`--metrics`)."
+            },
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(namespace: string): this",
+              "doc": "The metric's namespace, when the resource has several (`--namespace`)."
+            },
+            {
+              "name": "aggregation",
+              "kind": "method",
+              "optional": false,
+              "signature": "aggregation(aggregation: AzMonitorAggregation): this",
+              "doc": "The aggregation judged per interval (`--aggregation`), e.g. `\"Total\"`."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(interval: AzMonitorInterval): this",
+              "doc": "What each datapoint covers (`--interval`; default `PT1M`). Every\ndatapoint is judged, so `.max(5)` on a per-minute `Total` means \"no\nminute with more than five\"."
+            },
+            {
+              "name": "dimension",
+              "kind": "method",
+              "optional": false,
+              "signature": "dimension(name: string, value: string): this",
+              "doc": "Only the series where dimension `name` is `value`; repeatable."
+            },
+            {
+              "name": "kql",
+              "kind": "method",
+              "optional": false,
+              "signature": "kql(workspace: string, query: string): this",
+              "doc": "Judge a Log Analytics query instead of a metric: `query` must return one\nrow with one numeric column (`... | summarize count()`), run over the\nwindow against the workspace `workspace`. Needs the CLI's `log-analytics`\nextension installed."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number): this",
+              "doc": "How far back to read (`\"10m\"`, or ms; default 5 minutes). For a metric\nthe window ends at the last interval boundary, so the interval still\nbeing written is not judged. Azure Monitor publishes a datapoint a\nlittle after its interval ends, so the newest one in the window may\nstill be short of data — harmless for a `max`, but a `min` on a `Total`\nor `Count` can fail on the lag rather than on the candidate."
+            },
+            {
+              "name": "min",
+              "kind": "method",
+              "optional": false,
+              "signature": "min(value: number): this",
+              "doc": "Fail when any datapoint is below `value`, a finite number."
+            },
+            {
+              "name": "max",
+              "kind": "method",
+              "optional": false,
+              "signature": "max(value: number): this",
+              "doc": "Fail when any datapoint is above `value`, a finite number."
+            },
+            {
+              "name": "top",
+              "kind": "method",
+              "optional": false,
+              "signature": "top(count: number): this",
+              "doc": "The most series to read (`--top`; the CLI's default is ten). Azure\nMonitor applies it to a query narrowed by {@link dimension}, and the\nanalysis fails rather than judge an answer that reached it — raise it\nwhen a dimension value matches more series than that."
+            },
+            {
+              "name": "missingDataAs",
+              "kind": "method",
+              "optional": false,
+              "signature": "missingDataAs(value: number): this",
+              "doc": "Judge `value` when the window has no data, instead of failing. Azure\nMonitor reports nothing for an interval with no events, so for a count\nof errors no data means `0`; for a latency it usually means the\nresource, metric or dimensions are wrong, which is why that is a failure\nby default."
+            },
+            {
+              "name": "az",
+              "kind": "method",
+              "optional": false,
+              "signature": "az(configure: Configure<AzSettings>): this",
+              "doc": "Global options for the command — `(a) => a.subscription(\"prod\")`, a\n`.toolPath(...)`, or a `.runner(...)`, the seam a test answers through.\n`--output` and `--query` are the analysis's own and are set after it."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "The clock the window is read against — the seam a test pins it with."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "What the metric is called in a failure (set by {@link name})."
+            },
+            {
+              "name": "resource_",
+              "kind": "property",
+              "optional": true,
+              "signature": "resource_?: string",
+              "doc": "The resource whose metric is read (set by {@link resource})."
+            },
+            {
+              "name": "metric_",
+              "kind": "property",
+              "optional": true,
+              "signature": "metric_?: string",
+              "doc": "The metric's name (set by {@link metric})."
+            },
+            {
+              "name": "namespace_",
+              "kind": "property",
+              "optional": true,
+              "signature": "namespace_?: string",
+              "doc": "The metric's namespace (set by {@link namespace})."
+            },
+            {
+              "name": "aggregation_",
+              "kind": "property",
+              "optional": true,
+              "signature": "aggregation_?: AzMonitorAggregation",
+              "doc": "The aggregation judged (set by {@link aggregation})."
+            },
+            {
+              "name": "interval_",
+              "kind": "property",
+              "optional": false,
+              "signature": "interval_: AzMonitorInterval",
+              "doc": "What each datapoint covers (set by {@link interval})."
+            },
+            {
+              "name": "dimensions_",
+              "kind": "property",
+              "optional": false,
+              "signature": "dimensions_: Array<unknown>",
+              "doc": "The dimension values the series is narrowed to (set by {@link dimension})."
+            },
+            {
+              "name": "kql_",
+              "kind": "property",
+              "optional": true,
+              "signature": "kql_?: unknown",
+              "doc": "The workspace and query of the KQL mode (set by {@link kql})."
+            },
+            {
+              "name": "top_",
+              "kind": "property",
+              "optional": true,
+              "signature": "top_?: number",
+              "doc": "The most series to read (set by {@link top})."
+            },
+            {
+              "name": "window_",
+              "kind": "property",
+              "optional": false,
+              "signature": "window_: number",
+              "doc": "How far back to read, in ms (set by {@link window})."
+            },
+            {
+              "name": "min_",
+              "kind": "property",
+              "optional": true,
+              "signature": "min_?: number",
+              "doc": "The lowest acceptable value (set by {@link min})."
+            },
+            {
+              "name": "max_",
+              "kind": "property",
+              "optional": true,
+              "signature": "max_?: number",
+              "doc": "The highest acceptable value (set by {@link max})."
+            },
+            {
+              "name": "missingData_",
+              "kind": "property",
+              "optional": true,
+              "signature": "missingData_?: number",
+              "doc": "The value to judge when there is no data (set by {@link missingDataAs})."
+            },
+            {
+              "name": "az_",
+              "kind": "property",
+              "optional": false,
+              "signature": "az_: Configure<AzSettings>",
+              "doc": "Global options for the command (set by {@link az})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock the window is read against (set by {@link now})."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorInterval",
+          "kind": "typeAlias",
+          "doc": "The time grains `metrics list --interval` takes, in ISO 8601 — the form the\nCLI passes through unchanged. (Its `##h##m` shorthand writes a mixed\nduration such as `1h30m` in the wrong order, so it is not offered.)",
+          "signature": "type AzMonitorInterval = PT1M | PT5M | PT15M | PT30M | PT1H | PT6H | PT12H | PT24H",
+          "deprecated": false
+        },
+        {
+          "name": "AzMonitorLogAnalyticsQuerySettings",
+          "kind": "class",
+          "doc": "Settings for `az monitor log-analytics query`.",
+          "signature": "class AzMonitorLogAnalyticsQuerySettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "workspace",
+              "kind": "method",
+              "optional": false,
+              "signature": "workspace(id: string): this",
+              "doc": "The workspace's id — its customer id, a GUID (`--workspace`)."
+            },
+            {
+              "name": "analyticsQuery",
+              "kind": "method",
+              "optional": false,
+              "signature": "analyticsQuery(query: string): this",
+              "doc": "The KQL query (`--analytics-query`)."
+            },
+            {
+              "name": "timespan",
+              "kind": "method",
+              "optional": false,
+              "signature": "timespan(range: string | number): this",
+              "doc": "The range to query (`--timespan`): a duration back from now, as `\"30m\"`\nor milliseconds (sent as ISO 8601), or an ISO 8601 interval string such\nas `\"2026-10-07T10:00:00Z/2026-10-07T11:00:00Z\"`, sent as written. All\nthe data by default."
+            },
+            {
+              "name": "workspaces",
+              "kind": "method",
+              "optional": false,
+              "signature": "workspaces(...ids: string[]): this",
+              "doc": "Further workspaces to union into the query (`--workspaces`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorMetricsAlertListSettings",
+          "kind": "class",
+          "doc": "Settings for `az monitor metrics alert list`.",
+          "signature": "class AzMonitorMetricsAlertListSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resourceGroup",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceGroup(name: string): this",
+              "doc": "Only the rules in this resource group (`--resource-group`)."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorMetricsAlertShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az monitor metrics alert show`: one metric alert rule. The\nrule's definition, not whether it is firing — that lives in Azure Monitor's\nalerts, not in the rule.",
+          "signature": "class AzMonitorMetricsAlertShowSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "AzMonitorMetricsListDefinitionsSettings",
+          "kind": "class",
+          "doc": "Settings for `az monitor metrics list-definitions`: the metrics a resource has.",
+          "signature": "class AzMonitorMetricsListDefinitionsSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(id: string): this",
+              "doc": "The resource, by full resource id (`--resource`)."
+            },
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(namespace: string): this",
+              "doc": "Only this metric namespace (`--namespace`)."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorMetricsListSettings",
+          "kind": "class",
+          "doc": "Settings for `az monitor metrics list`: a resource's metrics over a time\nrange, one datapoint per interval.\n\nThe CLI returns at most {@link top} time series per metric — ten unless\ntold otherwise — so a query that splits by a dimension can silently lose\nseries; raise `top` to cover them.",
+          "signature": "class AzMonitorMetricsListSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resource",
+              "kind": "method",
+              "optional": false,
+              "signature": "resource(id: string): this",
+              "doc": "The resource, by full resource id (`--resource`)."
+            },
+            {
+              "name": "metrics",
+              "kind": "method",
+              "optional": false,
+              "signature": "metrics(...names: string[]): this",
+              "doc": "The metrics to read, by name (`--metrics`); repeatable."
+            },
+            {
+              "name": "aggregation",
+              "kind": "method",
+              "optional": false,
+              "signature": "aggregation(...types: AzMonitorAggregation[]): this",
+              "doc": "The aggregations to compute per interval (`--aggregation`); repeatable."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(interval: AzMonitorInterval): this",
+              "doc": "The time grain of each datapoint (`--interval`); one minute by default.\nThe range set by {@link window} is not aligned to it, so the newest\ndatapoint may cover an interval that is still being written."
+            },
+            {
+              "name": "startTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "startTime(time: AzTime): this",
+              "doc": "The start of the range (`--start-time`)."
+            },
+            {
+              "name": "endTime",
+              "kind": "method",
+              "optional": false,
+              "signature": "endTime(time: AzTime): this",
+              "doc": "The end of the range (`--end-time`); now by default."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number, end?: Date): this",
+              "doc": "The `duration` (`\"15m\"`, or milliseconds) up to `end` — now, unless\ngiven — as `--start-time` and `--end-time`."
+            },
+            {
+              "name": "offset",
+              "kind": "method",
+              "optional": false,
+              "signature": "offset(duration: string | number): this",
+              "doc": "The length of the range when only one end is given (`--offset`, as\n`\"30m\"` or milliseconds); an hour by default."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "An OData filter on the dimensions (`--filter`), e.g.\n`\"ApiName eq 'GetBlob' and GeoType eq '*'\"`. For plain equality, prefer\n{@link dimension}, which quotes the value."
+            },
+            {
+              "name": "dimension",
+              "kind": "method",
+              "optional": false,
+              "signature": "dimension(name: string, value: string): this",
+              "doc": "Only the series where the dimension `name` is `value` — rendered into\n`--filter` as `name eq 'value'`, joined with `and`; repeatable."
+            },
+            {
+              "name": "splitBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "splitBy(...dimensions: string[]): this",
+              "doc": "Split the series by these dimensions (`--dimension`); repeatable."
+            },
+            {
+              "name": "namespace",
+              "kind": "method",
+              "optional": false,
+              "signature": "namespace(namespace: string): this",
+              "doc": "The metric namespace (`--namespace`)."
+            },
+            {
+              "name": "top",
+              "kind": "method",
+              "optional": false,
+              "signature": "top(count: number): this",
+              "doc": "The most time series to return per metric (`--top`); 10 by default."
+            },
+            {
+              "name": "seriesLimit_",
+              "kind": "method",
+              "optional": false,
+              "signature": "seriesLimit_(): number | undefined",
+              "doc": "The most series the answer can hold, when the query can return several —\n{@link top}, or the CLI's default of ten — and `undefined` when it cannot.\nAzure Monitor applies `--top` only to a filtered or split query; without\none there is a single series. A reader that totals the series reads this\nto tell a complete answer from one cut at the limit."
+            },
+            {
+              "name": "orderby",
+              "kind": "method",
+              "optional": false,
+              "signature": "orderby(order: string): this",
+              "doc": "The aggregation and direction to sort series by (`--orderby`), e.g. `\"sum desc\"`."
+            },
+            {
+              "name": "aggregations_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aggregations_: AzMonitorAggregation[]",
+              "doc": "The aggregations to compute (set by {@link aggregation})."
+            }
+          ]
+        },
+        {
+          "name": "AzMonitorMetricValueSettings",
+          "kind": "class",
+          "doc": "Settings for `AzTasks.metricValue`: a `metrics list` request with exactly\none {@link AzMonitorMetricsListSettings.aggregation}, and how to read it.",
+          "signature": "class AzMonitorMetricValueSettings extends AzMonitorMetricsListSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metric",
+              "kind": "method",
+              "optional": false,
+              "signature": "metric(name: string): this",
+              "doc": "The metric to read, by name. Needed only when the request names more\nthan one with `.metrics(...)`."
+            },
+            {
+              "name": "aggregate",
+              "kind": "method",
+              "optional": false,
+              "signature": "aggregate(how: AzMonitorAggregate): this",
+              "doc": "How to turn the datapoints into one number, across every series the\nanswer holds. `\"latest\"` (the default) is the newest interval — the sum\nof the series' values at the newest timestamp any of them has, so a\nmetric split by a dimension reads as its total. The others combine every\ndatapoint in the range: a `\"sum\"` of per-minute `Total`s is the range's\ntotal."
+            },
+            {
+              "name": "missingDataAs",
+              "kind": "method",
+              "optional": false,
+              "signature": "missingDataAs(value: number): this",
+              "doc": "Return `value` when there are no datapoints, instead of failing. Azure\nMonitor reports an interval with no events without a value, so for a\ncount of errors no data does mean `0`; for a latency it usually means the\nquery is looking in the wrong place."
+            },
+            {
+              "name": "metric_",
+              "kind": "property",
+              "optional": true,
+              "signature": "metric_?: string",
+              "doc": "The metric to read (set by {@link metric}); the only one when unset."
+            },
+            {
+              "name": "aggregate_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aggregate_: AzMonitorAggregate",
+              "doc": "How to turn the datapoints into one number (set by {@link aggregate})."
+            },
+            {
+              "name": "missingData_",
+              "kind": "property",
+              "optional": true,
+              "signature": "missingData_?: number",
+              "doc": "The value to return when there are no datapoints (set by {@link missingDataAs})."
+            }
+          ]
+        },
+        {
+          "name": "AzOutputError",
+          "kind": "class",
+          "doc": "The Azure CLI succeeded but printed something a reader cannot use: output\nthat is not JSON, JSON of an unexpected shape, an empty or multi-line answer\nwhere one value was expected, no data where a number was expected, or a\ncapture that was truncated.\n\nThe message never quotes the output itself. Several readers return access\ntokens and secret values, and an error that echoed what the CLI printed\nwould put the secret in the build log it was read to stay out of.",
+          "signature": "class AzOutputError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "AzOutputFormat",
+          "kind": "typeAlias",
+          "doc": "The values the Azure CLI's `--output` option accepts.",
+          "signature": "type AzOutputFormat = json | jsonc | yaml | yamlc | table | tsv | none",
+          "deprecated": false
+        },
+        {
+          "name": "AzResourceSettings",
+          "kind": "class",
+          "doc": "Settings for a command on one named resource in a resource group.",
+          "signature": "class AzResourceSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The resource's name (`--name`)."
+            },
+            {
+              "name": "resourceGroup",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceGroup(name: string): this",
+              "doc": "The resource group the resource is in (`--resource-group`)."
+            }
+          ]
+        },
+        {
+          "name": "AzSettings",
+          "kind": "class",
+          "doc": "Settings for an `az` invocation.\n\nEvery instance sets three of the CLI's configuration variables in the\nchild's environment, so the CLI never waits on a keypress, installs code,\nor colours a build log:\n\n- `AZURE_EXTENSION_USE_DYNAMIC_INSTALL=no` — a command from an extension\n  that is not installed fails, instead of prompting (on a terminal) or\n  silently downloading and installing the extension (without one). The\n  CLI's message does not name the extension — it says the command `is\n  misspelled or not recognized by the system` and exits 2 — so install what\n  a build needs up front with `az extension add --name <name>`.\n- `AZURE_CORE_LOGIN_EXPERIENCE_V2=off` — an interactive `az login` does not\n  open its subscription selector.\n- `AZURE_CORE_NO_COLOR=true` — no ANSI colour codes in captured output.\n\nSetting them there keeps the argv exactly what the settings say; override\nany of them with `.env({...})`. A confirmation prompt (`group delete`\nwithout `--yes`) is not switched off: on a terminal it asks, without one\nthe CLI fails — call the command's `.yes()` to confirm in the build.",
+          "signature": "class AzSettings extends SubcommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "subscription",
+              "kind": "method",
+              "optional": false,
+              "signature": "subscription(nameOrId: string): this",
+              "doc": "The subscription to run against, by name or id (`--subscription`); the\nCLI's default subscription when omitted. Most commands take it; the\n`account` commands read it as the subscription they act on."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(format: AzOutputFormat): this",
+              "doc": "The output format (`--output`): `json`, `jsonc`, `yaml`, `yamlc`,\n`table`, `tsv` or `none`."
+            },
+            {
+              "name": "query",
+              "kind": "method",
+              "optional": false,
+              "signature": "query(expression: string): this",
+              "doc": "A JMESPath expression that filters the output (`--query`)."
+            },
+            {
+              "name": "onlyShowErrors",
+              "kind": "method",
+              "optional": false,
+              "signature": "onlyShowErrors(): this",
+              "doc": "Print errors only, suppressing warnings (`--only-show-errors`). The CLI\nrefuses it beside `--debug` or `--verbose`, and so do these settings."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "More logging, on stderr (`--verbose`)."
+            },
+            {
+              "name": "env",
+              "kind": "method",
+              "optional": false,
+              "signature": "env(record: Record<string, string>): this",
+              "doc": "Merge additional environment variables for the process. Under\n{@link debug} — set before or after — a credential variable set here is\nregistered with the run's redactor, like one in the build's environment."
+            },
+            {
+              "name": "debug",
+              "kind": "method",
+              "optional": false,
+              "signature": "debug(): this",
+              "doc": "Turn on the CLI's debug logging (`--debug`), written to stderr.\n\n**The debug log can carry credentials**: request and response details,\nwhich for a Key Vault or storage command include what was read or sent.\nThe credentials the CLI reads from the environment — `AZURE_STORAGE_KEY`,\n`AZURE_STORAGE_CONNECTION_STRING`, `AZURE_STORAGE_SAS_TOKEN`,\n`AZURE_CLIENT_SECRET`, `AZURE_DEVOPS_EXT_PAT`, and Terraform's\n`ARM_CLIENT_SECRET` beside them — are registered with the run's redactor,\nwhether they are in the build's environment or set with {@link env}, but a token the CLI holds in its own cache\n(`~/.azure`) is not known here and is not masked. Keep it for a local\ninvestigation, never a shared CI log."
+            },
+            {
+              "name": "flag",
+              "kind": "method",
+              "optional": false,
+              "signature": "flag(name: string, value?: string | number): this",
+              "doc": "Add an arbitrary option: `--name value`, or the bare `--name`.\n\nTwo hazards come with the escape hatch, which the typed setters guard and\nthis does not: a value that starts with `-` is read by the CLI as the next\noption, and a value that starts with `@` — or, in a `key=value` list\nelement, a value after the `=` that does — is replaced by that file's\ncontents (`@-` by standard input), which then leave the machine in the\nrequest. Never pass an untrusted value here, or through `.args(...)` or\n`.command(...)`."
+            },
+            {
+              "name": "runner",
+              "kind": "method",
+              "optional": false,
+              "signature": "runner(run: AzSettingsRunner): this",
+              "doc": "Replace how this command is run. The default spawns the CLI; this is the\nseam a test answers commands through, and the way a build executes `az`\nthrough something else. The runner reads the argv from the settings it is\nhanded and must not call their `run()` — that is the call it replaces."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(): Promise<CommandOutput>",
+              "doc": "Run the command — through the {@link runner} when one is set, otherwise\nby spawning the CLI. Either way the output is reported to the settings'\noutput hook and a non-zero exit throws a `CommandError` unless\n`.noThrow()` was called."
+            }
+          ]
+        },
+        {
+          "name": "AzSettingsRunner",
+          "kind": "typeAlias",
+          "doc": "Runs one prepared `az` command and returns what the process produced. The\ndefault spawns the CLI; a test, or a build that executes the CLI some other\nway, injects its own with {@link AzSettings.runner}. The runner only\nproduces the output: the exit code is judged afterwards exactly as for a\nspawned process, so a non-zero `code` still raises a `CommandError` unless\nthe settings say `.noThrow()`.",
+          "signature": "type AzSettingsRunner = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "AzSlotSwapAction",
+          "kind": "typeAlias",
+          "doc": "The kinds of swap `webapp deployment slot swap --action` performs.",
+          "signature": "type AzSlotSwapAction = swap | preview | reset",
+          "deprecated": false
+        },
+        {
+          "name": "AzStorageAuthMode",
+          "kind": "typeAlias",
+          "doc": "How a storage command authenticates (`--auth-mode`).",
+          "signature": "type AzStorageAuthMode = login | key",
+          "deprecated": false
+        },
+        {
+          "name": "AzStorageBlobDownloadSettings",
+          "kind": "class",
+          "doc": "Settings for `az storage blob download`.",
+          "signature": "class AzStorageBlobDownloadSettings extends AzStorageBlobSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "containerName",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerName(name: string): this",
+              "doc": "The container (`--container-name`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The blob's name (`--name`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: string): this",
+              "doc": "The local file to write (`--file`)."
+            },
+            {
+              "name": "overwrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwrite(value: boolean): this",
+              "doc": "Replace an existing local file (`--overwrite`)."
+            }
+          ]
+        },
+        {
+          "name": "AzStorageBlobSettings",
+          "kind": "class",
+          "doc": "The account and credential options every `storage blob` command takes.\nOne credential at most: the CLI reads it from standard input.",
+          "signature": "class AzStorageBlobSettings extends AzSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "accountName",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountName(name: string): this",
+              "doc": "The storage account (`--account-name`)."
+            },
+            {
+              "name": "authMode",
+              "kind": "method",
+              "optional": false,
+              "signature": "authMode(mode: AzStorageAuthMode): this",
+              "doc": "`login` uses the signed-in identity; `key` an account key (`--auth-mode`)."
+            },
+            {
+              "name": "accountKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountKey(key: string): this",
+              "doc": "The account key (`--account-key`), sent on standard input."
+            },
+            {
+              "name": "sasToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "sasToken(token: string): this",
+              "doc": "A SAS token (`--sas-token`), sent on standard input. Its signature is\nregistered on its own as well — as written, decoded and URL-encoded —\nsince the CLI's debug log prints the token URL-encoded inside a request\nURL, where the token as a whole never appears."
+            },
+            {
+              "name": "connectionString",
+              "kind": "method",
+              "optional": false,
+              "signature": "connectionString(connection: string): this",
+              "doc": "A connection string (`--connection-string`), sent on standard input."
+            }
+          ]
+        },
+        {
+          "name": "AzStorageBlobUploadBatchSettings",
+          "kind": "class",
+          "doc": "Settings for `az storage blob upload-batch`: upload a directory.",
+          "signature": "class AzStorageBlobUploadBatchSettings extends AzStorageBlobSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: string): this",
+              "doc": "The local directory to upload (`--source`)."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(container: string): this",
+              "doc": "The container, by name or URL (`--destination`)."
+            },
+            {
+              "name": "pattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "pattern(glob: string): this",
+              "doc": "Upload only the files matching this glob (`--pattern`)."
+            },
+            {
+              "name": "destinationPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "destinationPath(path: string): this",
+              "doc": "A path inside the container to upload under (`--destination-path`)."
+            },
+            {
+              "name": "overwrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwrite(value: boolean): this",
+              "doc": "Replace existing blobs (`--overwrite`)."
+            },
+            {
+              "name": "dryrun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryrun(): this",
+              "doc": "Show what would be uploaded without uploading (`--dryrun`)."
+            }
+          ]
+        },
+        {
+          "name": "AzStorageBlobUploadSettings",
+          "kind": "class",
+          "doc": "Settings for `az storage blob upload`.",
+          "signature": "class AzStorageBlobUploadSettings extends AzStorageBlobSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "containerName",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerName(name: string): this",
+              "doc": "The container (`--container-name`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "The blob's name (`--name`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: string): this",
+              "doc": "The local file to upload (`--file`)."
+            },
+            {
+              "name": "overwrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "overwrite(value: boolean): this",
+              "doc": "Replace an existing blob (`--overwrite`)."
+            },
+            {
+              "name": "contentType",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentType(type: string): this",
+              "doc": "The blob's MIME type (`--content-type`)."
+            },
+            {
+              "name": "contentCacheControl",
+              "kind": "method",
+              "optional": false,
+              "signature": "contentCacheControl(value: string): this",
+              "doc": "The blob's `Cache-Control` (`--content-cache-control`)."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(key: string, value: string): this",
+              "doc": "A blob index tag (`--tags key=value`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "AzTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the `az` CLI.",
+          "signature": "const AzTasks: AzTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "AzTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link AzTasks}.",
+          "signature": "interface AzTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<AzSettings>): Promise<CommandOutput>",
+              "doc": "Run any `az` command, built with `.command(group, …, verb)`."
+            },
+            {
+              "name": "login",
+              "kind": "method",
+              "optional": false,
+              "signature": "login(configure?: Configure<AzLoginSettings>): Promise<CommandOutput>",
+              "doc": "Sign the CLI in, non-interactively: `az login`."
+            },
+            {
+              "name": "logout",
+              "kind": "method",
+              "optional": false,
+              "signature": "logout(configure?: Configure<AzLogoutSettings>): Promise<CommandOutput>",
+              "doc": "Sign the CLI out: `az logout`."
+            },
+            {
+              "name": "accountShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountShow(configure?: Configure<AzAccountShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe the current subscription: `az account show`."
+            },
+            {
+              "name": "accountSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountSet(configure?: Configure<AzAccountSetSettings>): Promise<CommandOutput>",
+              "doc": "Make a subscription the default: `az account set`."
+            },
+            {
+              "name": "accountList",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountList(configure?: Configure<AzAccountListSettings>): Promise<CommandOutput>",
+              "doc": "List the subscriptions: `az account list`."
+            },
+            {
+              "name": "accountGetAccessToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "accountGetAccessToken(configure?: Configure<AzAccountGetAccessTokenSettings>): Promise<CommandOutput>",
+              "doc": "Get an access token: `az account get-access-token` (captured, never streamed)."
+            },
+            {
+              "name": "accessToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "accessToken(configure?: Configure<AzAccountGetAccessTokenSettings>): Promise<string>",
+              "doc": "An access token, read back as a string and registered as a secret. Pins\n`--query accessToken --output json`."
+            },
+            {
+              "name": "subscriptionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "subscriptionId(configure?: Configure<AzAccountShowSettings>): Promise<string>",
+              "doc": "The subscription id the CLI acts on. Pins `--query id --output tsv`."
+            },
+            {
+              "name": "tenantId",
+              "kind": "method",
+              "optional": false,
+              "signature": "tenantId(configure?: Configure<AzAccountShowSettings>): Promise<string>",
+              "doc": "The tenant id of the current subscription. Pins `--query tenantId --output tsv`."
+            },
+            {
+              "name": "groupCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupCreate(configure?: Configure<AzGroupCreateSettings>): Promise<CommandOutput>",
+              "doc": "Create a resource group: `az group create`."
+            },
+            {
+              "name": "groupShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupShow(configure?: Configure<AzGroupShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe a resource group: `az group show`."
+            },
+            {
+              "name": "groupDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupDelete(configure?: Configure<AzGroupDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Delete a resource group: `az group delete`."
+            },
+            {
+              "name": "groupExists",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupExists(configure?: Configure<AzGroupExistsSettings>): Promise<CommandOutput>",
+              "doc": "Print whether a resource group exists: `az group exists`."
+            },
+            {
+              "name": "resourceGroupExists",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceGroupExists(name: string, configure?: Configure<AzGroupExistsSettings>): Promise<boolean>",
+              "doc": "Whether resource group `name` exists. Pins `--output json`."
+            },
+            {
+              "name": "acrLogin",
+              "kind": "method",
+              "optional": false,
+              "signature": "acrLogin(configure?: Configure<AzAcrLoginSettings>): Promise<CommandOutput>",
+              "doc": "Log in to a registry: `az acr login` (captured, never streamed)."
+            },
+            {
+              "name": "acrToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "acrToken(configure?: Configure<AzAcrLoginSettings>): Promise<string>",
+              "doc": "A registry refresh token, for `docker login` as\n`00000000-0000-0000-0000-000000000000`: `az acr login --expose-token`,\nread back and registered as a secret. Pins `--query accessToken --output\njson`."
+            },
+            {
+              "name": "acrBuild",
+              "kind": "method",
+              "optional": false,
+              "signature": "acrBuild(configure?: Configure<AzAcrBuildSettings>): Promise<CommandOutput>",
+              "doc": "Build and push an image in the registry: `az acr build`."
+            },
+            {
+              "name": "acrRepositoryShowTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "acrRepositoryShowTags(configure?: Configure<AzAcrRepositoryShowTagsSettings>): Promise<CommandOutput>",
+              "doc": "List a repository's tags: `az acr repository show-tags`."
+            },
+            {
+              "name": "acrRepositoryDelete",
+              "kind": "method",
+              "optional": false,
+              "signature": "acrRepositoryDelete(configure?: Configure<AzAcrRepositoryDeleteSettings>): Promise<CommandOutput>",
+              "doc": "Delete an image or a repository: `az acr repository delete`."
+            },
+            {
+              "name": "aksGetCredentials",
+              "kind": "method",
+              "optional": false,
+              "signature": "aksGetCredentials(configure?: Configure<AzAksGetCredentialsSettings>): Promise<CommandOutput>",
+              "doc": "Write a cluster's credentials to a kubeconfig: `az aks get-credentials`."
+            },
+            {
+              "name": "aksShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "aksShow(configure?: Configure<AzAksShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe a cluster: `az aks show`."
+            },
+            {
+              "name": "containerappUpdate",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappUpdate(configure?: Configure<AzContainerappUpdateSettings>): Promise<CommandOutput>",
+              "doc": "Roll a container app onto a new revision: `az containerapp update`."
+            },
+            {
+              "name": "containerappShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappShow(configure?: Configure<AzContainerappShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe a container app: `az containerapp show`."
+            },
+            {
+              "name": "containerappFqdn",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappFqdn(configure?: Configure<AzContainerappShowSettings>): Promise<string>",
+              "doc": "A container app's ingress FQDN. Pins `--query\nproperties.configuration.ingress.fqdn --output tsv`; fails for an app\nwithout ingress."
+            },
+            {
+              "name": "containerappRevisionList",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappRevisionList(configure?: Configure<AzContainerappRevisionListSettings>): Promise<CommandOutput>",
+              "doc": "List a container app's revisions: `az containerapp revision list`."
+            },
+            {
+              "name": "containerappRevisionActivate",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappRevisionActivate(configure?: Configure<AzContainerappRevisionSettings>): Promise<CommandOutput>",
+              "doc": "Activate a revision: `az containerapp revision activate`."
+            },
+            {
+              "name": "containerappRevisionDeactivate",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappRevisionDeactivate(configure?: Configure<AzContainerappRevisionSettings>): Promise<CommandOutput>",
+              "doc": "Deactivate a revision: `az containerapp revision deactivate`."
+            },
+            {
+              "name": "containerappIngressTrafficSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "containerappIngressTrafficSet(configure?: Configure<AzContainerappIngressTrafficSetSettings>): Promise<CommandOutput>",
+              "doc": "Split traffic between revisions or labels: `az containerapp ingress traffic set`."
+            },
+            {
+              "name": "webappDeploy",
+              "kind": "method",
+              "optional": false,
+              "signature": "webappDeploy(configure?: Configure<AzWebappDeploySettings>): Promise<CommandOutput>",
+              "doc": "Deploy an artifact to a web app: `az webapp deploy`."
+            },
+            {
+              "name": "webappShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "webappShow(configure?: Configure<AzWebappShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe a web app: `az webapp show`."
+            },
+            {
+              "name": "webappHostName",
+              "kind": "method",
+              "optional": false,
+              "signature": "webappHostName(configure?: Configure<AzWebappShowSettings>): Promise<string>",
+              "doc": "A web app's default host name. Pins `--query defaultHostName --output tsv`."
+            },
+            {
+              "name": "webappConfigAppsettingsSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "webappConfigAppsettingsSet(configure?: Configure<AzWebappConfigAppsettingsSetSettings>): Promise<CommandOutput>",
+              "doc": "Set app settings: `az webapp config appsettings set`."
+            },
+            {
+              "name": "webappDeploymentSlotSwap",
+              "kind": "method",
+              "optional": false,
+              "signature": "webappDeploymentSlotSwap(configure?: Configure<AzWebappDeploymentSlotSwapSettings>): Promise<CommandOutput>",
+              "doc": "Swap a deployment slot: `az webapp deployment slot swap`."
+            },
+            {
+              "name": "functionappDeploymentSourceConfigZip",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionappDeploymentSourceConfigZip(configure?: Configure<AzFunctionappDeploymentSourceConfigZipSettings>): Promise<CommandOutput>",
+              "doc": "Deploy a zip package to a function app: `az functionapp deployment source config-zip`."
+            },
+            {
+              "name": "keyvaultSecretShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyvaultSecretShow(configure?: Configure<AzKeyvaultSecretShowSettings>): Promise<CommandOutput>",
+              "doc": "Read a secret: `az keyvault secret show` (captured, never streamed)."
+            },
+            {
+              "name": "secretValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretValue(configure?: Configure<AzKeyvaultSecretShowSettings>): Promise<string>",
+              "doc": "A Key Vault secret's value, read back exactly — multi-line values and\nsurrounding whitespace included — and registered as a secret. Pins\n`--query value --output json`."
+            },
+            {
+              "name": "keyvaultSecretSet",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyvaultSecretSet(configure?: Configure<AzKeyvaultSecretSetSettings>): Promise<CommandOutput>",
+              "doc": "Write a secret: `az keyvault secret set` (captured, never streamed)."
+            },
+            {
+              "name": "deploymentGroupCreate",
+              "kind": "method",
+              "optional": false,
+              "signature": "deploymentGroupCreate(configure?: Configure<AzDeploymentGroupCreateSettings>): Promise<CommandOutput>",
+              "doc": "Deploy a template to a resource group: `az deployment group create`."
+            },
+            {
+              "name": "deploymentGroupShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "deploymentGroupShow(configure?: Configure<AzDeploymentGroupShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe a deployment: `az deployment group show`."
+            },
+            {
+              "name": "deploymentGroupWhatIf",
+              "kind": "method",
+              "optional": false,
+              "signature": "deploymentGroupWhatIf(configure?: Configure<AzDeploymentGroupWhatIfSettings>): Promise<CommandOutput>",
+              "doc": "Preview what a deployment would change: `az deployment group what-if`."
+            },
+            {
+              "name": "deploymentOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "deploymentOutput(group: string, name: string, key: string, configure?: Configure<AzDeploymentGroupShowSettings>): Promise<string>",
+              "doc": "One output of deployment `name` in resource group `group`, read back as\na string — a non-string output as its JSON text. Pins `--query\nproperties.outputs --output json`; fails when there is no such output."
+            },
+            {
+              "name": "storageBlobUpload",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageBlobUpload(configure?: Configure<AzStorageBlobUploadSettings>): Promise<CommandOutput>",
+              "doc": "Upload a file to a blob: `az storage blob upload`."
+            },
+            {
+              "name": "storageBlobDownload",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageBlobDownload(configure?: Configure<AzStorageBlobDownloadSettings>): Promise<CommandOutput>",
+              "doc": "Download a blob to a file: `az storage blob download`."
+            },
+            {
+              "name": "storageBlobUploadBatch",
+              "kind": "method",
+              "optional": false,
+              "signature": "storageBlobUploadBatch(configure?: Configure<AzStorageBlobUploadBatchSettings>): Promise<CommandOutput>",
+              "doc": "Upload a directory: `az storage blob upload-batch`."
+            },
+            {
+              "name": "monitorMetricsList",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitorMetricsList(configure?: Configure<AzMonitorMetricsListSettings>): Promise<CommandOutput>",
+              "doc": "Read a resource's metrics: `az monitor metrics list`."
+            },
+            {
+              "name": "metricValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricValue(configure: Configure<AzMonitorMetricValueSettings>): Promise<number>",
+              "doc": "One number from Azure Monitor: the latest datapoint of a metric, or an\naggregate over the range. Pins `--query value --output json`; fails on\nno data unless `.missingDataAs(value)` says what it means."
+            },
+            {
+              "name": "monitorMetricsListDefinitions",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitorMetricsListDefinitions(configure?: Configure<AzMonitorMetricsListDefinitionsSettings>): Promise<CommandOutput>",
+              "doc": "List a resource's metric definitions: `az monitor metrics list-definitions`."
+            },
+            {
+              "name": "monitorMetricsAlertList",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitorMetricsAlertList(configure?: Configure<AzMonitorMetricsAlertListSettings>): Promise<CommandOutput>",
+              "doc": "List metric alert rules: `az monitor metrics alert list`."
+            },
+            {
+              "name": "monitorMetricsAlertShow",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitorMetricsAlertShow(configure?: Configure<AzMonitorMetricsAlertShowSettings>): Promise<CommandOutput>",
+              "doc": "Describe a metric alert rule: `az monitor metrics alert show`."
+            },
+            {
+              "name": "monitorActivityLogList",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitorActivityLogList(configure?: Configure<AzMonitorActivityLogListSettings>): Promise<CommandOutput>",
+              "doc": "List activity-log events: `az monitor activity-log list`."
+            },
+            {
+              "name": "monitorLogAnalyticsQuery",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitorLogAnalyticsQuery(configure?: Configure<AzMonitorLogAnalyticsQuerySettings>): Promise<CommandOutput>",
+              "doc": "Run a KQL query: `az monitor log-analytics query` (the `log-analytics` extension)."
+            },
+            {
+              "name": "logAnalyticsQuery",
+              "kind": "method",
+              "optional": false,
+              "signature": "logAnalyticsQuery(configure: Configure<AzMonitorLogAnalyticsQuerySettings>): Promise<AzLogAnalyticsRow[]>",
+              "doc": "The rows of a KQL query, every cell a string. Pins `--output json` and\nthe whole answer as the query."
+            }
+          ]
+        },
+        {
+          "name": "AzTime",
+          "kind": "typeAlias",
+          "doc": "A time given as a `Date` or as a string the CLI parses (ISO 8601).",
+          "signature": "type AzTime = Date | string",
+          "deprecated": false
+        },
+        {
+          "name": "azureMonitor",
+          "kind": "function",
+          "doc": "An analysis that reads an Azure Monitor metric — or a KQL query — over a\nrecent window and fails the canary when any datapoint is out of bounds,\nor when there is no data, unless\n{@link AzMonitorAnalysisSettings.missingDataAs} says what no data means.\n\nThe lambda runs on each check, so it may read resolved parameters, and\nevery failure message — one from the lambda included — passes through the\nrun's redactor.",
+          "signature": "function azureMonitor(configure: Configure<AzMonitorAnalysisSettings>): AzMonitorAnalysis",
+          "deprecated": false
+        },
+        {
+          "name": "AzWebappArtifactType",
+          "kind": "typeAlias",
+          "doc": "The artifact types `webapp deploy --type` accepts.",
+          "signature": "type AzWebappArtifactType = war | jar | ear | lib | startup | static | zip",
+          "deprecated": false
+        },
+        {
+          "name": "AzWebappConfigAppsettingsSetSettings",
+          "kind": "class",
+          "doc": "Settings for `az webapp config appsettings set`.\n\nEach setting's value is part of the argv, so it is visible in the process\ntable and in the command line the build logs; a credential belongs in Key\nVault, referenced with {@link keyVaultReference}. A value that starts with\n`@` is otherwise refused, because the CLI would read it from a file. The\nCLI's answer lists every setting with its value redacted.",
+          "signature": "class AzWebappConfigAppsettingsSetSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "setting",
+              "kind": "method",
+              "optional": false,
+              "signature": "setting(name: string, value: string): this",
+              "doc": "An app setting (`--settings name=value`); repeatable."
+            },
+            {
+              "name": "keyVaultReference",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyVaultReference(name: string, secretUri: string): this",
+              "doc": "An app setting whose value App Service reads from Key Vault; repeatable.\nSent as the JSON object `{\"name\":\"@Microsoft.KeyVault(SecretUri=<uri>)\"}`,\na form `--settings` accepts: written as `name=@Microsoft…` the CLI would\nfirst try to read a file of that name, and send its contents if one\nexisted."
+            },
+            {
+              "name": "slotSetting",
+              "kind": "method",
+              "optional": false,
+              "signature": "slotSetting(name: string, value: string): this",
+              "doc": "A setting that stays with its slot through a swap (`--slot-settings\nname=value`); repeatable."
+            },
+            {
+              "name": "slot",
+              "kind": "method",
+              "optional": false,
+              "signature": "slot(name: string): this",
+              "doc": "A slot instead of production (`--slot`)."
+            }
+          ]
+        },
+        {
+          "name": "AzWebappDeploymentSlotSwapSettings",
+          "kind": "class",
+          "doc": "Settings for `az webapp deployment slot swap`: swap a slot with production,\nor with {@link targetSlot}.",
+          "signature": "class AzWebappDeploymentSlotSwapSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "slot",
+              "kind": "method",
+              "optional": false,
+              "signature": "slot(name: string): this",
+              "doc": "The slot to swap from (`--slot`)."
+            },
+            {
+              "name": "targetSlot",
+              "kind": "method",
+              "optional": false,
+              "signature": "targetSlot(name: string): this",
+              "doc": "The slot to swap with; production by default (`--target-slot`)."
+            },
+            {
+              "name": "action",
+              "kind": "method",
+              "optional": false,
+              "signature": "action(action: AzSlotSwapAction): this",
+              "doc": "`preview` applies the target's settings to the source first, `swap`\ncompletes the swap, `reset` cancels a preview (`--action`)."
+            },
+            {
+              "name": "preserveVnet",
+              "kind": "method",
+              "optional": false,
+              "signature": "preserveVnet(value: boolean): this",
+              "doc": "Keep the virtual network with the slot (`--preserve-vnet`)."
+            }
+          ]
+        },
+        {
+          "name": "AzWebappDeploySettings",
+          "kind": "class",
+          "doc": "Settings for `az webapp deploy`, the current deploy command (the older\n`webapp deployment source config-zip` is deprecated in its favour).",
+          "signature": "class AzWebappDeploySettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "srcPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "srcPath(path: string): this",
+              "doc": "The artifact to deploy, a local path (`--src-path`)."
+            },
+            {
+              "name": "srcUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "srcUrl(url: string): this",
+              "doc": "The artifact to deploy, a URL the app pulls it from (`--src-url`)."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(type: AzWebappArtifactType): this",
+              "doc": "The artifact's type, when its extension does not say (`--type`)."
+            },
+            {
+              "name": "targetPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "targetPath(path: string): this",
+              "doc": "Where to deploy it, an absolute path on the app (`--target-path`)."
+            },
+            {
+              "name": "slot",
+              "kind": "method",
+              "optional": false,
+              "signature": "slot(name: string): this",
+              "doc": "The slot to deploy to; production when omitted (`--slot`)."
+            },
+            {
+              "name": "async",
+              "kind": "method",
+              "optional": false,
+              "signature": "async(value?: boolean): this",
+              "doc": "Return once the artifact is pushed, without waiting for it to deploy (`--async`)."
+            },
+            {
+              "name": "restart",
+              "kind": "method",
+              "optional": false,
+              "signature": "restart(value: boolean): this",
+              "doc": "Restart the app after deploying (`--restart`); the CLI's default is to."
+            },
+            {
+              "name": "clean",
+              "kind": "method",
+              "optional": false,
+              "signature": "clean(value: boolean): this",
+              "doc": "Empty the target directory first (`--clean`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(ms: number): this",
+              "doc": "How long to wait for the deployment, in milliseconds (`--timeout`)."
+            }
+          ]
+        },
+        {
+          "name": "AzWebappShowSettings",
+          "kind": "class",
+          "doc": "Settings for `az webapp show`.",
+          "signature": "class AzWebappShowSettings extends AzResourceSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "slot",
+              "kind": "method",
+              "optional": false,
+              "signature": "slot(name: string): this",
+              "doc": "A slot instead of production (`--slot`)."
+            }
+          ]
+        },
+        {
+          "name": "AzWhatIfChangeType",
+          "kind": "typeAlias",
+          "doc": "The kinds of change `what-if --exclude-change-types` can leave out.",
+          "signature": "type AzWhatIfChangeType = Create | Delete | Deploy | Ignore | Modify | NoChange | Unsupported",
+          "deprecated": false
+        }
+      ]
+    },
+    {
       "name": "@zuke/git",
       "dir": "git",
       "summary": "`@zuke/git` — typed `git` task wrappers for Zuke builds.",
