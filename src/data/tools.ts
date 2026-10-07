@@ -113,6 +113,7 @@ export const toolGroups: ToolGroup[] = [
     tools: [
       { name: "gcloud", pkg: "@zuke/gcloud", desc: "auth, builds, Cloud Run, Artifact Registry, GKE, storage" },
       { name: "AWS CLI", pkg: "@zuke/aws", desc: "S3, ECR, ECS, Lambda, CloudFormation, CloudWatch, secrets" },
+      { name: "Azure CLI", pkg: "@zuke/az", desc: "ACR, AKS, Container Apps, App Service, Key Vault, Monitor" },
       { name: "Terraform", pkg: "@zuke/terraform", desc: "init, plan, apply, destroy" },
       { name: "OpenTofu", pkg: "@zuke/tofu", desc: "open-source Terraform" },
     ],
