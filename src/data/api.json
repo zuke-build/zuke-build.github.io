@@ -2239,6 +2239,92 @@
           ]
         },
         {
+          "name": "cliPaint",
+          "kind": "function",
+          "doc": "The palette for `mode`: {@link PLAIN_PAINT} unless output is rich. Colour\nfollows `mode.color` separately, so `NO_COLOR` on a terminal still gets the\nglyphs without the escape codes.",
+          "signature": "function cliPaint(mode: Pick<OutputMode, rich | color>): CliPaint",
+          "deprecated": false
+        },
+        {
+          "name": "CliPaint",
+          "kind": "interface",
+          "doc": "How each kind of text in the CLI's informational output is painted.",
+          "signature": "interface CliPaint",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "heading",
+              "kind": "method",
+              "optional": false,
+              "signature": "heading(text: string): string",
+              "doc": "A section heading such as `Commands:`."
+            },
+            {
+              "name": "command",
+              "kind": "method",
+              "optional": false,
+              "signature": "command(text: string): string",
+              "doc": "A reserved command's name."
+            },
+            {
+              "name": "flag",
+              "kind": "method",
+              "optional": false,
+              "signature": "flag(text: string): string",
+              "doc": "A flag or parameter, such as `--plain`."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(text: string): string",
+              "doc": "A target's name."
+            },
+            {
+              "name": "muted",
+              "kind": "method",
+              "optional": false,
+              "signature": "muted(text: string): string",
+              "doc": "Secondary detail: dependencies, tags, hints."
+            },
+            {
+              "name": "brand",
+              "kind": "method",
+              "optional": false,
+              "signature": "brand(text: string): string",
+              "doc": "The program's own name in a title line."
+            },
+            {
+              "name": "ok",
+              "kind": "method",
+              "optional": false,
+              "signature": "ok(text: string): string",
+              "doc": "A line reporting success: a green ✔ before it when rich."
+            },
+            {
+              "name": "fail",
+              "kind": "method",
+              "optional": false,
+              "signature": "fail(text: string): string",
+              "doc": "A line reporting failure or unfinished work: a red ✖ before it when rich."
+            },
+            {
+              "name": "rich",
+              "kind": "property",
+              "optional": false,
+              "signature": "rich: boolean",
+              "doc": "Whether decoration (glyphs, panels) is on, as opposed to colour alone."
+            },
+            {
+              "name": "color",
+              "kind": "property",
+              "optional": false,
+              "signature": "color: boolean",
+              "doc": "Whether ANSI colour is on."
+            }
+          ]
+        },
+        {
           "name": "CliParameterInfo",
           "kind": "interface",
           "doc": "A parameter declared on the build.",
@@ -5611,6 +5697,13 @@
           "kind": "variable",
           "doc": "The environment variable that asks for plain output.",
           "signature": "const PLAIN_ENV: ZUKE_PLAIN",
+          "deprecated": false
+        },
+        {
+          "name": "PLAIN_PAINT",
+          "kind": "variable",
+          "doc": "Paint nothing: plain mode, and the default for every formatter.",
+          "signature": "const PLAIN_PAINT: CliPaint",
           "deprecated": false
         },
         {
@@ -9155,6 +9248,20 @@
           "kind": "variable",
           "doc": "The `@zuke/core` version. Kept in sync with deno.json by release-please.\n\nAnnotated `string` rather than left to inference on purpose. Without the\nannotation the declared type is the version itself, as a string literal\ntype, and `deno doc` records a declared type verbatim — so the version\nwould be baked into `llms-full.txt` and the package README. release-please\nrewrites the marked line below when it cuts a release but cannot run\n`deno doc`, so those generated files would drift on every bump and\n`apiDocsCheck` would fail on the release PR itself. Widening keeps a\nversion bump a self-contained edit.",
           "signature": "const VERSION: string",
+          "deprecated": false
+        },
+        {
+          "name": "versionPanel",
+          "kind": "function",
+          "doc": "A version panel: a box titled `zuke` with one aligned row per entry, the\nfirst value emphasised. Colour follows `paint`, so `NO_COLOR` keeps the box\nand drops the escape codes. The global `zuke` command prints its own\n`--version` with it, so both panels look the same.\n",
+          "signature": "function versionPanel(rows: unknown, paint: CliPaint): string",
+          "deprecated": false
+        },
+        {
+          "name": "VersionRow",
+          "kind": "typeAlias",
+          "doc": "One row of a version panel: its label and its value.",
+          "signature": "type VersionRow = unknown",
           "deprecated": false
         },
         {
