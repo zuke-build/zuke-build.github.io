@@ -45753,6 +45753,2089 @@
       ]
     },
     {
+      "name": "@zuke/prometheus",
+      "dir": "prometheus",
+      "summary": "A typed client for the Prometheus HTTP API, for Zuke builds. `PrometheusTasks`",
+      "symbols": [
+        {
+          "name": "PrometheusActiveTarget",
+          "kind": "interface",
+          "doc": "A target Prometheus is scraping.",
+          "signature": "interface PrometheusActiveTarget",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "discoveredLabels",
+              "kind": "property",
+              "optional": false,
+              "signature": "discoveredLabels: PrometheusLabels",
+              "doc": "The labels service discovery found, before relabelling."
+            },
+            {
+              "name": "labels",
+              "kind": "property",
+              "optional": false,
+              "signature": "labels: PrometheusLabels",
+              "doc": "The labels after relabelling."
+            },
+            {
+              "name": "scrapePool",
+              "kind": "property",
+              "optional": false,
+              "signature": "scrapePool: string",
+              "doc": "The scrape pool (the job) the target belongs to."
+            },
+            {
+              "name": "scrapeUrl",
+              "kind": "property",
+              "optional": false,
+              "signature": "scrapeUrl: string",
+              "doc": "The URL scraped."
+            },
+            {
+              "name": "globalUrl",
+              "kind": "property",
+              "optional": true,
+              "signature": "globalUrl?: string",
+              "doc": "The URL as seen from outside, when the server reports it."
+            },
+            {
+              "name": "lastError",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastError?: string",
+              "doc": "The last scrape's error, `\"\"` when it succeeded."
+            },
+            {
+              "name": "lastScrape",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastScrape?: string",
+              "doc": "When the last scrape happened (RFC 3339)."
+            },
+            {
+              "name": "lastScrapeDuration",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastScrapeDuration?: number",
+              "doc": "How long the last scrape took, in seconds."
+            },
+            {
+              "name": "health",
+              "kind": "property",
+              "optional": false,
+              "signature": "health: string",
+              "doc": "`up`, `down` or `unknown`."
+            },
+            {
+              "name": "scrapeInterval",
+              "kind": "property",
+              "optional": true,
+              "signature": "scrapeInterval?: string",
+              "doc": "The scrape interval, such as `\"1m\"`."
+            },
+            {
+              "name": "scrapeTimeout",
+              "kind": "property",
+              "optional": true,
+              "signature": "scrapeTimeout?: string",
+              "doc": "The scrape timeout, such as `\"10s\"`."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusAlert",
+          "kind": "interface",
+          "doc": "An alert, active or pending, as the rules and alerts endpoints report it.",
+          "signature": "interface PrometheusAlert",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "labels",
+              "kind": "property",
+              "optional": false,
+              "signature": "labels: PrometheusLabels",
+              "doc": "The alert's labels, `alertname` among them."
+            },
+            {
+              "name": "annotations",
+              "kind": "property",
+              "optional": false,
+              "signature": "annotations: PrometheusLabels",
+              "doc": "The alert's annotations."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: string",
+              "doc": "`firing` or `pending` (or `inactive` where a server reports it)."
+            },
+            {
+              "name": "activeAt",
+              "kind": "property",
+              "optional": true,
+              "signature": "activeAt?: string",
+              "doc": "When the alert became active (RFC 3339)."
+            },
+            {
+              "name": "value",
+              "kind": "property",
+              "optional": false,
+              "signature": "value: number",
+              "doc": "The expression's value when the alert last evaluated."
+            },
+            {
+              "name": "keepFiringSince",
+              "kind": "property",
+              "optional": true,
+              "signature": "keepFiringSince?: string",
+              "doc": "Until when it keeps firing after resolving, if `keep_firing_for` is set."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusAlertingRule",
+          "kind": "interface",
+          "doc": "An alerting rule.",
+          "signature": "interface PrometheusAlertingRule",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "property",
+              "optional": false,
+              "signature": "type: alerting",
+              "doc": "The rule kind."
+            },
+            {
+              "name": "duration",
+              "kind": "property",
+              "optional": false,
+              "signature": "duration: number",
+              "doc": "The `for` duration, in seconds."
+            },
+            {
+              "name": "annotations",
+              "kind": "property",
+              "optional": false,
+              "signature": "annotations: PrometheusLabels",
+              "doc": "The rule's annotations."
+            },
+            {
+              "name": "alerts",
+              "kind": "property",
+              "optional": true,
+              "signature": "alerts?: unknown",
+              "doc": "The rule's active alerts; absent when `excludeAlerts` was set (the server\nthen sends `\"alerts\": null`, read as absent)."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": true,
+              "signature": "state?: string",
+              "doc": "The rule's state: `firing`, `pending` or `inactive`."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusAlerts",
+          "kind": "interface",
+          "doc": "The active alerts.",
+          "signature": "interface PrometheusAlerts",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "alerts",
+              "kind": "property",
+              "optional": false,
+              "signature": "alerts: unknown",
+              "doc": "Every active alert."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusApiError",
+          "kind": "class",
+          "doc": "Prometheus, or an HTTP layer in front of it, refused the call: a non-2xx\nstatus, or an envelope whose `status` is `\"error\"`.\n\n```ts\ntry {\n  await PrometheusTasks.query((s) => s.url(url).query(\"rate(x[5m]\"));\n} catch (error) {\n  if (error instanceof PrometheusApiError && error.errorType === \"bad_data\") {\n    // the expression did not parse\n  }\n}\n```",
+          "signature": "class PrometheusApiError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "method",
+              "kind": "property",
+              "optional": false,
+              "signature": "method: string",
+              "doc": "The HTTP method of the failing call."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The endpoint path, such as `/api/v1/query` (never the base URL)."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: number",
+              "doc": "The HTTP status of the answer."
+            },
+            {
+              "name": "errorType",
+              "kind": "property",
+              "optional": false,
+              "signature": "errorType: string | undefined",
+              "doc": "Prometheus's `errorType` (`bad_data`, `execution`, `timeout`, …), when sent."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": false,
+              "signature": "detail: string | undefined",
+              "doc": "What went wrong: the envelope's `error` text, or — for an answer that was\nnot a Prometheus envelope, such as a gateway's error page — the start of\nthe body. Scrubbed of credentials and capped in length."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusAwsAccessKey",
+          "kind": "interface",
+          "doc": "An explicit access key (set by {@link PrometheusAwsSettings.accessKey}).",
+          "signature": "interface PrometheusAwsAccessKey",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "accessKeyId",
+              "kind": "property",
+              "optional": false,
+              "signature": "accessKeyId: string",
+              "doc": "The access key id."
+            },
+            {
+              "name": "secretAccessKey",
+              "kind": "property",
+              "optional": false,
+              "signature": "secretAccessKey: string",
+              "doc": "The secret access key."
+            },
+            {
+              "name": "sessionToken",
+              "kind": "property",
+              "optional": true,
+              "signature": "sessionToken?: string",
+              "doc": "The session token of temporary credentials."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusAwsSettings",
+          "kind": "class",
+          "doc": "Settings for `PrometheusConnectionSettings.sigv4(...)`.",
+          "signature": "class PrometheusAwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "region",
+              "kind": "method",
+              "optional": false,
+              "signature": "region(region: string): this",
+              "doc": "The workspace's region, such as `us-east-1`; defaults to `AWS_REGION`,\nthen `AWS_DEFAULT_REGION`."
+            },
+            {
+              "name": "profile",
+              "kind": "method",
+              "optional": false,
+              "signature": "profile(name: string): this",
+              "doc": "Read static keys from this profile of the shared credentials and config\nfiles (`~/.aws/credentials`, `~/.aws/config`) instead of searching the\ndefault chain."
+            },
+            {
+              "name": "accessKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "accessKey(accessKeyId: string, secretAccessKey: string, sessionToken?: string): this",
+              "doc": "Sign with this access key instead of searching the default chain."
+            },
+            {
+              "name": "region_",
+              "kind": "property",
+              "optional": true,
+              "signature": "region_?: string",
+              "doc": "The signing region (set by {@link region})."
+            },
+            {
+              "name": "profile_",
+              "kind": "property",
+              "optional": true,
+              "signature": "profile_?: string",
+              "doc": "The shared-config profile (set by {@link profile})."
+            },
+            {
+              "name": "accessKey_",
+              "kind": "property",
+              "optional": true,
+              "signature": "accessKey_?: PrometheusAwsAccessKey",
+              "doc": "An explicit access key (set by {@link accessKey})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusAzureCredentialKind",
+          "kind": "typeAlias",
+          "doc": "Which credential to use: `\"default\"` picks one from the environment (see\n`PrometheusConnectionSettings.azure`); the others are explicit.",
+          "signature": "type PrometheusAzureCredentialKind = default | clientSecret | workloadIdentity | managedIdentity",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusAzureSettings",
+          "kind": "class",
+          "doc": "Settings for `PrometheusConnectionSettings.azure(...)`.",
+          "signature": "class PrometheusAzureSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "scope",
+              "kind": "method",
+              "optional": false,
+              "signature": "scope(scope: string): this",
+              "doc": "The scope to request, replacing `https://prometheus.monitor.azure.com/.default`."
+            },
+            {
+              "name": "tenantId",
+              "kind": "method",
+              "optional": false,
+              "signature": "tenantId(id: string): this",
+              "doc": "The Microsoft Entra tenant (directory) id; defaults to `AZURE_TENANT_ID`."
+            },
+            {
+              "name": "clientId",
+              "kind": "method",
+              "optional": false,
+              "signature": "clientId(id: string): this",
+              "doc": "The application's client id — or, for a user-assigned managed identity,\nthe identity's; defaults to `AZURE_CLIENT_ID`."
+            },
+            {
+              "name": "authorityHost",
+              "kind": "method",
+              "optional": false,
+              "signature": "authorityHost(url: string): this",
+              "doc": "The Microsoft Entra authority, such as `https://login.microsoftonline.us`\nfor Azure Government; defaults to `AZURE_AUTHORITY_HOST`, then\n`https://login.microsoftonline.com`."
+            },
+            {
+              "name": "clientSecret",
+              "kind": "method",
+              "optional": false,
+              "signature": "clientSecret(secret?: string): this",
+              "doc": "Use a service principal's client secret (the client-credentials grant).\nThe secret defaults to `AZURE_CLIENT_SECRET`."
+            },
+            {
+              "name": "workloadIdentity",
+              "kind": "method",
+              "optional": false,
+              "signature": "workloadIdentity(tokenFile?: string): this",
+              "doc": "Use workload identity federation: the Kubernetes service-account token\nin `tokenFile` (default `AZURE_FEDERATED_TOKEN_FILE`) is the client\nassertion, read afresh on every token request since it is rotated."
+            },
+            {
+              "name": "managedIdentity",
+              "kind": "method",
+              "optional": false,
+              "signature": "managedIdentity(clientId?: string): this",
+              "doc": "Use the managed identity of the VM, App Service or Functions app the\nbuild runs on. Pass a user-assigned identity's client id, or leave it\nout for `clientId(...)` / `AZURE_CLIENT_ID`, and failing those the\nsystem-assigned identity."
+            },
+            {
+              "name": "credential_",
+              "kind": "property",
+              "optional": false,
+              "signature": "credential_: PrometheusAzureCredentialKind",
+              "doc": "The credential to use (set by the credential methods)."
+            },
+            {
+              "name": "scope_",
+              "kind": "property",
+              "optional": false,
+              "signature": "scope_: string",
+              "doc": "The scope requested (set by {@link scope})."
+            },
+            {
+              "name": "tenantId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "tenantId_?: string",
+              "doc": "The tenant (set by {@link tenantId}); else `AZURE_TENANT_ID`."
+            },
+            {
+              "name": "clientId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "clientId_?: string",
+              "doc": "The application or identity (set by {@link clientId}); else `AZURE_CLIENT_ID`."
+            },
+            {
+              "name": "authorityHost_",
+              "kind": "property",
+              "optional": true,
+              "signature": "authorityHost_?: string",
+              "doc": "The authority (set by {@link authorityHost}); else `AZURE_AUTHORITY_HOST`."
+            },
+            {
+              "name": "clientSecret_",
+              "kind": "property",
+              "optional": true,
+              "signature": "clientSecret_?: string",
+              "doc": "The client secret (set by {@link clientSecret}); else `AZURE_CLIENT_SECRET`."
+            },
+            {
+              "name": "federatedTokenFile_",
+              "kind": "property",
+              "optional": true,
+              "signature": "federatedTokenFile_?: string",
+              "doc": "The federated token file (set by {@link workloadIdentity}); else `AZURE_FEDERATED_TOKEN_FILE`."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusBuildInfo",
+          "kind": "interface",
+          "doc": "The server's build information. `version` is always present; the API notes\nthe other properties may change between versions, so they are optional.",
+          "signature": "interface PrometheusBuildInfo",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "The Prometheus version, such as `\"3.5.0\"`."
+            },
+            {
+              "name": "revision",
+              "kind": "property",
+              "optional": true,
+              "signature": "revision?: string",
+              "doc": "The VCS revision it was built from."
+            },
+            {
+              "name": "branch",
+              "kind": "property",
+              "optional": true,
+              "signature": "branch?: string",
+              "doc": "The branch it was built from."
+            },
+            {
+              "name": "buildUser",
+              "kind": "property",
+              "optional": true,
+              "signature": "buildUser?: string",
+              "doc": "Who built it."
+            },
+            {
+              "name": "buildDate",
+              "kind": "property",
+              "optional": true,
+              "signature": "buildDate?: string",
+              "doc": "When it was built."
+            },
+            {
+              "name": "goVersion",
+              "kind": "property",
+              "optional": true,
+              "signature": "goVersion?: string",
+              "doc": "The Go version it was built with."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusConnectionSettings",
+          "kind": "class",
+          "doc": "The connection half of every Prometheus call's settings.",
+          "signature": "class PrometheusConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "url",
+              "kind": "method",
+              "optional": false,
+              "signature": "url(url: string): this",
+              "doc": "The Prometheus base URL, such as `https://prometheus.internal`. A path or\nquery string it carries — a proxy prefix, a tenant parameter — is kept,\nand the endpoint path is appended. Userinfo in the URL\n(`https://user:pass@host`) is taken off the URL and sent as basic auth.\nWhen the call carries any credential — a configured source, or that\nuserinfo — the URL must be `https:` unless it is loopback, or\n`ZUKE_ALLOW_INSECURE_URL` is set, since a plaintext request hands the\ncredential to anyone on the path. An unauthenticated URL may be plaintext,\nas an in-cluster `http://prometheus.monitoring.svc:9090` usually is."
+            },
+            {
+              "name": "bearerToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "bearerToken(token: string): this",
+              "doc": "Authenticate with `Authorization: Bearer <token>`."
+            },
+            {
+              "name": "basicAuth",
+              "kind": "method",
+              "optional": false,
+              "signature": "basicAuth(username: string, password: string): this",
+              "doc": "Authenticate with HTTP basic auth (`Authorization: Basic …`)."
+            },
+            {
+              "name": "header",
+              "kind": "method",
+              "optional": false,
+              "signature": "header(name: string, value: string): this",
+              "doc": "Send a fixed header, such as a tenant id (`X-Scope-OrgID`). A plain\nheader does not make the call credentialed, so an in-cluster\n`http://` Mimir, Cortex or Thanos with a tenant header keeps working —\nexcept `Authorization`, `Proxy-Authorization`, `Cookie`, and a name core's\nURL redactor treats as credential-bearing (`X-API-Key`, `X-Auth-Token`:\nnames containing `key`, `token`, `secret`, `auth`, `pass` and the like),\nwhich count as credentials. For an API key under any other name use\n{@link secretHeader}. The value is masked in errors either way (when eight\nor more characters long)."
+            },
+            {
+              "name": "secretHeader",
+              "kind": "method",
+              "optional": false,
+              "signature": "secretHeader(name: string, value: string): this",
+              "doc": "Send a fixed header that carries a credential — an API key such as\n`X-API-Key`. Like `bearerToken`, it makes the call credentialed, so the\nURL must be `https:` unless it is loopback, and its value is masked in\nerrors."
+            },
+            {
+              "name": "credentials",
+              "kind": "method",
+              "optional": false,
+              "signature": "credentials(source: PrometheusCredentials): this",
+              "doc": "Add a credential source: a function handed the outgoing request — method,\nfull URL, headers so far, body bytes — and the connection's seams, that\nreturns the headers to add. Sources run in the order configured, so put a\nrequest signer last.\n\n```ts\ns.credentials(async (_request, { readTextFile }) => ({\n  authorization: `Bearer ${(await readTextFile(\"/run/secrets/prom\")).trim()}`,\n}))\n```"
+            },
+            {
+              "name": "google",
+              "kind": "method",
+              "optional": false,
+              "signature": "google(configure?: Configure<PrometheusGoogleSettings>): this",
+              "doc": "Authenticate to Google Cloud Managed Service for Prometheus with an\nOAuth access token from Application Default Credentials — no `gcloud`\nneeded. The search order is `credentialsFile(...)`, else the file\n`GOOGLE_APPLICATION_CREDENTIALS` names; then gcloud's\n`application_default_credentials.json`; then the GCE / GKE metadata\nserver. A file may be a `service_account` key, an `authorized_user`\ngcloud login, or an `external_account` workload identity federation\nconfiguration with a `file` or `url` subject-token source. The scope\ndefaults to `monitoring.read`; the token is cached until shortly before\nit expires.\n\n```ts\ns.url(\"https://monitoring.googleapis.com/v1/projects/my-project/location/global/prometheus\")\n  .google()\n```"
+            },
+            {
+              "name": "azure",
+              "kind": "method",
+              "optional": false,
+              "signature": "azure(configure?: Configure<PrometheusAzureSettings>): this",
+              "doc": "Authenticate to Azure Monitor managed service for Prometheus with a\nMicrosoft Entra ID token for\n`https://prometheus.monitor.azure.com/.default` — no `az` needed. Unless\na credential is chosen, the first the environment configures is used:\nclient secret (`AZURE_TENANT_ID`, `AZURE_CLIENT_ID`,\n`AZURE_CLIENT_SECRET`), then workload identity (`AZURE_TENANT_ID`,\n`AZURE_CLIENT_ID`, `AZURE_FEDERATED_TOKEN_FILE`), then managed identity\n(App Service's `IDENTITY_ENDPOINT`, else the VM's IMDS). The token is\ncached until shortly before it expires.\n\n```ts\ns.url(\"https://my-amw.eastus.prometheus.monitor.azure.com\")\n  .azure((a) => a.managedIdentity(clientId))\n```"
+            },
+            {
+              "name": "sigv4",
+              "kind": "method",
+              "optional": false,
+              "signature": "sigv4(configure?: Configure<PrometheusAwsSettings>): this",
+              "doc": "Sign every request with AWS Signature Version 4 for Amazon Managed\nService for Prometheus (service `aps`) — no `aws` CLI needed. The region\nis `region(...)`, else `AWS_REGION` / `AWS_DEFAULT_REGION`. Credentials\ncome from `accessKey(...)` or `profile(...)` when set, else the chain:\nthe `AWS_ACCESS_KEY_ID` environment, the shared files' profile, web\nidentity (`AWS_WEB_IDENTITY_TOKEN_FILE` + `AWS_ROLE_ARN`), the ECS / EKS\nPod Identity container endpoint, then EC2 IMDSv2. Configure it after any\nother source, so it signs the headers they add.\n\n```ts\ns.url(\"https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-1234\")\n  .sigv4((a) => a.region(\"us-east-1\"))\n```"
+            },
+            {
+              "name": "requestTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "requestTimeout(duration: string | number): this",
+              "doc": "How long the call may take, end to end (`\"10s\"`, or ms; default 30 s).\nClient-side: the query's own `timeout` parameter is separate."
+            },
+            {
+              "name": "maxResponseBytes",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxResponseBytes(bytes: number): this",
+              "doc": "The largest response body to read, in bytes (default 64 MiB). A larger\none fails the call rather than being buffered whole."
+            },
+            {
+              "name": "signal",
+              "kind": "method",
+              "optional": false,
+              "signature": "signal(signal: AbortSignal): this",
+              "doc": "A signal that cancels the call — a run's or a bake's own."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fetcher: fetch): this",
+              "doc": "The `fetch` to use — the seam a test answers calls through."
+            },
+            {
+              "name": "readEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "readEnv(reader: unknown): this",
+              "doc": "The environment reader: consulted for `ZUKE_ALLOW_INSECURE_URL` and handed\nto credential sources."
+            },
+            {
+              "name": "readTextFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "readTextFile(reader: unknown): this",
+              "doc": "The text-file reader handed to credential sources."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "The clock handed to credential sources, in epoch milliseconds."
+            },
+            {
+              "name": "url_",
+              "kind": "property",
+              "optional": true,
+              "signature": "url_?: string",
+              "doc": "The Prometheus base URL (set by {@link url})."
+            },
+            {
+              "name": "credentials_",
+              "kind": "property",
+              "optional": false,
+              "signature": "credentials_: PrometheusCredentials[]",
+              "doc": "The credential sources, in the order they run (set by the auth setters)."
+            },
+            {
+              "name": "requestTimeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "requestTimeout_: number",
+              "doc": "The client-side timeout in ms (set by {@link requestTimeout})."
+            },
+            {
+              "name": "maxResponseBytes_",
+              "kind": "property",
+              "optional": false,
+              "signature": "maxResponseBytes_: number",
+              "doc": "The response size cap in bytes (set by {@link maxResponseBytes})."
+            },
+            {
+              "name": "signal_",
+              "kind": "property",
+              "optional": true,
+              "signature": "signal_?: AbortSignal",
+              "doc": "A caller's signal that cancels the call (set by {@link signal})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` to use (set by {@link fetch}); the global one by default."
+            },
+            {
+              "name": "readEnv_",
+              "kind": "property",
+              "optional": false,
+              "signature": "readEnv_: unknown",
+              "doc": "The environment reader (set by {@link readEnv})."
+            },
+            {
+              "name": "readTextFile_",
+              "kind": "property",
+              "optional": false,
+              "signature": "readTextFile_: unknown",
+              "doc": "The text-file reader credential sources use (set by {@link readTextFile})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock, in epoch ms (set by {@link now})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusCredentials",
+          "kind": "typeAlias",
+          "doc": "A credential source: given the outgoing request and the context's seams,\nreturn the headers that authenticate it.\n\nSources run in the order they were configured, each seeing the headers the\nearlier ones added, and may not replace a header that is already present.\nEvery returned value is treated as a secret and masked in errors (values\nshorter than eight characters excepted — see {@link registerSecrets}). A\nsource that throws fails the call with a\n{@link \"./errors.ts\".PrometheusRequestError} whose message is scrubbed the\nsame way. It is called once per request.\n\nA source that caches — a token until its expiry — must keep that cache\noutside the settings lambda: the lambda runs on every call, so a source\ncreated inside it starts empty each time. Define the source once at module\nlevel (or key its cache in module state, as the built-in `google`, `azure`\nand `sigv4` sources do) and pass that one function to `credentials(...)`.",
+          "signature": "type PrometheusCredentials = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusCredentialsContext",
+          "kind": "interface",
+          "doc": "The seams a credential source reads the outside world through, so a source\nthat reads an environment variable, a key file, the clock or a token\nendpoint is testable without any of them. Each is set on the connection\nsettings (`readEnv`, `readTextFile`, `now`, `fetch`).",
+          "signature": "interface PrometheusCredentialsContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "readEnv",
+              "kind": "property",
+              "optional": false,
+              "signature": "readEnv: unknown",
+              "doc": "Read an environment variable; `undefined` when unset or not permitted."
+            },
+            {
+              "name": "readTextFile",
+              "kind": "property",
+              "optional": false,
+              "signature": "readTextFile: unknown",
+              "doc": "Read a text file — a mounted token, a key, a credentials file."
+            },
+            {
+              "name": "now",
+              "kind": "property",
+              "optional": false,
+              "signature": "now: unknown",
+              "doc": "The current time in epoch milliseconds, for signing and token expiry."
+            },
+            {
+              "name": "fetch",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch: fetch",
+              "doc": "The `fetch` the call itself uses, for a source that exchanges tokens."
+            },
+            {
+              "name": "signal",
+              "kind": "property",
+              "optional": false,
+              "signature": "signal: AbortSignal",
+              "doc": "Aborts when the call times out or the caller's signal fires."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusDroppedTarget",
+          "kind": "interface",
+          "doc": "A target relabelling dropped.",
+          "signature": "interface PrometheusDroppedTarget",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "discoveredLabels",
+              "kind": "property",
+              "optional": false,
+              "signature": "discoveredLabels: PrometheusLabels",
+              "doc": "The labels service discovery found."
+            },
+            {
+              "name": "scrapePool",
+              "kind": "property",
+              "optional": true,
+              "signature": "scrapePool?: string",
+              "doc": "The scrape pool, when the server reports it."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusDuration",
+          "kind": "typeAlias",
+          "doc": "A duration an API parameter accepts: Prometheus duration text such as\n`\"5m\"`, or a number of seconds (the API's float form).",
+          "signature": "type PrometheusDuration = string | number",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusExpressionSettings",
+          "kind": "class",
+          "doc": "What an instant and a range query share: the expression and its limits.",
+          "signature": "class PrometheusExpressionSettings extends PrometheusConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "query",
+              "kind": "method",
+              "optional": false,
+              "signature": "query(promql: string): this",
+              "doc": "The PromQL expression (`query`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: PrometheusDuration): this",
+              "doc": "The evaluation timeout (`timeout`), such as `\"30s\"` — capped by the\nserver's `-query.timeout`. The client-side limit is `requestTimeout`."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(series: number): this",
+              "doc": "The most series to return (`limit`); `0` means no limit."
+            },
+            {
+              "name": "lookbackDelta",
+              "kind": "method",
+              "optional": false,
+              "signature": "lookbackDelta(duration: PrometheusDuration): this",
+              "doc": "Override the lookback period for this query (`lookback_delta`)."
+            },
+            {
+              "name": "httpMethod",
+              "kind": "method",
+              "optional": false,
+              "signature": "httpMethod(method: PrometheusHttpMethod): this",
+              "doc": "Send the parameters as a `POST` form (the default) or in a `GET` URL."
+            },
+            {
+              "name": "query_",
+              "kind": "property",
+              "optional": true,
+              "signature": "query_?: string",
+              "doc": "The PromQL expression (set by {@link query})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": true,
+              "signature": "timeout_?: string",
+              "doc": "The evaluation timeout parameter (set by {@link timeout})."
+            },
+            {
+              "name": "limit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "limit_?: string",
+              "doc": "The series limit parameter (set by {@link limit})."
+            },
+            {
+              "name": "lookbackDelta_",
+              "kind": "property",
+              "optional": true,
+              "signature": "lookbackDelta_?: string",
+              "doc": "The lookback-delta parameter (set by {@link lookbackDelta})."
+            },
+            {
+              "name": "httpMethod_",
+              "kind": "property",
+              "optional": false,
+              "signature": "httpMethod_: PrometheusHttpMethod",
+              "doc": "The HTTP method (set by {@link httpMethod}); `POST` by default."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusFloatSample",
+          "kind": "interface",
+          "doc": "An instant-vector element whose sample is a float (the API's `value` key).",
+          "signature": "interface PrometheusFloatSample",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metric",
+              "kind": "property",
+              "optional": false,
+              "signature": "metric: PrometheusLabels",
+              "doc": "The series' labels."
+            },
+            {
+              "name": "timestamp",
+              "kind": "property",
+              "optional": false,
+              "signature": "timestamp: number",
+              "doc": "The sample's time, in Unix seconds (fractional)."
+            },
+            {
+              "name": "value",
+              "kind": "property",
+              "optional": false,
+              "signature": "value: number",
+              "doc": "The sample value; `NaN`, `Infinity` and `-Infinity` are kept as such."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusGoogleSettings",
+          "kind": "class",
+          "doc": "Settings for `PrometheusConnectionSettings.google(...)`.",
+          "signature": "class PrometheusGoogleSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "scopes",
+              "kind": "method",
+              "optional": false,
+              "signature": "scopes(...scopes: string[]): this",
+              "doc": "The OAuth scopes to request, replacing the default\n`https://www.googleapis.com/auth/monitoring.read`. A gcloud user\ncredential (`authorized_user`) carries the scopes it was granted at\n`gcloud auth application-default login` and ignores these."
+            },
+            {
+              "name": "credentialsFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "credentialsFile(path: string): this",
+              "doc": "Read this credentials file — a service-account key, a gcloud user\ncredential, or a workload identity federation configuration — instead of\nsearching Application Default Credentials."
+            },
+            {
+              "name": "quotaProject",
+              "kind": "method",
+              "optional": false,
+              "signature": "quotaProject(project: string): this",
+              "doc": "The project charged for the request's quota, sent as\n`x-goog-user-project`. Defaults to the credentials file's\n`quota_project_id`, which `gcloud auth application-default\nset-quota-project` writes."
+            },
+            {
+              "name": "scopes_",
+              "kind": "property",
+              "optional": false,
+              "signature": "scopes_: unknown",
+              "doc": "The OAuth scopes requested (set by {@link scopes})."
+            },
+            {
+              "name": "credentialsFile_",
+              "kind": "property",
+              "optional": true,
+              "signature": "credentialsFile_?: string",
+              "doc": "An explicit credentials file (set by {@link credentialsFile})."
+            },
+            {
+              "name": "quotaProject_",
+              "kind": "property",
+              "optional": true,
+              "signature": "quotaProject_?: string",
+              "doc": "The project billed for quota (set by {@link quotaProject})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusHeaders",
+          "kind": "typeAlias",
+          "doc": "Header names to values, as a credential source returns them.",
+          "signature": "type PrometheusHeaders = Readonly<Record<string, string>>",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusHistogram",
+          "kind": "interface",
+          "doc": "A native histogram value, the API's `<histogram>` placeholder.",
+          "signature": "interface PrometheusHistogram",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "count",
+              "kind": "property",
+              "optional": false,
+              "signature": "count: number",
+              "doc": "The count of observations."
+            },
+            {
+              "name": "sum",
+              "kind": "property",
+              "optional": false,
+              "signature": "sum: number",
+              "doc": "The sum of observations."
+            },
+            {
+              "name": "buckets",
+              "kind": "property",
+              "optional": false,
+              "signature": "buckets: unknown",
+              "doc": "The populated buckets; empty when the server sent none."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusHistogramBucket",
+          "kind": "interface",
+          "doc": "One bucket of a native histogram: `[<boundary_rule>, \"<left>\", \"<right>\", \"<count>\"]`.",
+          "signature": "interface PrometheusHistogramBucket",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "boundaryRule",
+              "kind": "property",
+              "optional": false,
+              "signature": "boundaryRule: 0 | 1 | 2 | 3",
+              "doc": "Which boundaries are inclusive: `0` open left, `1` open right, `2` open\nboth, `3` closed both — the API's `<boundary_rule>`."
+            },
+            {
+              "name": "lower",
+              "kind": "property",
+              "optional": false,
+              "signature": "lower: number",
+              "doc": "The bucket's left boundary."
+            },
+            {
+              "name": "upper",
+              "kind": "property",
+              "optional": false,
+              "signature": "upper: number",
+              "doc": "The bucket's right boundary."
+            },
+            {
+              "name": "count",
+              "kind": "property",
+              "optional": false,
+              "signature": "count: number",
+              "doc": "The number of observations in the bucket."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusHistogramPoint",
+          "kind": "interface",
+          "doc": "One native-histogram sample at a point in time: `[<unix_time>, <histogram>]`.",
+          "signature": "interface PrometheusHistogramPoint",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "timestamp",
+              "kind": "property",
+              "optional": false,
+              "signature": "timestamp: number",
+              "doc": "The sample's time, in Unix seconds (fractional)."
+            },
+            {
+              "name": "histogram",
+              "kind": "property",
+              "optional": false,
+              "signature": "histogram: PrometheusHistogram",
+              "doc": "The histogram."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusHistogramSample",
+          "kind": "interface",
+          "doc": "An instant-vector element whose sample is a native histogram (`histogram`).",
+          "signature": "interface PrometheusHistogramSample",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metric",
+              "kind": "property",
+              "optional": false,
+              "signature": "metric: PrometheusLabels",
+              "doc": "The series' labels."
+            },
+            {
+              "name": "timestamp",
+              "kind": "property",
+              "optional": false,
+              "signature": "timestamp: number",
+              "doc": "The sample's time, in Unix seconds (fractional)."
+            },
+            {
+              "name": "histogram",
+              "kind": "property",
+              "optional": false,
+              "signature": "histogram: PrometheusHistogram",
+              "doc": "The histogram."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusHttpMethod",
+          "kind": "typeAlias",
+          "doc": "The HTTP method for an endpoint the API serves on both `GET` and `POST`.",
+          "signature": "type PrometheusHttpMethod = GET | POST",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusLabels",
+          "kind": "typeAlias",
+          "doc": "A label set: label name to label value, as the API's `metric` object.",
+          "signature": "type PrometheusLabels = Readonly<Record<string, string>>",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusLabelsSettings",
+          "kind": "class",
+          "doc": "Settings for listing label names (`/api/v1/labels`).",
+          "signature": "class PrometheusLabelsSettings extends PrometheusSelectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "httpMethod",
+              "kind": "method",
+              "optional": false,
+              "signature": "httpMethod(method: PrometheusHttpMethod): this",
+              "doc": "Send the parameters as a `POST` form (the default) or in a `GET` URL."
+            },
+            {
+              "name": "httpMethod_",
+              "kind": "property",
+              "optional": false,
+              "signature": "httpMethod_: PrometheusHttpMethod",
+              "doc": "The HTTP method (set by {@link httpMethod}); `POST` by default."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusLabelValuesSettings",
+          "kind": "class",
+          "doc": "Settings for one label's values (`/api/v1/label/<label_name>/values`).",
+          "signature": "class PrometheusLabelValuesSettings extends PrometheusSelectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "labelName",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelName(name: string): this",
+              "doc": "The label whose values to list. Any name is accepted: one outside the\nclassic `[a-zA-Z_:][a-zA-Z0-9_:]*` form (a UTF-8 name such as\n`http.status_code`) is sent in the API's `U__` value-encoding escape, so\nnothing in the name can reach the URL path as a separator."
+            },
+            {
+              "name": "labelName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "labelName_?: string",
+              "doc": "The label whose values to list (set by {@link labelName})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusMatrix",
+          "kind": "interface",
+          "doc": "A range vector: `resultType: \"matrix\"`.",
+          "signature": "interface PrometheusMatrix",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resultType",
+              "kind": "property",
+              "optional": false,
+              "signature": "resultType: matrix",
+              "doc": "The result type."
+            },
+            {
+              "name": "result",
+              "kind": "property",
+              "optional": false,
+              "signature": "result: unknown",
+              "doc": "One entry per series."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusMetadataSettings",
+          "kind": "class",
+          "doc": "Settings for metric metadata (`/api/v1/metadata`).",
+          "signature": "class PrometheusMetadataSettings extends PrometheusConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(metrics: number): this",
+              "doc": "The most metrics to return (`limit`)."
+            },
+            {
+              "name": "limitPerMetric",
+              "kind": "method",
+              "optional": false,
+              "signature": "limitPerMetric(entries: number): this",
+              "doc": "The most metadata entries per metric (`limit_per_metric`)."
+            },
+            {
+              "name": "metric",
+              "kind": "method",
+              "optional": false,
+              "signature": "metric(name: string): this",
+              "doc": "Only this metric's metadata (`metric`)."
+            },
+            {
+              "name": "limit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "limit_?: string",
+              "doc": "The metric limit (set by {@link limit})."
+            },
+            {
+              "name": "limitPerMetric_",
+              "kind": "property",
+              "optional": true,
+              "signature": "limitPerMetric_?: string",
+              "doc": "The per-metric limit (set by {@link limitPerMetric})."
+            },
+            {
+              "name": "metric_",
+              "kind": "property",
+              "optional": true,
+              "signature": "metric_?: string",
+              "doc": "The metric to filter for (set by {@link metric})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusMetricMetadata",
+          "kind": "interface",
+          "doc": "One metadata entry for a metric, as scraped from a target.",
+          "signature": "interface PrometheusMetricMetadata",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "property",
+              "optional": false,
+              "signature": "type: string",
+              "doc": "The metric type: `counter`, `gauge`, `histogram`, `summary`, `unknown`, …"
+            },
+            {
+              "name": "help",
+              "kind": "property",
+              "optional": false,
+              "signature": "help: string",
+              "doc": "The `# HELP` text."
+            },
+            {
+              "name": "unit",
+              "kind": "property",
+              "optional": false,
+              "signature": "unit: string",
+              "doc": "The unit, or `\"\"`."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusOutgoingRequest",
+          "kind": "interface",
+          "doc": "The outgoing request a {@link PrometheusCredentials} source authenticates —\nexactly what will be sent, so a signature computed over it verifies.",
+          "signature": "interface PrometheusOutgoingRequest",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "method",
+              "kind": "property",
+              "optional": false,
+              "signature": "method: PrometheusHttpMethod",
+              "doc": "The HTTP method: `GET`, or `POST` for a form-encoded call."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "The absolute URL, including the query string: the base URL's own path and\nparameters, the endpoint path, and — on a `GET` — the call's parameters,\npercent-encoded as sent."
+            },
+            {
+              "name": "headers",
+              "kind": "property",
+              "optional": false,
+              "signature": "headers: PrometheusHeaders",
+              "doc": "The headers set so far, with lower-case names: the transport's own\n(`accept`, and `content-type` on a `POST`) plus whatever the sources\nconfigured before this one added. A source may only add headers — naming\none already present fails the call — so a signer configured last signs\nevery header that is sent."
+            },
+            {
+              "name": "body",
+              "kind": "property",
+              "optional": false,
+              "signature": "body: Uint8Array",
+              "doc": "The exact body bytes — the `application/x-www-form-urlencoded` form on a\n`POST`, empty on a `GET`. A copy: changing it changes nothing that is sent."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusPoint",
+          "kind": "interface",
+          "doc": "One float sample at a point in time: a `[<unix_time>, \"<value>\"]` pair.",
+          "signature": "interface PrometheusPoint",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "timestamp",
+              "kind": "property",
+              "optional": false,
+              "signature": "timestamp: number",
+              "doc": "The sample's time, in Unix seconds (fractional)."
+            },
+            {
+              "name": "value",
+              "kind": "property",
+              "optional": false,
+              "signature": "value: number",
+              "doc": "The sample value; `NaN`, `Infinity` and `-Infinity` are kept as such."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusQueryData",
+          "kind": "typeAlias",
+          "doc": "The `data` of an expression query, discriminated on `resultType` exactly as\nthe API sends it.",
+          "signature": "type PrometheusQueryData = PrometheusVector | PrometheusMatrix | PrometheusScalar | PrometheusStringResult",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusQueryRangeSettings",
+          "kind": "class",
+          "doc": "Settings for a range query (`/api/v1/query_range`).",
+          "signature": "class PrometheusQueryRangeSettings extends PrometheusExpressionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "start",
+              "kind": "method",
+              "optional": false,
+              "signature": "start(time: PrometheusTime): this",
+              "doc": "The inclusive start (`start`): a `Date`, Unix seconds, or RFC 3339 text."
+            },
+            {
+              "name": "end",
+              "kind": "method",
+              "optional": false,
+              "signature": "end(time: PrometheusTime): this",
+              "doc": "The inclusive end (`end`): a `Date`, Unix seconds, or RFC 3339 text."
+            },
+            {
+              "name": "step",
+              "kind": "method",
+              "optional": false,
+              "signature": "step(duration: PrometheusDuration): this",
+              "doc": "The resolution step (`step`): `\"15s\"`, or a number of seconds."
+            },
+            {
+              "name": "start_",
+              "kind": "property",
+              "optional": true,
+              "signature": "start_?: string",
+              "doc": "The range's start (set by {@link start})."
+            },
+            {
+              "name": "end_",
+              "kind": "property",
+              "optional": true,
+              "signature": "end_?: string",
+              "doc": "The range's end (set by {@link end})."
+            },
+            {
+              "name": "step_",
+              "kind": "property",
+              "optional": true,
+              "signature": "step_?: string",
+              "doc": "The resolution step (set by {@link step})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusQuerySettings",
+          "kind": "class",
+          "doc": "Settings for an instant query (`/api/v1/query`).",
+          "signature": "class PrometheusQuerySettings extends PrometheusExpressionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "time",
+              "kind": "method",
+              "optional": false,
+              "signature": "time(time: PrometheusTime): this",
+              "doc": "The evaluation time (`time`): a `Date`, Unix seconds, or RFC 3339 text."
+            },
+            {
+              "name": "time_",
+              "kind": "property",
+              "optional": true,
+              "signature": "time_?: string",
+              "doc": "The evaluation time (set by {@link time}); the server's now when unset."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRecordingRule",
+          "kind": "interface",
+          "doc": "A recording rule.",
+          "signature": "interface PrometheusRecordingRule",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "property",
+              "optional": false,
+              "signature": "type: recording",
+              "doc": "The rule kind."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRequestError",
+          "kind": "class",
+          "doc": "A Prometheus call produced no usable answer: the request could not be sent\nor timed out, a credential source failed, or the answer was too large, not\nJSON, or not shaped as the API reference describes.",
+          "signature": "class PrometheusRequestError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "method",
+              "kind": "property",
+              "optional": false,
+              "signature": "method: string",
+              "doc": "The HTTP method of the failing call."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The endpoint path, such as `/api/v1/query` (never the base URL)."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: number | undefined",
+              "doc": "The HTTP status, when an answer arrived; `undefined` when none did."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusResponse",
+          "kind": "interface",
+          "doc": "A successful API answer: the endpoint's typed `data`, plus the `warnings`\nand `infos` annotations Prometheus attaches to a result it still returned.\n\nBoth arrays are always present — empty when the server sent none — so a gate\ncan fail on `warnings.length > 0` without first checking for the key.",
+          "signature": "interface PrometheusResponse",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "data",
+              "kind": "property",
+              "optional": false,
+              "signature": "data: T",
+              "doc": "The endpoint's `data`, parsed into its typed shape."
+            },
+            {
+              "name": "warnings",
+              "kind": "property",
+              "optional": false,
+              "signature": "warnings: unknown",
+              "doc": "Problems that did not stop the request (`warnings` in the envelope)."
+            },
+            {
+              "name": "infos",
+              "kind": "property",
+              "optional": false,
+              "signature": "infos: unknown",
+              "doc": "Info-level annotations about possible query issues (`infos`)."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRule",
+          "kind": "typeAlias",
+          "doc": "A rule, discriminated on `type`.",
+          "signature": "type PrometheusRule = PrometheusAlertingRule | PrometheusRecordingRule",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusRuleFields",
+          "kind": "interface",
+          "doc": "Fields every rule carries.",
+          "signature": "interface PrometheusRuleFields",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The rule's name: the alert name or the recorded series."
+            },
+            {
+              "name": "query",
+              "kind": "property",
+              "optional": false,
+              "signature": "query: string",
+              "doc": "The PromQL expression."
+            },
+            {
+              "name": "labels",
+              "kind": "property",
+              "optional": false,
+              "signature": "labels: PrometheusLabels",
+              "doc": "The rule's configured labels."
+            },
+            {
+              "name": "health",
+              "kind": "property",
+              "optional": false,
+              "signature": "health: string",
+              "doc": "`ok`, `err` or `unknown`."
+            },
+            {
+              "name": "lastError",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastError?: string",
+              "doc": "The last evaluation's error, when it failed."
+            },
+            {
+              "name": "evaluationTime",
+              "kind": "property",
+              "optional": true,
+              "signature": "evaluationTime?: number",
+              "doc": "How long the last evaluation took, in seconds."
+            },
+            {
+              "name": "lastEvaluation",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastEvaluation?: string",
+              "doc": "When the rule last evaluated (RFC 3339)."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRuleGroup",
+          "kind": "interface",
+          "doc": "A rule group.",
+          "signature": "interface PrometheusRuleGroup",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The group's name."
+            },
+            {
+              "name": "file",
+              "kind": "property",
+              "optional": false,
+              "signature": "file: string",
+              "doc": "The file it was loaded from."
+            },
+            {
+              "name": "interval",
+              "kind": "property",
+              "optional": false,
+              "signature": "interval: number",
+              "doc": "The evaluation interval, in seconds."
+            },
+            {
+              "name": "rules",
+              "kind": "property",
+              "optional": false,
+              "signature": "rules: unknown",
+              "doc": "The group's rules."
+            },
+            {
+              "name": "limit",
+              "kind": "property",
+              "optional": true,
+              "signature": "limit?: number",
+              "doc": "The group's alert/series limit, when the server reports it."
+            },
+            {
+              "name": "evaluationTime",
+              "kind": "property",
+              "optional": true,
+              "signature": "evaluationTime?: number",
+              "doc": "How long the group's last evaluation took, in seconds."
+            },
+            {
+              "name": "lastEvaluation",
+              "kind": "property",
+              "optional": true,
+              "signature": "lastEvaluation?: string",
+              "doc": "When the group last evaluated (RFC 3339)."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRules",
+          "kind": "interface",
+          "doc": "The loaded rules.",
+          "signature": "interface PrometheusRules",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "groups",
+              "kind": "property",
+              "optional": false,
+              "signature": "groups: unknown",
+              "doc": "The rule groups."
+            },
+            {
+              "name": "groupNextToken",
+              "kind": "property",
+              "optional": true,
+              "signature": "groupNextToken?: string",
+              "doc": "The token for the next page, when `groupLimit` cut the list short."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRulesSettings",
+          "kind": "class",
+          "doc": "Settings for the loaded rules (`/api/v1/rules`).",
+          "signature": "class PrometheusRulesSettings extends PrometheusConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(type: PrometheusRuleType): this",
+              "doc": "Only alerting (`\"alert\"`) or only recording (`\"record\"`) rules (`type`)."
+            },
+            {
+              "name": "ruleName",
+              "kind": "method",
+              "optional": false,
+              "signature": "ruleName(...names: string[]): this",
+              "doc": "Only rules with these names (`rule_name[]`)."
+            },
+            {
+              "name": "ruleGroup",
+              "kind": "method",
+              "optional": false,
+              "signature": "ruleGroup(...groups: string[]): this",
+              "doc": "Only rules in these groups (`rule_group[]`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(...paths: string[]): this",
+              "doc": "Only rules from these files (`file[]`)."
+            },
+            {
+              "name": "match",
+              "kind": "method",
+              "optional": false,
+              "signature": "match(...selectors: string[]): this",
+              "doc": "Only rules whose configured labels match these selectors (`match[]`)."
+            },
+            {
+              "name": "excludeAlerts",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeAlerts(on?: boolean): this",
+              "doc": "Leave out each rule's active alerts (`exclude_alerts=true`)."
+            },
+            {
+              "name": "groupLimit",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupLimit(groups: number): this",
+              "doc": "At most this many rule groups per page (`group_limit`)."
+            },
+            {
+              "name": "groupNextToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupNextToken(token: string): this",
+              "doc": "Continue from a previous page's `groupNextToken` (`group_next_token`)."
+            },
+            {
+              "name": "type_",
+              "kind": "property",
+              "optional": true,
+              "signature": "type_?: PrometheusRuleType",
+              "doc": "The `type` filter (set by {@link type})."
+            },
+            {
+              "name": "ruleName_",
+              "kind": "property",
+              "optional": false,
+              "signature": "ruleName_: string[]",
+              "doc": "Rule names to keep (set by {@link ruleName}), as `rule_name[]`."
+            },
+            {
+              "name": "ruleGroup_",
+              "kind": "property",
+              "optional": false,
+              "signature": "ruleGroup_: string[]",
+              "doc": "Rule groups to keep (set by {@link ruleGroup}), as `rule_group[]`."
+            },
+            {
+              "name": "file_",
+              "kind": "property",
+              "optional": false,
+              "signature": "file_: string[]",
+              "doc": "Rule files to keep (set by {@link file}), as `file[]`."
+            },
+            {
+              "name": "match_",
+              "kind": "property",
+              "optional": false,
+              "signature": "match_: string[]",
+              "doc": "Label selectors rules must match (set by {@link match}), as `match[]`."
+            },
+            {
+              "name": "excludeAlerts_",
+              "kind": "property",
+              "optional": false,
+              "signature": "excludeAlerts_: boolean",
+              "doc": "Whether to leave out active alerts (set by {@link excludeAlerts})."
+            },
+            {
+              "name": "groupLimit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "groupLimit_?: string",
+              "doc": "The group page size (set by {@link groupLimit})."
+            },
+            {
+              "name": "groupNextToken_",
+              "kind": "property",
+              "optional": true,
+              "signature": "groupNextToken_?: string",
+              "doc": "The pagination token (set by {@link groupNextToken})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusRuleType",
+          "kind": "typeAlias",
+          "doc": "The rule kinds `/api/v1/rules` filters on: the API's `type` parameter.",
+          "signature": "type PrometheusRuleType = alert | record",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusScalar",
+          "kind": "interface",
+          "doc": "A scalar: `resultType: \"scalar\"`.",
+          "signature": "interface PrometheusScalar",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resultType",
+              "kind": "property",
+              "optional": false,
+              "signature": "resultType: scalar",
+              "doc": "The result type."
+            },
+            {
+              "name": "result",
+              "kind": "property",
+              "optional": false,
+              "signature": "result: PrometheusPoint",
+              "doc": "The scalar and the time it was evaluated at."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusSelectionSettings",
+          "kind": "class",
+          "doc": "What the series, label-name and label-value endpoints share.",
+          "signature": "class PrometheusSelectionSettings extends PrometheusConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "match",
+              "kind": "method",
+              "optional": false,
+              "signature": "match(...selectors: string[]): this",
+              "doc": "Add series selectors (`match[]`), such as `up` or `{job=\"api\"}`."
+            },
+            {
+              "name": "start",
+              "kind": "method",
+              "optional": false,
+              "signature": "start(time: PrometheusTime): this",
+              "doc": "The start time (`start`): a `Date`, Unix seconds, or RFC 3339 text."
+            },
+            {
+              "name": "end",
+              "kind": "method",
+              "optional": false,
+              "signature": "end(time: PrometheusTime): this",
+              "doc": "The end time (`end`): a `Date`, Unix seconds, or RFC 3339 text."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "The most results to return (`limit`); `0` means no limit."
+            },
+            {
+              "name": "match_",
+              "kind": "property",
+              "optional": false,
+              "signature": "match_: string[]",
+              "doc": "The series selectors (set by {@link match}), sent as repeated `match[]`."
+            },
+            {
+              "name": "start_",
+              "kind": "property",
+              "optional": true,
+              "signature": "start_?: string",
+              "doc": "The start time (set by {@link start})."
+            },
+            {
+              "name": "end_",
+              "kind": "property",
+              "optional": true,
+              "signature": "end_?: string",
+              "doc": "The end time (set by {@link end})."
+            },
+            {
+              "name": "limit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "limit_?: string",
+              "doc": "The result limit (set by {@link limit})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusSeries",
+          "kind": "interface",
+          "doc": "One series of a range vector. The API gives a series `values`, `histograms`,\nor both; whichever is absent is an empty array here.",
+          "signature": "interface PrometheusSeries",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metric",
+              "kind": "property",
+              "optional": false,
+              "signature": "metric: PrometheusLabels",
+              "doc": "The series' labels."
+            },
+            {
+              "name": "values",
+              "kind": "property",
+              "optional": false,
+              "signature": "values: unknown",
+              "doc": "The float samples, in time order."
+            },
+            {
+              "name": "histograms",
+              "kind": "property",
+              "optional": false,
+              "signature": "histograms: unknown",
+              "doc": "The native-histogram samples, in time order."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusSeriesSettings",
+          "kind": "class",
+          "doc": "Settings for finding series by matchers (`/api/v1/series`).",
+          "signature": "class PrometheusSeriesSettings extends PrometheusSelectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "httpMethod",
+              "kind": "method",
+              "optional": false,
+              "signature": "httpMethod(method: PrometheusHttpMethod): this",
+              "doc": "Send the parameters as a `POST` form (the default) or in a `GET` URL."
+            },
+            {
+              "name": "httpMethod_",
+              "kind": "property",
+              "optional": false,
+              "signature": "httpMethod_: PrometheusHttpMethod",
+              "doc": "The HTTP method (set by {@link httpMethod}); `POST` by default."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusStringResult",
+          "kind": "interface",
+          "doc": "A string: `resultType: \"string\"`.",
+          "signature": "interface PrometheusStringResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resultType",
+              "kind": "property",
+              "optional": false,
+              "signature": "resultType: string",
+              "doc": "The result type."
+            },
+            {
+              "name": "result",
+              "kind": "property",
+              "optional": false,
+              "signature": "result: unknown",
+              "doc": "The string and the time it was evaluated at."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusTargets",
+          "kind": "interface",
+          "doc": "The target overview: active and dropped targets.",
+          "signature": "interface PrometheusTargets",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "activeTargets",
+              "kind": "property",
+              "optional": false,
+              "signature": "activeTargets: unknown",
+              "doc": "The targets being scraped."
+            },
+            {
+              "name": "droppedTargets",
+              "kind": "property",
+              "optional": false,
+              "signature": "droppedTargets: unknown",
+              "doc": "The targets relabelling dropped (subject to `keep_dropped_targets`)."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusTargetsSettings",
+          "kind": "class",
+          "doc": "Settings for the target overview (`/api/v1/targets`).",
+          "signature": "class PrometheusTargetsSettings extends PrometheusConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "method",
+              "optional": false,
+              "signature": "state(state: PrometheusTargetState): this",
+              "doc": "Only active or only dropped targets (`state`); both by default."
+            },
+            {
+              "name": "state_",
+              "kind": "property",
+              "optional": true,
+              "signature": "state_?: PrometheusTargetState",
+              "doc": "The `state` filter (set by {@link state})."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusTargetState",
+          "kind": "typeAlias",
+          "doc": "Which targets `/api/v1/targets` returns: the API's `state` parameter.",
+          "signature": "type PrometheusTargetState = active | dropped | any",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusTasks",
+          "kind": "variable",
+          "doc": "The Prometheus HTTP API as tasks\n(<https://prometheus.io/docs/prometheus/latest/querying/api/>).",
+          "signature": "const PrometheusTasks: PrometheusTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusTasksApi",
+          "kind": "interface",
+          "doc": "The operations {@link PrometheusTasks} exposes.",
+          "signature": "interface PrometheusTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "query",
+              "kind": "method",
+              "optional": false,
+              "signature": "query(configure: Configure<PrometheusQuerySettings>): Promise<PrometheusResponse<PrometheusQueryData>>",
+              "doc": "Evaluate an instant query (`/api/v1/query`).\n\n```ts\nconst result = await PrometheusTasks.query((s) =>\n  s.url(\"https://prometheus.internal\").bearerToken(token)\n    .query('sum(rate(http_requests_total{code=~\"5..\"}[5m]))')\n);\n```"
+            },
+            {
+              "name": "queryRange",
+              "kind": "method",
+              "optional": false,
+              "signature": "queryRange(configure: Configure<PrometheusQueryRangeSettings>): Promise<PrometheusResponse<PrometheusMatrix>>",
+              "doc": "Evaluate a range query (`/api/v1/query_range`); the answer is a matrix."
+            },
+            {
+              "name": "series",
+              "kind": "method",
+              "optional": false,
+              "signature": "series(configure: Configure<PrometheusSeriesSettings>): Promise<PrometheusResponse<PrometheusLabels[]>>",
+              "doc": "Find the series matching selectors (`/api/v1/series`)."
+            },
+            {
+              "name": "labels",
+              "kind": "method",
+              "optional": false,
+              "signature": "labels(configure: Configure<PrometheusLabelsSettings>): Promise<PrometheusResponse<string[]>>",
+              "doc": "List label names (`/api/v1/labels`)."
+            },
+            {
+              "name": "labelValues",
+              "kind": "method",
+              "optional": false,
+              "signature": "labelValues(configure: Configure<PrometheusLabelValuesSettings>): Promise<PrometheusResponse<string[]>>",
+              "doc": "List one label's values (`/api/v1/label/<label_name>/values`)."
+            },
+            {
+              "name": "metadata",
+              "kind": "method",
+              "optional": false,
+              "signature": "metadata(configure: Configure<PrometheusMetadataSettings>): Promise<PrometheusResponse<Readonly<Record<string, unknown>>>>",
+              "doc": "Read metric metadata (`/api/v1/metadata`), keyed by metric name."
+            },
+            {
+              "name": "targets",
+              "kind": "method",
+              "optional": false,
+              "signature": "targets(configure: Configure<PrometheusTargetsSettings>): Promise<PrometheusResponse<PrometheusTargets>>",
+              "doc": "Read target discovery state (`/api/v1/targets`)."
+            },
+            {
+              "name": "rules",
+              "kind": "method",
+              "optional": false,
+              "signature": "rules(configure: Configure<PrometheusRulesSettings>): Promise<PrometheusResponse<PrometheusRules>>",
+              "doc": "Read the loaded alerting and recording rules (`/api/v1/rules`)."
+            },
+            {
+              "name": "alerts",
+              "kind": "method",
+              "optional": false,
+              "signature": "alerts(configure: Configure<PrometheusConnectionSettings>): Promise<PrometheusResponse<PrometheusAlerts>>",
+              "doc": "Read the active alerts (`/api/v1/alerts`)."
+            },
+            {
+              "name": "buildInfo",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildInfo(configure: Configure<PrometheusConnectionSettings>): Promise<PrometheusResponse<PrometheusBuildInfo>>",
+              "doc": "Read the server's build information (`/api/v1/status/buildinfo`)."
+            },
+            {
+              "name": "healthy",
+              "kind": "method",
+              "optional": false,
+              "signature": "healthy(configure: Configure<PrometheusConnectionSettings>): Promise<boolean>",
+              "doc": "Probe `/-/healthy`: `true` on 2xx, `false` on 503, and a\n`PrometheusApiError` on any other status — a 401 is a credential\nproblem, not an unhealthy server."
+            },
+            {
+              "name": "ready",
+              "kind": "method",
+              "optional": false,
+              "signature": "ready(configure: Configure<PrometheusConnectionSettings>): Promise<boolean>",
+              "doc": "Probe `/-/ready`: `true` once the server serves queries, `false` while it\nanswers 503, and a `PrometheusApiError` on any other status."
+            },
+            {
+              "name": "value",
+              "kind": "method",
+              "optional": false,
+              "signature": "value(response: PrometheusResponse<PrometheusQueryData>): number",
+              "doc": "The single number an instant query returned — a scalar, or a vector of\nexactly one float sample — failing clearly on an empty or multi-sample\nvector, a matrix, a string or a native histogram. `NaN` is returned as\n`NaN`, which compares false both ways — gate with `!(v <= max)`.\n\n```ts\nconst ratio = PrometheusTasks.value(await PrometheusTasks.query((s) => …));\n```"
+            },
+            {
+              "name": "samples",
+              "kind": "method",
+              "optional": false,
+              "signature": "samples(response: PrometheusResponse<PrometheusQueryData>): PrometheusFloatSample[]",
+              "doc": "Every float sample of an instant query, with its labels: a vector's\nelements, or a scalar as one unlabelled sample. An empty vector is an\nempty list; a matrix, string or native histogram fails."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusTime",
+          "kind": "typeAlias",
+          "doc": "A time an API parameter accepts: a `Date`, Unix seconds, or RFC 3339 text.",
+          "signature": "type PrometheusTime = Date | number | string",
+          "deprecated": false
+        },
+        {
+          "name": "PrometheusVector",
+          "kind": "interface",
+          "doc": "An instant vector: `resultType: \"vector\"`.",
+          "signature": "interface PrometheusVector",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "resultType",
+              "kind": "property",
+              "optional": false,
+              "signature": "resultType: vector",
+              "doc": "The result type."
+            },
+            {
+              "name": "result",
+              "kind": "property",
+              "optional": false,
+              "signature": "result: unknown",
+              "doc": "One element per series."
+            }
+          ]
+        },
+        {
+          "name": "PrometheusVectorSample",
+          "kind": "typeAlias",
+          "doc": "One element of an instant vector. The API gives each element a `value` or a\n`histogram`, never both — narrow with `\"value\" in sample`.",
+          "signature": "type PrometheusVectorSample = PrometheusFloatSample | PrometheusHistogramSample",
+          "deprecated": false
+        }
+      ]
+    },
+    {
       "name": "@zuke/canary",
       "dir": "canary",
       "summary": "Canary releases for Zuke builds. `canary(...)` turns a settings lambda into",
@@ -46338,7 +48421,7 @@
         {
           "name": "prometheus",
           "kind": "function",
-          "doc": "An analysis that runs an instant PromQL query and fails the canary when any\nsample is out of bounds:\n\n```ts\nprometheus((p) =>\n  p.url(\"https://prometheus.internal\")\n    .query('sum(rate(http_errors_total{rev=\"canary\"}[5m])) or vector(0)')\n    .max(0.01)\n)\n```\n\nThe lambda runs on each check, so it may read resolved parameters. Failure\nmessages pass through the run's redactor, so a secret parameter in the URL\nor the query is masked.",
+          "doc": "An analysis that runs an instant PromQL query and fails the canary when any\nsample is out of bounds:\n\n```ts\nprometheus((p) =>\n  p.url(\"https://prometheus.internal\")\n    .query('sum(rate(http_errors_total{rev=\"canary\"}[5m])) or vector(0)')\n    .max(0.01)\n)\n```\n\nThe lambda runs on each check, so it may read resolved parameters. The query\nis sent by `PrometheusTasks.query` from `@zuke/prometheus`, as a `GET` with\nthe expression in the URL — as this analysis always has. A URL sent a\ncredential must be `https:` unless it is loopback (or\n`ZUKE_ALLOW_INSECURE_URL` is set). A credential is an `Authorization`,\n`Proxy-Authorization` or `Cookie` header, a header whose name looks like a\ncredential's (`X-API-Key`, `X-Auth-Token`), `user:password@` or a credential\nparameter in the URL, or anything set through `connection(...)` — a\n`secretHeader(...)`, `sigv4()`, `google()`, `azure()`. Any other header,\nsuch as an `X-Scope-OrgID` tenant id, leaves an in-cluster\n`http://prometheus.monitoring.svc:9090` usable. Failure\nmessages pass through the run's redactor, so a secret parameter in the URL\nor the query is masked, and a header value (eight or more characters) never\nappears in them.",
           "signature": "function prometheus(configure: Configure<PrometheusSettings>): CanaryAnalysis",
           "deprecated": false
         },
@@ -46389,7 +48472,7 @@
               "kind": "method",
               "optional": false,
               "signature": "header(name: string, value: string): this",
-              "doc": "Add a request header — `header(\"Authorization\", `Bearer ${token}`)`."
+              "doc": "Add a request header — `header(\"X-Scope-OrgID\", tenant)`, or\n`header(\"Authorization\", `Bearer ${token}`)`. As in `@zuke/prometheus`,\na plain header such as a tenant id leaves an in-cluster `http://` URL\nusable, while `Authorization`, `Proxy-Authorization`, `Cookie` and a\ncredential-looking name (`X-API-Key`, `X-Auth-Token`) are credentials and\nneed `https:` (unless loopback, or `ZUKE_ALLOW_INSECURE_URL` is set)."
             },
             {
               "name": "timeout",
@@ -46404,6 +48487,13 @@
               "optional": false,
               "signature": "fetch(fetcher: fetch): this",
               "doc": "The `fetch` to use — the seam a test answers queries through."
+            },
+            {
+              "name": "connection",
+              "kind": "method",
+              "optional": false,
+              "signature": "connection(configure: Configure<PrometheusConnectionSettings>): this",
+              "doc": "Configure the rest of the connection with `@zuke/prometheus`'s own\nsettings — the managed services' credentials, an API-key header, a\nresponse cap:\n\n```ts\nprometheus((p) =>\n  p.url(\"https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-1\")\n    .query(ERROR_RATIO).max(0.01)\n    .connection((c) => c.sigv4((a) => a.region(\"us-east-1\")))\n)\n```\n\nApplied after `url`, `header`, `timeout` and `fetch`, so a request\nsigner configured here signs the headers set above."
             },
             {
               "name": "name_",
@@ -46460,6 +48550,13 @@
               "optional": false,
               "signature": "fetch_: fetch",
               "doc": "The `fetch` to use (set by {@link fetch}); the global one by default."
+            },
+            {
+              "name": "connection_",
+              "kind": "property",
+              "optional": false,
+              "signature": "connection_: Configure<PrometheusConnectionSettings>",
+              "doc": "Further connection settings (set by {@link connection})."
             }
           ]
         },
