@@ -3152,7 +3152,7 @@
               "kind": "property",
               "optional": true,
               "signature": "banner?: boolean",
-              "doc": "Print the opening banner — the wordmark (off CI), the framework, runtime\nand platform versions, and this run's id and directory. Defaults to on;\n`false` is the CLI's `--no-banner`, and `ZUKE_NO_BANNER` turns it off from\nthe environment.\n\nOnly ever printed when the run writes to the real console. A `silent` run\nor one given its own {@link ExecuteOptions.reporter} is embedding the\nexecutor, and gets no banner whatever this says."
+              "doc": "Print the opening banner — the wordmark (off CI), the framework, runtime\nand platform versions, and this run's id and directory. Defaults to on;\n`false` is the CLI's `--no-banner`, and `ZUKE_NO_BANNER` turns it off from\nthe environment. Plain output (`ZUKE_PLAIN`, or the CLI's `--plain`) turns\nit off as well, whatever this says.\n\nOnly ever printed when the run writes to the real console. A `silent` run\nor one given its own {@link ExecuteOptions.reporter} is embedding the\nexecutor, and gets no banner whatever this says."
             },
             {
               "name": "reporter",
@@ -4707,6 +4707,43 @@
           ]
         },
         {
+          "name": "lockedJsrSpecifiers",
+          "kind": "function",
+          "doc": "The `jsr:` specifiers a lock resolves, in the order the lock lists them.\n\nTolerant by design: a lock whose shape is unfamiliar yields no entries\nrather than throwing, because \"I could not read your lock\" is a worse answer\nto `zuke outdated` than \"nothing to report\" only if it is silent — and the\ncaller distinguishes the two by the specifier count, not by an exception.",
+          "signature": "function lockedJsrSpecifiers(lockText: string): LockedSpecifier[]",
+          "deprecated": false
+        },
+        {
+          "name": "LockedSpecifier",
+          "kind": "interface",
+          "doc": "One `jsr:` entry of a lock file's `specifiers` map.",
+          "signature": "interface LockedSpecifier",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "specifier",
+              "kind": "property",
+              "optional": false,
+              "signature": "specifier: string",
+              "doc": "The specifier as written, e.g. `jsr:@zuke/git@^1`."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The package it names, e.g. `@zuke/git`."
+            },
+            {
+              "name": "resolved",
+              "kind": "property",
+              "optional": false,
+              "signature": "resolved: string",
+              "doc": "The version the lock resolves it to."
+            }
+          ]
+        },
+        {
           "name": "LockHolder",
           "kind": "interface",
           "doc": "Who holds a lock — surfaced to the loser of a conflict so it can act.",
@@ -5087,6 +5124,13 @@
           "deprecated": false
         },
         {
+          "name": "NO_BANNER_ENV",
+          "kind": "variable",
+          "doc": "The environment variable that turns off a run's opening banner.",
+          "signature": "const NO_BANNER_ENV: ZUKE_NO_BANNER",
+          "deprecated": false
+        },
+        {
           "name": "NpmRunner",
           "kind": "typeAlias",
           "doc": "Runs `npm install <args>` — the injectable subprocess seam. Defaults to\nspawning the ambient `npm`; a test injects a fake that records the argv and\nplants the expected bin, so provisioning stays hermetic and network-free.",
@@ -5229,6 +5273,73 @@
               "optional": false,
               "signature": "writeFile(path: string, bytes: Uint8Array): Promise<void>",
               "doc": "Write a file, creating parent directories as needed."
+            }
+          ]
+        },
+        {
+          "name": "OutputMode",
+          "kind": "interface",
+          "doc": "What {@link resolveOutputMode} decides.",
+          "signature": "interface OutputMode",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "rich",
+              "kind": "property",
+              "optional": false,
+              "signature": "rich: boolean",
+              "doc": "Decorate informational output — panels, glyphs, coloured headings. Only on\nan interactive terminal that is not CI, and never when plain."
+            },
+            {
+              "name": "color",
+              "kind": "property",
+              "optional": false,
+              "signature": "color: boolean",
+              "doc": "Emit ANSI colour: a terminal, `NO_COLOR` unset, and not plain."
+            },
+            {
+              "name": "banner",
+              "kind": "property",
+              "optional": false,
+              "signature": "banner: boolean",
+              "doc": "Print a run's opening banner: not plain, and not turned off."
+            }
+          ]
+        },
+        {
+          "name": "OutputModeOptions",
+          "kind": "interface",
+          "doc": "Inputs to {@link resolveOutputMode}; every field has a real default.",
+          "signature": "interface OutputModeOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "plain",
+              "kind": "property",
+              "optional": true,
+              "signature": "plain?: boolean",
+              "doc": "An explicit `--plain`. Wins over `ZUKE_PLAIN` in both directions, the way\nevery explicit flag here wins over a standing preference in the shell."
+            },
+            {
+              "name": "banner",
+              "kind": "property",
+              "optional": true,
+              "signature": "banner?: boolean",
+              "doc": "An explicit banner choice (`--no-banner` is `false`). Wins over\n`ZUKE_NO_BANNER`, but never over plain: plain means no banner."
+            },
+            {
+              "name": "readEnv",
+              "kind": "property",
+              "optional": true,
+              "signature": "readEnv?: unknown",
+              "doc": "Reads an environment variable; defaults to the process environment."
+            },
+            {
+              "name": "isTerminal",
+              "kind": "property",
+              "optional": true,
+              "signature": "isTerminal?: unknown",
+              "doc": "Whether stdout is an interactive terminal; defaults to asking Deno."
             }
           ]
         },
@@ -5493,6 +5604,13 @@
           "kind": "typeAlias",
           "doc": "A filesystem path accepted by Zuke APIs: either a plain string or an\n{@link AbsolutePath}. Anywhere a tool wrapper or build helper takes a path,\nit accepts a `PathLike` and coerces it to a string.",
           "signature": "type PathLike = string | AbsolutePath",
+          "deprecated": false
+        },
+        {
+          "name": "PLAIN_ENV",
+          "kind": "variable",
+          "doc": "The environment variable that asks for plain output.",
+          "signature": "const PLAIN_ENV: ZUKE_PLAIN",
           "deprecated": false
         },
         {
@@ -5996,6 +6114,13 @@
           "deprecated": false
         },
         {
+          "name": "resolveOutputMode",
+          "kind": "function",
+          "doc": "Decide how decorated output should be, from the explicit flags and the\nenvironment. Pure apart from its two injectable reads.\n\nWhat counts as a set variable is {@link envFlag}'s business, so\n`ZUKE_PLAIN=false` and `ZUKE_PLAIN=0` mean \"not plain\". `NO_COLOR` follows its\nown convention instead: any non-empty value turns colour off.",
+          "signature": "function resolveOutputMode(options?: OutputModeOptions): OutputMode",
+          "deprecated": false
+        },
+        {
           "name": "ResolveRegistryOptions",
           "kind": "interface",
           "doc": "Inputs {@link resolveBuildRegistry} needs to build the default filesystem registry.",
@@ -6145,6 +6270,13 @@
               "optional": true,
               "signature": "banner?: boolean",
               "doc": "Print the opening banner (see {@link \"./executor.ts\".ExecuteOptions.banner})."
+            },
+            {
+              "name": "color",
+              "kind": "property",
+              "optional": true,
+              "signature": "color?: boolean",
+              "doc": "Force ANSI colour on or off (see {@link \"./executor.ts\".ExecuteOptions.color})."
             },
             {
               "name": "readEnv",
@@ -41239,7 +41371,14 @@
               "kind": "method",
               "optional": false,
               "signature": "realPath(path: string): Promise<string>",
-              "doc": "The path with every link resolved, as the launcher is spawned by it."
+              "doc": "The path with every link resolved."
+            },
+            {
+              "name": "readLink",
+              "kind": "method",
+              "optional": false,
+              "signature": "readLink(path: string): Promise<string | null>",
+              "doc": "The target a symlink names, exactly as written in the link (possibly\nrelative to the link's directory), or `null` when `path` is not a link."
             },
             {
               "name": "uid",
