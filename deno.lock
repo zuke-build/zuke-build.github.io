@@ -23,9 +23,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@astrojs/check@~0.9.9",
-        "npm:@types/node@^22.20.1",
         "npm:astro@^6.4.7",
-        "npm:pagefind@^1.5.2",
         "npm:typescript@^5.7.0"
       ]
     }
