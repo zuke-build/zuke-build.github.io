@@ -346,7 +346,8 @@ const canarySnippet = `import { Build, parameter, run, target } from "jsr:@zuke/
 import { canary, httpProbe, prometheus } from "jsr:@zuke/canary";
 import { cloudRunCanary } from "jsr:@zuke/gcloud";
 
-const PROM = "https://prometheus.example.com";
+// Google Managed Prometheus, read with no gcloud on the runner.
+const PROM = "https://monitoring.googleapis.com/v1/projects/my-project/location/global/prometheus";
 const ERROR_RATIO = "sum(rate(http_errors_total[5m])) / sum(rate(http_requests_total[5m]))";
 
 class Deploy extends Build {
@@ -362,7 +363,10 @@ class Deploy extends Build {
       .bake("10m")        // checks run while it bakes
       .analysis(
         httpProbe((h) => h.url("https://api.example.com/healthz").samples(30)),
-        prometheus((p) => p.url(PROM).query(ERROR_RATIO).max(0.01)),
+        prometheus((p) =>
+          p.url(PROM).query(ERROR_RATIO).max(0.01)
+            .connection((c) => c.google())
+        ),
       )
       .approval("canary-approved") // optional human gate
       .lock((l) => l.lockKey("deploy", "api").withTtl("24h"))
