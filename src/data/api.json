@@ -48454,6 +48454,20 @@
               "optional": false,
               "signature": "install(denoArgs: string[]): Promise<number>",
               "doc": "Run `deno <denoArgs>` to reinstall, returning its exit code."
+            },
+            {
+              "name": "denoVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "denoVersion(): string",
+              "doc": "The version of the Deno that runs the reinstall: the one running this\nCLI, since `zuke upgrade` only ever runs from a JSR install under Deno."
+            },
+            {
+              "name": "readText",
+              "kind": "method",
+              "optional": false,
+              "signature": "readText(path: string): Promise<string>",
+              "doc": "Read a text file, rejecting when it cannot be read."
             }
           ]
         }
