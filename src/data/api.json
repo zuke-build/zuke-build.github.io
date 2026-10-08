@@ -28366,6 +28366,675 @@
           "deprecated": false
         },
         {
+          "name": "cloudMonitoring",
+          "kind": "function",
+          "doc": "An analysis that reads a Cloud Monitoring metric — or counts log entries\n— over a recent window and fails the canary when any point is out of\nbounds, or when there is no data, unless\n{@link CloudMonitoringAnalysisSettings.missingDataAs} says what no data\nmeans.\n\nThe lambda runs on each check, so it may read resolved parameters, and\nevery failure message — one from the lambda included — passes through the\nrun's redactor.",
+          "signature": "function cloudMonitoring(configure: Configure<CloudMonitoringAnalysisSettings>): CloudMonitoringAnalysis",
+          "deprecated": false
+        },
+        {
+          "name": "CloudMonitoringAggregate",
+          "kind": "typeAlias",
+          "doc": "How {@link CloudMonitoringMetricValueSettings} turns the points into one\nnumber: the newest, or the sum, average, maximum or minimum of all of them.",
+          "signature": "type CloudMonitoringAggregate = latest | sum | average | maximum | minimum",
+          "deprecated": false
+        },
+        {
+          "name": "CloudMonitoringAligner",
+          "kind": "typeAlias",
+          "doc": "How each series' points are aligned into one value per alignment period\n(`aggregation.perSeriesAligner`).",
+          "signature": "type CloudMonitoringAligner = ALIGN_NONE | ALIGN_DELTA | ALIGN_RATE | ALIGN_INTERPOLATE | ALIGN_NEXT_OLDER | ALIGN_MIN | ALIGN_MAX | ALIGN_MEAN | ALIGN_COUNT | ALIGN_SUM | ALIGN_STDDEV | ALIGN_COUNT_TRUE | ALIGN_COUNT_FALSE | ALIGN_FRACTION_TRUE | ALIGN_PERCENTILE_99 | ALIGN_PERCENTILE_95 | ALIGN_PERCENTILE_50 | ALIGN_PERCENTILE_05 | ALIGN_PERCENT_CHANGE",
+          "deprecated": false
+        },
+        {
+          "name": "CloudMonitoringAnalysis",
+          "kind": "interface",
+          "doc": "A health check run against a canary, in the shape `@zuke/canary`'s\n`c.analysis(...)` accepts: throw to fail it, which rolls the rollout back.",
+          "signature": "interface CloudMonitoringAnalysis",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "validate",
+              "kind": "method",
+              "optional": false,
+              "signature": "validate(context: CloudMonitoringAnalysisContext): Promise<void>",
+              "doc": "Read the metric and throw when a point is out of bounds."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "`\"cloudMonitoring\"`, for diagnostics."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringAnalysisContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the analysis uses: the run's\nredactor, applied to every failure message. The engine hands a richer\ncontext; this is the narrow view.",
+          "signature": "interface CloudMonitoringAnalysisContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "redact",
+              "kind": "method",
+              "optional": false,
+              "signature": "redact(text: string): string",
+              "doc": "Mask every resolved `secret` parameter in `text`."
+            },
+            {
+              "name": "signal",
+              "kind": "property",
+              "optional": true,
+              "signature": "signal?: AbortSignal",
+              "doc": "Aborted when the run is cancelled; stops the check between steps."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringAnalysisSettings",
+          "kind": "class",
+          "doc": "Settings for {@link cloudMonitoring}: the metric — with the same setters\nas a `CloudMonitoringTasks.timeSeriesList` read, which these extend — or a\nlog filter, and the bounds.",
+          "signature": "class CloudMonitoringAnalysisSettings extends CloudMonitoringTimeSeriesSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "cloudRunCandidate",
+              "kind": "method",
+              "optional": false,
+              "signature": "cloudRunCandidate(service: string, region?: string): this",
+              "doc": "Judge only the canary revision of a Cloud Run service: before each\ncheck, read the service's latest created revision — the one\n`cloudRunCanary(...)` staged — with the `.gcloud(...)` flags, and narrow\nthe metric (or the log filter) to `resource.labels.service_name` and\n`resource.labels.revision_name`. Pair it with\n`.resourceType(\"cloud_run_revision\")`. A revision deployed by someone\nelse mid-rollout would be read instead; `cloudRunCanary`'s promote\nrefuses that case before moving traffic."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(name: string): this",
+              "doc": "What to call the metric when it is out of bounds."
+            },
+            {
+              "name": "min",
+              "kind": "method",
+              "optional": false,
+              "signature": "min(value: number): this",
+              "doc": "Fail when any point is below `value`, a finite number."
+            },
+            {
+              "name": "max",
+              "kind": "method",
+              "optional": false,
+              "signature": "max(value: number): this",
+              "doc": "Fail when any point is above `value`, a finite number."
+            },
+            {
+              "name": "missingDataAs",
+              "kind": "method",
+              "optional": false,
+              "signature": "missingDataAs(value: number): this",
+              "doc": "Judge `value` when the window has no points, instead of failing. Cloud\nMonitoring writes no point for a period with no events, so for a count\nof errors no data means `0`; for a latency it usually means the metric,\nresource or labels are wrong, which is why that is a failure by default."
+            },
+            {
+              "name": "logEntries",
+              "kind": "method",
+              "optional": false,
+              "signature": "logEntries(configure: Configure<GcloudLoggingReadSettings>): this",
+              "doc": "Judge the number of log entries a Cloud Logging filter matches over the\nwindow, instead of a metric — `(l) => l.resourceType(\"cloud_run_revision\")\n.resourceLabel(\"revision_name\", rev).minSeverity(\"ERROR\")`. The window is\nadded to the filter as `timestamp` bounds, and the read runs with the\n`.gcloud(...)` flags. It counts at most `.limit(n)` entries (default\n1000) and fails when more match, since the exact count is then unknown.\nOnly each entry's id is read: no payload reaches the build. A\n{@link project} set on the analysis is the read's `--project` too."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "What the metric is called in a failure (set by {@link name})."
+            },
+            {
+              "name": "min_",
+              "kind": "property",
+              "optional": true,
+              "signature": "min_?: number",
+              "doc": "The lowest acceptable value (set by {@link min})."
+            },
+            {
+              "name": "max_",
+              "kind": "property",
+              "optional": true,
+              "signature": "max_?: number",
+              "doc": "The highest acceptable value (set by {@link max})."
+            },
+            {
+              "name": "missingData_",
+              "kind": "property",
+              "optional": true,
+              "signature": "missingData_?: number",
+              "doc": "The value to judge when there is no data (set by {@link missingDataAs})."
+            },
+            {
+              "name": "logEntries_",
+              "kind": "property",
+              "optional": true,
+              "signature": "logEntries_?: Configure<GcloudLoggingReadSettings>",
+              "doc": "The log filter of the log-count mode (set by {@link logEntries})."
+            },
+            {
+              "name": "cloudRunCandidate_",
+              "kind": "property",
+              "optional": true,
+              "signature": "cloudRunCandidate_?: CloudRunService",
+              "doc": "The service whose candidate revision is judged (set by {@link cloudRunCandidate})."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringLabelled",
+          "kind": "interface",
+          "doc": "A type and its labels: a metric, or a monitored resource.",
+          "signature": "interface CloudMonitoringLabelled",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "type",
+              "kind": "property",
+              "optional": false,
+              "signature": "type: string",
+              "doc": "The metric type or resource type."
+            },
+            {
+              "name": "labels",
+              "kind": "property",
+              "optional": false,
+              "signature": "labels: Record<string, string>",
+              "doc": "Its labels."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringMetricValueSettings",
+          "kind": "class",
+          "doc": "Settings for `CloudMonitoringTasks.metricValue`: a time-series read, and\nhow to turn it into one number. The view is always `FULL` — the reader\nneeds the points.",
+          "signature": "class CloudMonitoringMetricValueSettings extends CloudMonitoringTimeSeriesSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "aggregate",
+              "kind": "method",
+              "optional": false,
+              "signature": "aggregate(how: CloudMonitoringAggregate): this",
+              "doc": "How to turn the points into one number, across every series the answer\nholds. `\"latest\"` (the default) sums each series' own newest point, so a\nmetric split by a label reads as its total. The others combine every\npoint in the window: a `\"sum\"` of per-minute `ALIGN_SUM` points is the\nwindow's total.\n\nA `DISTRIBUTION` point reads as its mean. `\"average\"` weights each mean\nby its sample count; `\"maximum\"` and `\"minimum\"` are of the means.\nMeans cannot be added, so `\"sum\"` refuses distributions, and `\"latest\"`\nrefuses more than one distribution series — collapse them with\n`.crossSeriesReducer(...)`, or align them to a number with\n`ALIGN_PERCENTILE_99`, `ALIGN_MEAN` and the like."
+            },
+            {
+              "name": "missingDataAs",
+              "kind": "method",
+              "optional": false,
+              "signature": "missingDataAs(value: number): this",
+              "doc": "Return `value` when there are no points, instead of failing. Cloud\nMonitoring writes no point for a period with no events, so for a count\nof errors no data does mean `0`; for a latency it usually means the\nfilter is looking in the wrong place."
+            },
+            {
+              "name": "aggregate_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aggregate_: CloudMonitoringAggregate",
+              "doc": "How to turn the points into one number (set by {@link aggregate})."
+            },
+            {
+              "name": "missingData_",
+              "kind": "property",
+              "optional": true,
+              "signature": "missingData_?: number",
+              "doc": "The value to return when there are no points (set by {@link missingDataAs})."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringPoint",
+          "kind": "interface",
+          "doc": "One point of a time series: the interval it covers, and its value.",
+          "signature": "interface CloudMonitoringPoint",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "start",
+              "kind": "property",
+              "optional": true,
+              "signature": "start?: Date",
+              "doc": "The start of the interval; absent for a `GAUGE` point."
+            },
+            {
+              "name": "end",
+              "kind": "property",
+              "optional": false,
+              "signature": "end: Date",
+              "doc": "The end of the interval — the time the point is for."
+            },
+            {
+              "name": "value",
+              "kind": "property",
+              "optional": false,
+              "signature": "value: CloudMonitoringValue",
+              "doc": "The value."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringReducer",
+          "kind": "typeAlias",
+          "doc": "How aligned series are combined into fewer (`aggregation.crossSeriesReducer`).",
+          "signature": "type CloudMonitoringReducer = REDUCE_NONE | REDUCE_MEAN | REDUCE_MIN | REDUCE_MAX | REDUCE_SUM | REDUCE_STDDEV | REDUCE_COUNT | REDUCE_COUNT_TRUE | REDUCE_COUNT_FALSE | REDUCE_FRACTION_TRUE | REDUCE_PERCENTILE_99 | REDUCE_PERCENTILE_95 | REDUCE_PERCENTILE_50 | REDUCE_PERCENTILE_05",
+          "deprecated": false
+        },
+        {
+          "name": "CloudMonitoringTasks",
+          "kind": "variable",
+          "doc": "Typed Cloud Monitoring reads.",
+          "signature": "const CloudMonitoringTasks: CloudMonitoringTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "CloudMonitoringTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link CloudMonitoringTasks}.",
+          "signature": "interface CloudMonitoringTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "timeSeriesList",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeSeriesList(configure?: Configure<CloudMonitoringTimeSeriesSettings>): Promise<CloudMonitoringTimeSeries[]>",
+              "doc": "Read the time series the settings describe, every page of them. A\nseries can arrive split across two pages; each part is returned as the\nAPI sent it. Fails when the read still has a next page after\n`.maxPages(n)` pages, rather than return part of the answer."
+            },
+            {
+              "name": "metricValue",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricValue(configure?: Configure<CloudMonitoringMetricValueSettings>): Promise<number>",
+              "doc": "One number from the time series the settings describe: the latest\nvalue, or an aggregate of every point in the window."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringTimeSeries",
+          "kind": "interface",
+          "doc": "One time series: what it measures, on what, and its points, newest first.",
+          "signature": "interface CloudMonitoringTimeSeries",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "metric",
+              "kind": "property",
+              "optional": false,
+              "signature": "metric: CloudMonitoringLabelled",
+              "doc": "The metric and its labels."
+            },
+            {
+              "name": "resource",
+              "kind": "property",
+              "optional": false,
+              "signature": "resource: CloudMonitoringLabelled",
+              "doc": "The monitored resource and its labels."
+            },
+            {
+              "name": "metricKind",
+              "kind": "property",
+              "optional": true,
+              "signature": "metricKind?: string",
+              "doc": "`GAUGE`, `DELTA` or `CUMULATIVE`, as the API reports it."
+            },
+            {
+              "name": "valueType",
+              "kind": "property",
+              "optional": true,
+              "signature": "valueType?: string",
+              "doc": "`BOOL`, `INT64`, `DOUBLE`, `STRING` or `DISTRIBUTION`."
+            },
+            {
+              "name": "unit",
+              "kind": "property",
+              "optional": true,
+              "signature": "unit?: string",
+              "doc": "The unit of the points, when the API reports one."
+            },
+            {
+              "name": "points",
+              "kind": "property",
+              "optional": false,
+              "signature": "points: CloudMonitoringPoint[]",
+              "doc": "The points, newest first. Empty for a `HEADERS` view."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringTimeSeriesSettings",
+          "kind": "class",
+          "doc": "Settings for a Cloud Monitoring time-series read, configured through\n`CloudMonitoringTasks.timeSeriesList((s) => …)`.\n\n```ts\ns.project(\"my-proj\")\n  .metricType(\"run.googleapis.com/request_count\")\n  .resourceType(\"cloud_run_revision\")\n  .resourceLabel(\"service_name\", \"api\")\n  .metricLabel(\"response_code_class\", \"5xx\")\n  .alignmentPeriod(\"60s\").perSeriesAligner(\"ALIGN_SUM\")\n  .crossSeriesReducer(\"REDUCE_SUM\")\n  .window(\"15m\")\n```",
+          "signature": "class CloudMonitoringTimeSeriesSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "project",
+              "kind": "method",
+              "optional": false,
+              "signature": "project(id: string): this",
+              "doc": "The project to read from; when omitted, `GOOGLE_CLOUD_PROJECT` (then\n`GCLOUD_PROJECT`)."
+            },
+            {
+              "name": "metricType",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricType(type: string): this",
+              "doc": "The metric to read: `metric.type = \"<type>\"`, e.g.\n`\"run.googleapis.com/request_count\"`. The API reads exactly one metric\ntype per call."
+            },
+            {
+              "name": "resourceType",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceType(type: string): this",
+              "doc": "Only series on this monitored-resource type: `resource.type = \"<type>\"`."
+            },
+            {
+              "name": "resourceLabel",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceLabel(key: string, value: string): this",
+              "doc": "Only series whose resource label `key` is `value`; repeatable."
+            },
+            {
+              "name": "metricLabel",
+              "kind": "method",
+              "optional": false,
+              "signature": "metricLabel(key: string, value: string): this",
+              "doc": "Only series whose metric label `key` is `value`; repeatable."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Raw text in the Monitoring filter language, joined with the typed parts\nby `AND`; repeatable. It is the caller's own text and is not escaped —\nnever build it from an untrusted value. With no {@link metricType}, it\nmust name the metric itself."
+            },
+            {
+              "name": "window",
+              "kind": "method",
+              "optional": false,
+              "signature": "window(duration: string | number): this",
+              "doc": "How far back to read (`\"15m\"`, or ms; default five minutes), ending now\n— or, with an {@link alignmentPeriod}, at the last period boundary, so\nthe period still being written is not read. The window must be at least\none period long."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(start: Date, end: Date): this",
+              "doc": "Read exactly this interval instead of a window ending now."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "The clock the window is read against — the seam a test pins it with."
+            },
+            {
+              "name": "alignmentPeriod",
+              "kind": "method",
+              "optional": false,
+              "signature": "alignmentPeriod(duration: string | number): this",
+              "doc": "What each aligned point covers (`aggregation.alignmentPeriod`) —\n`\"60s\"`, `\"5m\"`, or ms; whole seconds, at least 60, as the API requires."
+            },
+            {
+              "name": "perSeriesAligner",
+              "kind": "method",
+              "optional": false,
+              "signature": "perSeriesAligner(aligner: CloudMonitoringAligner): this",
+              "doc": "How each series is aligned (`aggregation.perSeriesAligner`)."
+            },
+            {
+              "name": "crossSeriesReducer",
+              "kind": "method",
+              "optional": false,
+              "signature": "crossSeriesReducer(reducer: CloudMonitoringReducer): this",
+              "doc": "How aligned series are combined (`aggregation.crossSeriesReducer`)."
+            },
+            {
+              "name": "groupByFields",
+              "kind": "method",
+              "optional": false,
+              "signature": "groupByFields(...fields: string[]): this",
+              "doc": "The labels the reducer keeps series apart by\n(`aggregation.groupByFields`), e.g. `\"resource.labels.revision_name\"`."
+            },
+            {
+              "name": "view",
+              "kind": "method",
+              "optional": false,
+              "signature": "view(view: CloudMonitoringView): this",
+              "doc": "`FULL` (the default) returns points; `HEADERS` only each series' labels."
+            },
+            {
+              "name": "pageSize",
+              "kind": "method",
+              "optional": false,
+              "signature": "pageSize(count: number): this",
+              "doc": "The most results per page (`pageSize`; the API's default is 100,000)."
+            },
+            {
+              "name": "maxPages",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxPages(count: number): this",
+              "doc": "The most pages to read (default 100). A read that still has a next page\nafter that many fails — a partial answer is never returned as a whole."
+            },
+            {
+              "name": "delay",
+              "kind": "method",
+              "optional": false,
+              "signature": "delay(duration: string | number): this",
+              "doc": "End the window this long before now (`\"2m\"`, or ms) — for the time a\nmetric takes to become readable. Google's metrics list gives it per\nmetric: Cloud Run's `request_count` and `request_latencies` are \"not\nvisible for up to 120 seconds\" after sampling. Without it the newest\npoints may not exist yet, or hold only part of their period. Default\n`0` for a read; the `cloudMonitoring(...)` analysis defaults to two\nminutes."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "A pre-resolved OAuth access token."
+            },
+            {
+              "name": "tokenProvider",
+              "kind": "method",
+              "optional": false,
+              "signature": "tokenProvider(provider: AccessTokenProvider): this",
+              "doc": "Resolves the access token, when no {@link token} is set."
+            },
+            {
+              "name": "gcloud",
+              "kind": "method",
+              "optional": false,
+              "signature": "gcloud(configure: Configure<GcloudSettings>): this",
+              "doc": "Global gcloud flags for the default token read,\n`gcloud auth print-access-token` — `(g) => g.account(\"ci@p.iam…\")`, or a\n`.runner(...)`, the seam a test answers through. Unused when a\n{@link token} or {@link tokenProvider} is set."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(implementation: fetch): this",
+              "doc": "The `fetch` the API is called through; the global by default."
+            },
+            {
+              "name": "readEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "readEnv(reader: unknown): this",
+              "doc": "Reads an environment variable for the project; `Deno.env.get` by default."
+            },
+            {
+              "name": "project_",
+              "kind": "property",
+              "optional": true,
+              "signature": "project_?: string",
+              "doc": "The project read from (set by {@link project})."
+            },
+            {
+              "name": "metricType_",
+              "kind": "property",
+              "optional": true,
+              "signature": "metricType_?: string",
+              "doc": "The metric type (set by {@link metricType})."
+            },
+            {
+              "name": "resourceType_",
+              "kind": "property",
+              "optional": true,
+              "signature": "resourceType_?: string",
+              "doc": "The monitored-resource type (set by {@link resourceType})."
+            },
+            {
+              "name": "resourceLabels_",
+              "kind": "property",
+              "optional": false,
+              "signature": "resourceLabels_: Array<unknown>",
+              "doc": "Resource labels the series must carry (set by {@link resourceLabel})."
+            },
+            {
+              "name": "metricLabels_",
+              "kind": "property",
+              "optional": false,
+              "signature": "metricLabels_: Array<unknown>",
+              "doc": "Metric labels the series must carry (set by {@link metricLabel})."
+            },
+            {
+              "name": "filters_",
+              "kind": "property",
+              "optional": false,
+              "signature": "filters_: string[]",
+              "doc": "Raw filter parts (set by {@link filter})."
+            },
+            {
+              "name": "window_",
+              "kind": "property",
+              "optional": false,
+              "signature": "window_: number",
+              "doc": "How far back to read, in ms (set by {@link window})."
+            },
+            {
+              "name": "interval_",
+              "kind": "property",
+              "optional": true,
+              "signature": "interval_?: unknown",
+              "doc": "An explicit interval, instead of the window (set by {@link interval})."
+            },
+            {
+              "name": "alignmentPeriod_",
+              "kind": "property",
+              "optional": true,
+              "signature": "alignmentPeriod_?: number",
+              "doc": "The alignment period, in ms (set by {@link alignmentPeriod})."
+            },
+            {
+              "name": "perSeriesAligner_",
+              "kind": "property",
+              "optional": true,
+              "signature": "perSeriesAligner_?: CloudMonitoringAligner",
+              "doc": "The per-series aligner (set by {@link perSeriesAligner})."
+            },
+            {
+              "name": "crossSeriesReducer_",
+              "kind": "property",
+              "optional": true,
+              "signature": "crossSeriesReducer_?: CloudMonitoringReducer",
+              "doc": "The cross-series reducer (set by {@link crossSeriesReducer})."
+            },
+            {
+              "name": "groupByFields_",
+              "kind": "property",
+              "optional": false,
+              "signature": "groupByFields_: string[]",
+              "doc": "The labels the reducer keeps series apart by (set by {@link groupByFields})."
+            },
+            {
+              "name": "view_",
+              "kind": "property",
+              "optional": false,
+              "signature": "view_: CloudMonitoringView",
+              "doc": "How much of each series to return (set by {@link view})."
+            },
+            {
+              "name": "pageSize_",
+              "kind": "property",
+              "optional": true,
+              "signature": "pageSize_?: number",
+              "doc": "The page size to ask for (set by {@link pageSize})."
+            },
+            {
+              "name": "maxPages_",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxPages_?: number",
+              "doc": "The most pages to read before failing (set by {@link maxPages}); 100 when unset."
+            },
+            {
+              "name": "delay_",
+              "kind": "property",
+              "optional": true,
+              "signature": "delay_?: number",
+              "doc": "How far before now the window ends, in ms (set by {@link delay})."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "A pre-resolved OAuth token (set by {@link token})."
+            },
+            {
+              "name": "tokenProvider_",
+              "kind": "property",
+              "optional": true,
+              "signature": "tokenProvider_?: AccessTokenProvider",
+              "doc": "Resolves the token (set by {@link tokenProvider})."
+            },
+            {
+              "name": "gcloud_",
+              "kind": "property",
+              "optional": false,
+              "signature": "gcloud_: Configure<GcloudSettings>",
+              "doc": "Global gcloud flags for the default token read (set by {@link gcloud})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetch_?: fetch",
+              "doc": "The `fetch` the API is called through (set by {@link fetch})."
+            },
+            {
+              "name": "readEnv_",
+              "kind": "property",
+              "optional": true,
+              "signature": "readEnv_?: unknown",
+              "doc": "Reads an environment variable for the project (set by {@link readEnv})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock the window is read against (set by {@link now})."
+            }
+          ]
+        },
+        {
+          "name": "CloudMonitoringValue",
+          "kind": "typeAlias",
+          "doc": "One point's value, by the metric's value type. A 64-bit integer is\nreturned as a `number` — exact up to 2^53, beyond which it rounds — with\nthe decimal string it arrived as beside it.",
+          "signature": "type CloudMonitoringValue = unknown | unknown | unknown | unknown | unknown",
+          "deprecated": false
+        },
+        {
+          "name": "CloudMonitoringView",
+          "kind": "typeAlias",
+          "doc": "How much of each series the API returns: its points, or only its labels.",
+          "signature": "type CloudMonitoringView = FULL | HEADERS",
+          "deprecated": false
+        },
+        {
           "name": "cloudRunCanary",
           "kind": "function",
           "doc": "A Cloud Run service as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(cloudRunCanary((r) =>\n  r.service(\"api\").region(\"europe-west1\").image(this.image.value)\n    .gcloud((g) => g.project(\"my-project\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters.\n\n- **stage** — reads the service's `metadata.uid`, runs `run services update\n  <service> --image <image> --tag canary --no-traffic`, then records the\n  service, region, tag, gcloud flags and uid, and the new revision.\n- **expose** — `run services update-traffic <service> --to-tags canary=<n>`.\n- **promote** — checks the latest revision is still the candidate, then\n  `update-traffic --to-latest`.\n- **abort** — `update-traffic --to-tags canary=0` mid-rollout; run by hand,\n  `--to-revisions <stable>=100` to the revision set with `.stable(...)`.\n\nEvery call after `stage` that has its record — expose, promote, and abort\nmid-rollout — first compares the configured service, region, tag and\ngcloud flags with the record, then reads the service's uid again, and\nrefuses on any difference before changing anything. A hand-run abort has no\nrecord and uses the configuration as it is.",
@@ -28554,10 +29223,40 @@
           ]
         },
         {
+          "name": "CloudRunService",
+          "kind": "interface",
+          "doc": "A Cloud Run service, and the region it runs in when one is named.",
+          "signature": "interface CloudRunService",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "service",
+              "kind": "property",
+              "optional": false,
+              "signature": "service: string",
+              "doc": "The service's name."
+            },
+            {
+              "name": "region",
+              "kind": "property",
+              "optional": true,
+              "signature": "region?: string",
+              "doc": "Its region (`--region`); gcloud's `run/region` when omitted."
+            }
+          ]
+        },
+        {
+          "name": "DEFAULT_COUNT_LIMIT",
+          "kind": "variable",
+          "doc": "The most entries the count reader reads when no `.limit(...)` is set.",
+          "signature": "const DEFAULT_COUNT_LIMIT: 1000",
+          "deprecated": false
+        },
+        {
           "name": "gcloudAccessToken",
           "kind": "function",
-          "doc": "The default {@link AccessTokenProvider}: the trimmed stdout of\n`gcloud auth print-access-token`, run with `--quiet` so the token never\nstreams to the build log. `run` defaults to {@link \"./gcloud.ts\".GcloudTasks}\n`.run` and is injectable for tests.",
-          "signature": "function gcloudAccessToken(run?: GcloudRunner): Promise<string>",
+          "doc": "The default {@link AccessTokenProvider}: the one line\n`gcloud auth print-access-token` prints, run with `--quiet` so the token\nnever streams to the build log. A failed exit is an error even when the\nrunner's settings say `.noThrow()`, and an empty, multi-line or truncated\nanswer is refused — each would otherwise be sent as a broken token. `run` defaults to {@link \"./gcloud.ts\".GcloudTasks}\n`.run` and is injectable for tests.",
+          "signature": "async function gcloudAccessToken(run?: GcloudRunner): Promise<string>",
           "deprecated": false
         },
         {
@@ -29300,6 +29999,314 @@
           ]
         },
         {
+          "name": "GcloudLoggingEntryCountSettings",
+          "kind": "class",
+          "doc": "Settings for `GcloudTasks.logEntryCount`: a `gcloud logging read` whose\nmatches are counted. `.limit(n)` is the most entries counted; a count\nabove it fails as \"more than n\".",
+          "signature": "class GcloudLoggingEntryCountSettings extends GcloudLoggingReadSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GcloudLoggingLogsListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud logging logs list`: the logs that hold entries.",
+          "signature": "class GcloudLoggingLogsListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "logView",
+              "kind": "method",
+              "optional": false,
+              "signature": "logView(bucket: string, location: string, view: string): this",
+              "doc": "List the logs of a log view (`--bucket`, `--location`, `--view`)."
+            },
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Keep only matching logs (`--filter`), gcloud's own list filter."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "List at most this many logs (`--limit`)."
+            },
+            {
+              "name": "sortBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "sortBy(...fields: string[]): this",
+              "doc": "Sort by these fields (`--sort-by`); prefix one with `~` to descend."
+            }
+          ]
+        },
+        {
+          "name": "GcloudLoggingReadSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud logging read`: which entries (the filter), from where\n(project, folder, organization, billing account, or a log view), and how\nmany.",
+          "signature": "class GcloudLoggingReadSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Raw filter text in the Logging query language, joined with every other\npart by `AND`; repeatable. It is the caller's own text and is not\nescaped — never build it from an untrusted value; use the typed setters\nfor those."
+            },
+            {
+              "name": "resourceType",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceType(type: string): this",
+              "doc": "Only entries from this monitored-resource type: `resource.type=\"…\"`."
+            },
+            {
+              "name": "resourceLabel",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceLabel(key: string, value: string): this",
+              "doc": "Only entries whose resource label `key` is `value`; repeatable."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(key: string, value: string): this",
+              "doc": "Only entries whose own label `key` is `value`; repeatable."
+            },
+            {
+              "name": "minSeverity",
+              "kind": "method",
+              "optional": false,
+              "signature": "minSeverity(severity: GcloudLogSeverity): this",
+              "doc": "Only entries at `severity` or above: `severity>=ERROR`."
+            },
+            {
+              "name": "since",
+              "kind": "method",
+              "optional": false,
+              "signature": "since(time: GcloudLogTime): this",
+              "doc": "Only entries at or after `time`: `timestamp>=\"…\"`."
+            },
+            {
+              "name": "until",
+              "kind": "method",
+              "optional": false,
+              "signature": "until(time: GcloudLogTime): this",
+              "doc": "Only entries before `time`: `timestamp<\"…\"`."
+            },
+            {
+              "name": "freshness",
+              "kind": "method",
+              "optional": false,
+              "signature": "freshness(duration: string | number): this",
+              "doc": "Only entries newer than this — `\"1h\"`, `\"90s\"`, or ms — sent as an\nexplicit `timestamp>=\"<now − duration>\"` in the filter, measured from\n{@link now}. gcloud's own `--freshness` is not used: gcloud silently\ndrops it whenever the filter's text contains the word `timestamp`\nanywhere, or the order is `asc`, and the read then spans the whole\nretention period."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "The clock {@link freshness} is measured from — the seam a test pins it\nwith. Either may be set first."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(order: asc | desc): this",
+              "doc": "Newest first (`desc`, gcloud's default) or oldest first (`--order`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "Read at most this many entries (`--limit`; gcloud's default is unlimited)."
+            },
+            {
+              "name": "organization",
+              "kind": "method",
+              "optional": false,
+              "signature": "organization(id: string): this",
+              "doc": "Read from an organization's logs (`--organization`). gcloud takes one of\n`--organization`, `--folder`, `--billing-account` and `--project`."
+            },
+            {
+              "name": "folder",
+              "kind": "method",
+              "optional": false,
+              "signature": "folder(id: string): this",
+              "doc": "Read from a folder's logs (`--folder`)."
+            },
+            {
+              "name": "billingAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "billingAccount(id: string): this",
+              "doc": "Read from a billing account's logs (`--billing-account`)."
+            },
+            {
+              "name": "logView",
+              "kind": "method",
+              "optional": false,
+              "signature": "logView(bucket: string, location: string, view: string): this",
+              "doc": "Read through a log view (`--bucket`, `--location`, `--view`)."
+            },
+            {
+              "name": "resourceNames",
+              "kind": "method",
+              "optional": false,
+              "signature": "resourceNames(...names: string[]): this",
+              "doc": "Read from these resources instead (`--resource-names`): a project,\nfolder or organization name, or a full log-view path. gcloud takes these\nor a log view, not both."
+            },
+            {
+              "name": "limit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "limit_?: number",
+              "doc": "The most entries to read (set by {@link limit})."
+            },
+            {
+              "name": "freshness_",
+              "kind": "property",
+              "optional": true,
+              "signature": "freshness_?: number",
+              "doc": "How long back `.freshness(...)` reaches, in ms (set by {@link freshness})."
+            },
+            {
+              "name": "since_",
+              "kind": "property",
+              "optional": true,
+              "signature": "since_?: GcloudLogTime",
+              "doc": "The earliest time `.since(...)` admits (set by {@link since})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock `.freshness(...)` is measured from (set by {@link now})."
+            }
+          ]
+        },
+        {
+          "name": "GcloudLogSeverity",
+          "kind": "typeAlias",
+          "doc": "A Cloud Logging severity, lowest to highest.",
+          "signature": "type GcloudLogSeverity = DEFAULT | DEBUG | INFO | NOTICE | WARNING | ERROR | CRITICAL | ALERT | EMERGENCY",
+          "deprecated": false
+        },
+        {
+          "name": "GcloudLogTime",
+          "kind": "typeAlias",
+          "doc": "A time a log filter compares `timestamp` with.",
+          "signature": "type GcloudLogTime = Date | string",
+          "deprecated": false
+        },
+        {
+          "name": "GcloudMonitoringDashboardsListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud monitoring dashboards list`.",
+          "signature": "class GcloudMonitoringDashboardsListSettings extends GcloudMonitoringListSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GcloudMonitoringListSettings",
+          "kind": "class",
+          "doc": "The list flags every `gcloud monitoring … list` command takes: `--filter`,\n`--limit`, `--page-size`, `--sort-by` and `--uri`. Each listing extends it\nand names its own command path.",
+          "signature": "class GcloudMonitoringListSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "filter",
+              "kind": "method",
+              "optional": false,
+              "signature": "filter(expression: string): this",
+              "doc": "Keep only matching items (`--filter`), gcloud's own list filter."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: number): this",
+              "doc": "List at most this many items (`--limit`)."
+            },
+            {
+              "name": "pageSize",
+              "kind": "method",
+              "optional": false,
+              "signature": "pageSize(count: number): this",
+              "doc": "How many items to request per page (`--page-size`)."
+            },
+            {
+              "name": "sortBy",
+              "kind": "method",
+              "optional": false,
+              "signature": "sortBy(...fields: string[]): this",
+              "doc": "Sort by these fields (`--sort-by`); prefix one with `~` to descend."
+            },
+            {
+              "name": "uri",
+              "kind": "method",
+              "optional": false,
+              "signature": "uri(): this",
+              "doc": "Print each item's resource URI instead (`--uri`)."
+            }
+          ]
+        },
+        {
+          "name": "GcloudMonitoringPoliciesDescribeSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud monitoring policies describe`.",
+          "signature": "class GcloudMonitoringPoliciesDescribeSettings extends GcloudSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "policy",
+              "kind": "method",
+              "optional": false,
+              "signature": "policy(idOrName: string): this",
+              "doc": "The policy to describe (positional): its id, or its full name\n`projects/<project>/alertPolicies/<id>`."
+            }
+          ]
+        },
+        {
+          "name": "GcloudMonitoringPoliciesListSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud monitoring policies list`: the alerting policies.",
+          "signature": "class GcloudMonitoringPoliciesListSettings extends GcloudMonitoringListSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GcloudMonitoringUptimeListConfigsSettings",
+          "kind": "class",
+          "doc": "Settings for `gcloud monitoring uptime list-configs`: the uptime checks and\nsynthetic monitors.",
+          "signature": "class GcloudMonitoringUptimeListConfigsSettings extends GcloudMonitoringListSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "GcloudOutputError",
+          "kind": "class",
+          "doc": "gcloud or a Google API succeeded but returned something a reader cannot\nuse: output that is not JSON, JSON of an unexpected shape, or a capture\nthat was truncated.\n\nThe message never quotes the output itself. A log read can return any\npayload an application logged, and an error that echoed it would put a\nsecret in the build log.",
+          "signature": "class GcloudOutputError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
           "name": "GcloudRunDeploySettings",
           "kind": "class",
           "doc": "Settings for `gcloud run deploy`.",
@@ -29758,13 +30765,27 @@
               "optional": false,
               "signature": "noPrompt(): this",
               "doc": "Disable interactive prompts, accepting defaults (gcloud's `--quiet`). Named\n`noPrompt` to avoid clashing with the base `.quiet()`, which suppresses\nZuke's own output streaming."
+            },
+            {
+              "name": "runner",
+              "kind": "method",
+              "optional": false,
+              "signature": "runner(run: GcloudSettingsRunner): this",
+              "doc": "Replace how this command is run. The default spawns gcloud; this is the\nseam a test answers commands through, and the way a build executes gcloud\nthrough something else. The runner reads the argv from the settings it is\nhanded and must not call their `run()` — that is the call it replaces."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(): Promise<CommandOutput>",
+              "doc": "Run the command — through the {@link runner} when one is set, otherwise\nby spawning gcloud. Either way the output is reported to the settings'\noutput hook and a non-zero exit throws a `CommandError` unless\n`.noThrow()` was called."
             }
           ]
         },
         {
           "name": "GcloudSettingsRunner",
           "kind": "typeAlias",
-          "doc": "Runs one prepared `gcloud` command and returns its output. The default runs\nit; a test or a build that executes gcloud some other way injects its own\nwith {@link CloudRunCanarySettings.runner}.",
+          "doc": "Runs one prepared `gcloud` command and returns what the process produced.\nThe default spawns gcloud; a test, or a build that executes gcloud some\nother way, injects its own with {@link GcloudSettings.runner}. The runner\nonly produces the output: the exit code is judged afterwards exactly as for\na spawned process, so a non-zero `code` still raises a `CommandError`\nunless the settings say `.noThrow()`.",
           "signature": "type GcloudSettingsRunner = unknown",
           "deprecated": false
         },
@@ -30202,6 +31223,55 @@
               "optional": false,
               "signature": "secretValue(configure?: Configure<GcloudSecretsVersionsAccessSettings>): Promise<string>",
               "doc": "A secret version's payload, read back as a string."
+            },
+            {
+              "name": "loggingRead",
+              "kind": "method",
+              "optional": false,
+              "signature": "loggingRead(configure?: Configure<GcloudLoggingReadSettings>): Promise<CommandOutput>",
+              "doc": "Read log entries: `gcloud logging read`. What it reads is printed, as\ngcloud prints it — into the build log unless `.quiet()` is set, and log\nentries can carry secrets."
+            },
+            {
+              "name": "logEntryCount",
+              "kind": "method",
+              "optional": false,
+              "signature": "logEntryCount(configure?: Configure<GcloudLoggingEntryCountSettings>): Promise<number>",
+              "doc": "How many log entries a `gcloud logging read` filter matches, counting at\nmost `.limit(n)` (default 1000) and failing when more match. Reads only\neach entry's id, quietly, so no payload reaches the build."
+            },
+            {
+              "name": "loggingLogsList",
+              "kind": "method",
+              "optional": false,
+              "signature": "loggingLogsList(configure?: Configure<GcloudLoggingLogsListSettings>): Promise<CommandOutput>",
+              "doc": "List the logs that hold entries: `gcloud logging logs list`."
+            },
+            {
+              "name": "monitoringPoliciesList",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitoringPoliciesList(configure?: Configure<GcloudMonitoringPoliciesListSettings>): Promise<CommandOutput>",
+              "doc": "List alerting policies: `gcloud monitoring policies list`."
+            },
+            {
+              "name": "monitoringPoliciesDescribe",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitoringPoliciesDescribe(configure?: Configure<GcloudMonitoringPoliciesDescribeSettings>): Promise<CommandOutput>",
+              "doc": "Describe an alerting policy: `gcloud monitoring policies describe`."
+            },
+            {
+              "name": "monitoringDashboardsList",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitoringDashboardsList(configure?: Configure<GcloudMonitoringDashboardsListSettings>): Promise<CommandOutput>",
+              "doc": "List dashboards: `gcloud monitoring dashboards list`."
+            },
+            {
+              "name": "monitoringUptimeListConfigs",
+              "kind": "method",
+              "optional": false,
+              "signature": "monitoringUptimeListConfigs(configure?: Configure<GcloudMonitoringUptimeListConfigsSettings>): Promise<CommandOutput>",
+              "doc": "List uptime checks and synthetic monitors:\n`gcloud monitoring uptime list-configs`."
             }
           ]
         },
@@ -30314,8 +31384,8 @@
         {
           "name": "resolveAccessToken",
           "kind": "function",
-          "doc": "Resolve a bearer token from an explicit `token` or, when it is omitted, the\n`tokenProvider` (defaulting to {@link gcloudAccessToken}). Shared by the REST\ntask groups so every call resolves auth the same way.",
-          "signature": "function resolveAccessToken(options: unknown): Promise<string>",
+          "doc": "Resolve a bearer token from an explicit `token` or, when it is omitted, the\n`tokenProvider` (defaulting to {@link gcloudAccessToken}). Shared by the REST\ntask groups so every call resolves auth the same way. The token is returned\ntrimmed of the whitespace a header drops anyway.\n\nAn empty token is refused, and so is one holding a control character after\nthat trim — a line break inside it, or a `\\v` or `\\f` at either end. It\ncannot be an OAuth token, it is not quoted here, and the runtime's own\nrefusal of such a header value would quote the whole value, token and all,\ninto the error.",
+          "signature": "async function resolveAccessToken(options: unknown): Promise<string>",
           "deprecated": false
         },
         {
