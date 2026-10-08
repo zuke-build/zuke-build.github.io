@@ -48175,8 +48175,8 @@
         {
           "name": "main",
           "kind": "function",
-          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, `buildProbe`, and `upgradeHost`\nare injectable for testing.",
-          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe, upgradeHost?: UpgradeHost): Promise<number>",
+          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, `buildProbe`, `upgradeHost` and\n`projectHost` are injectable for testing.",
+          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe, upgradeHost?: UpgradeHost, projectHost?: ProjectHost): Promise<number>",
           "deprecated": false
         },
         {
@@ -48215,6 +48215,50 @@
           "doc": "Parse the argument list following `zuke setup`.",
           "signature": "function parseSetupFlags(args: string[]): SetupFlags",
           "deprecated": false
+        },
+        {
+          "name": "ProjectHost",
+          "kind": "interface",
+          "doc": "What the project commands reach outside the process, injectable so they\nare testable without a real `deno`.",
+          "signature": "interface ProjectHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "readText",
+              "kind": "method",
+              "optional": false,
+              "signature": "readText(path: string): Promise<string>",
+              "doc": "Read a text file, rejecting when it cannot be read."
+            },
+            {
+              "name": "writeText",
+              "kind": "method",
+              "optional": false,
+              "signature": "writeText(path: string, text: string): Promise<void>",
+              "doc": "Write a text file, replacing what is there."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(path: string): Promise<void>",
+              "doc": "Remove a file."
+            },
+            {
+              "name": "deno",
+              "kind": "method",
+              "optional": false,
+              "signature": "deno(denoArgs: string[], cwd: string): Promise<number>",
+              "doc": "Run `deno <denoArgs>` in `cwd`, returning its exit code."
+            },
+            {
+              "name": "denoVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "denoVersion(): string",
+              "doc": "The version of the Deno that runs the command."
+            }
+          ]
         },
         {
           "name": "Prompter",
