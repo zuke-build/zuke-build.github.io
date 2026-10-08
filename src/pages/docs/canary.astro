@@ -130,8 +130,32 @@ const durableSnippet = `rollout = canary((c) =>
 const resumeSnippet = `# from a cron: reopen every parked gate whose time is up
 zuke resume --check`;
 
-const thresholdSnippet = `metricThreshold((m) =>
-  m.name("p99").read(async (ctx) => readP99(ctx.exposure)).max(0.5)
+const thresholdSnippet = `import { metricThreshold } from "jsr:@zuke/canary";
+import { PrometheusTasks } from "jsr:@zuke/prometheus";
+
+metricThreshold((m) =>
+  m.name("p99 seconds").max(0.5).read(async () =>
+    PrometheusTasks.value(
+      await PrometheusTasks.query((q) => q.url(PROMETHEUS).query(P99_LATENCY)),
+    )
+  )
+)`;
+
+const managedPrometheusSnippet = `// Amazon Managed Service for Prometheus, signed with SigV4.
+prometheus((p) =>
+  p.name("error ratio")
+    .url("https://aps-workspaces.us-east-1.amazonaws.com/workspaces/ws-1234")
+    .query(ERROR_RATIO).max(0.01)
+    .connection((c) => c.sigv4((a) => a.region("us-east-1")))
+)
+
+// Google Cloud Managed Service for Prometheus, through Application Default
+// Credentials; c.azure() does the same for Azure Monitor.
+prometheus((p) =>
+  p.name("error ratio")
+    .url("https://monitoring.googleapis.com/v1/projects/my-project/location/global/prometheus")
+    .query(ERROR_RATIO).max(0.01)
+    .connection((c) => c.google())
 )`;
 
 const approveSnippet = `zuke resume <run-id> --signal canary-approved`;
@@ -376,6 +400,15 @@ const approveSnippet = `zuke resume <run-id> --signal canary-approved`;
       </tr>
     </tbody>
   </table>
+  <p>
+    For anything beyond bounds on one instant query &mdash; a quantile you
+    reduce yourself, a range, a rule's state, the firing alerts &mdash; read it
+    with <code>PrometheusTasks</code> from <code>@zuke/prometheus</code>, the
+    same typed client <code>prometheus(...)</code> queries through, and judge
+    it in a <code>metricThreshold(...)</code> reader.
+    <code>PrometheusTasks.value</code> returns the one number an instant query
+    answered, and fails clearly on an empty or multi-sample result.
+  </p>
   <Code code={thresholdSnippet} lang="ts" theme="night-owl" />
   <p>
     Failure messages pass through the run's redactor, so a
@@ -384,6 +417,13 @@ const approveSnippet = `zuke resume <run-id> --signal canary-approved`;
     <code>0/0</code>, which Prometheus reports as <code>NaN</code> &mdash; and a
     <code>NaN</code> sample fails. Guard such a query so quiet means healthy.
   </p>
+  <p>
+    <code>.connection(...)</code> hands the rest of the connection to
+    <code>@zuke/prometheus</code>'s own settings, so a canary reads a managed
+    Prometheus with the cloud's own credentials &mdash; no <code>gcloud</code>,
+    <code>az</code> or <code>aws</code> CLI on the runner:
+  </p>
+  <Code code={managedPrometheusSnippet} lang="ts" theme="night-owl" />
 
   <h2 id="approval">The approval gate</h2>
   <p>

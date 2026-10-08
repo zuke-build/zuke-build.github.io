@@ -327,10 +327,11 @@ await run(Deploy);`,
     id: "canary",
     tag: "Canary release",
     title: "Roll out to Kubernetes 10% at a time — and back in one step",
-    desc: "canary() from @zuke/canary turns one settings lambda into a rollout: rollout.stage puts the candidate beside stable at 0%, each step widens its share and bakes while HTTP probes, a Prometheus query and your own metric reader check it, and rollout.promote sends it everything. kubectlCanary drives a stable and a canary Deployment, exposing by replica count — the canary grows and is ready before stable shrinks, so no step drops capacity. .durable() parks the run at each bake instead of holding a CI job open; zuke resume --check from a cron picks it back up. A failed check, a failed step, an approval that times out, or zuke cancel all run the one rollout.abort.",
+    desc: "canary() from @zuke/canary turns one settings lambda into a rollout: rollout.stage puts the candidate beside stable at 0%, each step widens its share and bakes while HTTP probes, a Prometheus query and your own metric reader — a typed PrometheusTasks query from @zuke/prometheus — check it, and rollout.promote sends it everything. kubectlCanary drives a stable and a canary Deployment, exposing by replica count — the canary grows and is ready before stable shrinks, so no step drops capacity. .durable() parks the run at each bake instead of holding a CI job open; zuke resume --check from a cron picks it back up. A failed check, a failed step, an approval that times out, or zuke cancel all run the one rollout.abort.",
     code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
 import { canary, httpProbe, metricThreshold, prometheus } from "jsr:@zuke/canary";
 import { kubectlCanary } from "jsr:@zuke/kubectl";
+import { PrometheusTasks } from "jsr:@zuke/prometheus";
 
 const PROM = "https://prometheus.example.com";
 
@@ -370,13 +371,15 @@ class Deploy extends Build {
   ship = target().dependsOn(this.rollout.promote).executes(() => {});
 }
 
-// Your own reader: any number, from any source.
+// Your own reader: any number, from any source — here, a typed
+// @zuke/prometheus query instead of a hand-rolled fetch.
 async function readP99(): Promise<number> {
-  const res = await fetch(\`\${PROM}/api/v1/query?query=\${encodeURIComponent(
-    'histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{app="api-canary"}[5m])))',
-  )}\`);
-  const body = await res.json();
-  return Number(body.data.result[0]?.value[1] ?? 0);
+  const result = await PrometheusTasks.query((q) =>
+    q.url(PROM).query(
+      'histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{app="api-canary"}[5m])))',
+    )
+  );
+  return PrometheusTasks.value(result); // exactly one sample, or a clear error
 }
 
 await run(Deploy);`,
