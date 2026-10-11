@@ -1443,6 +1443,29 @@
           ]
         },
         {
+          "name": "CiEnvironment",
+          "kind": "interface",
+          "doc": "A deployment environment a job runs in, by name and optionally the URL the\ndeployment is reachable at. See {@link CiJob.environment}.",
+          "signature": "interface CiEnvironment",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The environment's name, as the repository's settings define it."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": true,
+              "signature": "url?: string",
+              "doc": "The deployment's URL, shown on the run and the environment page. A literal\nor a provider expression; rendered verbatim either way."
+            }
+          ]
+        },
+        {
           "name": "CiFile",
           "kind": "class",
           "doc": "A declared CI file. Assign one (via {@link cicd}) to a build field and Zuke\nkeeps the file on disk in sync with the definition when the build runs.",
@@ -1669,8 +1692,22 @@
               "name": "matrix",
               "kind": "property",
               "optional": true,
-              "signature": "matrix?: Record<string, Array<string | number>>",
+              "signature": "matrix?: CiMatrixAxes",
               "doc": "A build matrix — fanning one target out over several OSes, say."
+            },
+            {
+              "name": "matrixInclude",
+              "kind": "property",
+              "optional": true,
+              "signature": "matrixInclude?: CiMatrixRow[]",
+              "doc": "Matrix rows to add (see {@link CiJob.matrixInclude})."
+            },
+            {
+              "name": "matrixExclude",
+              "kind": "property",
+              "optional": true,
+              "signature": "matrixExclude?: CiMatrixRow[]",
+              "doc": "Matrix combinations to remove (see {@link CiJob.matrixExclude})."
             },
             {
               "name": "failFast",
@@ -1720,6 +1757,20 @@
               "optional": true,
               "signature": "if?: string",
               "doc": "A condition gating the job."
+            },
+            {
+              "name": "environment",
+              "kind": "property",
+              "optional": true,
+              "signature": "environment?: string | CiEnvironment",
+              "doc": "The deployment environment the job runs in (see {@link CiJob.environment})."
+            },
+            {
+              "name": "outputs",
+              "kind": "property",
+              "optional": true,
+              "signature": "outputs?: Record<string, string>",
+              "doc": "Values the job hands to the jobs that need it (see {@link CiJob.outputs})."
             },
             {
               "name": "env",
@@ -1791,7 +1842,7 @@
               "kind": "property",
               "optional": true,
               "signature": "runsOn?: string",
-              "doc": "The runner. Interpreted per provider: a GitHub runner label and Azure\n`vmImage` (default `ubuntu-latest`), or a GitLab Docker image (runner\ndefault when omitted). Ignored when a matrix defines `os` on GitHub."
+              "doc": "The runner. Interpreted per provider: a GitHub runner label and Azure\n`vmImage` (default `ubuntu-latest`), or a GitLab Docker image (runner\ndefault when omitted). Ignored on GitHub when every matrix combination\nsets `os`, which then picks the runner."
             },
             {
               "name": "needs",
@@ -1804,8 +1855,22 @@
               "name": "matrix",
               "kind": "property",
               "optional": true,
-              "signature": "matrix?: Record<string, Array<string | number>>",
+              "signature": "matrix?: CiMatrixAxes",
               "doc": "A build matrix: each key fans out over its values."
+            },
+            {
+              "name": "matrixInclude",
+              "kind": "property",
+              "optional": true,
+              "signature": "matrixInclude?: CiMatrixRow[]",
+              "doc": "Matrix rows to add — GitHub's `matrix.include`. A row that agrees with an\naxis combination on every axis it names extends that combination with its\nother keys; a row that fits none becomes a combination of its own. With no\n{@link matrix} at all, the rows *are* the matrix — the way to run exactly\nthe combinations you list (four Node lines on Ubuntu plus one on macOS)\nrather than every pairing of two axes.\n\nRendered natively on GitHub. GitLab and Azure receive the expanded\ncombinations, so each provider runs the same jobs; Bitbucket has no matrix."
+            },
+            {
+              "name": "matrixExclude",
+              "kind": "property",
+              "optional": true,
+              "signature": "matrixExclude?: CiMatrixRow[]",
+              "doc": "Axis combinations to remove — GitHub's `matrix.exclude`. Each row is a\npartial match over the {@link matrix} axes (`{ os: \"windows-latest\" }`\ndrops every Windows combination), and naming a key that is not an axis is\nan error. Applied before {@link matrixInclude}, as on GitHub."
             },
             {
               "name": "failFast",
@@ -1850,6 +1915,20 @@
               "doc": "Environment variables for the job."
             },
             {
+              "name": "environment",
+              "kind": "property",
+              "optional": true,
+              "signature": "environment?: string | CiEnvironment",
+              "doc": "The deployment environment the job runs in: a name, or a name and the URL\nthe deployment is reachable at (often an expression such as\n`${{ steps.deployment.outputs.page_url }}`, rendered verbatim). Not to be\nconfused with {@link env}: an environment is what the provider's\nprotection rules, required reviewers and environment-scoped secrets attach\nto, and a GitHub Pages deployment needs one.\n\nDeclaring it grants nothing on its own — the provider still enforces the\nenvironment's rules. Rendered on GitHub and GitLab, whose `environment:`\ntakes the same name and URL. Azure (whose environments belong to a\nseparate deployment-job form) and Bitbucket refuse it with an error rather\nthan drop it, because a job silently stripped of its environment would\nalso be stripped of the approval gate guarding it."
+            },
+            {
+              "name": "outputs",
+              "kind": "property",
+              "optional": true,
+              "signature": "outputs?: Record<string, string>",
+              "doc": "Values this job hands to the jobs that `needs` it — GitHub's job\n`outputs:`, keyed by output name, each usually a step output expression\n(`${{ steps.deployment.outputs.page_url }}`). A consumer reads one as\n`${{ needs.<job>.outputs.<name> }}`. Expressions are rendered verbatim.\nGitHub only: the other providers have no job outputs, so they refuse it\nwith an error rather than render a pipeline whose consumers read nothing."
+            },
+            {
               "name": "if",
               "kind": "property",
               "optional": true,
@@ -1878,6 +1957,27 @@
               "doc": "The steps to run, in order. Defaults to a single step that runs the build."
             }
           ]
+        },
+        {
+          "name": "CiMatrixAxes",
+          "kind": "typeAlias",
+          "doc": "A matrix's independent axes: each key fans out over its values.",
+          "signature": "type CiMatrixAxes = Record<string, Array<string | number>>",
+          "deprecated": false
+        },
+        {
+          "name": "CiMatrixRow",
+          "kind": "typeAlias",
+          "doc": "One matrix combination, as an `include` or `exclude` entry spells it:\n`{ node: \"26\", os: \"macos-latest\" }`.",
+          "signature": "type CiMatrixRow = Record<string, string | number>",
+          "deprecated": false
+        },
+        {
+          "name": "CiPathFilter",
+          "kind": "typeAlias",
+          "doc": "Narrow a trigger to the changed files that matter: run only when a changed\nfile matches one of `paths`, or skip when every changed file matches one of\n`pathsIgnore`. Exactly one of the two, as GitHub requires; the patterns are\npassed through in the provider's own glob syntax.\n\nMind required status checks: a workflow the filter skips never reports, so a\ncheck it would have produced stays pending and blocks the merge. Filter\nworkflows whose checks are not required, or decide inside the run instead.",
+          "signature": "type CiPathFilter = unknown | unknown",
+          "deprecated": false
         },
         {
           "name": "CiPinResolver",
@@ -2110,6 +2210,20 @@
               "optional": true,
               "signature": "pullRequest?: string[]",
               "doc": "Branches whose pull/merge requests trigger the pipeline. An empty array\nmeans every branch (no filter); omit the field to disable the trigger."
+            },
+            {
+              "name": "pushPaths",
+              "kind": "property",
+              "optional": true,
+              "signature": "pushPaths?: CiPathFilter",
+              "doc": "Run the {@link push} trigger only for pushes that change these paths (see\n{@link CiPathFilter}). Requires {@link push}. Rendered as `paths` /\n`paths-ignore` on GitHub, `trigger.paths` on Azure and a `changes:` rule on\nGitLab, which can express `paths` but not `pathsIgnore`; Bitbucket has no\ntrigger-level path filter, so a filter for either of those is an error\nrather than a pipeline that runs on every change."
+            },
+            {
+              "name": "pullRequestPaths",
+              "kind": "property",
+              "optional": true,
+              "signature": "pullRequestPaths?: CiPathFilter",
+              "doc": "Run the {@link pullRequest} trigger only for pull/merge requests that change\nthese paths (see {@link CiPathFilter}). Requires {@link pullRequest}.\nProvider support as for {@link pushPaths}."
             },
             {
               "name": "pullRequestTypes",
