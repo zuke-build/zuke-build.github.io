@@ -48359,6 +48359,868 @@
       ]
     },
     {
+      "name": "@zuke/chocolatey",
+      "dir": "chocolatey",
+      "summary": "`@zuke/chocolatey` — ship a prebuilt Windows binary through",
+      "symbols": [
+        {
+          "name": "ChocoApikeyAction",
+          "kind": "typeAlias",
+          "doc": "What `choco apikey` does: list the saved keys, save one, or remove one.",
+          "signature": "type ChocoApikeyAction = list | add | remove",
+          "deprecated": false
+        },
+        {
+          "name": "ChocoApikeySettings",
+          "kind": "class",
+          "doc": "Settings for `choco apikey`, which manages the API keys choco saves per\nsource — so a later `choco push` to that source needs no key on its\ncommand line.\n\n```ts\nawait ChocoTasks.apikey((s) =>\n  s.add().source(\"https://push.chocolatey.org/\").apiKey(key)\n);\n```\n\n`add` needs a {@link source} and an {@link apiKey}; `remove` needs a\nsource. With no action set, choco lists the saved keys (by source; it never\nprints a key itself).",
+          "signature": "class ChocoApikeySettings extends ChocoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(): this",
+              "doc": "List the saved keys' sources (`apikey list`)."
+            },
+            {
+              "name": "add",
+              "kind": "method",
+              "optional": false,
+              "signature": "add(): this",
+              "doc": "Save the {@link apiKey} for the {@link source} (`apikey add`)."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(): this",
+              "doc": "Remove the key saved for the {@link source} (`apikey remove`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(url: string): this",
+              "doc": "The source the key is for (`--source`)."
+            },
+            {
+              "name": "apiKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiKey(value: string): this",
+              "doc": "The key to save (`--api-key`), for {@link add}. Masked in every rendering\nof the command and in its errors."
+            }
+          ]
+        },
+        {
+          "name": "ChocoCommandSettings",
+          "kind": "class",
+          "doc": "Base for a typed `choco` command: the command, then its operands, then its\nown options, then the common switches — the order choco's own usage lines\nprint (`choco install <pkg> [<options/switches>]`). Anything added through\nthe inherited `.command(...)`/`.flag(...)` escape hatches follows.\n\nValued options render as one `--name=value` token, the spelling choco's\nhelp prints, so a value that starts with `-` stays the option's value\nrather than becoming a switch of its own.\n\nOperands are refused when choco would read them as a switch: a package id\nor file path never starts with `-`, and passing `--force` as a \"package\"\nwould change what the command does rather than fail.",
+          "signature": "class ChocoCommandSettings extends ChocoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Answer yes to every prompt (`--yes`), which also accepts licenses."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Force the behaviour (`--force`) — reinstall an installed package, say.\nChoco warns against it in normal operation."
+            },
+            {
+              "name": "noProgress",
+              "kind": "method",
+              "optional": false,
+              "signature": "noProgress(): this",
+              "doc": "Do not print download progress percentages (`--no-progress`)."
+            },
+            {
+              "name": "limitOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "limitOutput(): this",
+              "doc": "Print only the essential information (`--limit-output`)."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Print verbose messages (`--verbose`)."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(): Promise<CommandOutput>",
+              "doc": "Run the command, masking every value passed to {@link secret} out of any\n`CommandError` or `CommandTimeoutError` it raises."
+            }
+          ]
+        },
+        {
+          "name": "ChocoInstallSettings",
+          "kind": "class",
+          "doc": "Settings for `choco install`.",
+          "signature": "class ChocoInstallSettings extends ChocoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...ids: string[]): this",
+              "doc": "Package ids to install (required); repeatable."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(location: string): this",
+              "doc": "Where to find the packages (`--source`): a feed URL, or a local directory\nholding `.nupkg` files. Defaults to the configured feeds."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The exact version to install (`--version`)."
+            },
+            {
+              "name": "prerelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "prerelease(): this",
+              "doc": "Consider prerelease versions (`--prerelease`)."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyPackage",
+          "kind": "interface",
+          "doc": "A rendered Chocolatey package: its identity, and the files that make it up,\nkeyed by their path relative to the package directory —\n`<id>.nuspec` and `tools/chocolateyinstall.ps1`.\n\nPlain data, so it can be written to disk, compared, or handed to\n`ChocolateyTasks.verify` and `ChocolateyTasks.publish`, which write it to a\ntemporary directory and pack it there.",
+          "signature": "interface ChocolateyPackage",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": false,
+              "signature": "id: string",
+              "doc": "The package id."
+            },
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "The package version."
+            },
+            {
+              "name": "files",
+              "kind": "property",
+              "optional": false,
+              "signature": "files: Readonly<Record<string, string>>",
+              "doc": "Each file's content, keyed by its `/`-separated relative path."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyPackageSettings",
+          "kind": "class",
+          "doc": "Settings for a package that installs a prebuilt binary from a zip.",
+          "signature": "class ChocolateyPackageSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "method",
+              "optional": false,
+              "signature": "id(value: string): this",
+              "doc": "The package id (required), e.g. `app`: lowercase letters and digits,\njoined by single `.`, `-` or `_`, at most 100 characters. It is also the\nnuspec's file name, `<id>.nuspec`."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The package version (required), a NuGet version such as `1.2.3`,\n`1.2.3.4` or `1.2.3-beta.1` — usually the release's own version."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(value: string): this",
+              "doc": "The display title (`<title>`), e.g. `App (Portable)`."
+            },
+            {
+              "name": "authors",
+              "kind": "method",
+              "optional": false,
+              "signature": "authors(...names: string[]): this",
+              "doc": "The software's authors (`<authors>`, required); repeatable."
+            },
+            {
+              "name": "owners",
+              "kind": "method",
+              "optional": false,
+              "signature": "owners(...names: string[]): this",
+              "doc": "The package's maintainers (`<owners>`) — on the community repository,\nthe user names that may push it; repeatable."
+            },
+            {
+              "name": "projectUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "projectUrl(url: string): this",
+              "doc": "The software's homepage (`<projectUrl>`, required; must be `https`)."
+            },
+            {
+              "name": "licenseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "licenseUrl(url: string): this",
+              "doc": "The license's URL (`<licenseUrl>`, `https`) — the community repository\nrequires it whenever the software has one."
+            },
+            {
+              "name": "iconUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "iconUrl(url: string): this",
+              "doc": "The package icon's URL (`<iconUrl>`, `https`)."
+            },
+            {
+              "name": "packageSourceUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageSourceUrl(url: string): this",
+              "doc": "Where the package's own source lives (`<packageSourceUrl>`, `https`) —\ntypically the repository whose build renders it."
+            },
+            {
+              "name": "docsUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "docsUrl(url: string): this",
+              "doc": "The software's documentation (`<docsUrl>`, `https`)."
+            },
+            {
+              "name": "bugTrackerUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "bugTrackerUrl(url: string): this",
+              "doc": "The software's issue tracker (`<bugTrackerUrl>`, `https`)."
+            },
+            {
+              "name": "tags",
+              "kind": "method",
+              "optional": false,
+              "signature": "tags(...values: string[]): this",
+              "doc": "Search tags (`<tags>`), each one word; repeatable."
+            },
+            {
+              "name": "summary",
+              "kind": "method",
+              "optional": false,
+              "signature": "summary(text: string): this",
+              "doc": "A one-line summary (`<summary>`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "The description (`<description>`, required; Markdown is fine), held to\nthe community repository's length rules: 30 to 4000 characters."
+            },
+            {
+              "name": "releaseNotes",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseNotes(text: string): this",
+              "doc": "The release notes (`<releaseNotes>`): text, Markdown, or a URL."
+            },
+            {
+              "name": "url64bit",
+              "kind": "method",
+              "optional": false,
+              "signature": "url64bit(url: string): this",
+              "doc": "The 64-bit zip on the release (required; must be `https`) — what the\ninstall script downloads (`url64bit`) and unpacks into the package's\n`tools` directory, where choco shims every `.exe` it holds."
+            },
+            {
+              "name": "checksum64",
+              "kind": "method",
+              "optional": false,
+              "signature": "checksum64(sha256: string): this",
+              "doc": "The zip's SHA-256 (required; 64 hex digits) — checked by choco before\nanything is unpacked (`checksum64`, with `checksumType64 = 'sha256'`)."
+            },
+            {
+              "name": "id_",
+              "kind": "property",
+              "optional": true,
+              "signature": "id_?: string",
+              "doc": "The package id. Set by {@link id}."
+            },
+            {
+              "name": "version_",
+              "kind": "property",
+              "optional": true,
+              "signature": "version_?: string",
+              "doc": "The package version. Set by {@link version}."
+            },
+            {
+              "name": "title_",
+              "kind": "property",
+              "optional": true,
+              "signature": "title_?: string",
+              "doc": "The display title. Set by {@link title}."
+            },
+            {
+              "name": "authors_",
+              "kind": "property",
+              "optional": false,
+              "signature": "authors_: string[]",
+              "doc": "The software's authors. Added by {@link authors}."
+            },
+            {
+              "name": "owners_",
+              "kind": "property",
+              "optional": false,
+              "signature": "owners_: string[]",
+              "doc": "The package's maintainers. Added by {@link owners}."
+            },
+            {
+              "name": "projectUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "projectUrl_?: string",
+              "doc": "The software's homepage. Set by {@link projectUrl}."
+            },
+            {
+              "name": "licenseUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "licenseUrl_?: string",
+              "doc": "The license's URL. Set by {@link licenseUrl}."
+            },
+            {
+              "name": "iconUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "iconUrl_?: string",
+              "doc": "The icon's URL. Set by {@link iconUrl}."
+            },
+            {
+              "name": "packageSourceUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "packageSourceUrl_?: string",
+              "doc": "Where the package's source lives. Set by {@link packageSourceUrl}."
+            },
+            {
+              "name": "docsUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "docsUrl_?: string",
+              "doc": "The software's documentation. Set by {@link docsUrl}."
+            },
+            {
+              "name": "bugTrackerUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "bugTrackerUrl_?: string",
+              "doc": "The software's issue tracker. Set by {@link bugTrackerUrl}."
+            },
+            {
+              "name": "tags_",
+              "kind": "property",
+              "optional": false,
+              "signature": "tags_: string[]",
+              "doc": "The search tags. Added by {@link tags}."
+            },
+            {
+              "name": "summary_",
+              "kind": "property",
+              "optional": true,
+              "signature": "summary_?: string",
+              "doc": "The one-line summary. Set by {@link summary}."
+            },
+            {
+              "name": "description_",
+              "kind": "property",
+              "optional": true,
+              "signature": "description_?: string",
+              "doc": "The description. Set by {@link description}."
+            },
+            {
+              "name": "releaseNotes_",
+              "kind": "property",
+              "optional": true,
+              "signature": "releaseNotes_?: string",
+              "doc": "The release notes. Set by {@link releaseNotes}."
+            },
+            {
+              "name": "url64bit_",
+              "kind": "property",
+              "optional": true,
+              "signature": "url64bit_?: string",
+              "doc": "The 64-bit zip's URL. Set by {@link url64bit}."
+            },
+            {
+              "name": "checksum64_",
+              "kind": "property",
+              "optional": true,
+              "signature": "checksum64_?: string",
+              "doc": "The 64-bit zip's SHA-256. Set by {@link checksum64}."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyPublishResult",
+          "kind": "interface",
+          "doc": "What a `ChocolateyTasks.publish` call pushed, and where.",
+          "signature": "interface ChocolateyPublishResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "property",
+              "optional": false,
+              "signature": "source: string",
+              "doc": "The source pushed to."
+            },
+            {
+              "name": "nupkg",
+              "kind": "property",
+              "optional": false,
+              "signature": "nupkg: string",
+              "doc": "The file name of the `.nupkg` pushed, e.g. `app.1.2.3.nupkg`."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyPublishSettings",
+          "kind": "class",
+          "doc": "Settings for publishing a package.",
+          "signature": "class ChocolateyPublishSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(value: ChocolateyPackage): this",
+              "doc": "The package to publish — what `ChocolateyTasks.package` rendered. It is\npacked in a temporary directory and the `.nupkg` pushed. Set this or\n{@link nupkg}, not both."
+            },
+            {
+              "name": "nupkg",
+              "kind": "method",
+              "optional": false,
+              "signature": "nupkg(path: PathLike): this",
+              "doc": "A `.nupkg` already built, pushed as it is. Set this or {@link package}."
+            },
+            {
+              "name": "apiKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiKey(value: string): this",
+              "doc": "The source's API key — for the community repository, the one on\n`https://community.chocolatey.org/account`. Masked in every rendering of\nthe push and in its errors. When unset, choco uses the key saved for the\nsource with `choco apikey add`."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(url: string): this",
+              "doc": "The source to push to (`https`), defaulting to the community repository,\n`https://push.chocolatey.org/`. An internal feed's push URL works too."
+            },
+            {
+              "name": "toolPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "toolPath(path: PathLike): this",
+              "doc": "The `choco` to run, when it is not on `PATH`."
+            },
+            {
+              "name": "package_",
+              "kind": "property",
+              "optional": true,
+              "signature": "package_?: ChocolateyPackage",
+              "doc": "The rendered package to pack and push. Set by {@link package}."
+            },
+            {
+              "name": "nupkg_",
+              "kind": "property",
+              "optional": true,
+              "signature": "nupkg_?: string",
+              "doc": "A `.nupkg` already built. Set by {@link nupkg}."
+            },
+            {
+              "name": "apiKey_",
+              "kind": "property",
+              "optional": true,
+              "signature": "apiKey_?: string",
+              "doc": "The API key. Set by {@link apiKey}."
+            },
+            {
+              "name": "source_",
+              "kind": "property",
+              "optional": false,
+              "signature": "source_: string",
+              "doc": "The source to push to. Set by {@link source}."
+            },
+            {
+              "name": "toolPath_",
+              "kind": "property",
+              "optional": true,
+              "signature": "toolPath_?: string",
+              "doc": "The `choco` binary to run. Set by {@link toolPath}."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyTasks",
+          "kind": "variable",
+          "doc": "Tasks for shipping a prebuilt Windows binary through Chocolatey.",
+          "signature": "const ChocolateyTasks: ChocolateyTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "ChocolateyTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link ChocolateyTasks}.",
+          "signature": "interface ChocolateyTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(configure: Configure<ChocolateyPackageSettings>): ChocolateyPackage",
+              "doc": "The files of a package that installs a prebuilt binary from a zip on a\nrelease: `<id>.nuspec` and `tools/chocolateyinstall.ps1`. Pure: nothing\nis read or written.\n"
+            },
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(configure: Configure<ChocolateyVerifySettings>): Promise<void>",
+              "doc": "Pack a rendered package in a temporary directory, install it from there,\nrun the binary it puts on `PATH`, then uninstall it and remove the\ndirectory — the cleanup runs whether or not the install and check\nsucceeded."
+            },
+            {
+              "name": "publish",
+              "kind": "method",
+              "optional": false,
+              "signature": "publish(configure: Configure<ChocolateyPublishSettings>): Promise<ChocolateyPublishResult>",
+              "doc": "Push a package — rendered, or a `.nupkg` already built — to the community\nrepository or another source, with its API key masked."
+            },
+            {
+              "name": "verifyJob",
+              "kind": "method",
+              "optional": false,
+              "signature": "verifyJob(configure: Configure<ChocolateyVerifyJobSettings>): CiInvocation",
+              "doc": "The CI job that runs a verifying target on Windows runners, ready to\nlist in `cicd({ invokes: [...] })`."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyVerifyExpectation",
+          "kind": "typeAlias",
+          "doc": "What the binary's output must contain: the package version, or a text.",
+          "signature": "type ChocolateyVerifyExpectation = unknown | unknown",
+          "deprecated": false
+        },
+        {
+          "name": "ChocolateyVerifyJobSettings",
+          "kind": "class",
+          "doc": "Settings for the package-verification CI job.",
+          "signature": "class ChocolateyVerifyJobSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(value: TargetBuilder): this",
+              "doc": "The target to run (required) — one that calls `ChocolateyTasks.verify`,\nor otherwise installs, checks and uninstalls the package."
+            },
+            {
+              "name": "runners",
+              "kind": "method",
+              "optional": false,
+              "signature": "runners(...labels: string[]): this",
+              "doc": "The runner labels to verify on, replacing the default `windows-latest` —\ne.g. `\"windows-2022\", \"windows-2025\"` to cover both images. Each must be\na Windows runner with Chocolatey installed."
+            },
+            {
+              "name": "target_",
+              "kind": "property",
+              "optional": true,
+              "signature": "target_?: TargetBuilder",
+              "doc": "The target the job runs. Set by {@link target}."
+            },
+            {
+              "name": "runners_",
+              "kind": "property",
+              "optional": false,
+              "signature": "runners_: string[]",
+              "doc": "The runner labels the job fans out over. Set by {@link runners}."
+            }
+          ]
+        },
+        {
+          "name": "ChocolateyVerifySettings",
+          "kind": "class",
+          "doc": "Settings for verifying a rendered package.",
+          "signature": "class ChocolateyVerifySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(value: ChocolateyPackage): this",
+              "doc": "The package to verify (required) — what `ChocolateyTasks.package` rendered."
+            },
+            {
+              "name": "binary",
+              "kind": "method",
+              "optional": false,
+              "signature": "binary(name: string): this",
+              "doc": "The command the package puts on `PATH` (required), e.g. `app` — choco\nnames each shim after the `.exe` it found in the zip."
+            },
+            {
+              "name": "command",
+              "kind": "method",
+              "optional": false,
+              "signature": "command(...args: string[]): this",
+              "doc": "The arguments to run the binary with, e.g. `\"--version\"`."
+            },
+            {
+              "name": "expectVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "expectVersion(): this",
+              "doc": "Require the binary's output to contain the package version."
+            },
+            {
+              "name": "expectOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "expectOutput(text: string): this",
+              "doc": "Require the binary's output to contain `text`."
+            },
+            {
+              "name": "toolPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "toolPath(path: PathLike): this",
+              "doc": "The `choco` to run, when it is not on `PATH`."
+            },
+            {
+              "name": "package_",
+              "kind": "property",
+              "optional": true,
+              "signature": "package_?: ChocolateyPackage",
+              "doc": "The package to verify. Set by {@link package}."
+            },
+            {
+              "name": "binary_",
+              "kind": "property",
+              "optional": true,
+              "signature": "binary_?: string",
+              "doc": "The shim to run once installed. Set by {@link binary}."
+            },
+            {
+              "name": "args_",
+              "kind": "property",
+              "optional": false,
+              "signature": "args_: string[]",
+              "doc": "The arguments to run it with. Set by {@link command}."
+            },
+            {
+              "name": "expectation_",
+              "kind": "property",
+              "optional": true,
+              "signature": "expectation_?: ChocolateyVerifyExpectation",
+              "doc": "What its output must contain. Set by {@link expectVersion}/{@link expectOutput}."
+            },
+            {
+              "name": "toolPath_",
+              "kind": "property",
+              "optional": true,
+              "signature": "toolPath_?: string",
+              "doc": "The `choco` binary to run. Set by {@link toolPath}."
+            }
+          ]
+        },
+        {
+          "name": "ChocoPackSettings",
+          "kind": "class",
+          "doc": "Settings for `choco pack`, which builds a `.nupkg` from a `.nuspec`. With no\nnuspec named, choco packs the one in the working directory.",
+          "signature": "class ChocoPackSettings extends ChocoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "nuspec",
+              "kind": "method",
+              "optional": false,
+              "signature": "nuspec(path: PathLike): this",
+              "doc": "The `.nuspec` to pack; defaults to the one in the working directory."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The version to write into the package, overriding the nuspec's (`--version`)."
+            },
+            {
+              "name": "outputDirectory",
+              "kind": "method",
+              "optional": false,
+              "signature": "outputDirectory(path: PathLike): this",
+              "doc": "Where to write the `.nupkg` (`--output-directory`); defaults to the working directory."
+            }
+          ]
+        },
+        {
+          "name": "ChocoPushSettings",
+          "kind": "class",
+          "doc": "Settings for `choco push`, which uploads a `.nupkg` to a source. With no\npackage named, choco pushes the only `.nupkg` in the working directory.\n\nThe API key is an argument — choco reads it from nowhere else — so it is\nregistered with the run's redactor and masked out of any error the push\nraises. It is still visible in the process table for the push's duration;\non a shared host, save it once with `choco apikey add` instead and leave\n{@link apiKey} unset, and choco looks it up by source.",
+          "signature": "class ChocoPushSettings extends ChocoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "nupkg",
+              "kind": "method",
+              "optional": false,
+              "signature": "nupkg(path: PathLike): this",
+              "doc": "The `.nupkg` to push."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(url: string): this",
+              "doc": "The source to push to (`--source`), e.g. `https://push.chocolatey.org/`\nfor the community repository."
+            },
+            {
+              "name": "apiKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiKey(value: string): this",
+              "doc": "The source's API key (`--api-key`). Masked in every rendering of the\ncommand and in its errors."
+            }
+          ]
+        },
+        {
+          "name": "ChocoSettings",
+          "kind": "class",
+          "doc": "Settings for a `choco` invocation.",
+          "signature": "class ChocoSettings extends SubcommandSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "ChocoTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the Chocolatey `choco` CLI.",
+          "signature": "const ChocoTasks: ChocoTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "ChocoTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link ChocoTasks}.",
+          "signature": "interface ChocoTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<ChocoSettings>): Promise<CommandOutput>",
+              "doc": "Run any `choco` command, built with `.command(...)`/`.flag(...)`."
+            },
+            {
+              "name": "pack",
+              "kind": "method",
+              "optional": false,
+              "signature": "pack(configure?: Configure<ChocoPackSettings>): Promise<CommandOutput>",
+              "doc": "Build a `.nupkg` from a `.nuspec` (`choco pack`)."
+            },
+            {
+              "name": "push",
+              "kind": "method",
+              "optional": false,
+              "signature": "push(configure?: Configure<ChocoPushSettings>): Promise<CommandOutput>",
+              "doc": "Upload a `.nupkg` to a source (`choco push`); the API key is masked."
+            },
+            {
+              "name": "install",
+              "kind": "method",
+              "optional": false,
+              "signature": "install(configure: Configure<ChocoInstallSettings>): Promise<CommandOutput>",
+              "doc": "Install packages (`choco install`)."
+            },
+            {
+              "name": "uninstall",
+              "kind": "method",
+              "optional": false,
+              "signature": "uninstall(configure: Configure<ChocoUninstallSettings>): Promise<CommandOutput>",
+              "doc": "Uninstall packages (`choco uninstall`)."
+            },
+            {
+              "name": "apikey",
+              "kind": "method",
+              "optional": false,
+              "signature": "apikey(configure?: Configure<ChocoApikeySettings>): Promise<CommandOutput>",
+              "doc": "List, save or remove a source's API key (`choco apikey`)."
+            }
+          ]
+        },
+        {
+          "name": "ChocoUninstallSettings",
+          "kind": "class",
+          "doc": "Settings for `choco uninstall`.",
+          "signature": "class ChocoUninstallSettings extends ChocoCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(...ids: string[]): this",
+              "doc": "Package ids to uninstall (required); repeatable."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(location: string): this",
+              "doc": "The source the packages came from (`--source`)."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The installed version to uninstall (`--version`)."
+            },
+            {
+              "name": "allVersions",
+              "kind": "method",
+              "optional": false,
+              "signature": "allVersions(): this",
+              "doc": "Uninstall every installed version (`--all-versions`)."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/homebrew",
       "dir": "homebrew",
       "summary": "`@zuke/homebrew` — ship a prebuilt binary through a",

@@ -122,6 +122,7 @@ export const toolGroups: ToolGroup[] = [
     category: "Version control, registry & CI",
     blurb: "Script Git, GitHub, and publishing straight from your build.",
     tools: [
+      { name: "Chocolatey", pkg: "@zuke/chocolatey", desc: "choco, package rendering, publishing" },
       { name: "Git", pkg: "@zuke/git", desc: "commit, tag, push, merge-base, blame, gitInfo()" },
       { name: "GitHub CLI", pkg: "@zuke/gh", desc: "releases, PRs, workflows" },
       { name: "Homebrew", pkg: "@zuke/homebrew", desc: "brew, formula rendering, tap publishing" },
