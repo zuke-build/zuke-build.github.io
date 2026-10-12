@@ -133,9 +133,10 @@ export const toolGroups: ToolGroup[] = [
   },
   {
     category: "Code signing & notarization",
-    blurb: "Sign, notarize, and package macOS apps from CI.",
+    blurb: "Sign and notarize macOS apps and Windows binaries from CI.",
     tools: [
       { name: "Apple", pkg: "@zuke/apple", desc: "codesign, notarytool, keychains, ditto" },
+      { name: "SignPath", pkg: "@zuke/signpath", desc: "Authenticode signing, signtool verify" },
     ],
   },
   {
