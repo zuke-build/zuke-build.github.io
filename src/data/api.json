@@ -52810,6 +52810,1273 @@
       ]
     },
     {
+      "name": "@zuke/apple",
+      "dir": "apple",
+      "summary": "`@zuke/apple` — typed task wrappers for Apple's code-signing tools in Zuke",
+      "symbols": [
+        {
+          "name": "CodesignDisplay",
+          "kind": "interface",
+          "doc": "A code signature as `codesign --display` describes it.",
+          "signature": "interface CodesignDisplay",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "identifier",
+              "kind": "property",
+              "optional": true,
+              "signature": "identifier?: string",
+              "doc": "The signed code's identifier (`Identifier=`), when printed."
+            },
+            {
+              "name": "teamIdentifier",
+              "kind": "property",
+              "optional": true,
+              "signature": "teamIdentifier?: string",
+              "doc": "The team identifier (`TeamIdentifier=`), when printed. `codesign` prints\n`not set` for an ad-hoc signature, and that text is kept as it is."
+            },
+            {
+              "name": "authorities",
+              "kind": "property",
+              "optional": false,
+              "signature": "authorities: string[]",
+              "doc": "The certificate chain (`Authority=` lines), leaf first."
+            },
+            {
+              "name": "text",
+              "kind": "property",
+              "optional": false,
+              "signature": "text: string",
+              "doc": "The whole description: stderr, then any stdout, trimmed."
+            },
+            {
+              "name": "output",
+              "kind": "property",
+              "optional": false,
+              "signature": "output: CommandOutput",
+              "doc": "The command output the description was read from."
+            }
+          ]
+        },
+        {
+          "name": "CodesignDisplaySettings",
+          "kind": "class",
+          "doc": "Settings for `codesign --display`.",
+          "signature": "class CodesignDisplaySettings extends CodesignSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "CodesignSettings",
+          "kind": "class",
+          "doc": "The shared shape of every `codesign` operation: the files it acts on and how\nverbose it is. Each operation subclass names its mode flag and its own\noptions.",
+          "signature": "class CodesignSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(...paths: PathLike[]): this",
+              "doc": "The code to act on (positional) — an app bundle, framework, binary or\ndisk image; repeatable. A relative path starting with `-` is passed as\n`./-…` so `codesign` cannot read it as an option."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(level?: number): this",
+              "doc": "More output (`--verbose`, or `--verbose=<level>` with a level). `display`\nshows more of the signature at each level; `4` lists everything."
+            }
+          ]
+        },
+        {
+          "name": "CodesignSignSettings",
+          "kind": "class",
+          "doc": "Settings for `codesign --sign`.",
+          "signature": "class CodesignSignSettings extends CodesignSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "identity",
+              "kind": "method",
+              "optional": false,
+              "signature": "identity(value: string): this",
+              "doc": "The signing identity (`--sign <identity>`): a certificate's common name,\na substring of it, or its SHA-1 hash. `-` signs ad hoc. Required."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Replace an existing signature (`--force`)."
+            },
+            {
+              "name": "deep",
+              "kind": "method",
+              "optional": false,
+              "signature": "deep(): this",
+              "doc": "Sign nested code as well (`--deep`). Apple discourages it for signing."
+            },
+            {
+              "name": "options",
+              "kind": "method",
+              "optional": false,
+              "signature": "options(...flags: string[]): this",
+              "doc": "Signature option flags (`--options`, comma-joined); repeatable.\n`runtime` enables the hardened runtime notarization requires."
+            },
+            {
+              "name": "timestamp",
+              "kind": "method",
+              "optional": false,
+              "signature": "timestamp(url?: string): this",
+              "doc": "Request a secure timestamp (`--timestamp`), from `url` when given\n(`--timestamp=<url>`). Notarization requires one."
+            },
+            {
+              "name": "entitlements",
+              "kind": "method",
+              "optional": false,
+              "signature": "entitlements(path: PathLike): this",
+              "doc": "The entitlements plist to embed (`--entitlements`)."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(path: PathLike): this",
+              "doc": "Look the identity up in this keychain only (`--keychain`)."
+            },
+            {
+              "name": "identifier",
+              "kind": "method",
+              "optional": false,
+              "signature": "identifier(value: string): this",
+              "doc": "The code's identifier (`--identifier`), overriding the bundle id."
+            }
+          ]
+        },
+        {
+          "name": "CodesignTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for Apple's `codesign`.",
+          "signature": "const CodesignTasks: CodesignTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "CodesignTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link CodesignTasks}.",
+          "signature": "interface CodesignTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "sign",
+              "kind": "method",
+              "optional": false,
+              "signature": "sign(configure: Configure<CodesignSignSettings>): Promise<CommandOutput>",
+              "doc": "Sign code with `codesign --sign`."
+            },
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(configure: Configure<CodesignVerifySettings>): Promise<CommandOutput>",
+              "doc": "Check a signature with `codesign --verify`; a bad one fails the run."
+            },
+            {
+              "name": "display",
+              "kind": "method",
+              "optional": false,
+              "signature": "display(configure: Configure<CodesignDisplaySettings>): Promise<CodesignDisplay>",
+              "doc": "Describe a signature with `codesign --display`. `codesign` prints the\ndescription on **stderr**, so it is returned parsed, with the raw text and\nthe command output alongside."
+            }
+          ]
+        },
+        {
+          "name": "CodesignVerifySettings",
+          "kind": "class",
+          "doc": "Settings for `codesign --verify`.",
+          "signature": "class CodesignVerifySettings extends CodesignSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "strict",
+              "kind": "method",
+              "optional": false,
+              "signature": "strict(): this",
+              "doc": "Apply the strict validation rules notarization uses (`--strict`)."
+            },
+            {
+              "name": "deep",
+              "kind": "method",
+              "optional": false,
+              "signature": "deep(): this",
+              "doc": "Verify nested code as well (`--deep`)."
+            }
+          ]
+        },
+        {
+          "name": "DittoSettings",
+          "kind": "class",
+          "doc": "Settings for a `ditto` run.",
+          "signature": "class DittoSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(): this",
+              "doc": "Create an archive rather than copy (`-c`)."
+            },
+            {
+              "name": "extract",
+              "kind": "method",
+              "optional": false,
+              "signature": "extract(): this",
+              "doc": "Extract an archive rather than copy (`-x`)."
+            },
+            {
+              "name": "pkzip",
+              "kind": "method",
+              "optional": false,
+              "signature": "pkzip(): this",
+              "doc": "Use the PKZip format for the archive (`-k`) instead of CPIO."
+            },
+            {
+              "name": "sequesterRsrc",
+              "kind": "method",
+              "optional": false,
+              "signature": "sequesterRsrc(): this",
+              "doc": "Keep resource forks and HFS metadata in a `__MACOSX` directory inside the\narchive (`--sequesterRsrc`), the way the Finder's own compress does."
+            },
+            {
+              "name": "keepParent",
+              "kind": "method",
+              "optional": false,
+              "signature": "keepParent(): this",
+              "doc": "Put the source directory itself in the archive, not only its contents\n(`--keepParent`) — what makes a zipped `MyApp.app` unzip as `MyApp.app`."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: PathLike): this",
+              "doc": "What to copy or archive (positional). Required."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(path: PathLike): this",
+              "doc": "Where to write it (positional). Required."
+            }
+          ]
+        },
+        {
+          "name": "DittoTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for macOS `ditto`.",
+          "signature": "const DittoTasks: DittoTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "DittoTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link DittoTasks}.",
+          "signature": "interface DittoTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "copy",
+              "kind": "method",
+              "optional": false,
+              "signature": "copy(configure: Configure<DittoSettings>): Promise<CommandOutput>",
+              "doc": "Copy a file or directory tree with `ditto`, metadata intact."
+            },
+            {
+              "name": "archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "archive(configure: Configure<DittoSettings>): Promise<CommandOutput>",
+              "doc": "Write a zip archive: `ditto -c -k`, then the lambda's settings."
+            },
+            {
+              "name": "extract",
+              "kind": "method",
+              "optional": false,
+              "signature": "extract(configure: Configure<DittoSettings>): Promise<CommandOutput>",
+              "doc": "Unpack a zip archive: `ditto -x -k`, then the lambda's settings."
+            }
+          ]
+        },
+        {
+          "name": "KeychainCleanupError",
+          "kind": "class",
+          "doc": "Raised by `SecurityTasks.temporaryKeychain` when tearing the keychain down\nfailed — restoring the search list, deleting the keychain, or removing its\ndirectory. Every step is attempted regardless; {@link failures} holds each\none that threw. When the callback had already failed, that error is the\n{@link Error.cause}, so neither is lost.",
+          "signature": "class KeychainCleanupError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "KeychainCleanupFailure",
+          "kind": "interface",
+          "doc": "One cleanup step of a temporary keychain that threw.",
+          "signature": "interface KeychainCleanupFailure",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "step",
+              "kind": "property",
+              "optional": false,
+              "signature": "step: string",
+              "doc": "What the step was doing, e.g. `delete the keychain`."
+            },
+            {
+              "name": "message",
+              "kind": "property",
+              "optional": false,
+              "signature": "message: string",
+              "doc": "The step's error message."
+            }
+          ]
+        },
+        {
+          "name": "KeychainError",
+          "kind": "class",
+          "doc": "Raised by `SecurityTasks.temporaryKeychain` when the keychain cannot be set\nup for signing: no certificate given, a certificate that is not base64, or\nan imported certificate holding no codesigning identity, or several that\nthe identity filter cannot tell apart. Never carries a password.",
+          "signature": "class KeychainError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "KeychainHost",
+          "kind": "interface",
+          "doc": "What `SecurityTasks.temporaryKeychain` asks of the machine it runs on.",
+          "signature": "interface KeychainHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "security",
+              "kind": "method",
+              "optional": false,
+              "signature": "security(settings: SecuritySettings): Promise<CommandOutput>",
+              "doc": "Run one configured `security` command and return its output."
+            },
+            {
+              "name": "makeTempDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "makeTempDir(): Promise<string>",
+              "doc": "Create a fresh private directory and return its absolute, canonical path\n— symlinks resolved, so it is spelled the way `security list-keychains`\nprints it (on macOS the temp dir is under the `/var` → `/private/var`\nlink)."
+            },
+            {
+              "name": "writePrivateFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "writePrivateFile(path: string, data: Uint8Array): Promise<void>",
+              "doc": "Write `data` to a new file at `path` readable by the owner only (mode\n`0600`), refusing to overwrite or follow anything already there."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(path: string): Promise<void>",
+              "doc": "Remove `path` and anything under it; a path that is already gone is fine."
+            },
+            {
+              "name": "randomHex",
+              "kind": "method",
+              "optional": false,
+              "signature": "randomHex(bytes: number): string",
+              "doc": "`bytes` cryptographically random bytes, as lower-case hex."
+            }
+          ]
+        },
+        {
+          "name": "NotarizationError",
+          "kind": "class",
+          "doc": "Raised by `NotarytoolTasks.submit` when `.wait()` was set and Apple finished\nthe submission with any status other than `Accepted`. The message names the\nstatus and lists the issues from the submission's notarization log, which\nthe task fetched with the same credentials.",
+          "signature": "class NotarizationError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolHistorySettings",
+          "kind": "class",
+          "doc": "Settings for `xcrun notarytool history`.",
+          "signature": "class NotarytoolHistorySettings extends NotarytoolSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "NotarytoolInfoSettings",
+          "kind": "class",
+          "doc": "Settings for `xcrun notarytool info <id>`.",
+          "signature": "class NotarytoolInfoSettings extends NotarytoolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "submissionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "submissionId(id: string): this",
+              "doc": "The submission to describe (positional). Required."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolIssue",
+          "kind": "interface",
+          "doc": "One problem a notarization log reports.",
+          "signature": "interface NotarytoolIssue",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "severity",
+              "kind": "property",
+              "optional": true,
+              "signature": "severity?: string",
+              "doc": "`error` or `warning`."
+            },
+            {
+              "name": "message",
+              "kind": "property",
+              "optional": true,
+              "signature": "message?: string",
+              "doc": "What is wrong, e.g. `The binary is not signed.`"
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": true,
+              "signature": "path?: string",
+              "doc": "The path inside the archive the issue is about."
+            },
+            {
+              "name": "architecture",
+              "kind": "property",
+              "optional": true,
+              "signature": "architecture?: string",
+              "doc": "The CPU architecture of the offending slice."
+            },
+            {
+              "name": "docUrl",
+              "kind": "property",
+              "optional": true,
+              "signature": "docUrl?: string",
+              "doc": "Apple's documentation link for the issue."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolLog",
+          "kind": "interface",
+          "doc": "A submission's notarization log, from `notarytool log`.",
+          "signature": "interface NotarytoolLog",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "jobId",
+              "kind": "property",
+              "optional": true,
+              "signature": "jobId?: string",
+              "doc": "The submission id the log belongs to."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": true,
+              "signature": "status?: string",
+              "doc": "The final status, e.g. `Invalid`."
+            },
+            {
+              "name": "statusSummary",
+              "kind": "property",
+              "optional": true,
+              "signature": "statusSummary?: string",
+              "doc": "A one-line summary, e.g. `Archive contains critical validation errors`."
+            },
+            {
+              "name": "issues",
+              "kind": "property",
+              "optional": false,
+              "signature": "issues: NotarytoolIssue[]",
+              "doc": "Every issue the log lists; empty for a clean submission."
+            },
+            {
+              "name": "text",
+              "kind": "property",
+              "optional": false,
+              "signature": "text: string",
+              "doc": "The log as notarytool printed it."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolLogSettings",
+          "kind": "class",
+          "doc": "Settings for `xcrun notarytool log <id>`.",
+          "signature": "class NotarytoolLogSettings extends NotarytoolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "submissionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "submissionId(id: string): this",
+              "doc": "The submission whose log to fetch (positional). Required."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolOutputError",
+          "kind": "class",
+          "doc": "Raised when `notarytool` did not print the JSON result a task asked for —\nan older Xcode, a crash, or output that is not a notarytool result at all.\nThe raw output is kept on the error rather than in its message.",
+          "signature": "class NotarytoolOutputError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolSettings",
+          "kind": "class",
+          "doc": "The shared settings of every `xcrun notarytool` subcommand: the credentials,\nand the masking of the app-specific password. A subclass names its\nsubcommand and builds its own arguments.",
+          "signature": "class NotarytoolSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "method",
+              "optional": false,
+              "signature": "key(path: PathLike): this",
+              "doc": "The App Store Connect API private key file, `AuthKey_<id>.p8` (`--key`)."
+            },
+            {
+              "name": "keyId",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyId(id: string): this",
+              "doc": "The API key's id (`--key-id`)."
+            },
+            {
+              "name": "issuer",
+              "kind": "method",
+              "optional": false,
+              "signature": "issuer(uuid: string): this",
+              "doc": "The API key's issuer UUID (`--issuer`); omit it for an individual key."
+            },
+            {
+              "name": "keychainProfile",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychainProfile(name: string): this",
+              "doc": "Authenticate with credentials saved by `notarytool store-credentials`\n(`--keychain-profile`)."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(path: PathLike): this",
+              "doc": "The keychain to read the {@link keychainProfile} from (`--keychain`)."
+            },
+            {
+              "name": "appleId",
+              "kind": "method",
+              "optional": false,
+              "signature": "appleId(email: string): this",
+              "doc": "The Apple ID to authenticate as (`--apple-id`)."
+            },
+            {
+              "name": "password",
+              "kind": "method",
+              "optional": false,
+              "signature": "password(value: string): this",
+              "doc": "The Apple ID's app-specific password (`--password`). Registered with the\nrun's redactor and masked out of any error this run raises."
+            },
+            {
+              "name": "teamId",
+              "kind": "method",
+              "optional": false,
+              "signature": "teamId(id: string): this",
+              "doc": "The developer team id the Apple ID signs for (`--team-id`)."
+            },
+            {
+              "name": "toolPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "toolPath(path: PathLike): this",
+              "doc": "Override the binary, remembered so a follow-up command uses it too."
+            },
+            {
+              "name": "env",
+              "kind": "method",
+              "optional": false,
+              "signature": "env(record: Record<string, string>): this",
+              "doc": "Merge environment variables, remembered for a follow-up command too."
+            },
+            {
+              "name": "cwd",
+              "kind": "method",
+              "optional": false,
+              "signature": "cwd(path: PathLike): this",
+              "doc": "Set the working directory, remembered for a follow-up command too."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(): Promise<CommandOutput>",
+              "doc": "Run the command, with the app-specific password masked out of any\n`CommandError` or timeout it raises — inside a run and outside one."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolSubmission",
+          "kind": "interface",
+          "doc": "A notarization submission as `notarytool` reports it.",
+          "signature": "interface NotarytoolSubmission",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": false,
+              "signature": "id: string",
+              "doc": "The submission id, used by `info`, `log` and `wait`."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": true,
+              "signature": "status?: string",
+              "doc": "The status — `Accepted`, `Invalid`, `Rejected` or `In Progress`. Absent\nfrom a `submit` run without `--wait`, which only reports the upload."
+            },
+            {
+              "name": "message",
+              "kind": "property",
+              "optional": true,
+              "signature": "message?: string",
+              "doc": "notarytool's message, e.g. `Processing complete`."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": true,
+              "signature": "name?: string",
+              "doc": "The uploaded file's name (`info`, `history`)."
+            },
+            {
+              "name": "createdDate",
+              "kind": "property",
+              "optional": true,
+              "signature": "createdDate?: string",
+              "doc": "When the submission was created, ISO 8601 (`info`, `history`)."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolSubmitSettings",
+          "kind": "class",
+          "doc": "Settings for `xcrun notarytool submit`.",
+          "signature": "class NotarytoolSubmitSettings extends NotarytoolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "The archive to notarize — a `.zip`, `.pkg` or `.dmg` (positional). Required."
+            },
+            {
+              "name": "wait",
+              "kind": "method",
+              "optional": false,
+              "signature": "wait(): this",
+              "doc": "Wait for Apple to finish processing (`--wait`). With it the result\ncarries the final status, and `NotarytoolTasks.submit` throws a\n`NotarizationError` for anything but `Accepted`."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string): this",
+              "doc": "How long `--wait` waits, e.g. `30m` or `1h` (`--timeout`). Needs {@link wait}."
+            },
+            {
+              "name": "waits",
+              "kind": "method",
+              "optional": false,
+              "signature": "waits(): boolean",
+              "doc": "Whether {@link wait} was set."
+            },
+            {
+              "name": "logFor",
+              "kind": "method",
+              "optional": false,
+              "signature": "logFor(id: string): NotarytoolLogSettings",
+              "doc": "Settings for `notarytool log <id>` that reuse this submission's\ncredentials, binary, environment and working directory."
+            },
+            {
+              "name": "submit_",
+              "kind": "method",
+              "optional": false,
+              "signature": "submit_(): Promise<NotarytoolSubmission>",
+              "doc": "Run the submission and read its JSON result — what\n`NotarytoolTasks.submit` calls before judging the status.\n\nThe exit code is judged after the JSON is read: notarytool can exit\nnon-zero for a waited submission Apple did not accept, and that result —\nwhich `NotarytoolTasks.submit` turns into a `NotarizationError` with the\nlog — is the most useful thing to report. Any other non-zero exit raises\nthe `CommandError`, even when it printed a result with an id (an upload\nthat failed after the id was issued, say); `.noThrow()` returns the\nresult instead. A failed run with no readable result raises it even under\n`.noThrow()`, since there is then nothing to return."
+            }
+          ]
+        },
+        {
+          "name": "NotarytoolTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for `xcrun notarytool`.",
+          "signature": "const NotarytoolTasks: NotarytoolTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "NotarytoolTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link NotarytoolTasks}.",
+          "signature": "interface NotarytoolTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "submit",
+              "kind": "method",
+              "optional": false,
+              "signature": "submit(configure: Configure<NotarytoolSubmitSettings>): Promise<NotarytoolSubmission>",
+              "doc": "Upload an archive with `notarytool submit` and return the parsed result.\nWith `.wait()`, a final status other than `Accepted` fetches the\nsubmission's log and throws a {@link NotarizationError} listing its\nissues — unless `.noThrow()` was set, when the result is returned for the\ncaller to inspect."
+            },
+            {
+              "name": "info",
+              "kind": "method",
+              "optional": false,
+              "signature": "info(configure: Configure<NotarytoolInfoSettings>): Promise<NotarytoolSubmission>",
+              "doc": "Read a submission's status with `notarytool info`."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(configure: Configure<NotarytoolLogSettings>): Promise<NotarytoolLog>",
+              "doc": "Fetch and parse a submission's notarization log with `notarytool log`."
+            },
+            {
+              "name": "history",
+              "kind": "method",
+              "optional": false,
+              "signature": "history(configure: Configure<NotarytoolHistorySettings>): Promise<NotarytoolSubmission[]>",
+              "doc": "List the team's past submissions with `notarytool history`."
+            }
+          ]
+        },
+        {
+          "name": "SecurityCreateKeychainSettings",
+          "kind": "class",
+          "doc": "Settings for `security create-keychain`.",
+          "signature": "class SecurityCreateKeychainSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "password",
+              "kind": "method",
+              "optional": false,
+              "signature": "password(value: string): this",
+              "doc": "The new keychain's password (`-p`). A secret: masked in every rendering\nof the command. Without it `security` prompts for one."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(...paths: PathLike[]): this",
+              "doc": "The keychain(s) to create (positional); repeatable. Required."
+            }
+          ]
+        },
+        {
+          "name": "SecurityDeleteKeychainSettings",
+          "kind": "class",
+          "doc": "Settings for `security delete-keychain`.",
+          "signature": "class SecurityDeleteKeychainSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(...paths: PathLike[]): this",
+              "doc": "The keychain(s) to delete (positional); repeatable. Required."
+            }
+          ]
+        },
+        {
+          "name": "SecurityDomain",
+          "kind": "typeAlias",
+          "doc": "A preference domain `security list-keychains` reads or sets (`-d`).",
+          "signature": "type SecurityDomain = user | system | common | dynamic",
+          "deprecated": false
+        },
+        {
+          "name": "SecurityFindIdentitySettings",
+          "kind": "class",
+          "doc": "Settings for `security find-identity`.",
+          "signature": "class SecurityFindIdentitySettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "policy",
+              "kind": "method",
+              "optional": false,
+              "signature": "policy(name: string): this",
+              "doc": "Only identities usable under this policy (`-p`), e.g. `codesigning`."
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(value: string): this",
+              "doc": "Only identities whose name contains this string (`-s`)."
+            },
+            {
+              "name": "valid",
+              "kind": "method",
+              "optional": false,
+              "signature": "valid(): this",
+              "doc": "Only valid identities (`-v`) — not expired, revoked or untrusted."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(...paths: PathLike[]): this",
+              "doc": "The keychain(s) to search (positional); the search list when omitted."
+            }
+          ]
+        },
+        {
+          "name": "SecurityIdentity",
+          "kind": "interface",
+          "doc": "A signing identity as `security find-identity` lists it.",
+          "signature": "interface SecurityIdentity",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "hash",
+              "kind": "property",
+              "optional": false,
+              "signature": "hash: string",
+              "doc": "The certificate's SHA-1 hash, 40 upper-case hex digits."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The certificate's common name, e.g. `Developer ID Application: … (TEAMID)`."
+            }
+          ]
+        },
+        {
+          "name": "SecurityImportFormat",
+          "kind": "typeAlias",
+          "doc": "A file format `security import` accepts (`-f`).",
+          "signature": "type SecurityImportFormat = openssl | openssh1 | openssh2 | bsafe | raw | pkcs7 | pkcs8 | pkcs12 | netscape | x509 | pemseq",
+          "deprecated": false
+        },
+        {
+          "name": "SecurityImportSettings",
+          "kind": "class",
+          "doc": "Settings for `security import`.",
+          "signature": "class SecurityImportSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "The file to import, e.g. a `.p12` (positional). Required."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(path: PathLike): this",
+              "doc": "The keychain to import into (`-k`); the default keychain when omitted."
+            },
+            {
+              "name": "passphrase",
+              "kind": "method",
+              "optional": false,
+              "signature": "passphrase(value: string): this",
+              "doc": "The file's passphrase (`-P`), e.g. a `.p12`'s export password. A secret:\nmasked in every rendering of the command."
+            },
+            {
+              "name": "application",
+              "kind": "method",
+              "optional": false,
+              "signature": "application(...paths: PathLike[]): this",
+              "doc": "An application allowed to use the imported key without a prompt (`-T`),\ne.g. `/usr/bin/codesign`; repeatable."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(value: SecurityItemType): this",
+              "doc": "The type of item in the file (`-t`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(value: SecurityImportFormat): this",
+              "doc": "The file's format (`-f`), e.g. `pkcs12`."
+            },
+            {
+              "name": "nonExtractable",
+              "kind": "method",
+              "optional": false,
+              "signature": "nonExtractable(): this",
+              "doc": "Make the imported private key non-extractable (`-x`)."
+            }
+          ]
+        },
+        {
+          "name": "SecurityItemType",
+          "kind": "typeAlias",
+          "doc": "An item type `security import` accepts (`-t`).",
+          "signature": "type SecurityItemType = pub | priv | session | cert | agg",
+          "deprecated": false
+        },
+        {
+          "name": "SecurityListKeychainsSettings",
+          "kind": "class",
+          "doc": "Settings for `security list-keychains`.",
+          "signature": "class SecurityListKeychainsSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "domain",
+              "kind": "method",
+              "optional": false,
+              "signature": "domain(value: SecurityDomain): this",
+              "doc": "The preference domain to read or set (`-d`)."
+            },
+            {
+              "name": "set",
+              "kind": "method",
+              "optional": false,
+              "signature": "set(...keychains: PathLike[]): this",
+              "doc": "Replace the search list with these keychains (`-s`), in order. Called\nwith none, it empties the list. Repeat calls append."
+            }
+          ]
+        },
+        {
+          "name": "SecuritySetKeychainSettings",
+          "kind": "class",
+          "doc": "Settings for `security set-keychain-settings`. With no flags, the keychain\nnever locks on its own — no timeout, and no lock on sleep — which is what a\nCI keychain wants for the length of a build.",
+          "signature": "class SecuritySetKeychainSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "lockOnSleep",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockOnSleep(): this",
+              "doc": "Lock the keychain when the machine sleeps (`-l`)."
+            },
+            {
+              "name": "lockAfterTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "lockAfterTimeout(): this",
+              "doc": "Lock the keychain after {@link timeout} seconds of inactivity (`-u`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(seconds: number): this",
+              "doc": "The inactivity timeout, in seconds (`-t`)."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(path: PathLike): this",
+              "doc": "The keychain to configure (positional); the default keychain when omitted."
+            }
+          ]
+        },
+        {
+          "name": "SecuritySetKeyPartitionListSettings",
+          "kind": "class",
+          "doc": "Settings for `security set-key-partition-list`, which lets Apple's signing\ntools use a key without the \"allow access\" prompt that hangs a headless\nbuild.",
+          "signature": "class SecuritySetKeyPartitionListSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "partitionList",
+              "kind": "method",
+              "optional": false,
+              "signature": "partitionList(...ids: string[]): this",
+              "doc": "Partition ids to allow (`-S`, comma-joined); repeatable. `apple-tool:`\nand `apple:` cover `codesign` and the other Apple tools."
+            },
+            {
+              "name": "privateKeys",
+              "kind": "method",
+              "optional": false,
+              "signature": "privateKeys(): this",
+              "doc": "Match private keys only (`-s`)."
+            },
+            {
+              "name": "password",
+              "kind": "method",
+              "optional": false,
+              "signature": "password(value: string): this",
+              "doc": "The keychain's password (`-k`). A secret: masked in every rendering of\nthe command. Without it `security` prompts for one."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(path: PathLike): this",
+              "doc": "The keychain to modify (positional); the default keychain when omitted."
+            }
+          ]
+        },
+        {
+          "name": "SecuritySettings",
+          "kind": "class",
+          "doc": "The shared settings of every `security` subcommand: the binary, and the\nsecret handling for the passwords a subcommand takes. A subclass names its\nsubcommand and builds its own arguments.",
+          "signature": "class SecuritySettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(): Promise<CommandOutput>",
+              "doc": "Run the command, with every password masked out of any `CommandError` or\ntimeout it raises — inside a run and outside one."
+            }
+          ]
+        },
+        {
+          "name": "SecurityTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for macOS `security`.",
+          "signature": "const SecurityTasks: SecurityTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "SecurityTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link SecurityTasks}.",
+          "signature": "interface SecurityTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "createKeychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "createKeychain(configure: Configure<SecurityCreateKeychainSettings>): Promise<CommandOutput>",
+              "doc": "Create a keychain with `security create-keychain`."
+            },
+            {
+              "name": "deleteKeychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "deleteKeychain(configure: Configure<SecurityDeleteKeychainSettings>): Promise<CommandOutput>",
+              "doc": "Delete a keychain with `security delete-keychain`."
+            },
+            {
+              "name": "unlockKeychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "unlockKeychain(configure: Configure<SecurityUnlockKeychainSettings>): Promise<CommandOutput>",
+              "doc": "Unlock a keychain with `security unlock-keychain`."
+            },
+            {
+              "name": "setKeychainSettings",
+              "kind": "method",
+              "optional": false,
+              "signature": "setKeychainSettings(configure: Configure<SecuritySetKeychainSettings>): Promise<CommandOutput>",
+              "doc": "Change a keychain's lock settings with `security set-keychain-settings`."
+            },
+            {
+              "name": "import",
+              "kind": "method",
+              "optional": false,
+              "signature": "import(configure: Configure<SecurityImportSettings>): Promise<CommandOutput>",
+              "doc": "Import a certificate or key with `security import`."
+            },
+            {
+              "name": "setKeyPartitionList",
+              "kind": "method",
+              "optional": false,
+              "signature": "setKeyPartitionList(configure: Configure<SecuritySetKeyPartitionListSettings>): Promise<CommandOutput>",
+              "doc": "Set which tools may use a key with `security set-key-partition-list`."
+            },
+            {
+              "name": "listKeychains",
+              "kind": "method",
+              "optional": false,
+              "signature": "listKeychains(configure?: Configure<SecurityListKeychainsSettings>): Promise<string[]>",
+              "doc": "Read — or, with `.set(...)`, replace — the keychain search list with\n`security list-keychains`. Returns the listed paths; empty after a set,\nwhich prints nothing."
+            },
+            {
+              "name": "findIdentity",
+              "kind": "method",
+              "optional": false,
+              "signature": "findIdentity(configure?: Configure<SecurityFindIdentitySettings>): Promise<SecurityIdentity[]>",
+              "doc": "List signing identities with `security find-identity`, parsed."
+            },
+            {
+              "name": "temporaryKeychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "temporaryKeychain(configure: Configure<TemporaryKeychainSettings>, use: unknown): Promise<T>",
+              "doc": "Import a base64 `.p12` into a fresh keychain, run `use` with the keychain\nand its codesigning identity, and always tear the keychain down after.\nSee {@link TemporaryKeychainSettings}."
+            }
+          ]
+        },
+        {
+          "name": "SecurityUnlockKeychainSettings",
+          "kind": "class",
+          "doc": "Settings for `security unlock-keychain`.",
+          "signature": "class SecurityUnlockKeychainSettings extends SecuritySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "password",
+              "kind": "method",
+              "optional": false,
+              "signature": "password(value: string): this",
+              "doc": "The keychain's password (`-p`). A secret: masked in every rendering of\nthe command. Without it `security` prompts for one."
+            },
+            {
+              "name": "keychain",
+              "kind": "method",
+              "optional": false,
+              "signature": "keychain(path: PathLike): this",
+              "doc": "The keychain to unlock (positional); the default keychain when omitted."
+            }
+          ]
+        },
+        {
+          "name": "TemporaryKeychain",
+          "kind": "interface",
+          "doc": "What the callback of `SecurityTasks.temporaryKeychain` is handed.",
+          "signature": "interface TemporaryKeychain",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "keychain",
+              "kind": "property",
+              "optional": false,
+              "signature": "keychain: string",
+              "doc": "The keychain's absolute path — pass it to `codesign --keychain`."
+            },
+            {
+              "name": "identity",
+              "kind": "property",
+              "optional": false,
+              "signature": "identity: SecurityIdentity",
+              "doc": "The codesigning identity imported into it."
+            }
+          ]
+        },
+        {
+          "name": "TemporaryKeychainSettings",
+          "kind": "class",
+          "doc": "Settings for `SecurityTasks.temporaryKeychain`.",
+          "signature": "class TemporaryKeychainSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "certificate",
+              "kind": "method",
+              "optional": false,
+              "signature": "certificate(base64P12: string): this",
+              "doc": "The signing certificate and its private key, as a base64-encoded `.p12`\n— the form CI secrets hold it in. Whitespace is ignored. Required. It is\ndecoded only into a `0600` file that is deleted straight after import,\nand never appears in a command line or an error message."
+            },
+            {
+              "name": "certificatePassword",
+              "kind": "method",
+              "optional": false,
+              "signature": "certificatePassword(value: string): this",
+              "doc": "The `.p12`'s export password, handed to `security import -P`. A secret:\nmasked in every rendering of that command. Defaults to empty, for a\n`.p12` exported without one — `security` would otherwise prompt."
+            },
+            {
+              "name": "identity",
+              "kind": "method",
+              "optional": false,
+              "signature": "identity(filter: string): this",
+              "doc": "Pick the identity whose name contains `filter`, or whose SHA-1 hash it\nis. Needed only when the `.p12` holds more than one codesigning identity."
+            },
+            {
+              "name": "application",
+              "kind": "method",
+              "optional": false,
+              "signature": "application(...paths: PathLike[]): this",
+              "doc": "An application allowed to use the imported key (`security import -T`);\nrepeatable. Defaults to `/usr/bin/codesign` when none is named."
+            },
+            {
+              "name": "toolPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "toolPath(path: PathLike): this",
+              "doc": "Run this `security` binary instead of the one on `PATH`."
+            },
+            {
+              "name": "host",
+              "kind": "method",
+              "optional": false,
+              "signature": "host(value: KeychainHost): this",
+              "doc": "Replace the machine the keychain is set up on — the seam a test uses to\nrecord the steps without macOS. Production code leaves the default."
+            },
+            {
+              "name": "open_",
+              "kind": "method",
+              "optional": false,
+              "signature": "open_(use: unknown): Promise<T>",
+              "doc": "Set the keychain up, run `use` with it, and tear it down — what\n`SecurityTasks.temporaryKeychain` calls. Returns what `use` returns.\n"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/prometheus",
       "dir": "prometheus",
       "summary": "A typed client for the Prometheus HTTP API, for Zuke builds. `PrometheusTasks`",
