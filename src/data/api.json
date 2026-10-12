@@ -56362,6 +56362,943 @@
       ]
     },
     {
+      "name": "@zuke/signpath",
+      "dir": "signpath",
+      "summary": "`@zuke/signpath` — Authenticode signing through",
+      "symbols": [
+        {
+          "name": "SignPathApiError",
+          "kind": "class",
+          "doc": "SignPath refused a call: a non-2xx status that is not a transient one the\ntransport retried.\n\n```ts\ntry {\n  await SignPathTasks.status((s) => s.signingRequestId(id));\n} catch (error) {\n  if (error instanceof SignPathApiError && error.status === 401) {\n    // the API token is wrong or expired\n  }\n}\n```",
+          "signature": "class SignPathApiError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "method",
+              "kind": "property",
+              "optional": false,
+              "signature": "method: string",
+              "doc": "The HTTP method of the failing call."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The endpoint path, such as `/v1/<org>/SigningRequests` (never the host)."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: number",
+              "doc": "The HTTP status of the answer."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": false,
+              "signature": "detail: string | undefined",
+              "doc": "What SignPath said, when it said anything: the `error`, `detail`, `title`\nor `message` of a JSON answer, or the start of a plain-text one. Scrubbed\nof credentials and control characters, and capped in length."
+            }
+          ]
+        },
+        {
+          "name": "SignPathConnectionSettings",
+          "kind": "class",
+          "doc": "The connection half of every SignPath call's settings.",
+          "signature": "class SignPathConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "organizationId",
+              "kind": "method",
+              "optional": false,
+              "signature": "organizationId(id: string): this",
+              "doc": "The SignPath organization id — the GUID in the web app's URLs and under\n*Organization settings*. Defaults to the `SIGNPATH_ORGANIZATION_ID`\nenvironment variable."
+            },
+            {
+              "name": "apiToken",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiToken(token: string): this",
+              "doc": "The API token of a SignPath user with submitter permission on the\nproject's signing policy, sent as `Authorization: Bearer <token>`.\nDefaults to the `SIGNPATH_API_TOKEN` environment variable.\n\nThe token never reaches a progress line or an error message: every\nmessage this package builds is scrubbed of it. Declare it in the build as\na `parameter(...).secret()` so Zuke masks it in its own output too."
+            },
+            {
+              "name": "apiUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiUrl(url: string): this",
+              "doc": "The REST API's base URL, `https://app.signpath.io/Api` by default; the\nversion and organization (`/v1/<org>/…`) are appended. It carries the\ntoken, so it must be `https:` unless it is loopback or\n`ZUKE_ALLOW_INSECURE_URL` is set. The web app's links in errors and\nprogress lines use the same origin (`<origin>/Web/<org>/…`)."
+            },
+            {
+              "name": "requestTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "requestTimeout(duration: string | number): this",
+              "doc": "Abort one API call after this long (`\"30s\"`, or ms); default one minute."
+            },
+            {
+              "name": "downloadTimeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "downloadTimeout(duration: string | number): this",
+              "doc": "Abort a signed-artifact download that has not finished after this long\n(`\"10m\"`, or ms); default five minutes."
+            },
+            {
+              "name": "maxDownloadBytes",
+              "kind": "method",
+              "optional": false,
+              "signature": "maxDownloadBytes(bytes: number): this",
+              "doc": "Refuse a signed artifact larger than this many bytes; default 2 GiB."
+            },
+            {
+              "name": "retries",
+              "kind": "method",
+              "optional": false,
+              "signature": "retries(count: number): this",
+              "doc": "Retry a transient failure this many times (default 3), with a doubling\ndelay from one second. A status poll or a download is retried after a\nnetwork error, a timeout, or HTTP 429, 502, 503 or 504; a submission only\nafter 429 or 503, the answers that say the request was not processed, so\na retry cannot create a second signing request."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fetcher: fetch): this",
+              "doc": "Send with this `fetch` instead of the global one — the seam tests use."
+            },
+            {
+              "name": "readEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "readEnv(reader: unknown): this",
+              "doc": "Read environment variables through `reader` instead of `Deno.env`."
+            },
+            {
+              "name": "sleep",
+              "kind": "method",
+              "optional": false,
+              "signature": "sleep(sleeper: unknown): this",
+              "doc": "Wait through `sleeper` instead of a timer — the seam tests use."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "Read the time from `clock` (epoch ms) instead of `Date.now`."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(sink: unknown): this",
+              "doc": "Send progress lines to `sink` instead of `console.log`."
+            },
+            {
+              "name": "organizationId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "organizationId_?: string",
+              "doc": "The organization id (set by {@link organizationId}); else read from the environment."
+            },
+            {
+              "name": "apiToken_",
+              "kind": "property",
+              "optional": true,
+              "signature": "apiToken_?: string",
+              "doc": "The API token (set by {@link apiToken}); else read from the environment."
+            },
+            {
+              "name": "apiUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "apiUrl_: string",
+              "doc": "The REST API's base URL (set by {@link apiUrl})."
+            },
+            {
+              "name": "requestTimeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "requestTimeout_: number",
+              "doc": "The per-call timeout in ms (set by {@link requestTimeout})."
+            },
+            {
+              "name": "downloadTimeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "downloadTimeout_: number",
+              "doc": "The signed-artifact download timeout in ms (set by {@link downloadTimeout})."
+            },
+            {
+              "name": "maxDownloadBytes_",
+              "kind": "property",
+              "optional": false,
+              "signature": "maxDownloadBytes_: number",
+              "doc": "The signed-artifact size cap in bytes (set by {@link maxDownloadBytes})."
+            },
+            {
+              "name": "retries_",
+              "kind": "property",
+              "optional": false,
+              "signature": "retries_: number",
+              "doc": "How many times a transient failure is retried (set by {@link retries})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` to use (set by {@link fetch}); the global one by default."
+            },
+            {
+              "name": "readEnv_",
+              "kind": "property",
+              "optional": false,
+              "signature": "readEnv_: unknown",
+              "doc": "The environment reader (set by {@link readEnv})."
+            },
+            {
+              "name": "sleep_",
+              "kind": "property",
+              "optional": false,
+              "signature": "sleep_: unknown",
+              "doc": "How the task waits between polls and retries (set by {@link sleep})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock, in epoch ms (set by {@link now})."
+            },
+            {
+              "name": "log_",
+              "kind": "property",
+              "optional": false,
+              "signature": "log_: unknown",
+              "doc": "Where progress lines go (set by {@link log}); `console.log` by default."
+            }
+          ]
+        },
+        {
+          "name": "SignPathDownloadSettings",
+          "kind": "class",
+          "doc": "Settings for `SignPathTasks.download`: the connection, the signing\nrequest's id, and where to write the signed artifact.",
+          "signature": "class SignPathDownloadSettings extends SignPathStatusSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "The file to write the signed artifact to; its directory is created when\nmissing, and an existing file is replaced. Required."
+            },
+            {
+              "name": "output_",
+              "kind": "property",
+              "optional": true,
+              "signature": "output_?: string",
+              "doc": "Where to write the signed artifact (set by {@link output})."
+            }
+          ]
+        },
+        {
+          "name": "SignPathGitHubOriginSettings",
+          "kind": "class",
+          "doc": "Where the artifact to sign lives in GitHub Actions. Only the artifact id is\nrequired: the run, repository and token default to the workflow's own\nenvironment (`GITHUB_RUN_ID`, `GITHUB_REPOSITORY`, `GITHUB_TOKEN`).\n\n```ts\nawait SignPathTasks.submit((s) =>\n  s.projectSlug(\"zuke\").signingPolicySlug(\"release-signing\")\n    .gitHubOrigin((g) => g.artifactId(artifactId).token(githubToken))\n    .output(\"dist/signed/zuke.zip\")\n);\n```",
+          "signature": "class SignPathGitHubOriginSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "artifactId",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifactId(id: string | number): this",
+              "doc": "The id of the artifact `actions/upload-artifact` (v4 or later) uploaded —\nits `artifact-id` step output. Required."
+            },
+            {
+              "name": "runId",
+              "kind": "method",
+              "optional": false,
+              "signature": "runId(id: string | number): this",
+              "doc": "The workflow run the artifact belongs to; defaults to `GITHUB_RUN_ID`."
+            },
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(name: string): this",
+              "doc": "The repository, `owner/name`; defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The GitHub token the connector reads the run and downloads the artifact\nwith — the workflow's `GITHUB_TOKEN` (with `actions: read` and\n`contents: read`) is enough. Defaults to the `GITHUB_TOKEN` environment\nvariable. It is masked out of every message, like the API token.\n\nThe workflow's own token stops working when the workflow ends, so the\ntask must wait for SignPath to fetch the artifact; `submit` always waits."
+            },
+            {
+              "name": "connectorUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "connectorUrl(url: string): this",
+              "doc": "The SignPath GitHub connector to submit through; SignPath's hosted\nGitHub.com one by default. Only a self-hosted GitHub Enterprise Server\nneeds another. It carries the API token, so it must be `https:`."
+            },
+            {
+              "name": "artifactId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "artifactId_?: string",
+              "doc": "The workflow artifact's id (set by {@link artifactId})."
+            },
+            {
+              "name": "runId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "runId_?: string",
+              "doc": "The workflow run's id (set by {@link runId}); else `GITHUB_RUN_ID`."
+            },
+            {
+              "name": "repository_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repository_?: string",
+              "doc": "The repository, `owner/name` (set by {@link repository}); else `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The GitHub token (set by {@link token}); else `GITHUB_TOKEN`."
+            },
+            {
+              "name": "connectorUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "connectorUrl_: string",
+              "doc": "The connector's URL (set by {@link connectorUrl})."
+            }
+          ]
+        },
+        {
+          "name": "SignPathRequestError",
+          "kind": "class",
+          "doc": "A SignPath call produced no usable answer: it could not be sent, it timed\nout, it was redirected somewhere it must not follow, the download was larger\nthan allowed, or the answer was not shaped as SignPath documents it.",
+          "signature": "class SignPathRequestError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "method",
+              "kind": "property",
+              "optional": false,
+              "signature": "method: string",
+              "doc": "The HTTP method of the failing call."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The endpoint path, such as `/v1/<org>/SigningRequests` (never the host)."
+            }
+          ]
+        },
+        {
+          "name": "SignPathSignedArtifact",
+          "kind": "interface",
+          "doc": "A signed artifact written to disk by `SignPathTasks.download` or `submit`.",
+          "signature": "interface SignPathSignedArtifact",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The path it was written to — the one configured with `.output(...)`."
+            },
+            {
+              "name": "bytes",
+              "kind": "property",
+              "optional": false,
+              "signature": "bytes: number",
+              "doc": "Its size in bytes."
+            }
+          ]
+        },
+        {
+          "name": "SignPathSigningError",
+          "kind": "class",
+          "doc": "A signing request reached a final status other than `Completed` — it was\n`Denied` by an approver, `Failed` (a malware scan, a processing error, an\nartifact SignPath could not retrieve) or `Canceled`.",
+          "signature": "class SignPathSigningError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "signingRequestId",
+              "kind": "property",
+              "optional": false,
+              "signature": "signingRequestId: string",
+              "doc": "The signing request's id."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: string",
+              "doc": "The final status, such as `Denied`."
+            },
+            {
+              "name": "workflowStatus",
+              "kind": "property",
+              "optional": false,
+              "signature": "workflowStatus: string | undefined",
+              "doc": "The finer-grained workflow status, such as `MalwareDetected`, when sent."
+            },
+            {
+              "name": "webUrl",
+              "kind": "property",
+              "optional": false,
+              "signature": "webUrl: string",
+              "doc": "The signing request's page in the SignPath web app."
+            }
+          ]
+        },
+        {
+          "name": "SignPathSigningRequestStatus",
+          "kind": "interface",
+          "doc": "Where a signing request stands, from `GET …/SigningRequests/<id>/Status`.\n\nSignPath documents these `status` values: `InProgress`,\n`WaitingForApproval`, `Completed`, `Failed`, `Denied` and `Canceled` — the\nlast four final. `workflowStatus` is finer-grained (`Submitted`,\n`RetrievingArtifact`, `ScanningForMalware`, `Processing`, `MalwareDetected`,\n`ArtifactRetrievalFailed`, …). Both are kept as the strings SignPath sent, so\na value added later still reads.",
+          "signature": "interface SignPathSigningRequestStatus",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "signingRequestId",
+              "kind": "property",
+              "optional": false,
+              "signature": "signingRequestId: string",
+              "doc": "The signing request's id, a GUID."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: string",
+              "doc": "The status, such as `InProgress` or `Completed`."
+            },
+            {
+              "name": "workflowStatus",
+              "kind": "property",
+              "optional": false,
+              "signature": "workflowStatus: string | undefined",
+              "doc": "The workflow status, such as `ScanningForMalware`, when sent."
+            },
+            {
+              "name": "isFinalStatus",
+              "kind": "property",
+              "optional": false,
+              "signature": "isFinalStatus: boolean",
+              "doc": "Whether the request will not change any more: SignPath's `isFinalStatus`,\nor — should an answer leave it out — whether `status` is one of the four\ndocumented final ones."
+            },
+            {
+              "name": "webUrl",
+              "kind": "property",
+              "optional": false,
+              "signature": "webUrl: string",
+              "doc": "The signing request's page in the SignPath web app."
+            }
+          ]
+        },
+        {
+          "name": "SignPathStatusSettings",
+          "kind": "class",
+          "doc": "Settings for `SignPathTasks.status`: the connection and the request's id.",
+          "signature": "class SignPathStatusSettings extends SignPathConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "signingRequestId",
+              "kind": "method",
+              "optional": false,
+              "signature": "signingRequestId(id: string): this",
+              "doc": "The signing request to read — the GUID `submit` returned. Required."
+            },
+            {
+              "name": "signingRequestId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "signingRequestId_?: string",
+              "doc": "The signing request's id (set by {@link signingRequestId})."
+            }
+          ]
+        },
+        {
+          "name": "SignPathSubmission",
+          "kind": "interface",
+          "doc": "What `SignPathTasks.submit` did: the request, its outcome, the download.",
+          "signature": "interface SignPathSubmission",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "signingRequestId",
+              "kind": "property",
+              "optional": false,
+              "signature": "signingRequestId: string",
+              "doc": "The new signing request's id, a GUID."
+            },
+            {
+              "name": "webUrl",
+              "kind": "property",
+              "optional": false,
+              "signature": "webUrl: string",
+              "doc": "The signing request's page in the SignPath web app."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: SignPathSigningRequestStatus",
+              "doc": "The final status — always `Completed`; anything else throws."
+            },
+            {
+              "name": "signedArtifact",
+              "kind": "property",
+              "optional": false,
+              "signature": "signedArtifact: SignPathSignedArtifact | undefined",
+              "doc": "The signed artifact, when `.output(...)` asked for it to be downloaded."
+            }
+          ]
+        },
+        {
+          "name": "SignPathSubmitSettings",
+          "kind": "class",
+          "doc": "Settings for `SignPathTasks.submit`.",
+          "signature": "class SignPathSubmitSettings extends SignPathConnectionSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "projectSlug",
+              "kind": "method",
+              "optional": false,
+              "signature": "projectSlug(slug: string): this",
+              "doc": "The SignPath project's slug. Required."
+            },
+            {
+              "name": "signingPolicySlug",
+              "kind": "method",
+              "optional": false,
+              "signature": "signingPolicySlug(slug: string): this",
+              "doc": "The signing policy's slug, such as `release-signing` — it decides the\ncertificate and whether an approver must sign off. Required."
+            },
+            {
+              "name": "artifactConfigurationSlug",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifactConfigurationSlug(slug: string): this",
+              "doc": "The artifact configuration's slug — which files inside the artifact are\nsigned, and how. The project's default configuration when unset."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "A description shown on the request, such as the version being released."
+            },
+            {
+              "name": "parameter",
+              "kind": "method",
+              "optional": false,
+              "signature": "parameter(name: string, value: string): this",
+              "doc": "A user-defined parameter the artifact configuration reads (a version\nnumber to stamp, say). Names are letters, digits, `.`, `-` and `_`.\nRepeatable."
+            },
+            {
+              "name": "artifact",
+              "kind": "method",
+              "optional": false,
+              "signature": "artifact(path: PathLike): this",
+              "doc": "Upload this local file as the artifact (`SubmitWithArtifact`). Exactly one\nof `artifact` and {@link gitHubOrigin} is required.\n\nSignPath's open-source programme accepts only builds whose origin it can\nverify, so for it use {@link gitHubOrigin} instead."
+            },
+            {
+              "name": "gitHubOrigin",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitHubOrigin(configure: Configure<SignPathGitHubOriginSettings>): this",
+              "doc": "Have SignPath fetch the artifact from a GitHub Actions workflow run and\nverify its origin. Exactly one of {@link artifact} and `gitHubOrigin` is\nrequired."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Download the signed artifact to this file once the request completes; its\ndirectory is created when missing. Without it, `submit` only waits."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string | number): this",
+              "doc": "Fail with a `SignPathTimeoutError` when the request is not final after\nthis long (`\"30m\"`, or ms); default ten minutes. A policy that needs a\nmanual approval wants longer."
+            },
+            {
+              "name": "pollInterval",
+              "kind": "method",
+              "optional": false,
+              "signature": "pollInterval(duration: string | number): this",
+              "doc": "Poll the request's status this often (`\"5s\"`, or ms; at least one second);\ndefault ten seconds."
+            },
+            {
+              "name": "projectSlug_",
+              "kind": "property",
+              "optional": true,
+              "signature": "projectSlug_?: string",
+              "doc": "The project's slug (set by {@link projectSlug})."
+            },
+            {
+              "name": "signingPolicySlug_",
+              "kind": "property",
+              "optional": true,
+              "signature": "signingPolicySlug_?: string",
+              "doc": "The signing policy's slug (set by {@link signingPolicySlug})."
+            },
+            {
+              "name": "artifactConfigurationSlug_",
+              "kind": "property",
+              "optional": true,
+              "signature": "artifactConfigurationSlug_?: string",
+              "doc": "The artifact configuration's slug (set by {@link artifactConfigurationSlug})."
+            },
+            {
+              "name": "description_",
+              "kind": "property",
+              "optional": true,
+              "signature": "description_?: string",
+              "doc": "The request's description (set by {@link description})."
+            },
+            {
+              "name": "parameters_",
+              "kind": "property",
+              "optional": false,
+              "signature": "parameters_: Array<unknown>",
+              "doc": "User-defined parameters, in the order set (set by {@link parameter})."
+            },
+            {
+              "name": "artifact_",
+              "kind": "property",
+              "optional": true,
+              "signature": "artifact_?: string",
+              "doc": "A local file to upload (set by {@link artifact})."
+            },
+            {
+              "name": "gitHubOrigin_",
+              "kind": "property",
+              "optional": true,
+              "signature": "gitHubOrigin_?: SignPathGitHubOriginSettings",
+              "doc": "A GitHub Actions artifact to fetch (set by {@link gitHubOrigin})."
+            },
+            {
+              "name": "output_",
+              "kind": "property",
+              "optional": true,
+              "signature": "output_?: string",
+              "doc": "Where to write the signed artifact (set by {@link output})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeout_: number",
+              "doc": "How long to wait for the request to finish, in ms (set by {@link timeout})."
+            },
+            {
+              "name": "pollInterval_",
+              "kind": "property",
+              "optional": false,
+              "signature": "pollInterval_: number",
+              "doc": "How often to poll its status, in ms (set by {@link pollInterval})."
+            }
+          ]
+        },
+        {
+          "name": "SignPathTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for SignPath's code-signing service.",
+          "signature": "const SignPathTasks: SignPathTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "SignPathTasksApi",
+          "kind": "interface",
+          "doc": "The operations {@link SignPathTasks} exposes.",
+          "signature": "interface SignPathTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "submit",
+              "kind": "method",
+              "optional": false,
+              "signature": "submit(configure: Configure<SignPathSubmitSettings>): Promise<SignPathSubmission>",
+              "doc": "Submit a signing request, wait for it to complete, and — with\n`.output(path)` — download the signed artifact.\n\n```ts\nconst { signingRequestId } = await SignPathTasks.submit((s) =>\n  s.organizationId(orgId).apiToken(token)\n    .projectSlug(\"zuke\").signingPolicySlug(\"release-signing\")\n    .gitHubOrigin((g) => g.artifactId(artifactId))\n    .timeout(\"30m\").output(\"dist/signed/zuke.zip\")\n);\n```\n"
+            },
+            {
+              "name": "status",
+              "kind": "method",
+              "optional": false,
+              "signature": "status(configure: Configure<SignPathStatusSettings>): Promise<SignPathSigningRequestStatus>",
+              "doc": "Read a signing request's status once — no waiting.\n\n```ts\nconst { status } = await SignPathTasks.status((s) =>\n  s.signingRequestId(id)\n);\n```"
+            },
+            {
+              "name": "download",
+              "kind": "method",
+              "optional": false,
+              "signature": "download(configure: Configure<SignPathDownloadSettings>): Promise<SignPathSignedArtifact>",
+              "doc": "Download a completed signing request's signed artifact.\n\n```ts\nawait SignPathTasks.download((s) =>\n  s.signingRequestId(id).output(\"dist/signed/zuke.exe\")\n);\n```"
+            }
+          ]
+        },
+        {
+          "name": "SignPathTimeoutError",
+          "kind": "class",
+          "doc": "A signing request was still not final when the wait ran out — typically\none waiting for a manual approval. The request is left as it is; approve\nit and fetch the result later with `SignPathTasks.download`.",
+          "signature": "class SignPathTimeoutError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "signingRequestId",
+              "kind": "property",
+              "optional": false,
+              "signature": "signingRequestId: string",
+              "doc": "The signing request's id."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: string",
+              "doc": "The last status seen, such as `WaitingForApproval`."
+            },
+            {
+              "name": "timeoutMs",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeoutMs: number",
+              "doc": "How long the wait lasted, in milliseconds."
+            },
+            {
+              "name": "webUrl",
+              "kind": "property",
+              "optional": false,
+              "signature": "webUrl: string",
+              "doc": "The signing request's page in the SignPath web app."
+            }
+          ]
+        },
+        {
+          "name": "SignPathValidationError",
+          "kind": "class",
+          "doc": "The SignPath GitHub connector refused to create the signing request because\nthe build's origin did not verify — the artifact is not from this workflow\nrun, a job ran on a self-hosted runner, the GitHub token cannot read the\nrun, and the like. {@link issues} lists what the connector reported.",
+          "signature": "class SignPathValidationError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            },
+            {
+              "name": "issues",
+              "kind": "property",
+              "optional": false,
+              "signature": "issues: unknown",
+              "doc": "The validation errors, in the order the connector reported them."
+            }
+          ]
+        },
+        {
+          "name": "SignPathValidationIssue",
+          "kind": "interface",
+          "doc": "One build-system validation error the GitHub connector reported.",
+          "signature": "interface SignPathValidationIssue",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": false,
+              "signature": "error: string",
+              "doc": "What failed, as the connector worded it (scrubbed and capped)."
+            },
+            {
+              "name": "howToFix",
+              "kind": "property",
+              "optional": false,
+              "signature": "howToFix: string | undefined",
+              "doc": "The connector's advice on fixing it, when it gave any."
+            }
+          ]
+        },
+        {
+          "name": "SigntoolHashAlgorithm",
+          "kind": "typeAlias",
+          "doc": "The digest algorithms `/hash` accepts.",
+          "signature": "type SigntoolHashAlgorithm = SHA1 | SHA256",
+          "deprecated": false
+        },
+        {
+          "name": "SigntoolTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the Windows SDK's `signtool`.",
+          "signature": "const SigntoolTasks: SigntoolTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "SigntoolTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link SigntoolTasks}.",
+          "signature": "interface SigntoolTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(configure: Configure<SigntoolVerifySettings>): Promise<CommandOutput>",
+              "doc": "Check a file's Authenticode signature with `signtool verify`; a file that\nis unsigned or fails the policy exits non-zero, which throws unless\n`.noThrow()` is set."
+            }
+          ]
+        },
+        {
+          "name": "SigntoolVerifySettings",
+          "kind": "class",
+          "doc": "Settings for `signtool verify`.",
+          "signature": "class SigntoolVerifySettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "authenticodePolicy",
+              "kind": "method",
+              "optional": false,
+              "signature": "authenticodePolicy(): this",
+              "doc": "Verify against the default Authenticode policy (`/pa`) — what a signed\n`.exe` or `.msi` needs. Without it `signtool` applies the Windows driver\npolicy and rejects ordinary code-signing certificates."
+            },
+            {
+              "name": "kernelPolicy",
+              "kind": "method",
+              "optional": false,
+              "signature": "kernelPolicy(): this",
+              "doc": "Verify against the kernel-mode driver signing policy (`/kp`)."
+            },
+            {
+              "name": "policy",
+              "kind": "method",
+              "optional": false,
+              "signature": "policy(guid: string): this",
+              "doc": "Verify against the policy with this GUID (`/pg`)."
+            },
+            {
+              "name": "allSignatures",
+              "kind": "method",
+              "optional": false,
+              "signature": "allSignatures(): this",
+              "doc": "Verify every signature of a file that carries several (`/all`)."
+            },
+            {
+              "name": "signatureIndex",
+              "kind": "method",
+              "optional": false,
+              "signature": "signatureIndex(index: number): this",
+              "doc": "Verify only the signature at this index, from 0 (`/ds`)."
+            },
+            {
+              "name": "hash",
+              "kind": "method",
+              "optional": false,
+              "signature": "hash(algorithm: SigntoolHashAlgorithm): this",
+              "doc": "Look the file up in a catalog only for this digest algorithm (`/hash`)."
+            },
+            {
+              "name": "catalog",
+              "kind": "method",
+              "optional": false,
+              "signature": "catalog(path: PathLike): this",
+              "doc": "Verify against this catalog file (`/c`)."
+            },
+            {
+              "name": "rootSubjectName",
+              "kind": "method",
+              "optional": false,
+              "signature": "rootSubjectName(name: string): this",
+              "doc": "Require the signing certificate to chain to a root whose subject name\ncontains this text (`/r`)."
+            },
+            {
+              "name": "timestampWarning",
+              "kind": "method",
+              "optional": false,
+              "signature": "timestampWarning(): this",
+              "doc": "Warn when the signature is not timestamped (`/tw`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(): this",
+              "doc": "Print the signature's description and URL (`/d`)."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Print the signer, the chain and the timestamp (`/v`)."
+            },
+            {
+              "name": "debug",
+              "kind": "method",
+              "optional": false,
+              "signature": "debug(): this",
+              "doc": "Print debugging information (`/debug`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(...paths: PathLike[]): this",
+              "doc": "The files to verify (positional), at least one. A relative path that\nstarts with `-` is passed as `./-…` so it cannot be read as an option; one\nthat starts with `/` is refused, since `signtool` would read it as an\noption and on Windows it means the current drive's root — give a\ndrive-qualified or a relative path instead."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/prometheus",
       "dir": "prometheus",
       "summary": "A typed client for the Prometheus HTTP API, for Zuke builds. `PrometheusTasks`",
