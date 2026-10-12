@@ -42844,6 +42844,194 @@
           ]
         },
         {
+          "name": "GhContentsApi",
+          "kind": "interface",
+          "doc": "The create-or-update-file operation {@link GhTasks} exposes.",
+          "signature": "interface GhContentsApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "createOrUpdateFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "createOrUpdateFile(configure?: Configure<GhContentsSettings>): Promise<GhContentsResult>",
+              "doc": "Write one file through the contents API, creating it or replacing its\ncontent — or, when it already holds exactly this content, writing nothing\nand reporting `unchanged`.\n\nA write that loses a race (the file changed between the read and the\nwrite) is read once more: if the file now holds this content the result is\n`unchanged`, otherwise the conflict is raised rather than overwritten."
+            }
+          ]
+        },
+        {
+          "name": "GhContentsResult",
+          "kind": "interface",
+          "doc": "What became of a {@link GhContentsApi.createOrUpdateFile} call.",
+          "signature": "interface GhContentsResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: created | updated | unchanged",
+              "doc": "`created` when the file did not exist, `updated` when it held other\ncontent, `unchanged` when it already held exactly this content and nothing\nwas written."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The repository-relative path that was written (or left alone)."
+            },
+            {
+              "name": "commitSha",
+              "kind": "property",
+              "optional": true,
+              "signature": "commitSha?: string",
+              "doc": "The commit that wrote the file; absent when the state is `unchanged`."
+            },
+            {
+              "name": "blobSha",
+              "kind": "property",
+              "optional": false,
+              "signature": "blobSha: string",
+              "doc": "The file's git blob SHA after the call."
+            }
+          ]
+        },
+        {
+          "name": "GhContentsSettings",
+          "kind": "class",
+          "doc": "Settings for creating or updating one file.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them names only the file.",
+          "signature": "class GhContentsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(value: string): this",
+              "doc": "The file's path inside the repository, e.g. `Formula/app.rb` (required).\nRelative, `/`-separated, with no `.` or `..` segment."
+            },
+            {
+              "name": "content",
+              "kind": "method",
+              "optional": false,
+              "signature": "content(text: string): this",
+              "doc": "The file's new content, as text (required). Written as UTF-8."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "The commit message (required)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "The branch to write on. Defaults to the repository's default branch."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: string): this",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to authenticate with — needs `contents: write` on the\nrepository. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "repoSlug_",
+              "kind": "method",
+              "optional": false,
+              "signature": "repoSlug_(): string",
+              "doc": "The effective `owner/repo`, from the setting or the environment."
+            },
+            {
+              "name": "authToken_",
+              "kind": "method",
+              "optional": false,
+              "signature": "authToken_(): string",
+              "doc": "The effective token, from the setting or the environment."
+            },
+            {
+              "name": "path_",
+              "kind": "property",
+              "optional": true,
+              "signature": "path_?: string",
+              "doc": "The repository-relative file path. Set by {@link path}."
+            },
+            {
+              "name": "content_",
+              "kind": "property",
+              "optional": true,
+              "signature": "content_?: string",
+              "doc": "The new file content. Set by {@link content}."
+            },
+            {
+              "name": "message_",
+              "kind": "property",
+              "optional": true,
+              "signature": "message_?: string",
+              "doc": "The commit message. Set by {@link message}."
+            },
+            {
+              "name": "branch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "branch_?: string",
+              "doc": "The branch to write on. Set by {@link branch}."
+            },
+            {
+              "name": "repo_",
+              "kind": "property",
+              "optional": true,
+              "signature": "repo_?: string",
+              "doc": "`owner/repo`. Set by {@link repo}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "baseUrl_: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
           "name": "GhCredential",
           "kind": "typeAlias",
           "doc": "A credential a build passes: a parameter, or a literal for tests.",
@@ -48158,6 +48346,1204 @@
               "optional": false,
               "signature": "jobs: WorkflowJob[]",
               "doc": "Each job's conclusion, so a build can branch on which suite failed."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@zuke/homebrew",
+      "dir": "homebrew",
+      "summary": "`@zuke/homebrew` — ship a prebuilt binary through a",
+      "symbols": [
+        {
+          "name": "BrewAuditSettings",
+          "kind": "class",
+          "doc": "Settings for `brew audit`. With no formulae named, brew audits every\nformula it can find.",
+          "signature": "class BrewAuditSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulae(...names: string[]): this",
+              "doc": "Formulae to audit; repeatable."
+            },
+            {
+              "name": "strict",
+              "kind": "method",
+              "optional": false,
+              "signature": "strict(): this",
+              "doc": "Run the additional, stricter checks (`--strict`)."
+            },
+            {
+              "name": "online",
+              "kind": "method",
+              "optional": false,
+              "signature": "online(): this",
+              "doc": "Run the additional checks that need the network (`--online`)."
+            },
+            {
+              "name": "new",
+              "kind": "method",
+              "optional": false,
+              "signature": "new(): this",
+              "doc": "Run the checks for a formula new to Homebrew (`--new`), which imply\n`--strict` and `--online`."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(): this",
+              "doc": "Treat every name as a formula, not a cask (`--formula`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewCommandSettings",
+          "kind": "class",
+          "doc": "Base for a typed `brew` subcommand: the verb, then its own flags, then its\noperands — the order brew's own usage lines print. Anything added through\nthe inherited `.command(...)`/`.flag(...)` escape hatches follows.\n\nOperands are refused when they start with `-`. A formula or tap name never\ndoes, and brew would read one that did as an option — so `--force` passed as\na \"formula\" would change what the command does rather than fail.",
+          "signature": "class BrewCommandSettings extends BrewSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "BrewFormulaInfo",
+          "kind": "interface",
+          "doc": "One formula, as `brew info --json=v2` describes it.",
+          "signature": "interface BrewFormulaInfo",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The short name, e.g. `app`."
+            },
+            {
+              "name": "fullName",
+              "kind": "property",
+              "optional": false,
+              "signature": "fullName: string",
+              "doc": "The fully qualified name, e.g. `acme/tap/app`."
+            },
+            {
+              "name": "tap",
+              "kind": "property",
+              "optional": false,
+              "signature": "tap: string | null",
+              "doc": "The tap it comes from, e.g. `acme/tap`, or `null` for a path formula."
+            },
+            {
+              "name": "desc",
+              "kind": "property",
+              "optional": false,
+              "signature": "desc: string | null",
+              "doc": "The one-line description, or `null` when it has none."
+            },
+            {
+              "name": "homepage",
+              "kind": "property",
+              "optional": false,
+              "signature": "homepage: string | null",
+              "doc": "The homepage, or `null` when it has none."
+            },
+            {
+              "name": "versions",
+              "kind": "property",
+              "optional": false,
+              "signature": "versions: BrewFormulaVersions",
+              "doc": "The available versions."
+            },
+            {
+              "name": "installed",
+              "kind": "property",
+              "optional": false,
+              "signature": "installed: string[]",
+              "doc": "The installed versions, oldest first as brew lists them; empty when none."
+            },
+            {
+              "name": "linkedKeg",
+              "kind": "property",
+              "optional": false,
+              "signature": "linkedKeg: string | null",
+              "doc": "The linked keg's version, or `null` when none is linked."
+            },
+            {
+              "name": "outdated",
+              "kind": "property",
+              "optional": false,
+              "signature": "outdated: boolean",
+              "doc": "Whether an installed version is older than the current one."
+            }
+          ]
+        },
+        {
+          "name": "BrewFormulaVersions",
+          "kind": "interface",
+          "doc": "A formula's available versions, as `brew info` reports them.",
+          "signature": "interface BrewFormulaVersions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "stable",
+              "kind": "property",
+              "optional": false,
+              "signature": "stable: string | null",
+              "doc": "The stable version, or `null` for a HEAD-only formula."
+            },
+            {
+              "name": "head",
+              "kind": "property",
+              "optional": false,
+              "signature": "head: string | null",
+              "doc": "The HEAD version, or `null` when the formula has no HEAD spec."
+            },
+            {
+              "name": "bottle",
+              "kind": "property",
+              "optional": false,
+              "signature": "bottle: boolean",
+              "doc": "Whether a bottle (a prebuilt package) exists for this platform."
+            }
+          ]
+        },
+        {
+          "name": "BrewInfo",
+          "kind": "interface",
+          "doc": "What `brew info --json=v2` reported.",
+          "signature": "interface BrewInfo",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "property",
+              "optional": false,
+              "signature": "formulae: BrewFormulaInfo[]",
+              "doc": "The formulae, in the order brew printed them."
+            }
+          ]
+        },
+        {
+          "name": "BrewInfoSettings",
+          "kind": "class",
+          "doc": "Settings for `brew info`, which always runs with `--json=v2` — the\ndocumented, machine-readable form — so the task can hand back a\n{@link BrewInfo}.",
+          "signature": "class BrewInfoSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulae(...names: string[]): this",
+              "doc": "Formulae to describe; repeatable."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(): this",
+              "doc": "Treat every name as a formula, not a cask (`--formula`)."
+            },
+            {
+              "name": "installed",
+              "kind": "method",
+              "optional": false,
+              "signature": "installed(): this",
+              "doc": "Describe every installed formula (`--installed`), instead of naming them."
+            }
+          ]
+        },
+        {
+          "name": "BrewInstallSettings",
+          "kind": "class",
+          "doc": "Settings for `brew install`. A formula is named by its name, its\n`user/tap/name`, or — where Homebrew still allows it — a local `.rb` path.",
+          "signature": "class BrewInstallSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulae(...names: string[]): this",
+              "doc": "Formulae to install (required); repeatable."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(): this",
+              "doc": "Treat every name as a formula, not a cask (`--formula`)."
+            },
+            {
+              "name": "buildFromSource",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildFromSource(): this",
+              "doc": "Compile from source even when a bottle exists (`--build-from-source`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Install without checking for keg-only or unmigrated versions (`--force`)."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Print the verification and post-install steps (`--verbose`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewLivecheckSettings",
+          "kind": "class",
+          "doc": "Settings for `brew livecheck`, which looks for a newer upstream version.",
+          "signature": "class BrewLivecheckSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulae(...names: string[]): this",
+              "doc": "Formulae to check; repeatable."
+            },
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Print the result as JSON (`--json`)."
+            },
+            {
+              "name": "newerOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "newerOnly(): this",
+              "doc": "Report only versions newer than the installed one (`--newer-only`)."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(): this",
+              "doc": "Check only formulae, not casks (`--formula`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewRepositorySettings",
+          "kind": "class",
+          "doc": "Settings for `brew --repository`, which prints where Homebrew's repository\nis — or, given a tap, where that tap's directory is.",
+          "signature": "class BrewRepositorySettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tap",
+              "kind": "method",
+              "optional": false,
+              "signature": "tap(name: string): this",
+              "doc": "The tap whose directory to print, `user/repo`."
+            }
+          ]
+        },
+        {
+          "name": "BrewSettings",
+          "kind": "class",
+          "doc": "Settings for a `brew` invocation.",
+          "signature": "class BrewSettings extends SubcommandSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "BrewStyleSettings",
+          "kind": "class",
+          "doc": "Settings for `brew style`, Homebrew's RuboCop check. With nothing named it\nchecks Homebrew's own code and every tap.",
+          "signature": "class BrewStyleSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "targets",
+              "kind": "method",
+              "optional": false,
+              "signature": "targets(...values: string[]): this",
+              "doc": "Files, taps or formulae to check; repeatable."
+            },
+            {
+              "name": "fix",
+              "kind": "method",
+              "optional": false,
+              "signature": "fix(): this",
+              "doc": "Correct what RuboCop can correct (`--fix`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewTapNewSettings",
+          "kind": "class",
+          "doc": "Settings for `brew tap-new`, which generates a new, local tap.",
+          "signature": "class BrewTapNewSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(tap: string): this",
+              "doc": "The tap to create (required), `user/repo`."
+            },
+            {
+              "name": "noGit",
+              "kind": "method",
+              "optional": false,
+              "signature": "noGit(): this",
+              "doc": "Do not initialise a git repository for it (`--no-git`)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "Initialise git on this branch, with its CI workflows (`--branch=`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewTapSettings",
+          "kind": "class",
+          "doc": "Settings for `brew tap`, which adds a formula repository.",
+          "signature": "class BrewTapSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(tap: string, url?: string): this",
+              "doc": "The tap to add (required), `user/repo` — brew clones\n`github.com/user/homebrew-repo` — and optionally the URL to clone it from\ninstead."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Tap a core tap even under API mode (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the Homebrew `brew` CLI.",
+          "signature": "const BrewTasks: BrewTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "BrewTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link BrewTasks}.",
+          "signature": "interface BrewTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<BrewSettings>): Promise<CommandOutput>",
+              "doc": "Run any `brew` command, built with `.command(...)`/`.flag(...)`."
+            },
+            {
+              "name": "install",
+              "kind": "method",
+              "optional": false,
+              "signature": "install(configure: Configure<BrewInstallSettings>): Promise<CommandOutput>",
+              "doc": "Install formulae (`brew install`)."
+            },
+            {
+              "name": "uninstall",
+              "kind": "method",
+              "optional": false,
+              "signature": "uninstall(configure: Configure<BrewUninstallSettings>): Promise<CommandOutput>",
+              "doc": "Uninstall formulae (`brew uninstall`)."
+            },
+            {
+              "name": "test",
+              "kind": "method",
+              "optional": false,
+              "signature": "test(configure: Configure<BrewTestSettings>): Promise<CommandOutput>",
+              "doc": "Run installed formulae's `test do` blocks (`brew test`)."
+            },
+            {
+              "name": "audit",
+              "kind": "method",
+              "optional": false,
+              "signature": "audit(configure?: Configure<BrewAuditSettings>): Promise<CommandOutput>",
+              "doc": "Audit formulae against Homebrew's rules (`brew audit`)."
+            },
+            {
+              "name": "style",
+              "kind": "method",
+              "optional": false,
+              "signature": "style(configure?: Configure<BrewStyleSettings>): Promise<CommandOutput>",
+              "doc": "Check formulae against Homebrew's RuboCop style (`brew style`)."
+            },
+            {
+              "name": "livecheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "livecheck(configure?: Configure<BrewLivecheckSettings>): Promise<CommandOutput>",
+              "doc": "Look for newer upstream versions (`brew livecheck`)."
+            },
+            {
+              "name": "tap",
+              "kind": "method",
+              "optional": false,
+              "signature": "tap(configure: Configure<BrewTapSettings>): Promise<CommandOutput>",
+              "doc": "Add a tap (`brew tap`)."
+            },
+            {
+              "name": "untap",
+              "kind": "method",
+              "optional": false,
+              "signature": "untap(configure: Configure<BrewUntapSettings>): Promise<CommandOutput>",
+              "doc": "Remove taps (`brew untap`)."
+            },
+            {
+              "name": "tapNew",
+              "kind": "method",
+              "optional": false,
+              "signature": "tapNew(configure: Configure<BrewTapNewSettings>): Promise<CommandOutput>",
+              "doc": "Generate a new local tap (`brew tap-new`)."
+            },
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(configure?: Configure<BrewRepositorySettings>): Promise<string>",
+              "doc": "The directory of Homebrew's repository, or of a tap\n(`brew --repository [tap]`), as a path with the trailing newline removed."
+            },
+            {
+              "name": "info",
+              "kind": "method",
+              "optional": false,
+              "signature": "info(configure: Configure<BrewInfoSettings>): Promise<BrewInfo>",
+              "doc": "Describe formulae (`brew info --json=v2`), parsed into a {@link BrewInfo}:\nnames, versions and the installed versions."
+            }
+          ]
+        },
+        {
+          "name": "BrewTestSettings",
+          "kind": "class",
+          "doc": "Settings for `brew test`, which runs a formula's `test do` block.",
+          "signature": "class BrewTestSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulae(...names: string[]): this",
+              "doc": "Installed formulae to test (required); repeatable."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Test even when the formula is unlinked (`--force`)."
+            },
+            {
+              "name": "keepTmp",
+              "kind": "method",
+              "optional": false,
+              "signature": "keepTmp(): this",
+              "doc": "Keep the temporary files the test created (`--keep-tmp`)."
+            },
+            {
+              "name": "retry",
+              "kind": "method",
+              "optional": false,
+              "signature": "retry(): this",
+              "doc": "Retry once if the test fails (`--retry`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewUninstallSettings",
+          "kind": "class",
+          "doc": "Settings for `brew uninstall`.",
+          "signature": "class BrewUninstallSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulae",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulae(...names: string[]): this",
+              "doc": "Formulae to uninstall (required); repeatable."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(): this",
+              "doc": "Treat every name as a formula, not a cask (`--formula`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Delete every installed version (`--force`)."
+            },
+            {
+              "name": "ignoreDependencies",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreDependencies(): this",
+              "doc": "Uninstall even when another formula depends on it (`--ignore-dependencies`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewUntapSettings",
+          "kind": "class",
+          "doc": "Settings for `brew untap`, which removes taps.",
+          "signature": "class BrewUntapSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "taps",
+              "kind": "method",
+              "optional": false,
+              "signature": "taps(...names: string[]): this",
+              "doc": "Taps to remove (required), `user/repo`; repeatable."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Uninstall the tap's formulae first, rather than refusing (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "FormulaArch",
+          "kind": "typeAlias",
+          "doc": "The CPU families a formula's `on_<arch>` blocks name.",
+          "signature": "type FormulaArch = arm | intel",
+          "deprecated": false
+        },
+        {
+          "name": "FormulaBinary",
+          "kind": "interface",
+          "doc": "A validated binary, as the formula renders it.",
+          "signature": "interface FormulaBinary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "os",
+              "kind": "property",
+              "optional": false,
+              "signature": "os: FormulaOs",
+              "doc": "The operating system."
+            },
+            {
+              "name": "arch",
+              "kind": "property",
+              "optional": false,
+              "signature": "arch: FormulaArch",
+              "doc": "The CPU family."
+            },
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "The `https` download URL."
+            },
+            {
+              "name": "sha256",
+              "kind": "property",
+              "optional": false,
+              "signature": "sha256: string",
+              "doc": "The archive's SHA-256, 64 lowercase hex digits."
+            }
+          ]
+        },
+        {
+          "name": "FormulaBinarySettings",
+          "kind": "class",
+          "doc": "Settings for one prebuilt binary of a formula, rendered as\n`on_<os> do on_<arch> do url \"…\" sha256 \"…\" end end`.\n\n```ts\ns.binary((b) =>\n  b.os(\"macos\").arch(\"arm\").url(\"https://…/app-aarch64-apple-darwin.tar.gz\")\n    .sha256(\"…\")\n)\n```",
+          "signature": "class FormulaBinarySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "os",
+              "kind": "method",
+              "optional": false,
+              "signature": "os(value: FormulaOs): this",
+              "doc": "The operating system the archive runs on (required)."
+            },
+            {
+              "name": "arch",
+              "kind": "method",
+              "optional": false,
+              "signature": "arch(value: FormulaArch): this",
+              "doc": "The CPU family the archive runs on (required)."
+            },
+            {
+              "name": "url",
+              "kind": "method",
+              "optional": false,
+              "signature": "url(value: string): this",
+              "doc": "Where Homebrew downloads the archive (required; must be `https`)."
+            },
+            {
+              "name": "sha256",
+              "kind": "method",
+              "optional": false,
+              "signature": "sha256(value: string): this",
+              "doc": "The archive's SHA-256 (required; 64 lowercase hex digits)."
+            },
+            {
+              "name": "resolve_",
+              "kind": "method",
+              "optional": false,
+              "signature": "resolve_(): FormulaBinary",
+              "doc": "Validate the settings into a {@link FormulaBinary}.\n"
+            },
+            {
+              "name": "os_",
+              "kind": "property",
+              "optional": true,
+              "signature": "os_?: FormulaOs",
+              "doc": "The operating system. Set by {@link os}."
+            },
+            {
+              "name": "arch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "arch_?: FormulaArch",
+              "doc": "The CPU family. Set by {@link arch}."
+            },
+            {
+              "name": "url_",
+              "kind": "property",
+              "optional": true,
+              "signature": "url_?: string",
+              "doc": "The download URL. Set by {@link url}."
+            },
+            {
+              "name": "sha256_",
+              "kind": "property",
+              "optional": true,
+              "signature": "sha256_?: string",
+              "doc": "The archive's SHA-256. Set by {@link sha256}."
+            }
+          ]
+        },
+        {
+          "name": "FormulaOs",
+          "kind": "typeAlias",
+          "doc": "The operating systems a formula's `on_<os>` blocks name.",
+          "signature": "type FormulaOs = macos | linux",
+          "deprecated": false
+        },
+        {
+          "name": "FormulaSettings",
+          "kind": "class",
+          "doc": "Settings for a formula that installs prebuilt binaries.",
+          "signature": "class FormulaSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The formula name (required), e.g. `app` or `app@2`: a lowercase letter,\nthen lowercase letters, digits, `-`, `_`, `.`, `+` or `@`. The Ruby class\nname is derived from it exactly as Homebrew does — `app-cli` defines\n`AppCli`, `app@2` defines `AppAT2`."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "The one-line description (`desc`, required), held to `brew audit`'s rules:\nat most 80 characters, starting with a capital letter, not with an\narticle or the formula's name, and with no trailing period."
+            },
+            {
+              "name": "homepage",
+              "kind": "method",
+              "optional": false,
+              "signature": "homepage(url: string): this",
+              "doc": "The project's homepage (required; must be `https`)."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(value: string): this",
+              "doc": "The version, e.g. `1.2.3` — set it only when Homebrew cannot read it from\nthe archive URLs.\n\nHomebrew detects a formula's version from its URL, and `brew audit`\nrejects a `version` line that repeats what it detected (\"version … is\nredundant with version scanned from URL\"). A GitHub release asset such as\n`…/releases/download/v1.2.3/app-aarch64-apple-darwin.tar.gz` carries it, so\nleave this unset there; `expectVersion()` in the test still works, against\nthe detected version. Set it for a URL with no version in it, such as a\n`…/releases/latest/download/…` link or a content-addressed store."
+            },
+            {
+              "name": "license",
+              "kind": "method",
+              "optional": false,
+              "signature": "license(spdx: string): this",
+              "doc": "The SPDX license identifier, e.g. `MIT`."
+            },
+            {
+              "name": "binary",
+              "kind": "method",
+              "optional": false,
+              "signature": "binary(configure: Configure<FormulaBinarySettings>): this",
+              "doc": "Add a prebuilt archive for one OS and CPU family. Call once per platform;\nat least one is required, and each OS/arch pair at most once."
+            },
+            {
+              "name": "install",
+              "kind": "method",
+              "optional": false,
+              "signature": "install(...files: string[]): this",
+              "doc": "Files from the archive to place in the formula's `bin` (`bin.install`);\nat least one is required. Plain file names only — no directory part."
+            },
+            {
+              "name": "caveats",
+              "kind": "method",
+              "optional": false,
+              "signature": "caveats(text: string): this",
+              "doc": "Text Homebrew prints after installing (`def caveats`)."
+            },
+            {
+              "name": "test",
+              "kind": "method",
+              "optional": false,
+              "signature": "test(configure: Configure<FormulaTestSettings>): this",
+              "doc": "The formula's `test do` block, which `brew test` runs. Without one,\n`brew test` (and so `HomebrewTasks.verify`) fails."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The formula name. Set by {@link name}."
+            },
+            {
+              "name": "description_",
+              "kind": "property",
+              "optional": true,
+              "signature": "description_?: string",
+              "doc": "The one-line description. Set by {@link description}."
+            },
+            {
+              "name": "homepage_",
+              "kind": "property",
+              "optional": true,
+              "signature": "homepage_?: string",
+              "doc": "The project's homepage. Set by {@link homepage}."
+            },
+            {
+              "name": "version_",
+              "kind": "property",
+              "optional": true,
+              "signature": "version_?: string",
+              "doc": "The version. Set by {@link version}."
+            },
+            {
+              "name": "license_",
+              "kind": "property",
+              "optional": true,
+              "signature": "license_?: string",
+              "doc": "The SPDX license. Set by {@link license}."
+            },
+            {
+              "name": "binaries_",
+              "kind": "property",
+              "optional": false,
+              "signature": "binaries_: FormulaBinarySettings[]",
+              "doc": "The binaries, one per platform. Added by {@link binary}."
+            },
+            {
+              "name": "install_",
+              "kind": "property",
+              "optional": false,
+              "signature": "install_: string[]",
+              "doc": "The files `bin.install` places. Added by {@link install}."
+            },
+            {
+              "name": "caveats_",
+              "kind": "property",
+              "optional": true,
+              "signature": "caveats_?: string",
+              "doc": "The caveats text. Set by {@link caveats}."
+            },
+            {
+              "name": "test_",
+              "kind": "property",
+              "optional": true,
+              "signature": "test_?: FormulaTestSettings",
+              "doc": "The `test do` block. Set by {@link test}."
+            }
+          ]
+        },
+        {
+          "name": "FormulaTestExpectation",
+          "kind": "typeAlias",
+          "doc": "What a formula test checks the command printed: the version, or a text.",
+          "signature": "type FormulaTestExpectation = unknown | unknown",
+          "deprecated": false
+        },
+        {
+          "name": "FormulaTestSettings",
+          "kind": "class",
+          "doc": "Settings for the formula's `test do` block.\n\n```ts\ns.test((t) => t.command(\"--version\").expectVersion())\n// test do\n//   assert_match version.to_s, shell_output(\"#{bin}/app --version\")\n// end\n```\n\nWithout an expectation the command only has to succeed, and is run with\n`system` and an argv — no shell at all.",
+          "signature": "class FormulaTestSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "binary",
+              "kind": "method",
+              "optional": false,
+              "signature": "binary(name: string): this",
+              "doc": "Which installed binary to run. Defaults to the first one the formula\ninstalls; it must be one of them."
+            },
+            {
+              "name": "command",
+              "kind": "method",
+              "optional": false,
+              "signature": "command(...args: string[]): this",
+              "doc": "The arguments to run the binary with, e.g. `\"--version\"`."
+            },
+            {
+              "name": "expectVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "expectVersion(): this",
+              "doc": "Require the output to contain the formula's version."
+            },
+            {
+              "name": "expectOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "expectOutput(text: string): this",
+              "doc": "Require the output to contain `text`."
+            },
+            {
+              "name": "render_",
+              "kind": "method",
+              "optional": false,
+              "signature": "render_(installed: unknown): string[]",
+              "doc": "The block's lines (unindented, without `test do`/`end`), for a formula\nthat installs `installed`.\n"
+            },
+            {
+              "name": "binary_",
+              "kind": "property",
+              "optional": true,
+              "signature": "binary_?: string",
+              "doc": "The installed binary to run. Set by {@link binary}."
+            },
+            {
+              "name": "args_",
+              "kind": "property",
+              "optional": false,
+              "signature": "args_: string[]",
+              "doc": "The arguments to run it with. Set by {@link command}."
+            },
+            {
+              "name": "expectation_",
+              "kind": "property",
+              "optional": true,
+              "signature": "expectation_?: FormulaTestExpectation",
+              "doc": "What the output must contain. Set by {@link expectVersion}/{@link expectOutput}."
+            }
+          ]
+        },
+        {
+          "name": "HomebrewPublishResult",
+          "kind": "interface",
+          "doc": "What became of a `HomebrewTasks.publish` call.",
+          "signature": "interface HomebrewPublishResult",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: created | updated | unchanged",
+              "doc": "`created` for a formula new to the tap, `updated` for a changed one,\n`unchanged` when the tap already held exactly this formula and nothing\nwas committed."
+            },
+            {
+              "name": "repo",
+              "kind": "property",
+              "optional": false,
+              "signature": "repo: string",
+              "doc": "The tap's GitHub repository, `owner/homebrew-x`."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": false,
+              "signature": "path: string",
+              "doc": "The formula's path in the tap, `Formula/<name>.rb`."
+            },
+            {
+              "name": "commitSha",
+              "kind": "property",
+              "optional": true,
+              "signature": "commitSha?: string",
+              "doc": "The commit that wrote it; absent when the state is `unchanged`."
+            }
+          ]
+        },
+        {
+          "name": "HomebrewPublishSettings",
+          "kind": "class",
+          "doc": "Settings for publishing a formula to a tap.",
+          "signature": "class HomebrewPublishSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tap",
+              "kind": "method",
+              "optional": false,
+              "signature": "tap(value: string): this",
+              "doc": "The tap (required): its GitHub repository `owner/homebrew-x`, or brew's\nshort form `owner/x`, which names the same repository."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(name: string, source: string): this",
+              "doc": "The formula to publish (required): its name, which becomes the file\n`Formula/<name>.rb`, and its Ruby source — typically what\n`HomebrewTasks.formula` rendered."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: string): this",
+              "doc": "The token to write with — needs `contents: write` on the tap repository.\nDefaults to `GITHUB_TOKEN`, which only works when the tap is the\nrepository the job runs in; a separate tap needs its own token."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: string): this",
+              "doc": "The branch to commit on. Defaults to the tap's default branch."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: string): this",
+              "doc": "The commit message. Defaults to `<name>: update formula`."
+            },
+            {
+              "name": "baseUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseUrl(url: string): this",
+              "doc": "The API root, for GitHub Enterprise."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fn: fetch): this",
+              "doc": "Override the `fetch` implementation (a test seam)."
+            },
+            {
+              "name": "tap_",
+              "kind": "property",
+              "optional": true,
+              "signature": "tap_?: string",
+              "doc": "The tap, as given. Set by {@link tap}."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The formula name. Set by {@link formula}."
+            },
+            {
+              "name": "source_",
+              "kind": "property",
+              "optional": true,
+              "signature": "source_?: string",
+              "doc": "The formula's Ruby source. Set by {@link formula}."
+            },
+            {
+              "name": "token_",
+              "kind": "property",
+              "optional": true,
+              "signature": "token_?: string",
+              "doc": "The token. Set by {@link token}."
+            },
+            {
+              "name": "branch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "branch_?: string",
+              "doc": "The branch to commit on. Set by {@link branch}."
+            },
+            {
+              "name": "message_",
+              "kind": "property",
+              "optional": true,
+              "signature": "message_?: string",
+              "doc": "The commit message. Set by {@link message}."
+            },
+            {
+              "name": "baseUrl_",
+              "kind": "property",
+              "optional": true,
+              "signature": "baseUrl_?: string",
+              "doc": "The API root. Set by {@link baseUrl}."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetch_?: fetch",
+              "doc": "The `fetch` implementation. Set by {@link fetch}."
+            }
+          ]
+        },
+        {
+          "name": "HomebrewTasks",
+          "kind": "variable",
+          "doc": "Tasks for shipping a prebuilt binary through a Homebrew tap.",
+          "signature": "const HomebrewTasks: HomebrewTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "HomebrewTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link HomebrewTasks}.",
+          "signature": "interface HomebrewTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(configure: Configure<FormulaSettings>): string",
+              "doc": "The Ruby source of a formula that installs prebuilt binaries — one\narchive per OS and CPU family. Pure: nothing is read or written.\n"
+            },
+            {
+              "name": "publish",
+              "kind": "method",
+              "optional": false,
+              "signature": "publish(configure: Configure<HomebrewPublishSettings>): Promise<HomebrewPublishResult>",
+              "doc": "Write `Formula/<name>.rb` into a tap repository on GitHub, or leave it\nalone — reporting `unchanged` — when the tap already holds exactly that\nsource."
+            },
+            {
+              "name": "verify",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify(configure: Configure<HomebrewVerifySettings>): Promise<void>",
+              "doc": "Install a formula file through a throwaway local tap, run its test, then\nuninstall it and remove the tap — the cleanup runs whether or not the\ninstall and test succeeded."
+            },
+            {
+              "name": "verifyJob",
+              "kind": "method",
+              "optional": false,
+              "signature": "verifyJob(configure: Configure<HomebrewVerifyJobSettings>): CiInvocation",
+              "doc": "The CI job that runs a verifying target across macOS and Linux runners,\nready to list in `cicd({ invokes: [...] })`."
+            }
+          ]
+        },
+        {
+          "name": "HomebrewVerifyJobSettings",
+          "kind": "class",
+          "doc": "Settings for the formula-verification CI job.",
+          "signature": "class HomebrewVerifyJobSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(value: TargetBuilder): this",
+              "doc": "The target to run (required) — one that calls `HomebrewTasks.verify`, or\notherwise installs, tests and uninstalls the formula."
+            },
+            {
+              "name": "runners",
+              "kind": "method",
+              "optional": false,
+              "signature": "runners(...labels: string[]): this",
+              "doc": "The runner labels to verify on, replacing the default `macos-latest` and\n`ubuntu-latest` — e.g. `\"macos-15\", \"macos-15-intel\", \"ubuntu-latest\"` to\ncover both Mac CPU families. GitHub's ARM Linux runners\n(`ubuntu-24.04-arm`) ship without Homebrew, so they cannot verify a\nformula without installing it first."
+            },
+            {
+              "name": "target_",
+              "kind": "property",
+              "optional": true,
+              "signature": "target_?: TargetBuilder",
+              "doc": "The target the job runs. Set by {@link target}."
+            },
+            {
+              "name": "runners_",
+              "kind": "property",
+              "optional": false,
+              "signature": "runners_: string[]",
+              "doc": "The runner labels the job fans out over. Set by {@link runners}."
+            }
+          ]
+        },
+        {
+          "name": "HomebrewVerifySettings",
+          "kind": "class",
+          "doc": "Settings for verifying a formula file.",
+          "signature": "class HomebrewVerifySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "formulaFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "formulaFile(path: PathLike): this",
+              "doc": "The formula's Ruby source on disk (required), e.g. `dist/app.rb`."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: string): this",
+              "doc": "The formula's name (required) — the class the file defines is derived\nfrom it, and it is installed and tested under it."
+            },
+            {
+              "name": "toolPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "toolPath(path: PathLike): this",
+              "doc": "The `brew` to run, when it is not on `PATH` — on a GitHub Linux runner\nHomebrew is installed but not on `PATH`:\n`/home/linuxbrew/.linuxbrew/bin/brew`."
+            },
+            {
+              "name": "formulaFile_",
+              "kind": "property",
+              "optional": true,
+              "signature": "formulaFile_?: string",
+              "doc": "The formula file to verify. Set by {@link formulaFile}."
+            },
+            {
+              "name": "name_",
+              "kind": "property",
+              "optional": true,
+              "signature": "name_?: string",
+              "doc": "The formula's name. Set by {@link name}."
+            },
+            {
+              "name": "toolPath_",
+              "kind": "property",
+              "optional": true,
+              "signature": "toolPath_?: string",
+              "doc": "The `brew` binary to run. Set by {@link toolPath}."
             }
           ]
         }

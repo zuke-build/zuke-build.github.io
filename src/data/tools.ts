@@ -124,6 +124,7 @@ export const toolGroups: ToolGroup[] = [
     tools: [
       { name: "Git", pkg: "@zuke/git", desc: "commit, tag, push, merge-base, blame, gitInfo()" },
       { name: "GitHub CLI", pkg: "@zuke/gh", desc: "releases, PRs, workflows" },
+      { name: "Homebrew", pkg: "@zuke/homebrew", desc: "brew, formula rendering, tap publishing" },
       { name: "Husky", pkg: "@zuke/husky", desc: "install & manage git hooks" },
       { name: "JSR", pkg: "@zuke/jsr", desc: "publish, add, remove" },
       { name: "release-please", pkg: "@zuke/release-please", desc: "release PRs & GitHub releases" },
