@@ -7876,6 +7876,13 @@
               "optional": true,
               "signature": "linkname?: string",
               "doc": "For a symbolic-link entry, its target (≤ 100 bytes); absent for a regular\nfile. Node's release tarballs, for one, ship `bin/npm`/`bin/npx` as symlinks\ninto `lib/node_modules`, so extracting a runtime tree must preserve them."
+            },
+            {
+              "name": "mode",
+              "kind": "property",
+              "optional": true,
+              "signature": "mode?: number",
+              "doc": "A regular file's permission bits, written into its header: `0o755` for an\nexecutable, so a binary shipped in the archive runs once extracted.\nDefaults to `0o644`. Ignored for a symlink entry, which is always\n`0o777`."
             }
           ]
         },
