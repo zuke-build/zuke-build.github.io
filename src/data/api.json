@@ -48287,6 +48287,43 @@
           "deprecated": false
         },
         {
+          "name": "InstallHost",
+          "kind": "interface",
+          "doc": "The process facts {@link installSource} reads, injectable so each install\nkind is testable from a single process.",
+          "signature": "interface InstallHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "standalone",
+              "kind": "method",
+              "optional": false,
+              "signature": "standalone(): boolean",
+              "doc": "Whether this process is a `deno compile` binary (`Deno.build.standalone`)."
+            },
+            {
+              "name": "mainModule",
+              "kind": "method",
+              "optional": false,
+              "signature": "mainModule(): string",
+              "doc": "The running CLI's main module (`Deno.mainModule`). Deno reports a JSR\nprogram by its specifier, `jsr:@zuke/cli` or `jsr:@zuke/cli@<version>`."
+            },
+            {
+              "name": "execPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "execPath(): string",
+              "doc": "The running executable's path (`Deno.execPath()`)."
+            },
+            {
+              "name": "realPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "realPath(path: string): Promise<string>",
+              "doc": "`path` with every symbolic link resolved (`Deno.realPath`)."
+            }
+          ]
+        },
+        {
           "name": "main",
           "kind": "function",
           "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, `buildProbe`, `upgradeHost` and\n`projectHost` are injectable for testing.",
@@ -48571,13 +48608,6 @@
           "signature": "interface UpgradeHost",
           "deprecated": false,
           "members": [
-            {
-              "name": "mainModule",
-              "kind": "method",
-              "optional": false,
-              "signature": "mainModule(): string",
-              "doc": "The running CLI's main module (`Deno.mainModule`). Deno reports a JSR\nprogram by its specifier, `jsr:@zuke/cli` or `jsr:@zuke/cli@<version>`."
-            },
             {
               "name": "binDir",
               "kind": "method",
