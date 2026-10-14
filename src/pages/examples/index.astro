@@ -1,4 +1,5 @@
 ---
+import CopyBlock from "../../components/CopyBlock.astro";
 import CopyCode from "../../components/CopyCode.astro";
 import Base from "../../layouts/Base.astro";
 
@@ -978,11 +979,27 @@ deno run -A zuke.ts --list`} lang="bash" />
       <div class="ex-cta panel" data-reveal>
         <div>
           <h2>Make it your own</h2>
-          <p>Scaffold a build and start from a working template.</p>
+          <p>
+            Install the CLI — from JSR, Homebrew (macOS, Linux) or Chocolatey
+            (Windows) — and scaffold a build from a working template.
+          </p>
         </div>
         <div class="ex-cta__btns">
           <a class="btn btn-primary" href="/docs">Get started →</a>
           <a class="btn btn-ghost" href="https://github.com/zuke-build/zuke" target="_blank" rel="noopener noreferrer">View source</a>
+        </div>
+        <div class="ex-cta__install">
+          <CopyBlock
+            lines={[
+              "# pick one",
+              "deno install -A -g -n zuke jsr:@zuke/cli",
+              "brew install zuke-build/tap/zuke",
+              "choco install zuke",
+              "# then",
+              "zuke setup",
+              "./zuke --list",
+            ]}
+          />
         </div>
       </div>
     </div>
@@ -1144,6 +1161,7 @@ deno run -A zuke.ts --list`} lang="bash" />
   .ex-cta h2 { font-size: 1.6rem; margin-bottom: 6px; }
   .ex-cta p { margin: 0; }
   .ex-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
+  .ex-cta__install { flex: 1 1 100%; min-width: 0; }
 
   @media (max-width: 860px) {
     .container { max-width: none; }
