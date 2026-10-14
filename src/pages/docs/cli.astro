@@ -13,7 +13,12 @@ const toc = [
   { id: "env", label: "Environment variables" },
 ];
 
-const installCliSnippet = `deno install -A -g -n zuke jsr:@zuke/cli`;
+const installCliSnippet = `# from JSR, any OS with Deno
+deno install -A -g -n zuke jsr:@zuke/cli
+# with Homebrew, macOS and Linux
+brew install zuke-build/tap/zuke
+# with Chocolatey, Windows
+choco install zuke`;
 
 const installSetupSnippet = `zuke setup`;
 
@@ -124,8 +129,8 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     launcher CLI (<code>@zuke/cli</code>), not the help text alone — so what you
     read is what the parser actually accepts.
   </p>
-  <p>Install the global CLI (project scaffolding) once:</p>
-  <CopyCode code={installCliSnippet} lang="bash" />
+  <p>Install the global CLI (project scaffolding) once — pick one:</p>
+  <CopyCode code={installCliSnippet} lang="bash" multi />
   <p>Scaffold <code>zuke.ts</code> and the <code>./zuke</code> launcher:</p>
   <CopyCode code={installSetupSnippet} lang="bash" />
   <p>Everything after setup runs through the scaffolded launcher (<code>./zuke build</code> is <code>deno run -A zuke.ts build</code>):</p>
@@ -138,8 +143,8 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   </p>
   <ul>
     <li>
-      <strong>The global CLI</strong> (<code>@zuke/cli</code>, installed with
-      <code>deno install</code>) is the pre-build tool: it scaffolds a project
+      <strong>The global CLI</strong> (<code>@zuke/cli</code>, installed from
+      JSR, Homebrew, or Chocolatey) is the pre-build tool: it scaffolds a project
       (<code>setup</code>, <code>import</code>), documents packages
       (<code>doc</code>), and reports its own <code>--version</code>. You run it
       as <code>zuke</code> before a build file exists.

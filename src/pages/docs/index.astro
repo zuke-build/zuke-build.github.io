@@ -31,6 +31,10 @@ const graphNoOpenSnippet = `./zuke graph --output=html --no-open`;
 
 const installCliSnippet = `deno install -A -g -n zuke jsr:@zuke/cli`;
 
+const installBrewSnippet = `brew install zuke-build/tap/zuke`;
+
+const installChocoSnippet = `choco install zuke`;
+
 const setupSnippet = `zuke setup          # or: zuke setup --mcp, to register the build for your agent too`;
 
 const firstRunSnippet = `./zuke`;
@@ -99,9 +103,17 @@ Total                  17.8s
   <h2 id="install">Install</h2>
   <p>
     Zuke runs on <a href="https://deno.com" target="_blank" rel="noopener noreferrer">Deno</a> and ships on
-    <a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>. Install the CLI globally with Deno:
+    <a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>. Install the CLI one of three
+    ways — each installs the same program. From JSR, on any OS with Deno 2.x:
   </p>
   <CopyCode code={installCliSnippet} lang="bash" />
+  <p>
+    With Homebrew on macOS and Linux — a standalone binary, so it needs no Deno
+    up front (upgrade with <code>brew upgrade zuke</code>):
+  </p>
+  <CopyCode code={installBrewSnippet} lang="bash" />
+  <p>With Chocolatey on Windows:</p>
+  <CopyCode code={installChocoSnippet} lang="bash" />
   <p>
     Then scaffold <code>zuke.ts</code>, the launchers, and config in your
     project:

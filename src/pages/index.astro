@@ -451,9 +451,15 @@ const cdMoreIcons: Record<string, string> = {
         </div>
         <div class="hero__install">
           <CopyBlock
-            label="Install the CLI"
+            label="Install the CLI — pick one"
             lines={[
+              "# from JSR, any OS with Deno",
               "deno install -A -g -n zuke jsr:@zuke/cli",
+              "# with Homebrew, macOS and Linux",
+              "brew install zuke-build/tap/zuke",
+              "# with Chocolatey, Windows",
+              "choco install zuke",
+              "# then scaffold and run",
               "zuke setup",
               "./zuke",
               "./zuke generate-ci",
@@ -1782,15 +1788,20 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
       <div class="cta panel" data-reveal>
         <h2>Ship your first typed build in minutes.</h2>
         <p>
-          Install the CLI, scaffold a <code>zuke.ts</code>, and run your first
-          target. Already have <code>package.json</code> scripts or a
+          Install the CLI — from JSR with Deno, or with Homebrew on macOS and
+          Linux and Chocolatey on Windows — scaffold a <code>zuke.ts</code>, and
+          run your first target. Already have <code>package.json</code> scripts or a
           <code>Makefile</code>? Swap <code>zuke setup</code> for
           <code>zuke import</code> and start from a target per task instead of a
           blank page.
         </p>
         <CopyBlock
           lines={[
+            "# pick one",
             "deno install -A -g -n zuke jsr:@zuke/cli",
+            "brew install zuke-build/tap/zuke",
+            "choco install zuke",
+            "# then",
             "zuke setup",
             "./zuke --list",
           ]}
