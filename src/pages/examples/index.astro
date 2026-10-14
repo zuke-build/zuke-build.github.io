@@ -990,12 +990,16 @@ deno run -A zuke.ts --list`} lang="bash" />
         </div>
         <div class="ex-cta__install">
           <CopyBlock
+            label="Install the CLI — pick one"
             lines={[
-              "# pick one",
               "deno install -A -g -n zuke jsr:@zuke/cli",
               "brew install zuke-build/tap/zuke",
               "choco install zuke",
-              "# then",
+            ]}
+          />
+          <CopyBlock
+            label="Then scaffold and run"
+            lines={[
               "zuke setup",
               "./zuke --list",
             ]}
@@ -1162,6 +1166,7 @@ deno run -A zuke.ts --list`} lang="bash" />
   .ex-cta p { margin: 0; }
   .ex-cta__btns { display: flex; gap: 12px; flex-wrap: wrap; }
   .ex-cta__install { flex: 1 1 100%; min-width: 0; }
+  .ex-cta__install :global(.copy ~ .copy) { margin-top: 12px; }
 
   @media (max-width: 860px) {
     .container { max-width: none; }
