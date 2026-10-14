@@ -9601,6 +9601,13 @@
           ]
         },
         {
+          "name": "zip",
+          "kind": "function",
+          "doc": "Create a `.zip` archive from the given entries (in order), each deflated —\nthe writer {@link unzip} reads. Like {@link tar}, every entry carries a\nfixed timestamp, so the bytes depend only on the entries.\n\nOnly regular files are written: an entry with a `linkname` throws, since\nzip has no portable symlink, and `mode` is ignored, since zip extractors\ndo not agree on reading one. An archive that would need zip64 (an entry or\nthe archive past 4 GiB, or 65535 entries or more) throws too.",
+          "signature": "async function zip(entries: TarEntry[]): Promise<Uint8Array>",
+          "deprecated": false
+        },
+        {
           "name": "ZUKE_ACTION",
           "kind": "variable",
           "doc": "The name a {@link CiPinResolver} is asked for the prelude action, so a\nrepository that pins its own actions can pin this one the same way.",
