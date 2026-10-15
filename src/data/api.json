@@ -51050,6 +51050,13 @@
               "doc": "Report kind: `coverage` (default) or `test_results` (`--report-type`)."
             },
             {
+              "name": "disableTelem",
+              "kind": "method",
+              "optional": false,
+              "signature": "disableTelem(): this",
+              "doc": "Keep the CLI from reporting its own errors to Codecov's Sentry\n(`--disable-telem`). A global flag, so it is emitted before the subcommand."
+            },
+            {
               "name": "disableSearch",
               "kind": "method",
               "optional": false,
