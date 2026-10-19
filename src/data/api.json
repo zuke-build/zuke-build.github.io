@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "core@1.73.0",
+  "generated": "core@1.74.0",
   "packages": [
     {
       "name": "@zuke/core",
@@ -4837,6 +4837,13 @@
           "kind": "function",
           "doc": "Whether a string names one of the {@link SGR} styles.",
           "signature": "function isStyleName(name: string): name is StyleName",
+          "deprecated": false
+        },
+        {
+          "name": "joinShellArgs",
+          "kind": "function",
+          "doc": "Render `argv` as a single command line a POSIX shell parses back into\nexactly the same argv — for showing an operator a command to paste, or for\nhanding a command to something that runs it through `sh`.\n\nEach token is written as it is when it holds only characters no shell treats\nspecially (letters, digits and `_@%+=:,./-`). Anything else — an empty token,\nwhitespace, a newline, `$`, a backtick, a quote, a glob character — is\nwrapped in single quotes, with each embedded `'` written as `'\\''`. Nothing\ninside single quotes is special to the shell, so a token can never expand a\nvariable, substitute a command, or become a second command. Tokens are\njoined by single spaces.\n\n```ts\njoinShellArgs([\"gcloud\", \"run\", \"services\", \"describe\", \"my svc\"]);\n// gcloud run services describe 'my svc'\njoinShellArgs([\"echo\", \"it's\", \"\"]);\n// echo 'it'\\''s' ''\n```\n\nThe output round-trips through {@link splitShellArgs}. The quoting governs\nhow each token is split and expanded, not the grammar of the command\nposition: the first token should be the program to run, since a shell reads\na leading `NAME=value` as an assignment and a leading `if` as a keyword.\n",
+          "signature": "function joinShellArgs(argv: unknown): string",
           "deprecated": false
         },
         {
