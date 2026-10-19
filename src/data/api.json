@@ -31655,7 +31655,7 @@
     {
       "name": "@zuke/aws",
       "dir": "aws",
-      "summary": "`@zuke/aws` — typed AWS CLI tasks for Zuke builds, readers and a canary analysis.",
+      "summary": "`@zuke/aws` — typed AWS CLI tasks, readers, and a canary platform and analysis.",
       "symbols": [
         {
           "name": "AwsCloudformationDeleteStackSettings",
@@ -32871,6 +32871,252 @@
           ]
         },
         {
+          "name": "AwsLambdaCanary",
+          "kind": "class",
+          "doc": "A Lambda alias as a canary platform. Create one with {@link lambdaCanary};\nhand it to `@zuke/canary`'s `c.platform(...)`.\n\nExposure is a share of the alias's invocations, set exactly.",
+          "signature": "class AwsLambdaCanary",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(): string",
+              "doc": "`\"Lambda alias api:live\"`, for the build summary."
+            },
+            {
+              "name": "stage",
+              "kind": "method",
+              "optional": false,
+              "signature": "stage(ctx: AwsLambdaCanaryContext): Promise<void>",
+              "doc": "Read the alias and its stable version, publish the candidate (or take the\nversion given) and wait for it to be `Active`, then record the rollout:\nthe function, alias and AWS flags every later call is checked against,\nthe alias's ARN, the stable version and the candidate with their code\nhashes. The alias itself is not changed, so the candidate takes no\ntraffic yet — though publishing a code source does make it the\nfunction's `$LATEST`.\n\nRefuses an alias that already splits its traffic — another rollout, or\none left behind — and one that points at `$LATEST`, which weighted\nrouting does not allow; and a candidate that is the stable version, which\nis what publishing unchanged code and configuration gives back. A stage\nrun again over a record of the same rollout checks it and changes\nnothing."
+            },
+            {
+              "name": "expose",
+              "kind": "method",
+              "optional": false,
+              "signature": "expose(percent: number, ctx: AwsLambdaCanaryContext): Promise<number>",
+              "doc": "Send `percent` of the alias's invocations to the candidate, as its\nadditional weight; the stable version keeps the rest. First the\nconfiguration is compared with the record; then the alias is read, and\nthis refuses — changing nothing — unless it is still the alias staged,\nstill points at the stable version, and splits only with the candidate,\nand unless the candidate still has the code staged. The update carries\nthe alias's revision, so a change made in between fails it."
+            },
+            {
+              "name": "promote",
+              "kind": "method",
+              "optional": false,
+              "signature": "promote(ctx: AwsLambdaCanaryContext): Promise<void>",
+              "doc": "Point the alias at the candidate and clear its routing, so the candidate\ntakes every invocation. Before that, the same checks as\n{@link expose}: the record, the alias's ARN, that it still splits only\nbetween the stable version and the candidate, and the candidate's code.\nAn alias already pointing at the candidate with no routing is left as it\nis, so a promote run again changes nothing."
+            },
+            {
+              "name": "abort",
+              "kind": "method",
+              "optional": false,
+              "signature": "abort(ctx: AwsLambdaCanaryContext): Promise<void>",
+              "doc": "Take the candidate's traffic back. Idempotent. What it does depends on\nwhat this rollout recorded:\n\n- **The rollout is staged** (a rollback mid-rollout): once the\n  configuration and the alias's ARN match the record, the candidate's\n  weight comes off the alias, leaving any other weight as it is. The\n  update is written even when the candidate has no share, so an expose\n  of this rollout still in flight — a `zuke cancel` from another process\n  races it — fails on the revision instead of landing afterwards; a\n  write that loses such a race reads the alias again and retries. An\n  alias already pointing at the candidate — promoted, or moved there —\n  goes back to the stable version, once that version still has the code\n  recorded; one that also splits with another version is a newer rollout\n  built on the candidate, and this refuses rather than undo it too.\n- **`stage` failed before recording it**: the alias was never changed,\n  so nothing runs.\n- **Any other stage marker**: the record is damaged, and this refuses.\n- **Nothing recorded** (`rollout.abort` run by hand, a fresh run): the\n  alias goes to the version set with {@link AwsLambdaCanarySettings.stable}\n  and its routing is cleared. Without one this refuses, since claiming a\n  rollback it cannot do would be worse."
+            },
+            {
+              "name": "exposure",
+              "kind": "property",
+              "optional": false,
+              "signature": "exposure: traffic",
+              "doc": "The alias splits invocations, so exposure is a traffic share."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaCanaryContext",
+          "kind": "interface",
+          "doc": "The part of the canary engine's context the Lambda platform uses: the\nrollout's durable state, where the staged versions are recorded, and the\nbuild summary. The engine hands a richer context; this is the narrow view.",
+          "signature": "interface AwsLambdaCanaryContext",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "reportSummary",
+              "kind": "method",
+              "optional": false,
+              "signature": "reportSummary(pairs: SummaryPairs): void",
+              "doc": "Add key/value pairs to the calling target's row in the build summary."
+            },
+            {
+              "name": "state",
+              "kind": "property",
+              "optional": false,
+              "signature": "state: TargetStateHandle",
+              "doc": "The rollout's durable platform state, shared by every call."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaCanarySettings",
+          "kind": "class",
+          "doc": "How {@link lambdaCanary} reaches the alias and finds the candidate,\nconfigured through its lambda.",
+          "signature": "class AwsLambdaCanarySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function to roll out — its name, partial ARN or ARN."
+            },
+            {
+              "name": "alias",
+              "kind": "method",
+              "optional": false,
+              "signature": "alias(name: string): this",
+              "doc": "The alias whose traffic the canary splits, e.g. `\"live\"`. It must\nalready exist and point at a published version: that version is the\nstable one."
+            },
+            {
+              "name": "zipFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "zipFile(path: string): this",
+              "doc": "The candidate's deployment package on disk, shipped and published by\n`stage` (`update-function-code --zip-file --publish`). Name one code\nsource — this, {@link s3Bucket} with {@link s3Key}, or {@link imageUri} —\nor a {@link version} instead."
+            },
+            {
+              "name": "s3Bucket",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Bucket(name: string): this",
+              "doc": "The bucket holding the candidate's package (`--s3-bucket`)."
+            },
+            {
+              "name": "s3Key",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3Key(key: string): this",
+              "doc": "The candidate package's key in that bucket (`--s3-key`)."
+            },
+            {
+              "name": "s3ObjectVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "s3ObjectVersion(version: string): this",
+              "doc": "The candidate package object's version (`--s3-object-version`)."
+            },
+            {
+              "name": "imageUri",
+              "kind": "method",
+              "optional": false,
+              "signature": "imageUri(uri: string): this",
+              "doc": "The candidate's container image, for an image function (`--image-uri`)."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(number: string): this",
+              "doc": "An already published version to roll out — one the build published\nitself, for example with `AwsTasks.lambdaPublishedVersion`. Use this or a\ncode source, not both. Unlike a code source it leaves the function's\n`$LATEST` as it is."
+            },
+            {
+              "name": "stable",
+              "kind": "method",
+              "optional": false,
+              "signature": "stable(number: string): this",
+              "doc": "The version to send all traffic back to when `rollout.abort` is run by\nhand. Such a run is fresh, with no record of a rollout, so it has nothing\nelse to go on — and the release it is undoing has usually been promoted\nalready. A rollback the engine runs mid-rollout does not use it: that one\ntakes the candidate's weight off the alias instead."
+            },
+            {
+              "name": "aws",
+              "kind": "method",
+              "optional": false,
+              "signature": "aws(configure: Configure<AwsSettings>): this",
+              "doc": "Global options for every command the platform runs —\n`(a) => a.profile(\"deploy\").region(\"eu-west-1\")`, a `.toolPath(...)`, or\na `.runner(...)`, the seam a test answers through. The flags it gives are\nrecorded in the rollout's state, which is plain JSON: never pass a secret\non the command line here. A reader's `--output` and `--query` are its own\nand are set after it."
+            },
+            {
+              "name": "functionName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "functionName_?: string",
+              "doc": "The function's name or ARN (set by {@link functionName})."
+            },
+            {
+              "name": "alias_",
+              "kind": "property",
+              "optional": true,
+              "signature": "alias_?: string",
+              "doc": "The alias whose traffic is split (set by {@link alias})."
+            },
+            {
+              "name": "zipFile_",
+              "kind": "property",
+              "optional": true,
+              "signature": "zipFile_?: string",
+              "doc": "The deployment package on disk (set by {@link zipFile})."
+            },
+            {
+              "name": "s3Bucket_",
+              "kind": "property",
+              "optional": true,
+              "signature": "s3Bucket_?: string",
+              "doc": "The bucket holding the package (set by {@link s3Bucket})."
+            },
+            {
+              "name": "s3Key_",
+              "kind": "property",
+              "optional": true,
+              "signature": "s3Key_?: string",
+              "doc": "The package's key in that bucket (set by {@link s3Key})."
+            },
+            {
+              "name": "s3ObjectVersion_",
+              "kind": "property",
+              "optional": true,
+              "signature": "s3ObjectVersion_?: string",
+              "doc": "The package object's version (set by {@link s3ObjectVersion})."
+            },
+            {
+              "name": "imageUri_",
+              "kind": "property",
+              "optional": true,
+              "signature": "imageUri_?: string",
+              "doc": "The container image (set by {@link imageUri})."
+            },
+            {
+              "name": "version_",
+              "kind": "property",
+              "optional": true,
+              "signature": "version_?: string",
+              "doc": "An already published candidate version (set by {@link version})."
+            },
+            {
+              "name": "stable_",
+              "kind": "property",
+              "optional": true,
+              "signature": "stable_?: string",
+              "doc": "The version a hand-run rollback returns to (set by {@link stable})."
+            },
+            {
+              "name": "aws_",
+              "kind": "property",
+              "optional": false,
+              "signature": "aws_: Configure<AwsSettings>",
+              "doc": "Global options for every command (set by {@link aws})."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaGetAliasSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda get-alias`.",
+          "signature": "class AwsLambdaGetAliasSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(alias: string): this",
+              "doc": "The alias to describe (`--name`), e.g. `\"live\"`."
+            }
+          ]
+        },
+        {
           "name": "AwsLambdaGetFunctionSettings",
           "kind": "class",
           "doc": "Settings for `aws lambda get-function`.",
@@ -33022,6 +33268,13 @@
               "optional": false,
               "signature": "additionalVersionWeight(version: string, weight: number): this",
               "doc": "Send a share of the alias's traffic to another version\n(`--routing-config AdditionalVersionWeights`), as a fraction from 0 to 1;\nrepeatable. The rest goes to {@link functionVersion}."
+            },
+            {
+              "name": "revisionId",
+              "kind": "method",
+              "optional": false,
+              "signature": "revisionId(id: string): this",
+              "doc": "Update only if the alias is still at this revision (`--revision-id`) — the\n`RevisionId` a `get-alias` read, so a change made in between fails the\nupdate instead of being overwritten."
             },
             {
               "name": "clearRouting",
@@ -33180,6 +33433,43 @@
               "optional": false,
               "signature": "layers(...arns: string[]): this",
               "doc": "The layers to attach, by version ARN (`--layers`); replaces the set."
+            }
+          ]
+        },
+        {
+          "name": "AwsLambdaWaiter",
+          "kind": "typeAlias",
+          "doc": "The states `aws lambda wait` can wait for. `function-updated-v2` waits for\nan update in progress to finish; `published-version-active` for a version\njust published to leave `Pending` — SnapStart and image functions take a\nwhile, and Lambda fails invocations of a version until it is `Active`.",
+          "signature": "type AwsLambdaWaiter = function-active | function-active-v2 | function-exists | function-updated | function-updated-v2 | published-version-active",
+          "deprecated": false
+        },
+        {
+          "name": "AwsLambdaWaitSettings",
+          "kind": "class",
+          "doc": "Settings for `aws lambda wait`: poll the function until it reaches the\nstate named, exiting non-zero — a `CommandError` — when it fails or the\nwaiter gives up.",
+          "signature": "class AwsLambdaWaitSettings extends AwsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "waiter",
+              "kind": "method",
+              "optional": false,
+              "signature": "waiter(name: AwsLambdaWaiter): this",
+              "doc": "The state to wait for, e.g. `\"published-version-active\"`."
+            },
+            {
+              "name": "functionName",
+              "kind": "method",
+              "optional": false,
+              "signature": "functionName(name: string): this",
+              "doc": "The function's name or ARN (`--function-name`)."
+            },
+            {
+              "name": "qualifier",
+              "kind": "method",
+              "optional": false,
+              "signature": "qualifier(value: string): this",
+              "doc": "The version or alias to wait on (`--qualifier`)."
             }
           ]
         },
@@ -34434,11 +34724,25 @@
               "doc": "Move an alias: `aws lambda update-alias`."
             },
             {
+              "name": "lambdaGetAlias",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaGetAlias(configure?: Configure<AwsLambdaGetAliasSettings>): Promise<CommandOutput>",
+              "doc": "Describe an alias: `aws lambda get-alias`."
+            },
+            {
               "name": "lambdaGetFunction",
               "kind": "method",
               "optional": false,
               "signature": "lambdaGetFunction(configure?: Configure<AwsLambdaGetFunctionSettings>): Promise<CommandOutput>",
               "doc": "Describe a function: `aws lambda get-function`."
+            },
+            {
+              "name": "lambdaWait",
+              "kind": "method",
+              "optional": false,
+              "signature": "lambdaWait(configure?: Configure<AwsLambdaWaitSettings>): Promise<CommandOutput>",
+              "doc": "Wait for a function or version to reach a state: `aws lambda wait`."
             },
             {
               "name": "lambdaInvoke",
@@ -34622,6 +34926,13 @@
           "kind": "function",
           "doc": "An analysis that reads a CloudWatch metric over a recent window and fails\nthe canary when any datapoint is out of bounds — or when there is no data,\nunless {@link AwsCloudwatchAnalysisSettings.missingDataAs} says what no\ndata means. Each datapoint covers one period, so a `.max(5)` on a\nper-minute `Sum` means \"no minute with more than five\".\n\nThe lambda runs on each check, so it may read resolved parameters, and\nevery failure message — one from the lambda included — passes through the\nrun's redactor.",
           "signature": "function cloudwatch(configure: Configure<AwsCloudwatchAnalysisSettings>): AwsCloudwatchAnalysis",
+          "deprecated": false
+        },
+        {
+          "name": "lambdaCanary",
+          "kind": "function",
+          "doc": "A Lambda alias as a canary platform, for `@zuke/canary`:\n\n```ts\nc.platform(lambdaCanary((l) =>\n  l.functionName(\"api\").alias(\"live\").zipFile(\"dist/api.zip\")\n    .aws((a) => a.profile(\"deploy\").region(\"eu-west-1\"))\n))\n```\n\nThe lambda runs on every call, so it may read resolved parameters.\n\n- **stage** — reads the alias (`get-alias`), whose version becomes the\n  stable one; waits out an update in progress (`wait function-updated-v2`)\n  and publishes the candidate with `update-function-code --publish`, or\n  takes `.version(...)`; reads it back with `get-function`; waits for it\n  to be `Active` (`wait published-version-active`); records the rollout.\n  The alias is not changed.\n- **expose** — `update-alias --routing-config\n  AdditionalVersionWeights={\"<candidate>\": <n/100>} --revision-id <rev>`.\n- **promote** — `update-alias --function-version <candidate>` with the\n  routing cleared.\n- **abort** — takes the candidate's weight off mid-rollout; run by hand,\n  `--function-version <stable>` with the routing cleared.\n\nEvery call after `stage` that has its record — expose, promote, and abort\nmid-rollout — compares the configured function, alias and AWS flags with\nthe record, reads the alias and checks its ARN (which names the account and\nregion), and refuses on any difference before changing anything. Expose and\npromote also check that the alias splits only as the rollout left it and\nthat the candidate still has the code staged. Each `update-alias` carries\nthe alias's `--revision-id`, so a change made between the read and the\nupdate fails it. A hand-run abort has no record and uses the configuration\nas it is.\n\nLambda's weighted routing needs the two versions to share an execution role\nand a dead-letter configuration; the update fails, and the canary rolls\nback, when they do not.",
+          "signature": "function lambdaCanary(configure: Configure<AwsLambdaCanarySettings>): AwsLambdaCanary",
           "deprecated": false
         }
       ]
