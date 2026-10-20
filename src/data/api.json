@@ -57861,6 +57861,949 @@
       ]
     },
     {
+      "name": "@zuke/flutter",
+      "dir": "flutter",
+      "summary": "`@zuke/flutter` — typed `FlutterTasks` wrappers for the",
+      "symbols": [
+        {
+          "name": "FlutterAnalyzeSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter analyze`.",
+          "signature": "class FlutterAnalyzeSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(path: PathLike): this",
+              "doc": "A file or directory to analyze (defaults to the project); repeatable."
+            },
+            {
+              "name": "noFatalInfos",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFatalInfos(): this",
+              "doc": "Do not fail on info-level issues (`--no-fatal-infos`)."
+            },
+            {
+              "name": "noFatalWarnings",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFatalWarnings(): this",
+              "doc": "Do not fail on warnings (`--no-fatal-warnings`)."
+            },
+            {
+              "name": "write",
+              "kind": "method",
+              "optional": false,
+              "signature": "write(path: PathLike): this",
+              "doc": "Also write the analysis results to a file (`--write`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterAppSettings",
+          "kind": "class",
+          "doc": "Compile flags plus the build mode and the entry point (`--target`), shared by\n`flutter build` and `flutter drive`.",
+          "signature": "class FlutterAppSettings extends FlutterCompileSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "mode",
+              "kind": "method",
+              "optional": false,
+              "signature": "mode(mode: FlutterBuildMode): this",
+              "doc": "The build mode (`--debug`, `--profile` or `--release`)."
+            },
+            {
+              "name": "release",
+              "kind": "method",
+              "optional": false,
+              "signature": "release(): this",
+              "doc": "Build in release mode (`--release`)."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(path: PathLike): this",
+              "doc": "The main entry-point file, instead of `lib/main.dart` (`--target`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterBuildMode",
+          "kind": "typeAlias",
+          "doc": "A Flutter build mode, rendered as `--debug`, `--profile` or `--release`.",
+          "signature": "type FlutterBuildMode = debug | profile | release",
+          "deprecated": false
+        },
+        {
+          "name": "FlutterBuildSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter build <target>`. Flags that only one target accepts say\nso; `flutter` rejects them for the others.",
+          "signature": "class FlutterBuildSettings extends FlutterAppSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "buildName",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildName(name: string): this",
+              "doc": "The version name, e.g. `1.4.0` (`--build-name`)."
+            },
+            {
+              "name": "buildNumber",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildNumber(number: string | number): this",
+              "doc": "The build number, e.g. the CI run number (`--build-number`)."
+            },
+            {
+              "name": "obfuscate",
+              "kind": "method",
+              "optional": false,
+              "signature": "obfuscate(): this",
+              "doc": "Obfuscate Dart symbols (`--obfuscate`); needs {@link splitDebugInfo}."
+            },
+            {
+              "name": "splitDebugInfo",
+              "kind": "method",
+              "optional": false,
+              "signature": "splitDebugInfo(dir: PathLike): this",
+              "doc": "Write split debug symbols to a directory (`--split-debug-info`)."
+            },
+            {
+              "name": "noTreeShakeIcons",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTreeShakeIcons(): this",
+              "doc": "Keep every icon font glyph (`--no-tree-shake-icons`)."
+            },
+            {
+              "name": "targetPlatform",
+              "kind": "method",
+              "optional": false,
+              "signature": "targetPlatform(platform: string): this",
+              "doc": "The platform to build for (`--target-platform`). Android takes several ABIs,\ne.g. `android-arm64`, joined into one list; `linux` and `windows` take one,\ne.g. `linux-arm64`."
+            },
+            {
+              "name": "splitPerAbi",
+              "kind": "method",
+              "optional": false,
+              "signature": "splitPerAbi(): this",
+              "doc": "`apk`: one APK per ABI (`--split-per-abi`)."
+            },
+            {
+              "name": "noCodesign",
+              "kind": "method",
+              "optional": false,
+              "signature": "noCodesign(): this",
+              "doc": "`ios`: build without code signing (`--no-codesign`)."
+            },
+            {
+              "name": "exportMethod",
+              "kind": "method",
+              "optional": false,
+              "signature": "exportMethod(method: string): this",
+              "doc": "`ipa`: the export method, e.g. `app-store` or `ad-hoc` (`--export-method`)."
+            },
+            {
+              "name": "exportOptionsPlist",
+              "kind": "method",
+              "optional": false,
+              "signature": "exportOptionsPlist(path: PathLike): this",
+              "doc": "`ipa`: the export options plist (`--export-options-plist`)."
+            },
+            {
+              "name": "baseHref",
+              "kind": "method",
+              "optional": false,
+              "signature": "baseHref(href: string): this",
+              "doc": "`web`: the base href of the app, e.g. `/app/` (`--base-href`)."
+            },
+            {
+              "name": "wasm",
+              "kind": "method",
+              "optional": false,
+              "signature": "wasm(): this",
+              "doc": "`web`: compile to WebAssembly (`--wasm`)."
+            },
+            {
+              "name": "sourceMaps",
+              "kind": "method",
+              "optional": false,
+              "signature": "sourceMaps(): this",
+              "doc": "`web`: emit source maps (`--source-maps`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(dir: PathLike): this",
+              "doc": "`web`: the output directory, instead of `build/web` (`--output`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterBuildTarget",
+          "kind": "typeAlias",
+          "doc": "The artifact `flutter build` produces — its subcommand.",
+          "signature": "type FlutterBuildTarget = aar | apk | appbundle | ios | ipa | linux | macos | web | windows",
+          "deprecated": false
+        },
+        {
+          "name": "FlutterBuildTask",
+          "kind": "typeAlias",
+          "doc": "A task that runs `flutter build <target>`.",
+          "signature": "type FlutterBuildTask = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "FlutterCommandSettings",
+          "kind": "class",
+          "doc": "Settings for a flagless command: `flutter clean`, or `flutter gen-l10n`\n(configured by `l10n.yaml`). Extra flags go through `.args()`.",
+          "signature": "class FlutterCommandSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "FlutterCompileSettings",
+          "kind": "class",
+          "doc": "Flags shared by the commands that compile Dart code: `--no-pub`,\n`--dart-define`, `--dart-define-from-file` and `--flavor`.",
+          "signature": "class FlutterCompileSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noPub",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPub(): this",
+              "doc": "Skip the implicit `flutter pub get` (`--no-pub`)."
+            },
+            {
+              "name": "dartDefine",
+              "kind": "method",
+              "optional": false,
+              "signature": "dartDefine(name: string, value: string): this",
+              "doc": "Define a compile-time constant (`--dart-define=name=value`); repeatable."
+            },
+            {
+              "name": "dartDefineFromFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "dartDefineFromFile(path: PathLike): this",
+              "doc": "Read compile-time constants from a JSON or `.env` file (`--dart-define-from-file`); repeatable."
+            },
+            {
+              "name": "flavor",
+              "kind": "method",
+              "optional": false,
+              "signature": "flavor(name: string): this",
+              "doc": "The build flavor, for apps with product flavors or schemes (`--flavor`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterConfigSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter config`.",
+          "signature": "class FlutterConfigSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "enable",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable(feature: string): this",
+              "doc": "Turn a feature on, e.g. `web` → `--enable-web`; repeatable."
+            },
+            {
+              "name": "disable",
+              "kind": "method",
+              "optional": false,
+              "signature": "disable(feature: string): this",
+              "doc": "Turn a feature off, e.g. `web` → `--no-enable-web`; repeatable."
+            },
+            {
+              "name": "androidSdk",
+              "kind": "method",
+              "optional": false,
+              "signature": "androidSdk(dir: PathLike): this",
+              "doc": "The Android SDK directory (`--android-sdk`)."
+            },
+            {
+              "name": "noAnalytics",
+              "kind": "method",
+              "optional": false,
+              "signature": "noAnalytics(): this",
+              "doc": "Turn analytics reporting off (`--no-analytics`)."
+            },
+            {
+              "name": "clearFeatures",
+              "kind": "method",
+              "optional": false,
+              "signature": "clearFeatures(): this",
+              "doc": "Reset every feature flag to its default (`--clear-features`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter create`.",
+          "signature": "class FlutterCreateSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The directory to create the project in; required."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(org: string): this",
+              "doc": "The reverse-domain organization, e.g. `com.example` (`--org`)."
+            },
+            {
+              "name": "projectName",
+              "kind": "method",
+              "optional": false,
+              "signature": "projectName(name: string): this",
+              "doc": "The Dart package name, instead of the directory's (`--project-name`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: string): this",
+              "doc": "The project description (`--description`)."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(name: string): this",
+              "doc": "The template: `app`, `module`, `package`, `plugin`, … (`--template`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(name: string): this",
+              "doc": "A platform to scaffold, e.g. `android` or `web` (`--platforms`); repeatable."
+            },
+            {
+              "name": "empty",
+              "kind": "method",
+              "optional": false,
+              "signature": "empty(): this",
+              "doc": "Scaffold a minimal app without the counter sample (`--empty`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterDevicesSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter devices`.",
+          "signature": "class FlutterDevicesSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "machine",
+              "kind": "method",
+              "optional": false,
+              "signature": "machine(): this",
+              "doc": "Print the devices as JSON (`--machine`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterDoctorSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter doctor`.",
+          "signature": "class FlutterDoctorSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose(): this",
+              "doc": "Show full details for every check (`--verbose`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterDriveSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter drive`, which runs integration tests on a device.",
+          "signature": "class FlutterDriveSettings extends FlutterAppSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "driver",
+              "kind": "method",
+              "optional": false,
+              "signature": "driver(path: PathLike): this",
+              "doc": "The test driver file, e.g. `test_driver/integration_test.dart` (`--driver`)."
+            },
+            {
+              "name": "deviceId",
+              "kind": "method",
+              "optional": false,
+              "signature": "deviceId(id: string): this",
+              "doc": "The device to run on, e.g. `chrome` or an emulator id (`--device-id`)."
+            },
+            {
+              "name": "screenshot",
+              "kind": "method",
+              "optional": false,
+              "signature": "screenshot(dir: PathLike): this",
+              "doc": "Save a screenshot to this directory if the run fails (`--screenshot`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterInstallSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter install`, which installs a built app on a device.",
+          "signature": "class FlutterInstallSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "mode",
+              "kind": "method",
+              "optional": false,
+              "signature": "mode(mode: FlutterBuildMode): this",
+              "doc": "Install the build of this mode (`--debug`, `--profile` or `--release`)."
+            },
+            {
+              "name": "flavor",
+              "kind": "method",
+              "optional": false,
+              "signature": "flavor(name: string): this",
+              "doc": "Install this build flavor (`--flavor`)."
+            },
+            {
+              "name": "deviceId",
+              "kind": "method",
+              "optional": false,
+              "signature": "deviceId(id: string): this",
+              "doc": "The device to install on (`--device-id`)."
+            },
+            {
+              "name": "useApplicationBinary",
+              "kind": "method",
+              "optional": false,
+              "signature": "useApplicationBinary(path: PathLike): this",
+              "doc": "Install this prebuilt binary instead (`--use-application-binary`)."
+            },
+            {
+              "name": "uninstallOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "uninstallOnly(): this",
+              "doc": "Only uninstall the app (`--uninstall-only`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterPlainCommand",
+          "kind": "typeAlias",
+          "doc": "A `flutter` command that a build runs without flags.",
+          "signature": "type FlutterPlainCommand = clean | gen-l10n",
+          "deprecated": false
+        },
+        {
+          "name": "FlutterPrecacheSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter precache`, which downloads platform artifacts.",
+          "signature": "class FlutterPrecacheSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(name: string): this",
+              "doc": "Fetch a platform's artifacts, e.g. `android` → `--android`; repeatable."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Re-download even when cached (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterPubDepsSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter pub deps`.",
+          "signature": "class FlutterPubDepsSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Print the dependency graph as JSON (`--json`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterPubGetSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter pub get`.",
+          "signature": "class FlutterPubGetSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "offline",
+              "kind": "method",
+              "optional": false,
+              "signature": "offline(): this",
+              "doc": "Resolve from the local pub cache only (`--offline`)."
+            },
+            {
+              "name": "enforceLockfile",
+              "kind": "method",
+              "optional": false,
+              "signature": "enforceLockfile(): this",
+              "doc": "Fail rather than change `pubspec.lock` (`--enforce-lockfile`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterPubOutdatedSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter pub outdated`.",
+          "signature": "class FlutterPubOutdatedSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Print machine-readable JSON (`--json`)."
+            },
+            {
+              "name": "showAll",
+              "kind": "method",
+              "optional": false,
+              "signature": "showAll(): this",
+              "doc": "Include packages that are already up to date (`--show-all`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterPubPackagesSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter pub add` and `flutter pub remove`.",
+          "signature": "class FlutterPubPackagesSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(spec: string): this",
+              "doc": "A package to add or remove; repeatable, at least one is required. For\n`add` it takes pub's descriptor syntax: `http`, `http:^1.2.0`, or\n`dev:mocktail` for a dev dependency."
+            }
+          ]
+        },
+        {
+          "name": "FlutterPubUpgradeSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter pub upgrade`.",
+          "signature": "class FlutterPubUpgradeSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(name: string): this",
+              "doc": "Upgrade only this package (defaults to all); repeatable."
+            },
+            {
+              "name": "majorVersions",
+              "kind": "method",
+              "optional": false,
+              "signature": "majorVersions(): this",
+              "doc": "Also raise constraints in `pubspec.yaml` across majors (`--major-versions`)."
+            },
+            {
+              "name": "tighten",
+              "kind": "method",
+              "optional": false,
+              "signature": "tighten(): this",
+              "doc": "Raise lower bounds in `pubspec.yaml` to the resolved versions (`--tighten`)."
+            }
+          ]
+        },
+        {
+          "name": "FlutterSettings",
+          "kind": "class",
+          "doc": "Base for all `flutter` settings: the binary is `flutter`, found on `PATH`.",
+          "signature": "class FlutterSettings extends ToolSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "FlutterTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the `flutter` CLI.",
+          "signature": "const FlutterTasks: FlutterTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "FlutterTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link FlutterTasks}.",
+          "signature": "interface FlutterTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "analyze",
+              "kind": "method",
+              "optional": false,
+              "signature": "analyze(configure?: Configure<FlutterAnalyzeSettings>): Promise<CommandOutput>",
+              "doc": "Analyze the project's Dart code: `flutter analyze`."
+            },
+            {
+              "name": "test",
+              "kind": "method",
+              "optional": false,
+              "signature": "test(configure?: Configure<FlutterTestSettings>): Promise<CommandOutput>",
+              "doc": "Run the unit and widget tests: `flutter test`."
+            },
+            {
+              "name": "pubGet",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubGet(configure?: Configure<FlutterPubGetSettings>): Promise<CommandOutput>",
+              "doc": "Resolve dependencies: `flutter pub get`."
+            },
+            {
+              "name": "pubUpgrade",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubUpgrade(configure?: Configure<FlutterPubUpgradeSettings>): Promise<CommandOutput>",
+              "doc": "Upgrade dependencies: `flutter pub upgrade`."
+            },
+            {
+              "name": "pubOutdated",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubOutdated(configure?: Configure<FlutterPubOutdatedSettings>): Promise<CommandOutput>",
+              "doc": "List outdated dependencies: `flutter pub outdated`."
+            },
+            {
+              "name": "pubDeps",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubDeps(configure?: Configure<FlutterPubDepsSettings>): Promise<CommandOutput>",
+              "doc": "Print the dependency graph: `flutter pub deps`."
+            },
+            {
+              "name": "pubAdd",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubAdd(configure: Configure<FlutterPubPackagesSettings>): Promise<CommandOutput>",
+              "doc": "Add dependencies to `pubspec.yaml`: `flutter pub add`."
+            },
+            {
+              "name": "pubRemove",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubRemove(configure: Configure<FlutterPubPackagesSettings>): Promise<CommandOutput>",
+              "doc": "Remove dependencies from `pubspec.yaml`: `flutter pub remove`."
+            },
+            {
+              "name": "clean",
+              "kind": "method",
+              "optional": false,
+              "signature": "clean(configure?: Configure<FlutterCommandSettings>): Promise<CommandOutput>",
+              "doc": "Delete the build and `.dart_tool` directories: `flutter clean`."
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(configure: Configure<FlutterCreateSettings>): Promise<CommandOutput>",
+              "doc": "Scaffold a project: `flutter create`."
+            },
+            {
+              "name": "genL10n",
+              "kind": "method",
+              "optional": false,
+              "signature": "genL10n(configure?: Configure<FlutterCommandSettings>): Promise<CommandOutput>",
+              "doc": "Generate localizations from `l10n.yaml`: `flutter gen-l10n`."
+            },
+            {
+              "name": "drive",
+              "kind": "method",
+              "optional": false,
+              "signature": "drive(configure?: Configure<FlutterDriveSettings>): Promise<CommandOutput>",
+              "doc": "Run integration tests on a device: `flutter drive`."
+            },
+            {
+              "name": "install",
+              "kind": "method",
+              "optional": false,
+              "signature": "install(configure?: Configure<FlutterInstallSettings>): Promise<CommandOutput>",
+              "doc": "Install a built app on a device: `flutter install`."
+            },
+            {
+              "name": "devices",
+              "kind": "method",
+              "optional": false,
+              "signature": "devices(configure?: Configure<FlutterDevicesSettings>): Promise<CommandOutput>",
+              "doc": "List connected devices: `flutter devices`."
+            },
+            {
+              "name": "doctor",
+              "kind": "method",
+              "optional": false,
+              "signature": "doctor(configure?: Configure<FlutterDoctorSettings>): Promise<CommandOutput>",
+              "doc": "Check the toolchain: `flutter doctor`."
+            },
+            {
+              "name": "precache",
+              "kind": "method",
+              "optional": false,
+              "signature": "precache(configure?: Configure<FlutterPrecacheSettings>): Promise<CommandOutput>",
+              "doc": "Download platform artifacts: `flutter precache`."
+            },
+            {
+              "name": "config",
+              "kind": "method",
+              "optional": false,
+              "signature": "config(configure?: Configure<FlutterConfigSettings>): Promise<CommandOutput>",
+              "doc": "Change SDK settings: `flutter config`."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(configure?: Configure<FlutterVersionSettings>): Promise<CommandOutput>",
+              "doc": "Print the Flutter, Dart and engine versions: `flutter --version`."
+            },
+            {
+              "name": "buildAar",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildAar: FlutterBuildTask",
+              "doc": "Build an Android library: `flutter build aar`. It builds the debug, profile\nand release variants unless told not to, so a single mode needs the others\nturned off through `.args(\"--no-debug\", \"--no-profile\")`."
+            },
+            {
+              "name": "buildApk",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildApk: FlutterBuildTask",
+              "doc": "Build an Android APK: `flutter build apk`."
+            },
+            {
+              "name": "buildAppBundle",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildAppBundle: FlutterBuildTask",
+              "doc": "Build an Android App Bundle: `flutter build appbundle`."
+            },
+            {
+              "name": "buildIos",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildIos: FlutterBuildTask",
+              "doc": "Build the iOS app: `flutter build ios`."
+            },
+            {
+              "name": "buildIpa",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildIpa: FlutterBuildTask",
+              "doc": "Build an iOS archive and IPA: `flutter build ipa`."
+            },
+            {
+              "name": "buildLinux",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildLinux: FlutterBuildTask",
+              "doc": "Build the Linux desktop app: `flutter build linux`."
+            },
+            {
+              "name": "buildMacos",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildMacos: FlutterBuildTask",
+              "doc": "Build the macOS desktop app: `flutter build macos`."
+            },
+            {
+              "name": "buildWeb",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildWeb: FlutterBuildTask",
+              "doc": "Build the web app: `flutter build web`."
+            },
+            {
+              "name": "buildWindows",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildWindows: FlutterBuildTask",
+              "doc": "Build the Windows desktop app: `flutter build windows`."
+            }
+          ]
+        },
+        {
+          "name": "FlutterTestSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter test`.",
+          "signature": "class FlutterTestSettings extends FlutterCompileSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(path: PathLike): this",
+              "doc": "A test file or directory to run (defaults to `test/`); repeatable."
+            },
+            {
+              "name": "coverage",
+              "kind": "method",
+              "optional": false,
+              "signature": "coverage(): this",
+              "doc": "Collect coverage into `coverage/lcov.info` (`--coverage`)."
+            },
+            {
+              "name": "coveragePath",
+              "kind": "method",
+              "optional": false,
+              "signature": "coveragePath(path: PathLike): this",
+              "doc": "Where to write the lcov coverage report (`--coverage-path`)."
+            },
+            {
+              "name": "mergeCoverage",
+              "kind": "method",
+              "optional": false,
+              "signature": "mergeCoverage(): this",
+              "doc": "Merge with the existing coverage report (`--merge-coverage`)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(pattern: string): this",
+              "doc": "Run only tests whose name matches a regular expression (`--name`); repeatable."
+            },
+            {
+              "name": "plainName",
+              "kind": "method",
+              "optional": false,
+              "signature": "plainName(text: string): this",
+              "doc": "Run only tests whose name contains a string (`--plain-name`); repeatable."
+            },
+            {
+              "name": "tags",
+              "kind": "method",
+              "optional": false,
+              "signature": "tags(expression: string): this",
+              "doc": "Run only tests with a tag expression (`--tags`)."
+            },
+            {
+              "name": "excludeTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeTags(expression: string): this",
+              "doc": "Skip tests matching a tag expression (`--exclude-tags`)."
+            },
+            {
+              "name": "concurrency",
+              "kind": "method",
+              "optional": false,
+              "signature": "concurrency(count: number): this",
+              "doc": "How many test suites to run at once (`--concurrency`)."
+            },
+            {
+              "name": "reporter",
+              "kind": "method",
+              "optional": false,
+              "signature": "reporter(name: string): this",
+              "doc": "The console reporter: `compact`, `expanded`, `github`, `json`, … (`--reporter`)."
+            },
+            {
+              "name": "fileReporter",
+              "kind": "method",
+              "optional": false,
+              "signature": "fileReporter(spec: string): this",
+              "doc": "Also write a reporter's output to a file, e.g. `json:report.json` (`--file-reporter`)."
+            },
+            {
+              "name": "updateGoldens",
+              "kind": "method",
+              "optional": false,
+              "signature": "updateGoldens(): this",
+              "doc": "Rewrite golden files instead of comparing against them (`--update-goldens`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(name: string): this",
+              "doc": "Run on a platform other than the VM, e.g. `chrome` (`--platform`)."
+            },
+            {
+              "name": "randomizeOrderingSeed",
+              "kind": "method",
+              "optional": false,
+              "signature": "randomizeOrderingSeed(seed: string | number): this",
+              "doc": "Shuffle test order with a seed, or `random` (`--test-randomize-ordering-seed`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(value: string): this",
+              "doc": "The default per-test timeout, e.g. `30s` or `2x` (`--timeout`)."
+            },
+            {
+              "name": "shard",
+              "kind": "method",
+              "optional": false,
+              "signature": "shard(index: number, total: number): this",
+              "doc": "Run one shard of the suite: `shard(index, total)` renders\n`--total-shards total --shard-index index`, with `index` from 0."
+            }
+          ]
+        },
+        {
+          "name": "FlutterVersionSettings",
+          "kind": "class",
+          "doc": "Settings for `flutter --version`.",
+          "signature": "class FlutterVersionSettings extends FlutterSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "machine",
+              "kind": "method",
+              "optional": false,
+              "signature": "machine(): this",
+              "doc": "Print the versions as JSON (`--machine`)."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/prometheus",
       "dir": "prometheus",
       "summary": "A typed client for the Prometheus HTTP API, for Zuke builds. `PrometheusTasks`",

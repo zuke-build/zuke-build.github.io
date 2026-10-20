@@ -51,6 +51,7 @@ export const toolGroups: ToolGroup[] = [
     category: "Frameworks & code generation",
     blurb: "Scaffold app frameworks and generate typed clients from a schema.",
     tools: [
+      { name: "Flutter", pkg: "@zuke/flutter", desc: "analyze, test, build apps, pub" },
       { name: "Nest", pkg: "@zuke/nest", desc: "NestJS: build, start, generate" },
       { name: "openapi-ts", pkg: "@zuke/openapi-ts", desc: "OpenAPI → typed TS client" },
       { name: "Orval", pkg: "@zuke/orval", desc: "generate API clients & mocks" },
