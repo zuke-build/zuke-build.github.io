@@ -56288,6 +56288,296 @@
       "summary": "`@zuke/apple` — typed task wrappers for Apple's code-signing tools in Zuke",
       "symbols": [
         {
+          "name": "AltoolOperation",
+          "kind": "typeAlias",
+          "doc": "The `altool` operations this wrapper runs.",
+          "signature": "type AltoolOperation = --upload-app | --validate-app",
+          "deprecated": false
+        },
+        {
+          "name": "AltoolPlatform",
+          "kind": "typeAlias",
+          "doc": "The platform of the app being uploaded (`--type`).",
+          "signature": "type AltoolPlatform = ios | macos | appletvos | visionos",
+          "deprecated": false
+        },
+        {
+          "name": "AltoolSettings",
+          "kind": "class",
+          "doc": "Settings for `xcrun altool --upload-app` and `--validate-app`.",
+          "signature": "class AltoolSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "The `.ipa` or `.pkg` to upload or validate (`--file`); required."
+            },
+            {
+              "name": "type",
+              "kind": "method",
+              "optional": false,
+              "signature": "type(platform: AltoolPlatform): this",
+              "doc": "The app's platform (`--type`); required."
+            },
+            {
+              "name": "apiKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiKey(keyId: string, issuerId: string): this",
+              "doc": "Authenticate with an App Store Connect API key: its key id and issuer id\n(`--apiKey`, `--apiIssuer`). `altool` finds `AuthKey_<keyId>.p8` in\n`~/.appstoreconnect/private_keys` and its other search directories, or in\n{@link apiPrivateKeysDir}."
+            },
+            {
+              "name": "apiPrivateKeysDir",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiPrivateKeysDir(path: PathLike): this",
+              "doc": "The directory holding `AuthKey_<keyId>.p8`, passed to `altool` as\n`API_PRIVATE_KEYS_DIR`."
+            },
+            {
+              "name": "appleId",
+              "kind": "method",
+              "optional": false,
+              "signature": "appleId(username: string, password: string): this",
+              "doc": "Authenticate with an Apple ID and an app-specific password\n(`--username`, `--password`). The password is handed to `altool` in an\nenvironment variable it reads through `@env:`, so it is never on the\ncommand line, and it is registered with the run's redactor."
+            }
+          ]
+        },
+        {
+          "name": "AltoolTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for `xcrun altool`.",
+          "signature": "const AltoolTasks: AltoolTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "AltoolTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link AltoolTasks}.",
+          "signature": "interface AltoolTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "uploadApp",
+              "kind": "method",
+              "optional": false,
+              "signature": "uploadApp(configure: Configure<AltoolSettings>): Promise<CommandOutput>",
+              "doc": "Upload an app to App Store Connect: `xcrun altool --upload-app`."
+            },
+            {
+              "name": "validateApp",
+              "kind": "method",
+              "optional": false,
+              "signature": "validateApp(configure: Configure<AltoolSettings>): Promise<CommandOutput>",
+              "doc": "Validate an app without uploading it: `xcrun altool --validate-app`."
+            }
+          ]
+        },
+        {
+          "name": "APP_STORE_CONNECT_API_URL",
+          "kind": "variable",
+          "doc": "The App Store Connect API's base URL.",
+          "signature": "const APP_STORE_CONNECT_API_URL: https://api.appstoreconnect.apple.com",
+          "deprecated": false
+        },
+        {
+          "name": "AppStoreConnectError",
+          "kind": "class",
+          "doc": "Raised when the App Store Connect API answers with an error status. The\nmessage names the request and every error the API listed; it never carries\nthe API key or the token signed with it.",
+          "signature": "class AppStoreConnectError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "AppStoreConnectErrorDetail",
+          "kind": "interface",
+          "doc": "One entry of an App Store Connect API error response's `errors` list.",
+          "signature": "interface AppStoreConnectErrorDetail",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "code",
+              "kind": "property",
+              "optional": false,
+              "signature": "code: string",
+              "doc": "The machine-readable code, e.g. `ENTITY_ERROR.ATTRIBUTE.INVALID`."
+            },
+            {
+              "name": "title",
+              "kind": "property",
+              "optional": false,
+              "signature": "title: string",
+              "doc": "The short title."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": true,
+              "signature": "detail?: string",
+              "doc": "The explanation, when the API gave one."
+            }
+          ]
+        },
+        {
+          "name": "AppStoreConnectSettings",
+          "kind": "class",
+          "doc": "Settings for a task that calls the App Store Connect API with an API key\n(*Users and Access → Integrations* in App Store Connect): the issuer id, the\nkey id, and the `AuthKey_<keyId>.p8` private key.\n\nThe private key and every token signed with it stay out of progress lines\nand errors. Declare them in the build as `parameter(...).secret()` so Zuke\nmasks them in its own output too.",
+          "signature": "class AppStoreConnectSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "issuerId",
+              "kind": "method",
+              "optional": false,
+              "signature": "issuerId(id: string): this",
+              "doc": "The API key's issuer id, a UUID."
+            },
+            {
+              "name": "keyId",
+              "kind": "method",
+              "optional": false,
+              "signature": "keyId(id: string): this",
+              "doc": "The API key's id, e.g. `ABC123`."
+            },
+            {
+              "name": "privateKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "privateKey(pem: string): this",
+              "doc": "The private key, as the PEM text of `AuthKey_<keyId>.p8`."
+            },
+            {
+              "name": "privateKeyFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "privateKeyFile(path: PathLike): this",
+              "doc": "Read the private key from `AuthKey_<keyId>.p8`."
+            },
+            {
+              "name": "apiUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiUrl(url: string): this",
+              "doc": "The API's base URL, `https://api.appstoreconnect.apple.com` by default.\nIt carries the token, so it must be `https:` unless it is loopback or\n`ZUKE_ALLOW_INSECURE_URL` is set."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fetcher: fetch): this",
+              "doc": "Send with this `fetch` instead of the global one — the seam tests use."
+            },
+            {
+              "name": "readEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "readEnv(reader: unknown): this",
+              "doc": "Read environment variables through `reader` instead of `Deno.env`."
+            },
+            {
+              "name": "sleep",
+              "kind": "method",
+              "optional": false,
+              "signature": "sleep(sleeper: unknown): this",
+              "doc": "Wait through `sleeper` instead of a timer — the seam tests use."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "Read the time from `clock` (epoch ms) instead of `Date.now`."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(sink: unknown): this",
+              "doc": "Send progress lines to `sink` instead of `console.log`."
+            },
+            {
+              "name": "issuerId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "issuerId_?: string",
+              "doc": "The API key's issuer id (set by {@link issuerId})."
+            },
+            {
+              "name": "keyId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "keyId_?: string",
+              "doc": "The API key's id (set by {@link keyId})."
+            },
+            {
+              "name": "privateKey_",
+              "kind": "property",
+              "optional": true,
+              "signature": "privateKey_?: string",
+              "doc": "The private key, PEM (set by {@link privateKey})."
+            },
+            {
+              "name": "privateKeyFile_",
+              "kind": "property",
+              "optional": true,
+              "signature": "privateKeyFile_?: string",
+              "doc": "The private key's file (set by {@link privateKeyFile})."
+            },
+            {
+              "name": "apiUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "apiUrl_: string",
+              "doc": "The API's base URL (set by {@link apiUrl})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` to use (set by {@link fetch})."
+            },
+            {
+              "name": "readEnv_",
+              "kind": "property",
+              "optional": false,
+              "signature": "readEnv_: unknown",
+              "doc": "The environment reader (set by {@link readEnv})."
+            },
+            {
+              "name": "sleep_",
+              "kind": "property",
+              "optional": false,
+              "signature": "sleep_: unknown",
+              "doc": "How the task waits between polls (set by {@link sleep})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock, in epoch ms (set by {@link now})."
+            },
+            {
+              "name": "log_",
+              "kind": "property",
+              "optional": false,
+              "signature": "log_: unknown",
+              "doc": "Where progress lines go (set by {@link log})."
+            }
+          ]
+        },
+        {
           "name": "CodesignDisplay",
           "kind": "interface",
           "doc": "A code signature as `codesign --display` describes it.",
@@ -56579,6 +56869,150 @@
               "optional": false,
               "signature": "extract(configure: Configure<DittoSettings>): Promise<CommandOutput>",
               "doc": "Unpack a zip archive: `ditto -x -k`, then the lambda's settings."
+            }
+          ]
+        },
+        {
+          "name": "ExportDestination",
+          "kind": "typeAlias",
+          "doc": "Whether to write the export locally or upload it to App Store Connect (`destination`).",
+          "signature": "type ExportDestination = export | upload",
+          "deprecated": false
+        },
+        {
+          "name": "ExportMethod",
+          "kind": "typeAlias",
+          "doc": "How an archive is exported (`method`). Xcode 15.3 renamed three methods:\n`app-store-connect`, `release-testing` and `debugging` were `app-store`,\n`ad-hoc` and `development`, which older Xcode versions still require.",
+          "signature": "type ExportMethod = app-store-connect | release-testing | enterprise | debugging | developer-id | mac-application | validation | app-store | ad-hoc | development",
+          "deprecated": false
+        },
+        {
+          "name": "ExportOptionsSettings",
+          "kind": "class",
+          "doc": "Settings for an `ExportOptions.plist`.",
+          "signature": "class ExportOptionsSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "method",
+              "kind": "method",
+              "optional": false,
+              "signature": "method(method: ExportMethod): this",
+              "doc": "How the archive is exported (`method`); required."
+            },
+            {
+              "name": "teamId",
+              "kind": "method",
+              "optional": false,
+              "signature": "teamId(id: string): this",
+              "doc": "The developer team id (`teamID`)."
+            },
+            {
+              "name": "signingStyle",
+              "kind": "method",
+              "optional": false,
+              "signature": "signingStyle(style: ExportSigningStyle): this",
+              "doc": "Automatic or manual signing (`signingStyle`)."
+            },
+            {
+              "name": "signingCertificate",
+              "kind": "method",
+              "optional": false,
+              "signature": "signingCertificate(name: string): this",
+              "doc": "The certificate to sign with, e.g. `Apple Distribution` (`signingCertificate`)."
+            },
+            {
+              "name": "provisioningProfile",
+              "kind": "method",
+              "optional": false,
+              "signature": "provisioningProfile(bundleId: string, profile: string): this",
+              "doc": "The provisioning profile, by name or UUID, for one bundle identifier\n(`provisioningProfiles`); repeatable, once per app and extension."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(destination: ExportDestination): this",
+              "doc": "Export to a directory, or upload to App Store Connect (`destination`)."
+            },
+            {
+              "name": "uploadSymbols",
+              "kind": "method",
+              "optional": false,
+              "signature": "uploadSymbols(enabled: boolean): this",
+              "doc": "Include symbols for crash reports (`uploadSymbols`)."
+            },
+            {
+              "name": "manageAppVersionAndBuildNumber",
+              "kind": "method",
+              "optional": false,
+              "signature": "manageAppVersionAndBuildNumber(enabled: boolean): this",
+              "doc": "Let App Store Connect manage the version and build number (`manageAppVersionAndBuildNumber`)."
+            },
+            {
+              "name": "stripSwiftSymbols",
+              "kind": "method",
+              "optional": false,
+              "signature": "stripSwiftSymbols(enabled: boolean): this",
+              "doc": "Strip Swift symbols from the binary (`stripSwiftSymbols`)."
+            },
+            {
+              "name": "testFlightInternalTestingOnly",
+              "kind": "method",
+              "optional": false,
+              "signature": "testFlightInternalTestingOnly(enabled: boolean): this",
+              "doc": "Limit a TestFlight upload to internal testers (`testFlightInternalTestingOnly`)."
+            },
+            {
+              "name": "render",
+              "kind": "method",
+              "optional": false,
+              "signature": "render(): string",
+              "doc": "The property list, as `xcodebuild -exportArchive -exportOptionsPlist`\nreads it. Pure: no I/O.\n"
+            },
+            {
+              "name": "options_",
+              "kind": "property",
+              "optional": false,
+              "signature": "options_: Map<string, ExportOptionValue>",
+              "doc": "The options set so far, in the order each key was first set; setting a\nkey again replaces its value in place."
+            }
+          ]
+        },
+        {
+          "name": "ExportOptionValue",
+          "kind": "typeAlias",
+          "doc": "One value in an `ExportOptions.plist`: a string, a boolean, or a string dictionary.",
+          "signature": "type ExportOptionValue = string | boolean | Record<string, string>",
+          "deprecated": false
+        },
+        {
+          "name": "ExportSigningStyle",
+          "kind": "typeAlias",
+          "doc": "Whether Xcode or the export options pick the signing assets (`signingStyle`).",
+          "signature": "type ExportSigningStyle = automatic | manual",
+          "deprecated": false
+        },
+        {
+          "name": "InstalledProvisioningProfile",
+          "kind": "interface",
+          "doc": "An installed provisioning profile.",
+          "signature": "interface InstalledProvisioningProfile",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "profile",
+              "kind": "property",
+              "optional": false,
+              "signature": "profile: ProvisioningProfile",
+              "doc": "What the profile says about itself."
+            },
+            {
+              "name": "paths",
+              "kind": "property",
+              "optional": false,
+              "signature": "paths: unknown",
+              "doc": "Every file it was installed as."
             }
           ]
         },
@@ -57074,6 +57508,296 @@
           ]
         },
         {
+          "name": "ProvisioningHost",
+          "kind": "interface",
+          "doc": "The operations installing a provisioning profile needs.",
+          "signature": "interface ProvisioningHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "readFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "readFile(path: string): Promise<Uint8Array>",
+              "doc": "Read a file's bytes."
+            },
+            {
+              "name": "makeDirectory",
+              "kind": "method",
+              "optional": false,
+              "signature": "makeDirectory(path: string): Promise<void>",
+              "doc": "Create a directory and its parents, if missing."
+            },
+            {
+              "name": "writeFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "writeFile(path: string, data: Uint8Array): Promise<void>",
+              "doc": "Write a file, replacing one that exists."
+            },
+            {
+              "name": "remove",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove(path: string): Promise<void>",
+              "doc": "Remove a file."
+            },
+            {
+              "name": "exists",
+              "kind": "method",
+              "optional": false,
+              "signature": "exists(path: string): Promise<boolean>",
+              "doc": "Whether a file exists."
+            },
+            {
+              "name": "home",
+              "kind": "method",
+              "optional": false,
+              "signature": "home(): string",
+              "doc": "The user's home directory."
+            }
+          ]
+        },
+        {
+          "name": "ProvisioningProfile",
+          "kind": "interface",
+          "doc": "A provisioning profile's identity, as read from the profile itself.",
+          "signature": "interface ProvisioningProfile",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "uuid",
+              "kind": "property",
+              "optional": false,
+              "signature": "uuid: string",
+              "doc": "The profile's UUID — Xcode installs it as `<uuid>.mobileprovision`."
+            },
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The profile's name, as `ExportOptions.plist` can refer to it."
+            },
+            {
+              "name": "teamIds",
+              "kind": "property",
+              "optional": false,
+              "signature": "teamIds: unknown",
+              "doc": "The team ids it belongs to."
+            },
+            {
+              "name": "teamName",
+              "kind": "property",
+              "optional": false,
+              "signature": "teamName: string",
+              "doc": "The team's name."
+            },
+            {
+              "name": "appIdName",
+              "kind": "property",
+              "optional": false,
+              "signature": "appIdName: string",
+              "doc": "The App ID's name."
+            },
+            {
+              "name": "bundleId",
+              "kind": "property",
+              "optional": false,
+              "signature": "bundleId: string",
+              "doc": "The bundle identifier it signs, e.g. `com.example.app`, or a wildcard\nsuch as `com.example.*` — the `application-identifier` entitlement\nwithout its team prefix."
+            },
+            {
+              "name": "platforms",
+              "kind": "property",
+              "optional": false,
+              "signature": "platforms: unknown",
+              "doc": "The platforms it is for, e.g. `[\"iOS\"]`."
+            },
+            {
+              "name": "kind",
+              "kind": "property",
+              "optional": false,
+              "signature": "kind: ProvisioningProfileKind",
+              "doc": "How it distributes the app."
+            },
+            {
+              "name": "creationDate",
+              "kind": "property",
+              "optional": false,
+              "signature": "creationDate: Date",
+              "doc": "When it was created."
+            },
+            {
+              "name": "expirationDate",
+              "kind": "property",
+              "optional": false,
+              "signature": "expirationDate: Date",
+              "doc": "When it expires."
+            },
+            {
+              "name": "xcodeManaged",
+              "kind": "property",
+              "optional": false,
+              "signature": "xcodeManaged: boolean",
+              "doc": "Whether Xcode created and manages it (automatic signing)."
+            }
+          ]
+        },
+        {
+          "name": "ProvisioningProfileError",
+          "kind": "class",
+          "doc": "Raised by `ProvisioningProfileTasks` when a profile cannot be read, is\nexpired, or could not be removed after `temporary`. When the callback had\nalready failed before the removal did, that error is the\n{@link Error.cause}.",
+          "signature": "class ProvisioningProfileError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "ProvisioningProfileKind",
+          "kind": "typeAlias",
+          "doc": "How a profile distributes the app, as Xcode's Organizer names it:\n`development` (devices listed, debugging allowed), `ad-hoc` (devices\nlisted), `enterprise` (all devices) or `app-store` (no devices — App Store\nand TestFlight).",
+          "signature": "type ProvisioningProfileKind = development | ad-hoc | enterprise | app-store",
+          "deprecated": false
+        },
+        {
+          "name": "ProvisioningProfileSettings",
+          "kind": "class",
+          "doc": "Settings for `ProvisioningProfileTasks`.",
+          "signature": "class ProvisioningProfileSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: PathLike): this",
+              "doc": "Read the profile from a `.mobileprovision` file."
+            },
+            {
+              "name": "base64",
+              "kind": "method",
+              "optional": false,
+              "signature": "base64(text: string): this",
+              "doc": "Take the profile as base64 — how a CI secret usually holds it\n(`base64 -i profile.mobileprovision`)."
+            },
+            {
+              "name": "directory",
+              "kind": "method",
+              "optional": false,
+              "signature": "directory(path: PathLike): this",
+              "doc": "Install into this directory instead of Xcode's two defaults; repeatable."
+            },
+            {
+              "name": "allowExpired",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowExpired(): this",
+              "doc": "Install the profile even if it has expired."
+            },
+            {
+              "name": "host",
+              "kind": "method",
+              "optional": false,
+              "signature": "host(host: ProvisioningHost): this",
+              "doc": "Work through `host` instead of the real file system — the test seam."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "Read the time from `clock` (epoch ms) instead of `Date.now`."
+            },
+            {
+              "name": "file_",
+              "kind": "property",
+              "optional": true,
+              "signature": "file_?: string",
+              "doc": "The profile file (set by {@link file})."
+            },
+            {
+              "name": "base64_",
+              "kind": "property",
+              "optional": true,
+              "signature": "base64_?: string",
+              "doc": "The profile as base64 (set by {@link base64})."
+            },
+            {
+              "name": "directories_",
+              "kind": "property",
+              "optional": false,
+              "signature": "directories_: string[]",
+              "doc": "Directories to install into (set by {@link directory})."
+            },
+            {
+              "name": "allowExpired_",
+              "kind": "property",
+              "optional": false,
+              "signature": "allowExpired_: boolean",
+              "doc": "Whether an expired profile may be installed (set by {@link allowExpired})."
+            },
+            {
+              "name": "host_",
+              "kind": "property",
+              "optional": false,
+              "signature": "host_: ProvisioningHost",
+              "doc": "The file-system seam (set by {@link host})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock, in epoch ms (set by {@link now})."
+            }
+          ]
+        },
+        {
+          "name": "ProvisioningProfileTasks",
+          "kind": "variable",
+          "doc": "Read and install provisioning profiles.",
+          "signature": "const ProvisioningProfileTasks: ProvisioningProfileTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "ProvisioningProfileTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link ProvisioningProfileTasks}.",
+          "signature": "interface ProvisioningProfileTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "inspect",
+              "kind": "method",
+              "optional": false,
+              "signature": "inspect(configure: Configure<ProvisioningProfileSettings>): Promise<ProvisioningProfile>",
+              "doc": "Read what a profile says about itself, without installing it."
+            },
+            {
+              "name": "install",
+              "kind": "method",
+              "optional": false,
+              "signature": "install(configure: Configure<ProvisioningProfileSettings>): Promise<InstalledProvisioningProfile>",
+              "doc": "Install a profile where Xcode looks for it, named by its UUID. Refuses an\nexpired profile unless `.allowExpired()`."
+            },
+            {
+              "name": "temporary",
+              "kind": "method",
+              "optional": false,
+              "signature": "temporary(configure: Configure<ProvisioningProfileSettings>, fn: unknown): Promise<T>",
+              "doc": "Install a profile, run `fn`, then remove every file the install created —\neven when `fn` throws. A copy that was already installed under the same\nUUID is left in place. Returns what `fn` returns.\n"
+            }
+          ]
+        },
+        {
           "name": "SecurityCreateKeychainSettings",
           "kind": "class",
           "doc": "Settings for `security create-keychain`.",
@@ -57546,6 +58270,610 @@
               "doc": "Set the keychain up, run `use` with it, and tear it down — what\n`SecurityTasks.temporaryKeychain` calls. Returns what `use` returns.\n"
             }
           ]
+        },
+        {
+          "name": "TestFlightBuild",
+          "kind": "interface",
+          "doc": "A build in App Store Connect, once processed.",
+          "signature": "interface TestFlightBuild",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "id",
+              "kind": "property",
+              "optional": false,
+              "signature": "id: string",
+              "doc": "The build's App Store Connect id."
+            },
+            {
+              "name": "appId",
+              "kind": "property",
+              "optional": false,
+              "signature": "appId: string",
+              "doc": "The app's App Store Connect id."
+            },
+            {
+              "name": "buildNumber",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildNumber: string",
+              "doc": "The build number, `CFBundleVersion`."
+            },
+            {
+              "name": "processingState",
+              "kind": "property",
+              "optional": false,
+              "signature": "processingState: string",
+              "doc": "The processing state: `VALID` once `distribute` returns."
+            }
+          ]
+        },
+        {
+          "name": "TestFlightError",
+          "kind": "class",
+          "doc": "Raised by `TestFlightTasks.distribute` when the release cannot go ahead:\nno app has the bundle id, a beta group does not exist, the build finished\nprocessing as `INVALID` or `FAILED`, or it had not finished by the timeout.",
+          "signature": "class TestFlightError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "TestFlightPlatform",
+          "kind": "typeAlias",
+          "doc": "The platform of a build, as App Store Connect names it.",
+          "signature": "type TestFlightPlatform = IOS | MAC_OS | TV_OS | VISION_OS",
+          "deprecated": false
+        },
+        {
+          "name": "TestFlightSettings",
+          "kind": "class",
+          "doc": "Settings for `TestFlightTasks.distribute`.",
+          "signature": "class TestFlightSettings extends AppStoreConnectSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "bundleId",
+              "kind": "method",
+              "optional": false,
+              "signature": "bundleId(id: string): this",
+              "doc": "The app's bundle id, e.g. `com.example.app`; required."
+            },
+            {
+              "name": "buildNumber",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildNumber(number: string | number): this",
+              "doc": "The uploaded build's number, `CFBundleVersion`; required."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(version: string): this",
+              "doc": "The uploaded build's version, `CFBundleShortVersionString` — needed when\nthe same build number exists under several versions."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(platform: TestFlightPlatform): this",
+              "doc": "The build's platform — needed when the app ships on several."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string | number): this",
+              "doc": "The longest wait for the build to finish processing (`\"45m\"`, or ms); default 30 minutes."
+            },
+            {
+              "name": "pollInterval",
+              "kind": "method",
+              "optional": false,
+              "signature": "pollInterval(duration: string | number): this",
+              "doc": "The time between two looks at the build (`\"1m\"`, or ms); default 30 seconds."
+            },
+            {
+              "name": "usesNonExemptEncryption",
+              "kind": "method",
+              "optional": false,
+              "signature": "usesNonExemptEncryption(uses: boolean): this",
+              "doc": "Answer the export-compliance question: whether the app uses encryption\nbeyond the exempt kinds. Until it is answered — here, or by\n`ITSAppUsesNonExemptEncryption` in `Info.plist` — the build sits at\n*Missing Compliance* and no tester can install it."
+            },
+            {
+              "name": "whatToTest",
+              "kind": "method",
+              "optional": false,
+              "signature": "whatToTest(text: string, locale?: string): this",
+              "doc": "The \"What to Test\" notes testers see, per locale; default locale `en-US`."
+            },
+            {
+              "name": "group",
+              "kind": "method",
+              "optional": false,
+              "signature": "group(name: string): this",
+              "doc": "Add the build to this beta group, by name; repeatable."
+            },
+            {
+              "name": "submitForBetaReview",
+              "kind": "method",
+              "optional": false,
+              "signature": "submitForBetaReview(): this",
+              "doc": "Submit the build for beta review, which external testing needs."
+            },
+            {
+              "name": "bundleId_",
+              "kind": "property",
+              "optional": true,
+              "signature": "bundleId_?: string",
+              "doc": "The app's bundle id (set by {@link bundleId})."
+            },
+            {
+              "name": "buildNumber_",
+              "kind": "property",
+              "optional": true,
+              "signature": "buildNumber_?: string",
+              "doc": "The build number (set by {@link buildNumber})."
+            },
+            {
+              "name": "version_",
+              "kind": "property",
+              "optional": true,
+              "signature": "version_?: string",
+              "doc": "The version (set by {@link version})."
+            },
+            {
+              "name": "platform_",
+              "kind": "property",
+              "optional": true,
+              "signature": "platform_?: TestFlightPlatform",
+              "doc": "The platform (set by {@link platform})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeout_: number",
+              "doc": "The longest wait for processing, in ms (set by {@link timeout})."
+            },
+            {
+              "name": "pollInterval_",
+              "kind": "property",
+              "optional": false,
+              "signature": "pollInterval_: number",
+              "doc": "The time between two polls, in ms (set by {@link pollInterval})."
+            },
+            {
+              "name": "usesNonExemptEncryption_",
+              "kind": "property",
+              "optional": true,
+              "signature": "usesNonExemptEncryption_?: boolean",
+              "doc": "Export compliance (set by {@link usesNonExemptEncryption})."
+            },
+            {
+              "name": "whatToTest_",
+              "kind": "property",
+              "optional": false,
+              "signature": "whatToTest_: Map<string, string>",
+              "doc": "\"What to Test\" notes by locale (set by {@link whatToTest})."
+            },
+            {
+              "name": "groups_",
+              "kind": "property",
+              "optional": false,
+              "signature": "groups_: string[]",
+              "doc": "Beta groups to add the build to (set by {@link group})."
+            },
+            {
+              "name": "submitForBetaReview_",
+              "kind": "property",
+              "optional": false,
+              "signature": "submitForBetaReview_: boolean",
+              "doc": "Whether to submit for beta review (set by {@link submitForBetaReview})."
+            }
+          ]
+        },
+        {
+          "name": "TestFlightTasks",
+          "kind": "variable",
+          "doc": "Distribute builds in TestFlight through the App Store Connect API.",
+          "signature": "const TestFlightTasks: TestFlightTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "TestFlightTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link TestFlightTasks}.",
+          "signature": "interface TestFlightTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "distribute",
+              "kind": "method",
+              "optional": false,
+              "signature": "distribute(configure: Configure<TestFlightSettings>): Promise<TestFlightBuild>",
+              "doc": "Wait for an uploaded build to be processed, then distribute it in\nTestFlight as configured.\n"
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildActionSettings",
+          "kind": "class",
+          "doc": "Settings for `xcodebuild build`, `clean`, `analyze`, `build-for-testing` and\n`-resolvePackageDependencies`.",
+          "signature": "class XcodebuildActionSettings extends XcodebuildProjectSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "XcodebuildActionTask",
+          "kind": "typeAlias",
+          "doc": "A task that runs a flag-free `xcodebuild` action.",
+          "signature": "type XcodebuildActionTask = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "XcodebuildArchiveSettings",
+          "kind": "class",
+          "doc": "Settings for `xcodebuild archive`.",
+          "signature": "class XcodebuildArchiveSettings extends XcodebuildProjectSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "archivePath",
+              "kind": "method",
+              "optional": false,
+              "signature": "archivePath(path: PathLike): this",
+              "doc": "Where to write the `.xcarchive` (`-archivePath`); required."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildExportArchiveSettings",
+          "kind": "class",
+          "doc": "Settings for `xcodebuild -exportArchive`.",
+          "signature": "class XcodebuildExportArchiveSettings extends XcodebuildSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "archivePath",
+              "kind": "method",
+              "optional": false,
+              "signature": "archivePath(path: PathLike): this",
+              "doc": "The `.xcarchive` to export (`-archivePath`); required."
+            },
+            {
+              "name": "exportPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "exportPath(path: PathLike): this",
+              "doc": "The directory to write the export to (`-exportPath`); required."
+            },
+            {
+              "name": "exportOptionsPlist",
+              "kind": "method",
+              "optional": false,
+              "signature": "exportOptionsPlist(path: PathLike): this",
+              "doc": "The export options (`-exportOptionsPlist`); required. Write one with\n`XcodebuildTasks.writeExportOptions`."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildPlainAction",
+          "kind": "typeAlias",
+          "doc": "An `xcodebuild` action that takes no flags of its own.",
+          "signature": "type XcodebuildPlainAction = analyze | build | build-for-testing | clean | -resolvePackageDependencies",
+          "deprecated": false
+        },
+        {
+          "name": "XcodebuildProjectSettings",
+          "kind": "class",
+          "doc": "The project flags every build action takes. Each action names itself and\nits own flags; the project flags come first, then the action, then the\nbuild settings.",
+          "signature": "class XcodebuildProjectSettings extends XcodebuildSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "workspace",
+              "kind": "method",
+              "optional": false,
+              "signature": "workspace(path: PathLike): this",
+              "doc": "The workspace to build, e.g. `App.xcworkspace` (`-workspace`)."
+            },
+            {
+              "name": "project",
+              "kind": "method",
+              "optional": false,
+              "signature": "project(path: PathLike): this",
+              "doc": "The project to build, e.g. `App.xcodeproj` (`-project`)."
+            },
+            {
+              "name": "scheme",
+              "kind": "method",
+              "optional": false,
+              "signature": "scheme(name: string): this",
+              "doc": "The scheme to build (`-scheme`); required with a workspace. A later call replaces it."
+            },
+            {
+              "name": "configuration",
+              "kind": "method",
+              "optional": false,
+              "signature": "configuration(name: string): this",
+              "doc": "The build configuration, e.g. `Release` (`-configuration`). A later call replaces it."
+            },
+            {
+              "name": "sdk",
+              "kind": "method",
+              "optional": false,
+              "signature": "sdk(name: string): this",
+              "doc": "The SDK, e.g. `iphoneos` or `iphonesimulator` (`-sdk`). A later call replaces it."
+            },
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(specifier: string): this",
+              "doc": "A destination, e.g. `generic/platform=iOS` or\n`platform=iOS Simulator,name=iPhone 16` (`-destination`); repeatable."
+            },
+            {
+              "name": "derivedDataPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "derivedDataPath(path: PathLike): this",
+              "doc": "Where intermediate build files go (`-derivedDataPath`)."
+            },
+            {
+              "name": "clonedSourcePackagesDirPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "clonedSourcePackagesDirPath(path: PathLike): this",
+              "doc": "Where Swift packages are checked out (`-clonedSourcePackagesDirPath`)."
+            },
+            {
+              "name": "resultBundlePath",
+              "kind": "method",
+              "optional": false,
+              "signature": "resultBundlePath(path: PathLike): this",
+              "doc": "Write an `.xcresult` bundle with the logs and results (`-resultBundlePath`)."
+            },
+            {
+              "name": "xcconfig",
+              "kind": "method",
+              "optional": false,
+              "signature": "xcconfig(path: PathLike): this",
+              "doc": "Apply an `.xcconfig` file's settings over every target (`-xcconfig`)."
+            },
+            {
+              "name": "buildSetting",
+              "kind": "method",
+              "optional": false,
+              "signature": "buildSetting(name: string, value: string): this",
+              "doc": "Override a build setting for every target, e.g.\n`(\"DEVELOPMENT_TEAM\", \"ABCDE12345\")` → `DEVELOPMENT_TEAM=ABCDE12345`;\nrepeatable. A condition goes in the name:\n`CODE_SIGN_IDENTITY[sdk=iphoneos*]`."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildSettings",
+          "kind": "class",
+          "doc": "Base for all `xcodebuild` settings: the binary is `xcodebuild`, on `PATH`.",
+          "signature": "class XcodebuildSettings extends ToolSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "quietOutput",
+              "kind": "method",
+              "optional": false,
+              "signature": "quietOutput(): this",
+              "doc": "Print only warnings and errors (`-quiet`)."
+            },
+            {
+              "name": "allowProvisioningUpdates",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowProvisioningUpdates(): this",
+              "doc": "Let Xcode create and update provisioning profiles and certificates\n(`-allowProvisioningUpdates`); on CI, pair it with\n{@link authenticationKey}."
+            },
+            {
+              "name": "authenticationKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "authenticationKey(path: PathLike, keyId: string, issuerId: string): this",
+              "doc": "Sign in to the developer account with an App Store Connect API key\ninstead of an Xcode account: the `AuthKey_<id>.p8` file, its key id and\nits issuer id (`-authenticationKeyPath`, `-authenticationKeyID`,\n`-authenticationKeyIssuerID`)."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildShowBuildSettings",
+          "kind": "class",
+          "doc": "Settings for `xcodebuild -showBuildSettings`.",
+          "signature": "class XcodebuildShowBuildSettings extends XcodebuildProjectSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Print the settings as JSON (`-json`)."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for `xcodebuild`.",
+          "signature": "const XcodebuildTasks: XcodebuildTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "XcodebuildTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link XcodebuildTasks}.",
+          "signature": "interface XcodebuildTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "archive(configure: Configure<XcodebuildArchiveSettings>): Promise<CommandOutput>",
+              "doc": "Build an `.xcarchive`: `xcodebuild archive`."
+            },
+            {
+              "name": "exportArchive",
+              "kind": "method",
+              "optional": false,
+              "signature": "exportArchive(configure: Configure<XcodebuildExportArchiveSettings>): Promise<CommandOutput>",
+              "doc": "Export an archive to an `.ipa`, or upload it: `xcodebuild -exportArchive`."
+            },
+            {
+              "name": "showBuildSettings",
+              "kind": "method",
+              "optional": false,
+              "signature": "showBuildSettings(configure?: Configure<XcodebuildShowBuildSettings>): Promise<CommandOutput>",
+              "doc": "Print the resolved build settings: `xcodebuild -showBuildSettings`."
+            },
+            {
+              "name": "writeExportOptions",
+              "kind": "method",
+              "optional": false,
+              "signature": "writeExportOptions(path: PathLike, configure: Configure<ExportOptionsSettings>): Promise<void>",
+              "doc": "Write an `ExportOptions.plist` for {@link exportArchive} to `path`. Runs\nno subprocess."
+            },
+            {
+              "name": "build",
+              "kind": "property",
+              "optional": false,
+              "signature": "build: XcodebuildActionTask",
+              "doc": "Build a scheme: `xcodebuild build`."
+            },
+            {
+              "name": "clean",
+              "kind": "property",
+              "optional": false,
+              "signature": "clean: XcodebuildActionTask",
+              "doc": "Remove build products: `xcodebuild clean`."
+            },
+            {
+              "name": "analyze",
+              "kind": "property",
+              "optional": false,
+              "signature": "analyze: XcodebuildActionTask",
+              "doc": "Run the static analyzer: `xcodebuild analyze`."
+            },
+            {
+              "name": "buildForTesting",
+              "kind": "property",
+              "optional": false,
+              "signature": "buildForTesting: XcodebuildActionTask",
+              "doc": "Build for a later test run: `xcodebuild build-for-testing`."
+            },
+            {
+              "name": "resolvePackageDependencies",
+              "kind": "property",
+              "optional": false,
+              "signature": "resolvePackageDependencies: XcodebuildActionTask",
+              "doc": "Resolve Swift package dependencies: `xcodebuild -resolvePackageDependencies`."
+            },
+            {
+              "name": "test",
+              "kind": "property",
+              "optional": false,
+              "signature": "test: XcodebuildTestTask",
+              "doc": "Build and run the tests: `xcodebuild test`."
+            },
+            {
+              "name": "testWithoutBuilding",
+              "kind": "property",
+              "optional": false,
+              "signature": "testWithoutBuilding: XcodebuildTestTask",
+              "doc": "Run tests already built: `xcodebuild test-without-building`."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildTestAction",
+          "kind": "typeAlias",
+          "doc": "An `xcodebuild` action that runs tests.",
+          "signature": "type XcodebuildTestAction = test | test-without-building",
+          "deprecated": false
+        },
+        {
+          "name": "XcodebuildTestSettings",
+          "kind": "class",
+          "doc": "Settings for `xcodebuild test` and `test-without-building`.",
+          "signature": "class XcodebuildTestSettings extends XcodebuildProjectSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "xctestrun",
+              "kind": "method",
+              "optional": false,
+              "signature": "xctestrun(path: PathLike): this",
+              "doc": "Run the tests a `build-for-testing` run described, from its `.xctestrun`\nfile (`-xctestrun`), instead of a scheme — the usual way to run\n`test-without-building`."
+            },
+            {
+              "name": "testPlan",
+              "kind": "method",
+              "optional": false,
+              "signature": "testPlan(name: string): this",
+              "doc": "The test plan to run (`-testPlan`)."
+            },
+            {
+              "name": "onlyTesting",
+              "kind": "method",
+              "optional": false,
+              "signature": "onlyTesting(identifier: string): this",
+              "doc": "Run only this test target, class or method, e.g. `AppTests/LoginTests`\n(`-only-testing`); repeatable."
+            },
+            {
+              "name": "skipTesting",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipTesting(identifier: string): this",
+              "doc": "Skip this test target, class or method (`-skip-testing`); repeatable."
+            },
+            {
+              "name": "enableCodeCoverage",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableCodeCoverage(enabled?: boolean): this",
+              "doc": "Turn code coverage on or off (`-enableCodeCoverage YES|NO`)."
+            },
+            {
+              "name": "parallelTestingEnabled",
+              "kind": "method",
+              "optional": false,
+              "signature": "parallelTestingEnabled(enabled?: boolean): this",
+              "doc": "Turn parallel testing on or off (`-parallel-testing-enabled YES|NO`)."
+            },
+            {
+              "name": "retryTestsOnFailure",
+              "kind": "method",
+              "optional": false,
+              "signature": "retryTestsOnFailure(): this",
+              "doc": "Re-run a failed test until it passes, up to the iteration limit (`-retry-tests-on-failure`)."
+            },
+            {
+              "name": "testIterations",
+              "kind": "method",
+              "optional": false,
+              "signature": "testIterations(count: number): this",
+              "doc": "How many times to run each test (`-test-iterations`)."
+            }
+          ]
+        },
+        {
+          "name": "XcodebuildTestTask",
+          "kind": "typeAlias",
+          "doc": "A task that runs an `xcodebuild` test action.",
+          "signature": "type XcodebuildTestTask = unknown",
+          "deprecated": false
         }
       ]
     },
