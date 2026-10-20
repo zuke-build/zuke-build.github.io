@@ -17,7 +17,7 @@ export const toolGroups: ToolGroup[] = [
     category: "Runtimes & package managers",
     blurb: "Install, run, and publish across every major JS toolchain.",
     tools: [
-      { name: "Deno", pkg: "@zuke/deno", desc: "run, test, check, fmt, lint, coverage" },
+      { name: "Deno", pkg: "@zuke/deno", desc: "run, test, check, fmt, lint, coverage, Deno Deploy" },
       { name: "Node", pkg: "@zuke/node", desc: "run scripts, npx, version pinning" },
       { name: "npm", pkg: "@zuke/npm", desc: "install, ci, run scripts, publish" },
       { name: "Bun", pkg: "@zuke/bun", desc: "install, add, run, x, bun test" },
