@@ -3647,7 +3647,7 @@
         {
           "name": "extractTarXz",
           "kind": "function",
-          "doc": "Read the `.tar.xz` at `src`, decompress and unpack it, and write each entry\nunder `destDir` exactly as {@link extractTarGzip} does — the same symlink\nhandling, the same zip-slip guards, the same {@link ExtractOptions.strip}.\nThe xz decoder is built in (the platform has none), covering the single\nLZMA2 filter chain `xz` writes by default and verifying each block's check.",
+          "doc": "Read the `.tar.xz` at `src`, decompress and unpack it, and write each entry\nunder `destDir` exactly as {@link extractTarGzip} does — the same symlink\nhandling, the same zip-slip guards, the same {@link ExtractOptions.strip}.\nThe system `xz` decompresses when one is on `PATH`, several times faster\nthan the built-in decoder this falls back to, which covers the single LZMA2\nfilter chain `xz` writes by default and verifies each block's check. Either\nway Zuke's own tar reader and guards unpack the result.",
           "signature": "async function extractTarXz(src: PathLike, destDir: PathLike, options?: ExtractOptions): Promise<void>",
           "deprecated": false
         },
