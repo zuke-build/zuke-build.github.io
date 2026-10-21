@@ -7460,10 +7460,17 @@
           ]
         },
         {
+          "name": "signJwtEs256",
+          "kind": "function",
+          "doc": "Sign `claims` as a compact ES256 JWT with a PEM P-256 private key in\nPKCS#8 — `BEGIN PRIVATE KEY`, as an App Store Connect `AuthKey_<id>.p8`\nholds it.\n\nThe header is `{\"alg\":\"ES256\",\"typ\":\"JWT\"}`, plus `\"kid\"` when `keyId` is\ngiven (App Store Connect requires it). The claims are serialised as given:\nthe caller sets `iat`, `exp` and the rest. The signature is the raw r‖s\npair ES256 requires.\n\n```ts\nconst jwt = await signJwtEs256(p8, { iss: issuerId, iat, exp: iat + 1200 }, keyId);\n```\n",
+          "signature": "function signJwtEs256(privateKeyPem: string, claims: Readonly<Record<string, unknown>>, keyId?: string): Promise<string>",
+          "deprecated": false
+        },
+        {
           "name": "signJwtRs256",
           "kind": "function",
           "doc": "Sign `claims` as a compact RS256 JWT with a PEM RSA private key —\n`BEGIN RSA PRIVATE KEY` (PKCS#1) or `BEGIN PRIVATE KEY` (PKCS#8).\n\nThe header is `{\"alg\":\"RS256\",\"typ\":\"JWT\"}`, plus `\"kid\"` when `keyId` is\ngiven (a Google service-account key's `private_key_id`). The claims are\nserialised as given: the caller sets `iat`, `exp` and the rest.\n\n```ts\nconst jwt = await signJwtRs256(pem, { iss: \"1234\", iat, exp: iat + 540 });\n```\n",
-          "signature": "async function signJwtRs256(privateKeyPem: string, claims: Readonly<Record<string, unknown>>, keyId?: string): Promise<string>",
+          "signature": "function signJwtRs256(privateKeyPem: string, claims: Readonly<Record<string, unknown>>, keyId?: string): Promise<string>",
           "deprecated": false
         },
         {
