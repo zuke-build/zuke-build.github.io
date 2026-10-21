@@ -576,7 +576,7 @@
         {
           "name": "archiveOutputs",
           "kind": "function",
-          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents.\nA declared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory.",
+          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents,\neach file with its permission bits so a binary restores executable. A\ndeclared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory other than `.zuke/tools`.",
           "signature": "async function archiveOutputs(outputs: unknown, host: OutputHost): Promise<Uint8Array>",
           "deprecated": false
         },
@@ -1358,6 +1358,13 @@
               "optional": true,
               "signature": "denoVersion?: string",
               "doc": "Install this Deno version, for a job that runs `deno` directly rather than\nthrough the `./zuke` launcher (which bootstraps its own)."
+            },
+            {
+              "name": "actionsCache",
+              "kind": "property",
+              "optional": true,
+              "signature": "actionsCache?: boolean",
+              "doc": "Expose the GitHub Actions cache to the build, so `envCacheStore` shares\ntarget outputs through it with no further configuration. The runner hands\nthe cache service's token and URL to JavaScript actions only; this has the\naction export them to the job."
             },
             {
               "name": "name",
@@ -3222,7 +3229,7 @@
         {
           "name": "envCacheStore",
           "kind": "function",
-          "doc": "Resolve a {@link RemoteCacheStore} from the environment, or `undefined` when\nnone is configured. `ZUKE_REMOTE_CACHE_URL` (with an optional\n`ZUKE_REMOTE_CACHE_TOKEN`) selects an {@link HttpCacheStore}; otherwise\n`ZUKE_REMOTE_CACHE_DIR` selects a {@link FileSystemCacheStore}.",
+          "doc": "Resolve a {@link RemoteCacheStore} from the environment, or `undefined` when\nnone is configured. `ZUKE_REMOTE_CACHE_URL` (with an optional\n`ZUKE_REMOTE_CACHE_TOKEN`) selects an {@link HttpCacheStore}; otherwise\n`ZUKE_REMOTE_CACHE_DIR` selects a {@link FileSystemCacheStore}; otherwise,\non a GitHub Actions job that exposes its `ACTIONS_RUNTIME_TOKEN` and\n`ACTIONS_RESULTS_URL` (the `actions-cache` input of the `zuke-build/zuke`\naction), a {@link \"./github_actions_cache.ts\".GitHubActionsCacheStore}.",
           "signature": "function envCacheStore(readEnv: unknown): RemoteCacheStore | undefined",
           "deprecated": false
         },
@@ -4116,6 +4123,66 @@
           "doc": "List the files changed since `base` (default `HEAD`) via git: tracked changes\nversus `base` plus untracked files not covered by `.gitignore`. `run` invokes\ngit and returns stdout (defaults to a real `git` subprocess); override it to\ntest without a repository.",
           "signature": "async function gitChangedFiles(base?: string, run?: unknown): Promise<string[]>",
           "deprecated": false
+        },
+        {
+          "name": "GitHubActionsCacheStore",
+          "kind": "class",
+          "doc": "A {@link RemoteCacheStore} over the GitHub Actions cache service. A `get`\nasks the service for the entry's signed download URL and fetches it; a `put`\nreserves the entry, uploads the archive to the signed upload URL it is given,\nand finalizes it. A key another job finalized first is left as it is: entries\nare immutable, and both jobs built the same outputs from the same inputs.\n\nRestores are subject to the Actions cache's own scoping — a run sees entries\nwritten on its branch and on the default branch — and the service's eviction,\nso a miss after a quiet week is normal and costs one rebuild.",
+          "signature": "class GitHubActionsCacheStore",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "get",
+              "kind": "method",
+              "optional": false,
+              "signature": "get(key: string): Promise<Uint8Array | null>",
+              "doc": "Fetch the archived outputs stored under `key`, or `null` if there are none."
+            },
+            {
+              "name": "put",
+              "kind": "method",
+              "optional": false,
+              "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
+              "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            }
+          ]
+        },
+        {
+          "name": "GitHubActionsCacheStoreOptions",
+          "kind": "interface",
+          "doc": "Configuration for a {@link GitHubActionsCacheStore}.",
+          "signature": "interface GitHubActionsCacheStoreOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "url",
+              "kind": "property",
+              "optional": false,
+              "signature": "url: string",
+              "doc": "The cache service's base URL: the job's `ACTIONS_RESULTS_URL`."
+            },
+            {
+              "name": "token",
+              "kind": "property",
+              "optional": false,
+              "signature": "token: string",
+              "doc": "The job's `ACTIONS_RUNTIME_TOKEN`, sent as a bearer token to the service."
+            },
+            {
+              "name": "fetch",
+              "kind": "property",
+              "optional": true,
+              "signature": "fetch?: fetch",
+              "doc": "The `fetch` implementation; defaults to the global. Overridable for tests."
+            },
+            {
+              "name": "maxArtifactBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxArtifactBytes?: number",
+              "doc": "The most a fetched artifact may weigh on the wire, in bytes, before it is\nrefused. Defaults to 2 GiB — larger than the HTTP store's 512 MiB, because\nthis store is written only by the repository's own workflows and the\noutputs worth caching here are the big ones (a 1.5 GB SDK). What the bytes\n*decompress* to is bounded separately, by `restoreOutputs`."
+            }
+          ]
         },
         {
           "name": "glob",
@@ -5458,7 +5525,7 @@
               "kind": "method",
               "optional": false,
               "signature": "stat(path: string): Promise<unknown | null>",
-              "doc": "Whether a path exists and is a directory, or `null` if it is missing."
+              "doc": "Whether a path exists and is a directory, or `null` if it is missing. A\nhost that has permission bits reports them as `mode`, so an archived\nbinary is restored executable; one that does not (Windows, a test double)\nleaves it out and the entry takes the archive's default."
             },
             {
               "name": "lstat",
@@ -5478,8 +5545,8 @@
               "name": "writeFile",
               "kind": "method",
               "optional": false,
-              "signature": "writeFile(path: string, bytes: Uint8Array): Promise<void>",
-              "doc": "Write a file, creating parent directories as needed."
+              "signature": "writeFile(path: string, bytes: Uint8Array, mode?: number): Promise<void>",
+              "doc": "Write a file, creating parent directories as needed, with the permission\nbits `mode` where the platform has them."
             }
           ]
         },
@@ -6425,7 +6492,7 @@
         {
           "name": "restoreOutputs",
           "kind": "function",
-          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\nsymlink or directory entry (which {@link archiveOutputs} never produces),\nwhen it lands under `.git` or `.zuke`, when — given `outputs` — it falls\noutside the target's declared outputs, and when the path it would be written\nto passes through, or is, a symlink that already exists on disk.\n\nThat last refusal is what makes the confinement real rather than lexical. The\narchive cannot plant a link, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
+          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\nsymlink or directory entry (which {@link archiveOutputs} never produces),\nwhen it lands under `.git` or `.zuke` (`.zuke/tools` aside), when — given\n`outputs` — it falls\noutside the target's declared outputs, and when the path it would be written\nto passes through, or is, a symlink that already exists on disk.\n\nThat last refusal is what makes the confinement real rather than lexical. The\narchive cannot plant a link, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
           "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost, outputs?: unknown, maxBytes?: number): Promise<string[]>",
           "deprecated": false
         },
