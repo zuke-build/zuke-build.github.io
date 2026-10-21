@@ -60765,6 +60765,1024 @@
       ]
     },
     {
+      "name": "@zuke/dart",
+      "dir": "dart",
+      "summary": "`@zuke/dart` — typed `DartTasks` wrappers for the [Dart](https://dart.dev)",
+      "symbols": [
+        {
+          "name": "DartAnalyzeSettings",
+          "kind": "class",
+          "doc": "Settings for `dart analyze`.",
+          "signature": "class DartAnalyzeSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(path: PathLike): this",
+              "doc": "A file or directory to analyze (defaults to the current one); repeatable."
+            },
+            {
+              "name": "fatalInfos",
+              "kind": "method",
+              "optional": false,
+              "signature": "fatalInfos(): this",
+              "doc": "Treat info-level issues as fatal (`--fatal-infos`)."
+            },
+            {
+              "name": "noFatalWarnings",
+              "kind": "method",
+              "optional": false,
+              "signature": "noFatalWarnings(): this",
+              "doc": "Do not fail on warnings (`--no-fatal-warnings`)."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(name: default | json | machine): this",
+              "doc": "The output format: `default`, `json` or `machine` (`--format`)."
+            },
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(path: PathLike): this",
+              "doc": "The package resolution file to use (`--packages`)."
+            }
+          ]
+        },
+        {
+          "name": "DartCompileSettings",
+          "kind": "class",
+          "doc": "Settings for `dart compile <target>`.",
+          "signature": "class DartCompileSettings extends DartVmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "enableAsserts",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableAsserts(): this",
+              "doc": "Enable assert statements (`--enable-asserts`); not for `kernel`."
+            },
+            {
+              "name": "verbosity",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbosity(level: error | warning | info | all): this",
+              "doc": "How much to print (`--verbosity`); not for `wasm`."
+            },
+            {
+              "name": "entry",
+              "kind": "method",
+              "optional": false,
+              "signature": "entry(path: PathLike): this",
+              "doc": "The Dart entry point to compile; required."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Where to write the compiled artifact (`--output`)."
+            },
+            {
+              "name": "targetOs",
+              "kind": "method",
+              "optional": false,
+              "signature": "targetOs(os: DartTargetOs): this",
+              "doc": "Cross-compile for another OS (`--target-os`); `exe` and `aot-snapshot` only."
+            },
+            {
+              "name": "saveDebuggingInfo",
+              "kind": "method",
+              "optional": false,
+              "signature": "saveDebuggingInfo(path: PathLike): this",
+              "doc": "Strip debugging information into a separate file (`--save-debugging-info`); `exe` and `aot-snapshot` only."
+            },
+            {
+              "name": "depfile",
+              "kind": "method",
+              "optional": false,
+              "signature": "depfile(path: PathLike): this",
+              "doc": "Write a Makefile-style dependency file (`--depfile`); not for `js`."
+            },
+            {
+              "name": "optimize",
+              "kind": "method",
+              "optional": false,
+              "signature": "optimize(level: number): this",
+              "doc": "The optimization level, `0` to `4` (`-O<level>`); `js` and `wasm` only."
+            }
+          ]
+        },
+        {
+          "name": "DartCompileTarget",
+          "kind": "typeAlias",
+          "doc": "A `dart compile` target: what the entry point is compiled to.",
+          "signature": "type DartCompileTarget = aot-snapshot | exe | jit-snapshot | js | kernel | wasm",
+          "deprecated": false
+        },
+        {
+          "name": "DartCompileTask",
+          "kind": "typeAlias",
+          "doc": "A task that runs `dart compile <target>`; `.entry()` is required.",
+          "signature": "type DartCompileTask = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "DartCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `dart create`.",
+          "signature": "class DartCreateSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The directory to create the project in; required."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(name: DartCreateTemplate): this",
+              "doc": "The project template, instead of `console` (`--template`)."
+            },
+            {
+              "name": "noPub",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPub(): this",
+              "doc": "Skip the implicit `dart pub get` (`--no-pub`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Create into a directory that already exists (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "DartCreateTemplate",
+          "kind": "typeAlias",
+          "doc": "A `dart create` template (`--template`).",
+          "signature": "type DartCreateTemplate = cli | console | package | server-shelf | web",
+          "deprecated": false
+        },
+        {
+          "name": "DartDocSettings",
+          "kind": "class",
+          "doc": "Settings for `dart doc`.",
+          "signature": "class DartDocSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The package directory to document (defaults to the current one)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "Where to write the generated docs, instead of `doc/api` (`--output`)."
+            },
+            {
+              "name": "validateLinks",
+              "kind": "method",
+              "optional": false,
+              "signature": "validateLinks(): this",
+              "doc": "Check the generated docs for broken links (`--validate-links`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would be documented without writing files (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "DartFixSettings",
+          "kind": "class",
+          "doc": "Settings for `dart fix`.",
+          "signature": "class DartFixSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: PathLike): this",
+              "doc": "The directory to fix (defaults to the current one)."
+            },
+            {
+              "name": "apply",
+              "kind": "method",
+              "optional": false,
+              "signature": "apply(): this",
+              "doc": "Apply the proposed fixes (`--apply`). Without it or `.dryRun()`, `dart fix` only prints usage."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "List the proposed fixes without applying them (`--dry-run`)."
+            },
+            {
+              "name": "code",
+              "kind": "method",
+              "optional": false,
+              "signature": "code(code: string): this",
+              "doc": "Apply only the fix for one diagnostic code (`--code`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "DartFormatSettings",
+          "kind": "class",
+          "doc": "Settings for `dart format`. With no `.path()` the current directory is\nformatted: `dart format` itself would read stdin instead, and in CI — no\nterminal, empty stdin — a `.setExitIfChanged()` check would pass vacuously.",
+          "signature": "class DartFormatSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(path: PathLike): this",
+              "doc": "A file or directory to format (defaults to `.`); repeatable."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(mode: write | show | json | none): this",
+              "doc": "What to do with formatted code: `write` (default), `show`, `json` or `none` (`--output`)."
+            },
+            {
+              "name": "setExitIfChanged",
+              "kind": "method",
+              "optional": false,
+              "signature": "setExitIfChanged(): this",
+              "doc": "Exit with code 1 when any file would change — the CI check (`--set-exit-if-changed`)."
+            },
+            {
+              "name": "lineLength",
+              "kind": "method",
+              "optional": false,
+              "signature": "lineLength(columns: number): this",
+              "doc": "Wrap lines longer than this (`--line-length`)."
+            },
+            {
+              "name": "show",
+              "kind": "method",
+              "optional": false,
+              "signature": "show(which: all | changed | none): this",
+              "doc": "Which files to list: `all`, `changed` (default) or `none` (`--show`)."
+            },
+            {
+              "name": "summary",
+              "kind": "method",
+              "optional": false,
+              "signature": "summary(kind: line | profile | none): this",
+              "doc": "The summary to print: `line` (default), `profile` or `none` (`--summary`)."
+            },
+            {
+              "name": "followLinks",
+              "kind": "method",
+              "optional": false,
+              "signature": "followLinks(): this",
+              "doc": "Follow symbolic links into directories (`--follow-links`)."
+            },
+            {
+              "name": "languageVersion",
+              "kind": "method",
+              "optional": false,
+              "signature": "languageVersion(version: string): this",
+              "doc": "The language version to parse as, e.g. `3.3` (`--language-version`)."
+            },
+            {
+              "name": "enableExperiment",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableExperiment(name: string): this",
+              "doc": "Enable an experimental language feature (`--enable-experiment`); repeatable."
+            }
+          ]
+        },
+        {
+          "name": "DartInfoSettings",
+          "kind": "class",
+          "doc": "Settings for `dart info`, which prints diagnostic details about the SDK.",
+          "signature": "class DartInfoSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "noRemoveFilePaths",
+              "kind": "method",
+              "optional": false,
+              "signature": "noRemoveFilePaths(): this",
+              "doc": "Keep file paths in the output instead of redacting them (`--no-remove-file-paths`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubDepsSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub deps`.",
+          "signature": "class DartPubDepsSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "style",
+              "kind": "method",
+              "optional": false,
+              "signature": "style(name: compact | tree | list): this",
+              "doc": "The layout: `compact`, `tree` (default) or `list` (`--style`)."
+            },
+            {
+              "name": "noDev",
+              "kind": "method",
+              "optional": false,
+              "signature": "noDev(): this",
+              "doc": "Leave dev dependencies out (`--no-dev`)."
+            },
+            {
+              "name": "executables",
+              "kind": "method",
+              "optional": false,
+              "signature": "executables(): this",
+              "doc": "List the executables the dependencies expose instead (`--executables`)."
+            },
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Print the dependency graph as JSON (`--json`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubDowngradeSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub downgrade`.",
+          "signature": "class DartPubDowngradeSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(name: string): this",
+              "doc": "Downgrade only this package (defaults to all); repeatable."
+            },
+            {
+              "name": "offline",
+              "kind": "method",
+              "optional": false,
+              "signature": "offline(): this",
+              "doc": "Resolve from the local pub cache only (`--offline`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would change without changing it (`--dry-run`)."
+            },
+            {
+              "name": "tighten",
+              "kind": "method",
+              "optional": false,
+              "signature": "tighten(): this",
+              "doc": "Lower the constraints in `pubspec.yaml` to the resolved versions (`--tighten`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubGetSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub get`.",
+          "signature": "class DartPubGetSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "offline",
+              "kind": "method",
+              "optional": false,
+              "signature": "offline(): this",
+              "doc": "Resolve from the local pub cache only (`--offline`)."
+            },
+            {
+              "name": "enforceLockfile",
+              "kind": "method",
+              "optional": false,
+              "signature": "enforceLockfile(): this",
+              "doc": "Fail rather than change `pubspec.lock` (`--enforce-lockfile`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would change without changing it (`--dry-run`)."
+            },
+            {
+              "name": "noPrecompile",
+              "kind": "method",
+              "optional": false,
+              "signature": "noPrecompile(): this",
+              "doc": "Skip precompiling executables (`--no-precompile`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubOutdatedSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub outdated`.",
+          "signature": "class DartPubOutdatedSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(): this",
+              "doc": "Print machine-readable JSON (`--json`)."
+            },
+            {
+              "name": "showAll",
+              "kind": "method",
+              "optional": false,
+              "signature": "showAll(): this",
+              "doc": "Include packages that are already up to date (`--show-all`)."
+            },
+            {
+              "name": "noDevDependencies",
+              "kind": "method",
+              "optional": false,
+              "signature": "noDevDependencies(): this",
+              "doc": "Leave dev dependencies out (`--no-dev-dependencies`)."
+            },
+            {
+              "name": "noTransitive",
+              "kind": "method",
+              "optional": false,
+              "signature": "noTransitive(): this",
+              "doc": "Leave transitive dependencies out (`--no-transitive`)."
+            },
+            {
+              "name": "prereleases",
+              "kind": "method",
+              "optional": false,
+              "signature": "prereleases(): this",
+              "doc": "Include prereleases when looking for newer versions (`--prereleases`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubPackagesSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub add` and `dart pub remove`.",
+          "signature": "class DartPubPackagesSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(spec: string): this",
+              "doc": "A package to add or remove; repeatable, at least one is required. For\n`add` it takes pub's descriptor syntax: `http`, `http:^1.2.0`, or\n`dev:mocktail` for a dev dependency."
+            },
+            {
+              "name": "offline",
+              "kind": "method",
+              "optional": false,
+              "signature": "offline(): this",
+              "doc": "Resolve from the local pub cache only (`--offline`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would change without changing it (`--dry-run`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubPublishSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub publish`.",
+          "signature": "class DartPubPublishSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Validate the package without uploading it (`--dry-run`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force(): this",
+              "doc": "Publish without the confirmation prompt — what CI needs (`--force`)."
+            },
+            {
+              "name": "skipValidation",
+              "kind": "method",
+              "optional": false,
+              "signature": "skipValidation(): this",
+              "doc": "Publish even when validation reports warnings (`--skip-validation`)."
+            }
+          ]
+        },
+        {
+          "name": "DartPubUpgradeSettings",
+          "kind": "class",
+          "doc": "Settings for `dart pub upgrade`.",
+          "signature": "class DartPubUpgradeSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "package",
+              "kind": "method",
+              "optional": false,
+              "signature": "package(name: string): this",
+              "doc": "Upgrade only this package (defaults to all); repeatable."
+            },
+            {
+              "name": "offline",
+              "kind": "method",
+              "optional": false,
+              "signature": "offline(): this",
+              "doc": "Resolve from the local pub cache only (`--offline`)."
+            },
+            {
+              "name": "dryRun",
+              "kind": "method",
+              "optional": false,
+              "signature": "dryRun(): this",
+              "doc": "Report what would change without changing it (`--dry-run`)."
+            },
+            {
+              "name": "majorVersions",
+              "kind": "method",
+              "optional": false,
+              "signature": "majorVersions(): this",
+              "doc": "Also raise constraints in `pubspec.yaml` across majors (`--major-versions`)."
+            },
+            {
+              "name": "tighten",
+              "kind": "method",
+              "optional": false,
+              "signature": "tighten(): this",
+              "doc": "Raise lower bounds in `pubspec.yaml` to the resolved versions (`--tighten`)."
+            },
+            {
+              "name": "unlockTransitive",
+              "kind": "method",
+              "optional": false,
+              "signature": "unlockTransitive(): this",
+              "doc": "Also upgrade the transitive dependencies of the named packages (`--unlock-transitive`)."
+            }
+          ]
+        },
+        {
+          "name": "DartRunSettings",
+          "kind": "class",
+          "doc": "Settings for `dart run`. The entry point is the last token the settings\nbuild, so anything passed through `.args()` lands after it and reaches the\nprogram, not the VM — without an `.entry()`, the first `.args()` token is\nwhat `dart run` takes as the program, exactly as on the command line.",
+          "signature": "class DartRunSettings extends DartVmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "entry",
+              "kind": "method",
+              "optional": false,
+              "signature": "entry(fileOrTarget: PathLike): this",
+              "doc": "The Dart file to run, or a package executable such as `build_runner` or\n`test:test`. Without one, `dart run` runs the current package's own\nexecutable."
+            },
+            {
+              "name": "observe",
+              "kind": "method",
+              "optional": false,
+              "signature": "observe(bind?: string): this",
+              "doc": "Start the VM service with the debugging conveniences and pause on start\n(`--observe=<port>[/<bind-address>]`). The value is attached with `=`\nbecause `dart run` reads the option's value from the next token, which\nwould otherwise be the entry point."
+            },
+            {
+              "name": "enableVmService",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableVmService(bind?: string): this",
+              "doc": "Start the VM service without pausing (`--enable-vm-service=<port>[/<bind-address>]`)."
+            }
+          ]
+        },
+        {
+          "name": "DartSettings",
+          "kind": "class",
+          "doc": "Base for all `dart` settings: the binary is `dart`, found on `PATH`.",
+          "signature": "class DartSettings extends ToolSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "DartTargetOs",
+          "kind": "typeAlias",
+          "doc": "An operating system `dart compile exe|aot-snapshot` can target (`--target-os`).",
+          "signature": "type DartTargetOs = android | fuchsia | ios | linux | macos | windows",
+          "deprecated": false
+        },
+        {
+          "name": "DartTasks",
+          "kind": "variable",
+          "doc": "Typed task functions for the `dart` CLI.",
+          "signature": "const DartTasks: DartTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "DartTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link DartTasks}.",
+          "signature": "interface DartTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "analyze",
+              "kind": "method",
+              "optional": false,
+              "signature": "analyze(configure?: Configure<DartAnalyzeSettings>): Promise<CommandOutput>",
+              "doc": "Analyze the project's Dart code: `dart analyze`."
+            },
+            {
+              "name": "format",
+              "kind": "method",
+              "optional": false,
+              "signature": "format(configure?: Configure<DartFormatSettings>): Promise<CommandOutput>",
+              "doc": "Format Dart code, or check it with `.setExitIfChanged()`: `dart format`."
+            },
+            {
+              "name": "fix",
+              "kind": "method",
+              "optional": false,
+              "signature": "fix(configure?: Configure<DartFixSettings>): Promise<CommandOutput>",
+              "doc": "Apply analyzer fixes: `dart fix`."
+            },
+            {
+              "name": "test",
+              "kind": "method",
+              "optional": false,
+              "signature": "test(configure?: Configure<DartTestSettings>): Promise<CommandOutput>",
+              "doc": "Run the tests: `dart test`."
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(configure?: Configure<DartRunSettings>): Promise<CommandOutput>",
+              "doc": "Run a Dart program or package executable: `dart run`."
+            },
+            {
+              "name": "doc",
+              "kind": "method",
+              "optional": false,
+              "signature": "doc(configure?: Configure<DartDocSettings>): Promise<CommandOutput>",
+              "doc": "Generate API documentation: `dart doc`."
+            },
+            {
+              "name": "create",
+              "kind": "method",
+              "optional": false,
+              "signature": "create(configure: Configure<DartCreateSettings>): Promise<CommandOutput>",
+              "doc": "Scaffold a project: `dart create`."
+            },
+            {
+              "name": "pubGet",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubGet(configure?: Configure<DartPubGetSettings>): Promise<CommandOutput>",
+              "doc": "Resolve dependencies: `dart pub get`."
+            },
+            {
+              "name": "pubUpgrade",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubUpgrade(configure?: Configure<DartPubUpgradeSettings>): Promise<CommandOutput>",
+              "doc": "Upgrade dependencies: `dart pub upgrade`."
+            },
+            {
+              "name": "pubDowngrade",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubDowngrade(configure?: Configure<DartPubDowngradeSettings>): Promise<CommandOutput>",
+              "doc": "Downgrade dependencies to their lowest allowed versions: `dart pub downgrade`."
+            },
+            {
+              "name": "pubOutdated",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubOutdated(configure?: Configure<DartPubOutdatedSettings>): Promise<CommandOutput>",
+              "doc": "List outdated dependencies: `dart pub outdated`."
+            },
+            {
+              "name": "pubDeps",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubDeps(configure?: Configure<DartPubDepsSettings>): Promise<CommandOutput>",
+              "doc": "Print the dependency graph: `dart pub deps`."
+            },
+            {
+              "name": "pubAdd",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubAdd(configure: Configure<DartPubPackagesSettings>): Promise<CommandOutput>",
+              "doc": "Add dependencies to `pubspec.yaml`: `dart pub add`."
+            },
+            {
+              "name": "pubRemove",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubRemove(configure: Configure<DartPubPackagesSettings>): Promise<CommandOutput>",
+              "doc": "Remove dependencies from `pubspec.yaml`: `dart pub remove`."
+            },
+            {
+              "name": "pubPublish",
+              "kind": "method",
+              "optional": false,
+              "signature": "pubPublish(configure?: Configure<DartPubPublishSettings>): Promise<CommandOutput>",
+              "doc": "Publish the package to pub.dev: `dart pub publish`."
+            },
+            {
+              "name": "info",
+              "kind": "method",
+              "optional": false,
+              "signature": "info(configure?: Configure<DartInfoSettings>): Promise<CommandOutput>",
+              "doc": "Print diagnostic details about the SDK: `dart info`."
+            },
+            {
+              "name": "version",
+              "kind": "method",
+              "optional": false,
+              "signature": "version(configure?: Configure<DartVersionSettings>): Promise<CommandOutput>",
+              "doc": "Print the Dart SDK version: `dart --version`."
+            },
+            {
+              "name": "compileExe",
+              "kind": "property",
+              "optional": false,
+              "signature": "compileExe: DartCompileTask",
+              "doc": "Compile to a self-contained executable: `dart compile exe`."
+            },
+            {
+              "name": "compileAotSnapshot",
+              "kind": "property",
+              "optional": false,
+              "signature": "compileAotSnapshot: DartCompileTask",
+              "doc": "Compile to an AOT snapshot for `dartaotruntime`: `dart compile aot-snapshot`."
+            },
+            {
+              "name": "compileJitSnapshot",
+              "kind": "property",
+              "optional": false,
+              "signature": "compileJitSnapshot: DartCompileTask",
+              "doc": "Compile to a JIT snapshot: `dart compile jit-snapshot`."
+            },
+            {
+              "name": "compileKernel",
+              "kind": "property",
+              "optional": false,
+              "signature": "compileKernel: DartCompileTask",
+              "doc": "Compile to a kernel binary: `dart compile kernel`."
+            },
+            {
+              "name": "compileJs",
+              "kind": "property",
+              "optional": false,
+              "signature": "compileJs: DartCompileTask",
+              "doc": "Compile to JavaScript: `dart compile js`."
+            },
+            {
+              "name": "compileWasm",
+              "kind": "property",
+              "optional": false,
+              "signature": "compileWasm: DartCompileTask",
+              "doc": "Compile to WebAssembly: `dart compile wasm`."
+            }
+          ]
+        },
+        {
+          "name": "DartTestSettings",
+          "kind": "class",
+          "doc": "Settings for `dart test`.",
+          "signature": "class DartTestSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(path: PathLike): this",
+              "doc": "A test file or directory to run (defaults to `test/`); repeatable."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(pattern: string): this",
+              "doc": "Run only tests whose name matches a regular expression (`--name`); repeatable."
+            },
+            {
+              "name": "plainName",
+              "kind": "method",
+              "optional": false,
+              "signature": "plainName(text: string): this",
+              "doc": "Run only tests whose name contains a string (`--plain-name`); repeatable."
+            },
+            {
+              "name": "tags",
+              "kind": "method",
+              "optional": false,
+              "signature": "tags(expression: string): this",
+              "doc": "Run only tests with a tag expression (`--tags`)."
+            },
+            {
+              "name": "excludeTags",
+              "kind": "method",
+              "optional": false,
+              "signature": "excludeTags(expression: string): this",
+              "doc": "Skip tests matching a tag expression (`--exclude-tags`)."
+            },
+            {
+              "name": "preset",
+              "kind": "method",
+              "optional": false,
+              "signature": "preset(name: string): this",
+              "doc": "Apply a preset from `dart_test.yaml` (`--preset`); repeatable."
+            },
+            {
+              "name": "runSkipped",
+              "kind": "method",
+              "optional": false,
+              "signature": "runSkipped(): this",
+              "doc": "Run skipped tests too (`--run-skipped`)."
+            },
+            {
+              "name": "failFast",
+              "kind": "method",
+              "optional": false,
+              "signature": "failFast(): this",
+              "doc": "Stop after the first failure (`--fail-fast`)."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(name: string): this",
+              "doc": "Run on a platform, e.g. `vm`, `chrome` or `node` (`--platform`); repeatable."
+            },
+            {
+              "name": "compiler",
+              "kind": "method",
+              "optional": false,
+              "signature": "compiler(name: string): this",
+              "doc": "The compiler for a platform, e.g. `dart2js`, `dart2wasm` or `kernel` (`--compiler`); repeatable."
+            },
+            {
+              "name": "concurrency",
+              "kind": "method",
+              "optional": false,
+              "signature": "concurrency(count: number): this",
+              "doc": "How many test suites to run at once (`--concurrency`)."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(value: string): this",
+              "doc": "The default per-test timeout, e.g. `30s` or `2x` (`--timeout`)."
+            },
+            {
+              "name": "coverage",
+              "kind": "method",
+              "optional": false,
+              "signature": "coverage(dir: PathLike): this",
+              "doc": "Collect coverage into a directory of JSON reports (`--coverage`)."
+            },
+            {
+              "name": "reporter",
+              "kind": "method",
+              "optional": false,
+              "signature": "reporter(name: string): this",
+              "doc": "The console reporter: `compact`, `expanded`, `failures-only`, `github`, `json` or `silent` (`--reporter`)."
+            },
+            {
+              "name": "fileReporter",
+              "kind": "method",
+              "optional": false,
+              "signature": "fileReporter(spec: string): this",
+              "doc": "Also write a reporter's output to a file, e.g. `json:report.json` (`--file-reporter`)."
+            },
+            {
+              "name": "randomizeOrderingSeed",
+              "kind": "method",
+              "optional": false,
+              "signature": "randomizeOrderingSeed(seed: string | number): this",
+              "doc": "Shuffle test order with a seed, or `random` (`--test-randomize-ordering-seed`)."
+            },
+            {
+              "name": "ignoreTimeouts",
+              "kind": "method",
+              "optional": false,
+              "signature": "ignoreTimeouts(): this",
+              "doc": "Do not stop a test at its timeout (`--ignore-timeouts`)."
+            },
+            {
+              "name": "noColor",
+              "kind": "method",
+              "optional": false,
+              "signature": "noColor(): this",
+              "doc": "Print stack traces without colour codes (`--no-color`)."
+            },
+            {
+              "name": "shard",
+              "kind": "method",
+              "optional": false,
+              "signature": "shard(index: number, total: number): this",
+              "doc": "Run one shard of the suite: `shard(index, total)` renders\n`--total-shards total --shard-index index`, with `index` from 0."
+            }
+          ]
+        },
+        {
+          "name": "DartVersionSettings",
+          "kind": "class",
+          "doc": "Settings for `dart --version`.",
+          "signature": "class DartVersionSettings extends DartSettings",
+          "deprecated": false,
+          "members": []
+        },
+        {
+          "name": "DartVmSettings",
+          "kind": "class",
+          "doc": "Flags shared by the commands that load Dart code into the VM — `compile`\nand `run`: `--define`, `--enable-asserts`, `--enable-experiment`,\n`--packages` and `--verbosity`. Valued options render as `--flag=value`:\n`dart compile js` hands its argv to dart2js, whose parser accepts only that\nspelling, and Dart's `args` package accepts it everywhere else.",
+          "signature": "class DartVmSettings extends DartSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "define",
+              "kind": "method",
+              "optional": false,
+              "signature": "define(name: string, value: string): this",
+              "doc": "Define an environment declaration (`--define=name=value`); repeatable."
+            },
+            {
+              "name": "enableAsserts",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableAsserts(): this",
+              "doc": "Enable assert statements (`--enable-asserts`)."
+            },
+            {
+              "name": "enableExperiment",
+              "kind": "method",
+              "optional": false,
+              "signature": "enableExperiment(name: string): this",
+              "doc": "Enable an experimental language feature (`--enable-experiment`); repeatable."
+            },
+            {
+              "name": "packages",
+              "kind": "method",
+              "optional": false,
+              "signature": "packages(path: PathLike): this",
+              "doc": "The package resolution file to use (`--packages`)."
+            },
+            {
+              "name": "verbosity",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbosity(level: error | warning | info | all): this",
+              "doc": "How much to print: `error`, `warning`, `info` or `all` (`--verbosity`)."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/prometheus",
       "dir": "prometheus",
       "summary": "A typed client for the Prometheus HTTP API, for Zuke builds. `PrometheusTasks`",
