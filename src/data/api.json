@@ -50078,6 +50078,13 @@
               "doc": "Search tags (`<tags>`), each one word; repeatable."
             },
             {
+              "name": "copyright",
+              "kind": "method",
+              "optional": false,
+              "signature": "copyright(text: string): this",
+              "doc": "The software's copyright notice (`<copyright>`), one line — e.g. the\nline in its LICENSE, `Copyright (c) 2026 Acme`. The community\nrepository's moderators ask for it whenever the software has one."
+            },
+            {
               "name": "summary",
               "kind": "method",
               "optional": false,
@@ -50167,6 +50174,13 @@
               "optional": true,
               "signature": "iconUrl_?: string",
               "doc": "The icon's URL. Set by {@link iconUrl}."
+            },
+            {
+              "name": "copyright_",
+              "kind": "property",
+              "optional": true,
+              "signature": "copyright_?: string",
+              "doc": "The copyright notice. Set by {@link copyright}."
             },
             {
               "name": "packageSourceUrl_",
