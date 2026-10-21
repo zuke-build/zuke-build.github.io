@@ -576,7 +576,7 @@
         {
           "name": "archiveOutputs",
           "kind": "function",
-          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents,\neach file with its permission bits so a binary restores executable. A\ndeclared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory other than `.zuke/tools`.",
+          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents,\neach file with its permission bits so a binary restores executable. A\ndeclared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory, other than `.zuke/tools` and whatever it holds.",
           "signature": "async function archiveOutputs(outputs: unknown, host: OutputHost): Promise<Uint8Array>",
           "deprecated": false
         },
@@ -3326,7 +3326,7 @@
         {
           "name": "envCacheStore",
           "kind": "function",
-          "doc": "Resolve a {@link RemoteCacheStore} from the environment, or `undefined` when\nnone is configured. `ZUKE_REMOTE_CACHE_URL` (with an optional\n`ZUKE_REMOTE_CACHE_TOKEN`) selects an {@link HttpCacheStore}; otherwise\n`ZUKE_REMOTE_CACHE_S3_URL` selects an {@link \"./s3_cache.ts\".S3CacheStore}\nsigned with `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (and\n`AWS_SESSION_TOKEN`) in `AWS_REGION` or `AWS_DEFAULT_REGION`; otherwise\n`ZUKE_REMOTE_CACHE_DIR` selects a {@link FileSystemCacheStore}; otherwise,\non a GitHub Actions job that exposes its `ACTIONS_RUNTIME_TOKEN` and\n`ACTIONS_RESULTS_URL` (the `actions-cache` input of the `zuke-build/zuke`\naction), a {@link \"./github_actions_cache.ts\".GitHubActionsCacheStore}.",
+          "doc": "Resolve a {@link RemoteCacheStore} from the environment, or `undefined` when\nnone is configured. `ZUKE_REMOTE_CACHE_URL` (with an optional\n`ZUKE_REMOTE_CACHE_TOKEN`) selects an {@link HttpCacheStore}; otherwise\n`ZUKE_REMOTE_CACHE_S3_URL` selects an {@link \"./s3_cache.ts\".S3CacheStore}\nsigned with `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (and\n`AWS_SESSION_TOKEN`) in `AWS_REGION` or `AWS_DEFAULT_REGION`; otherwise\n`ZUKE_REMOTE_CACHE_DIR` selects a {@link FileSystemCacheStore}; otherwise,\non a GitHub Actions job that exposes its `ACTIONS_RUNTIME_TOKEN` and\n`ACTIONS_RESULTS_URL` (the `actions-cache` input of the `zuke-build/zuke`\naction), a {@link \"./github_actions_cache.ts\".GitHubActionsCacheStore}.\nWhichever is chosen takes `ZUKE_REMOTE_CACHE_MAX_INFLATED_BYTES`, when set,\nas its {@link RemoteCacheStore.maxInflatedBytes}.",
           "signature": "function envCacheStore(readEnv: unknown): RemoteCacheStore | undefined",
           "deprecated": false
         },
@@ -3810,6 +3810,29 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most an artifact may decompress to; see {@link RemoteCacheStore.maxInflatedBytes}."
+            }
+          ]
+        },
+        {
+          "name": "FileSystemCacheStoreOptions",
+          "kind": "interface",
+          "doc": "Configuration for a {@link FileSystemCacheStore}.",
+          "signature": "interface FileSystemCacheStoreOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most a fetched artifact may decompress to, in bytes — see\n{@link RemoteCacheStore.maxInflatedBytes}. Defaults to 2 GiB."
             }
           ]
         },
@@ -4248,6 +4271,13 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most an artifact may decompress to; see {@link RemoteCacheStore.maxInflatedBytes}."
             }
           ]
         },
@@ -4285,6 +4315,13 @@
               "optional": true,
               "signature": "maxArtifactBytes?: number",
               "doc": "The most a fetched artifact may weigh on the wire, in bytes, before it is\nrefused. Defaults to 2 GiB — larger than the HTTP store's 512 MiB, because\nthis store is written only by the repository's own workflows and the\noutputs worth caching here are the big ones (a 1.5 GB SDK). What the bytes\n*decompress* to is bounded separately, by `restoreOutputs`."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most a fetched artifact may decompress to, in bytes — see\n{@link RemoteCacheStore.maxInflatedBytes}. Defaults to 2 GiB."
             }
           ]
         },
@@ -4532,6 +4569,13 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most an artifact may decompress to; see {@link RemoteCacheStore.maxInflatedBytes}."
             }
           ]
         },
@@ -4576,6 +4620,13 @@
               "optional": true,
               "signature": "maxArtifactBytes?: number",
               "doc": "The most a fetched artifact may weigh on the wire, in bytes, before it is\nrefused. Defaults to 512 MiB. Raise it for a target whose compressed\noutputs are genuinely larger; a refusal is a warned rebuild, not a build\nfailure. What the bytes *decompress* to is bounded separately, by\n{@link restoreOutputs}."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most a fetched artifact may decompress to, in bytes — see\n{@link RemoteCacheStore.maxInflatedBytes}. Defaults to 2 GiB."
             }
           ]
         },
@@ -6370,6 +6421,13 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most an artifact from this store may decompress to, in bytes, before\n{@link restoreOutputs} refuses it. Defaults to 2 GiB; raise it for a target\nwhose outputs are genuinely larger, such as a whole SDK. The restore holds\nthe inflated archive in memory, so the bound is also its memory ceiling."
             }
           ]
         },
@@ -7371,6 +7429,13 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most an artifact may decompress to; see {@link RemoteCacheStore.maxInflatedBytes}."
             }
           ]
         },
@@ -7422,6 +7487,13 @@
               "optional": true,
               "signature": "maxArtifactBytes?: number",
               "doc": "The most a fetched artifact may weigh on the wire, in bytes, before it is\nrefused. Defaults to 512 MiB — see\n{@link \"./remote_cache.ts\".HttpCacheStoreOptions.maxArtifactBytes}."
+            },
+            {
+              "name": "maxInflatedBytes",
+              "kind": "property",
+              "optional": true,
+              "signature": "maxInflatedBytes?: number",
+              "doc": "The most a fetched artifact may decompress to, in bytes — see\n{@link RemoteCacheStore.maxInflatedBytes}. Defaults to 2 GiB."
             }
           ]
         },
@@ -8118,7 +8190,7 @@
         {
           "name": "tar",
           "kind": "function",
-          "doc": "Create a `ustar` archive from the given entries (in order).",
+          "doc": "Create a `ustar` archive from the given entries (in order). A name or\nsymlink target past ustar's 100 bytes is carried by a pax extended header\n(typeflag `'x'`) ahead of its member, which {@link untar} and every modern\n`tar` read back.",
           "signature": "function tar(entries: TarEntry[]): Uint8Array",
           "deprecated": false
         },
@@ -8134,7 +8206,7 @@
               "kind": "property",
               "optional": false,
               "signature": "name: string",
-              "doc": "The entry's path inside the archive (≤ 100 bytes)."
+              "doc": "The entry's path inside the archive."
             },
             {
               "name": "data",
@@ -8148,7 +8220,7 @@
               "kind": "property",
               "optional": true,
               "signature": "linkname?: string",
-              "doc": "For a symbolic-link entry, its target (≤ 100 bytes); absent for a regular\nfile. Node's release tarballs, for one, ship `bin/npm`/`bin/npx` as symlinks\ninto `lib/node_modules`, so extracting a runtime tree must preserve them."
+              "doc": "For a symbolic-link entry, its target; absent for a regular file. Node's release tarballs, for one, ship `bin/npm`/`bin/npx` as symlinks\ninto `lib/node_modules`, so extracting a runtime tree must preserve them."
             },
             {
               "name": "mode",
