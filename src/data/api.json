@@ -634,7 +634,7 @@
         {
           "name": "assertSafeLinkTarget",
           "kind": "function",
-          "doc": "Reject a symlink whose target would resolve outside the destination directory\n— an absolute target, or a relative one that climbs (with `..`) above the\nextraction root once resolved against the link's own directory. A file entry's\nname is bounded by {@link assertSafeEntryName}; a symlink adds a second escape\nvector (its target), so a poisoned tarball can't plant `bin/x -> ../../etc`.",
+          "doc": "Reject a symlink whose target would resolve outside the destination directory\n— an absolute target, or a relative one that climbs (with `..`) above the\nextraction root once resolved against the link's own directory. A file entry's\nname is bounded by {@link assertSafeEntryName}; a symlink adds a second escape\nvector (its target), so a poisoned tarball can't plant `bin/x -> ../../etc`.\n\nA `..` is allowed only before the target's first name: after a name, that\nname may itself be a symlink, and `..` would climb from wherever it points —\nso a chain such as `up -> ..` then `p -> up/..` could reach outside the root\nwhile every target looked bounded. An empty target, or one holding a NUL, is\nrefused too.",
           "signature": "function assertSafeLinkTarget(entryName: string, target: string): void",
           "deprecated": false
         },
@@ -4913,7 +4913,7 @@
         {
           "name": "installTree",
           "kind": "function",
-          "doc": "Download and unpack a **whole archive tree** — a multi-file runtime such as\nNode.js, which ships `bin/node`, `bin/npm`, `bin/npx`, and\n`lib/node_modules/**` in one tarball — and return the {@link AbsolutePath} of\nits (stripped) root. `installRelease` extracts a single binary; `installTree`\nkeeps the entire directory, symlinks included.\n\nBecause {@link AbsolutePath} is callable, the root doubles as an accessor:\n`root(\"bin\", \"node\")` is the node binary and `root(\"bin\")` is the directory to\nput on `PATH` (with `prependPath`). Declared {@link InstallTreeOptions.bins}\nare marked executable on POSIX. With a {@link InstallTreeOptions.checksum} the\narchive is verified before unpacking and a matching prior install is reused.",
+          "doc": "Download and unpack a **whole archive tree** — a multi-file runtime such as\nNode.js, which ships `bin/node`, `bin/npm`, `bin/npx`, and\n`lib/node_modules/**` in one tarball — and return the {@link AbsolutePath} of\nits (stripped) root. `installRelease` extracts a single binary; `installTree`\nkeeps the entire directory, symlinks included.\n\nBecause {@link AbsolutePath} is callable, the root doubles as an accessor:\n`root(\"bin\", \"node\")` is the node binary and `root(\"bin\")` is the directory to\nput on `PATH` (with `prependPath`). Files keep the archive's permission bits;\ndeclared {@link InstallTreeOptions.bins} are also marked executable on POSIX,\nas a fallback. With a {@link InstallTreeOptions.checksum} the\narchive is verified before unpacking and a matching prior install is reused.",
           "signature": "async function installTree(options: InstallTreeOptions): Promise<AbsolutePath>",
           "deprecated": false
         },
@@ -4964,7 +4964,7 @@
               "kind": "property",
               "optional": true,
               "signature": "bins?: unknown",
-              "doc": "Paths (relative to the stripped tree root) to mark executable on POSIX — the\ntar reader does not preserve mode bits, so a runtime's `bin/node`,\n`bin/npm`, … need it. Chmod follows a symlink to its real target, so listing\na symlinked bin makes the script it points at executable too."
+              "doc": "Paths (relative to the stripped tree root) to mark executable on POSIX — a\nruntime's `bin/node`, `bin/npm`, … Extraction keeps the archive's mode\nbits, so this is a fallback for an archive that ships a binary without the\nexecutable bit. Chmod follows a symlink to its real target, so listing\na symlinked bin makes the script it points at executable too."
             },
             {
               "name": "platform",
@@ -8155,7 +8155,7 @@
               "kind": "property",
               "optional": true,
               "signature": "mode?: number",
-              "doc": "A regular file's permission bits, written into its header: `0o755` for an\nexecutable, so a binary shipped in the archive runs once extracted.\nDefaults to `0o644`. Ignored for a symlink entry, which is always\n`0o777`."
+              "doc": "A regular file's permission bits, written into its header: `0o755` for an\nexecutable, so a binary shipped in the archive runs once extracted. The\nextractors apply them on POSIX, always owner-readable and -writable and\nnever group- or world-writable.\nDefaults to `0o644`. Ignored for a symlink entry, which is always\n`0o777`."
             }
           ]
         },
@@ -9245,7 +9245,7 @@
               "kind": "method",
               "optional": false,
               "signature": "bins(...paths: string[]): this",
-              "doc": "For a tree install, the paths (relative to the stripped root) to mark\nexecutable on POSIX — a runtime's `bin/node`, `bin/npm`, … Ignored by a\nsingle-binary install."
+              "doc": "For a tree install, the paths (relative to the stripped root) to mark\nexecutable on POSIX — a runtime's `bin/node`, `bin/npm`, … Extraction\nalready keeps the archive's mode bits, so this is a fallback for an\narchive that ships them without the executable bit. Ignored by a\nsingle-binary install."
             },
             {
               "name": "checksum",
@@ -9552,7 +9552,7 @@
         {
           "name": "unzip",
           "kind": "function",
-          "doc": "Read the entries of a `.zip` archive, decompressing `stored` and `deflate`\nmembers. The central directory is the source of truth. Directory entries (a\ntrailing `/`) are skipped. Encrypted, zip64, or otherwise-compressed entries\nthrow a friendly error naming the offending entry, and a header or data field\nthat runs past the archive is reported as a malformed zip (not a raw\nout-of-bounds error). Every offset read from the archive is bounds-checked;\nfor integrity against a tampered download, pin a `.checksum(...)`, which is\nverified before the archive is ever parsed.",
+          "doc": "Read the entries of a `.zip` archive, decompressing `stored` and `deflate`\nmembers. The central directory is the source of truth. Directory entries (a\ntrailing `/`) are skipped. An entry from a zip made on Unix keeps its\npermission bits as `mode`, and a Unix symlink entry comes back with its\ntarget as `linkname`, so {@link extractZip} recreates it. Encrypted, zip64, or otherwise-compressed entries\nthrow a friendly error naming the offending entry, and a header or data field\nthat runs past the archive is reported as a malformed zip (not a raw\nout-of-bounds error). Every offset read from the archive is bounds-checked;\nfor integrity against a tampered download, pin a `.checksum(...)`, which is\nverified before the archive is ever parsed.",
           "signature": "async function unzip(archive: Uint8Array): Promise<TarEntry[]>",
           "deprecated": false
         },
