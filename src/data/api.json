@@ -59237,6 +59237,294 @@
       ]
     },
     {
+      "name": "@zuke/google",
+      "dir": "google",
+      "summary": "`@zuke/google` — Google Play publishing for Zuke builds, through the Google",
+      "symbols": [
+        {
+          "name": "GOOGLE_PLAY_API_URL",
+          "kind": "variable",
+          "doc": "The Google Play Developer API's base URL.",
+          "signature": "const GOOGLE_PLAY_API_URL: https://androidpublisher.googleapis.com",
+          "deprecated": false
+        },
+        {
+          "name": "GooglePlayError",
+          "kind": "class",
+          "doc": "Raised by `GooglePlayTasks.upload`. The message names the step and, for a\nrefused request, Google's own error message; it never carries the\nservice-account key or an access token.",
+          "signature": "class GooglePlayError extends Error",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The error name."
+            }
+          ]
+        },
+        {
+          "name": "GooglePlayReleaseStatus",
+          "kind": "typeAlias",
+          "doc": "A release's status on its track. `completed` makes it live for the track's\ntesters or users; `draft` saves it to publish from the Play Console — the\nonly status Google accepts for an app that has never had a release.",
+          "signature": "type GooglePlayReleaseStatus = completed | draft",
+          "deprecated": false
+        },
+        {
+          "name": "GooglePlaySettings",
+          "kind": "class",
+          "doc": "Settings for `GooglePlayTasks.upload`.\n\nThe service-account key and every token signed with it stay out of progress\nlines and errors. Declare the key in the build as `parameter(...).secret()`\nso Zuke masks it in its own output too.",
+          "signature": "class GooglePlaySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "serviceAccount",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceAccount(json: string): this",
+              "doc": "The service account's key, as the text of the JSON file the Play Console\n(or Google Cloud) downloaded; required. The account needs the *Release\napps to testing tracks* (or *Release to production*) permission on the\napp."
+            },
+            {
+              "name": "packageName",
+              "kind": "method",
+              "optional": false,
+              "signature": "packageName(name: string): this",
+              "doc": "The app's package name, e.g. `com.example.app`; required."
+            },
+            {
+              "name": "bundle",
+              "kind": "method",
+              "optional": false,
+              "signature": "bundle(path: PathLike): this",
+              "doc": "The Android app bundle (`.aab`) to upload; required."
+            },
+            {
+              "name": "track",
+              "kind": "method",
+              "optional": false,
+              "signature": "track(name: string): this",
+              "doc": "The track to release on: `internal` (the default), `alpha`, `beta`,\n`production`, or the name of a closed testing track."
+            },
+            {
+              "name": "status",
+              "kind": "method",
+              "optional": false,
+              "signature": "status(status: GooglePlayReleaseStatus): this",
+              "doc": "The release's status; default `completed`."
+            },
+            {
+              "name": "releaseNotes",
+              "kind": "method",
+              "optional": false,
+              "signature": "releaseNotes(text: string, language?: string): this",
+              "doc": "The release notes users see, per BCP-47 language (`\"en-US\"`, `\"bg\"`);\nrepeatable, one call per language. Default language `en-US`."
+            },
+            {
+              "name": "changesNotSentForReview",
+              "kind": "method",
+              "optional": false,
+              "signature": "changesNotSentForReview(): this",
+              "doc": "Commit without sending the changes for review, so an app with managed\npublishing or a release that review would otherwise hold can go out as\nGoogle allows it to."
+            },
+            {
+              "name": "timeout",
+              "kind": "method",
+              "optional": false,
+              "signature": "timeout(duration: string | number): this",
+              "doc": "The longest the whole upload may take (`\"30m\"`, or ms); default 15 minutes."
+            },
+            {
+              "name": "apiUrl",
+              "kind": "method",
+              "optional": false,
+              "signature": "apiUrl(url: string): this",
+              "doc": "The API's base URL, `https://androidpublisher.googleapis.com` by default.\nIt carries the access token, so it must be `https:` unless it is loopback\nor `ZUKE_ALLOW_INSECURE_URL` is set."
+            },
+            {
+              "name": "fetch",
+              "kind": "method",
+              "optional": false,
+              "signature": "fetch(fetcher: fetch): this",
+              "doc": "Send with this `fetch` instead of the global one — the seam tests use."
+            },
+            {
+              "name": "readEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "readEnv(reader: unknown): this",
+              "doc": "Read environment variables through `reader` instead of `Deno.env`."
+            },
+            {
+              "name": "now",
+              "kind": "method",
+              "optional": false,
+              "signature": "now(clock: unknown): this",
+              "doc": "Read the time from `clock` (epoch ms) instead of `Date.now`."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log(sink: unknown): this",
+              "doc": "Send progress lines to `sink` instead of `console.log`."
+            },
+            {
+              "name": "serviceAccount_",
+              "kind": "property",
+              "optional": true,
+              "signature": "serviceAccount_?: string",
+              "doc": "The service-account key's JSON text (set by {@link serviceAccount})."
+            },
+            {
+              "name": "packageName_",
+              "kind": "property",
+              "optional": true,
+              "signature": "packageName_?: string",
+              "doc": "The app's package name (set by {@link packageName})."
+            },
+            {
+              "name": "bundle_",
+              "kind": "property",
+              "optional": true,
+              "signature": "bundle_?: string",
+              "doc": "The app bundle's path (set by {@link bundle})."
+            },
+            {
+              "name": "track_",
+              "kind": "property",
+              "optional": false,
+              "signature": "track_: string",
+              "doc": "The track (set by {@link track})."
+            },
+            {
+              "name": "status_",
+              "kind": "property",
+              "optional": false,
+              "signature": "status_: GooglePlayReleaseStatus",
+              "doc": "The release status (set by {@link status})."
+            },
+            {
+              "name": "releaseNotes_",
+              "kind": "property",
+              "optional": false,
+              "signature": "releaseNotes_: Map<string, string>",
+              "doc": "Release notes by language (set by {@link releaseNotes})."
+            },
+            {
+              "name": "changesNotSentForReview_",
+              "kind": "property",
+              "optional": false,
+              "signature": "changesNotSentForReview_: boolean",
+              "doc": "Whether the commit skips review (set by {@link changesNotSentForReview})."
+            },
+            {
+              "name": "timeout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeout_: number",
+              "doc": "The longest the whole upload may take, in ms (set by {@link timeout})."
+            },
+            {
+              "name": "apiUrl_",
+              "kind": "property",
+              "optional": false,
+              "signature": "apiUrl_: string",
+              "doc": "The API's base URL (set by {@link apiUrl})."
+            },
+            {
+              "name": "fetch_",
+              "kind": "property",
+              "optional": false,
+              "signature": "fetch_: fetch",
+              "doc": "The `fetch` to use (set by {@link fetch})."
+            },
+            {
+              "name": "readEnv_",
+              "kind": "property",
+              "optional": false,
+              "signature": "readEnv_: unknown",
+              "doc": "The environment reader (set by {@link readEnv})."
+            },
+            {
+              "name": "now_",
+              "kind": "property",
+              "optional": false,
+              "signature": "now_: unknown",
+              "doc": "The clock, in epoch ms (set by {@link now})."
+            },
+            {
+              "name": "log_",
+              "kind": "property",
+              "optional": false,
+              "signature": "log_: unknown",
+              "doc": "Where progress lines go (set by {@link log})."
+            }
+          ]
+        },
+        {
+          "name": "GooglePlayTasks",
+          "kind": "variable",
+          "doc": "Publish to Google Play through the Google Play Developer API.",
+          "signature": "const GooglePlayTasks: GooglePlayTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "GooglePlayTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link GooglePlayTasks}.",
+          "signature": "interface GooglePlayTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "upload",
+              "kind": "method",
+              "optional": false,
+              "signature": "upload(configure: Configure<GooglePlaySettings>): Promise<GooglePlayUpload>",
+              "doc": "Upload an app bundle and release it on a track, in one committed edit.\n"
+            }
+          ]
+        },
+        {
+          "name": "GooglePlayUpload",
+          "kind": "interface",
+          "doc": "What `GooglePlayTasks.upload` released.",
+          "signature": "interface GooglePlayUpload",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "packageName",
+              "kind": "property",
+              "optional": false,
+              "signature": "packageName: string",
+              "doc": "The app's package name."
+            },
+            {
+              "name": "versionCode",
+              "kind": "property",
+              "optional": false,
+              "signature": "versionCode: number",
+              "doc": "The uploaded bundle's version code, as Google Play read it."
+            },
+            {
+              "name": "track",
+              "kind": "property",
+              "optional": false,
+              "signature": "track: string",
+              "doc": "The track the release went to."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: GooglePlayReleaseStatus",
+              "doc": "The release's status."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/signpath",
       "dir": "signpath",
       "summary": "`@zuke/signpath` — Authenticode signing through",

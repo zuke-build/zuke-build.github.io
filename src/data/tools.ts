@@ -138,6 +138,7 @@ export const toolGroups: ToolGroup[] = [
     blurb: "Sign and notarize macOS apps and Windows binaries from CI.",
     tools: [
       { name: "Apple", pkg: "@zuke/apple", desc: "xcodebuild, TestFlight, profiles, codesign, notarytool, keychains" },
+      { name: "Google Play", pkg: "@zuke/google", desc: "upload an app bundle to a Play track" },
       { name: "SignPath", pkg: "@zuke/signpath", desc: "Authenticode signing, signtool verify" },
     ],
   },
