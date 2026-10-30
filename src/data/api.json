@@ -9976,6 +9976,971 @@
       ]
     },
     {
+      "name": "@zuke/engine",
+      "dir": "engine",
+      "summary": "`@zuke/engine` — the engine for a build another process hosts. An SDK in",
+      "symbols": [
+        {
+          "name": "ConfigureParams",
+          "kind": "interface",
+          "doc": "What `build.configure` tells the worker once the parameters have resolved,\nbefore `build.onStart` and before any body: each parameter's value in its\nCLI form, or null when unset. The run's id and dry-run flag travel with\nevery `target.run` instead, since the build's own `onStart` has neither.",
+          "signature": "interface ConfigureParams",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "parameters",
+              "kind": "property",
+              "optional": false,
+              "signature": "parameters: Readonly<Record<string, string | null>>",
+              "doc": "Each parameter's resolved value in its CLI form, or null when unset."
+            }
+          ]
+        },
+        {
+          "name": "Duration",
+          "kind": "typeAlias",
+          "doc": "A duration as the wrappers take it: `\"5m\"` or milliseconds.",
+          "signature": "type Duration = string | number",
+          "deprecated": false
+        },
+        {
+          "name": "HookName",
+          "kind": "typeAlias",
+          "doc": "The hooks a worker may implement, named as the `build.*` methods are.",
+          "signature": "type HookName = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "LateSettings",
+          "kind": "interface",
+          "doc": "What `target.settings` answers for one target: the sections it declared.",
+          "signature": "interface LateSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "lock",
+              "kind": "property",
+              "optional": true,
+              "signature": "lock?: LockSpec",
+              "doc": "The lock, when the target declared one."
+            },
+            {
+              "name": "waitsFor",
+              "kind": "property",
+              "optional": true,
+              "signature": "waitsFor?: WaitSpec",
+              "doc": "The wait gate, when the target declared one."
+            },
+            {
+              "name": "validateDuring",
+              "kind": "property",
+              "optional": true,
+              "signature": "validateDuring?: ValidateDuringSpec",
+              "doc": "The interval checks, when the target declared them."
+            }
+          ]
+        },
+        {
+          "name": "LockSpec",
+          "kind": "interface",
+          "doc": "A cross-run lock, as `LockSettings` configures it.",
+          "signature": "interface LockSpec",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "property",
+              "optional": false,
+              "signature": "key: string",
+              "doc": "The lock's key."
+            },
+            {
+              "name": "ttl",
+              "kind": "property",
+              "optional": true,
+              "signature": "ttl?: Duration",
+              "doc": "How long the lock may be held."
+            },
+            {
+              "name": "waitUpTo",
+              "kind": "property",
+              "optional": true,
+              "signature": "waitUpTo?: Duration",
+              "doc": "How long to wait for a held lock before giving up."
+            },
+            {
+              "name": "pollEvery",
+              "kind": "property",
+              "optional": true,
+              "signature": "pollEvery?: Duration",
+              "doc": "How often to poll a held lock."
+            },
+            {
+              "name": "holdForRun",
+              "kind": "property",
+              "optional": false,
+              "signature": "holdForRun: boolean",
+              "doc": "Keep the lock until the run ends rather than until the target does."
+            }
+          ]
+        },
+        {
+          "name": "Manifest",
+          "kind": "interface",
+          "doc": "The build as the worker describes it in reply to `build.describe`.",
+          "signature": "interface Manifest",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The build's name."
+            },
+            {
+              "name": "targets",
+              "kind": "property",
+              "optional": false,
+              "signature": "targets: unknown",
+              "doc": "The targets, in declaration order."
+            },
+            {
+              "name": "parameters",
+              "kind": "property",
+              "optional": false,
+              "signature": "parameters: unknown",
+              "doc": "The parameters, in declaration order."
+            },
+            {
+              "name": "groups",
+              "kind": "property",
+              "optional": false,
+              "signature": "groups: unknown",
+              "doc": "The groups."
+            },
+            {
+              "name": "hooks",
+              "kind": "property",
+              "optional": false,
+              "signature": "hooks: ManifestHooks",
+              "doc": "The hooks the worker implements."
+            },
+            {
+              "name": "config",
+              "kind": "property",
+              "optional": false,
+              "signature": "config: ManifestConfig",
+              "doc": "Build-wide settings."
+            },
+            {
+              "name": "ci",
+              "kind": "property",
+              "optional": false,
+              "signature": "ci: unknown",
+              "doc": "The CI files the build declares, for `generate-ci`."
+            }
+          ]
+        },
+        {
+          "name": "ManifestCi",
+          "kind": "interface",
+          "doc": "One CI file the build declares.",
+          "signature": "interface ManifestCi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The field the file is declared on, which names its default path:\n`releaseWorkflow` writes `.github/workflows/release.yml`."
+            },
+            {
+              "name": "provider",
+              "kind": "property",
+              "optional": true,
+              "signature": "provider?: CiProvider",
+              "doc": "The provider to render for; GitHub when omitted."
+            },
+            {
+              "name": "path",
+              "kind": "property",
+              "optional": true,
+              "signature": "path?: string",
+              "doc": "The output path, overriding the one the name implies."
+            },
+            {
+              "name": "pipeline",
+              "kind": "property",
+              "optional": true,
+              "signature": "pipeline?: CiPipeline",
+              "doc": "The pipeline-level fields, and the jobs unless `invokes` or `fanOut` supply them."
+            },
+            {
+              "name": "invokes",
+              "kind": "property",
+              "optional": true,
+              "signature": "invokes?: unknown",
+              "doc": "The targets to run as jobs, bare or with the runner's adjustments."
+            },
+            {
+              "name": "fanOut",
+              "kind": "property",
+              "optional": true,
+              "signature": "fanOut?: boolean | FanOutOptions",
+              "doc": "One job per target in the graph; the options without a command, which stays the launcher."
+            },
+            {
+              "name": "pins",
+              "kind": "property",
+              "optional": true,
+              "signature": "pins?: Readonly<Record<string, CiUses>>",
+              "doc": "Pinned action references by action name: what a `pins` resolver answers."
+            }
+          ]
+        },
+        {
+          "name": "ManifestCiInvocation",
+          "kind": "interface",
+          "doc": "An invoked target as the manifest names it, and the targets it runs after.",
+          "signature": "interface ManifestCiInvocation",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": false,
+              "signature": "target: string",
+              "doc": "The target the job runs."
+            },
+            {
+              "name": "after",
+              "kind": "property",
+              "optional": true,
+              "signature": "after?: unknown",
+              "doc": "Extra `needs:` edges, by target name."
+            }
+          ]
+        },
+        {
+          "name": "ManifestConfig",
+          "kind": "interface",
+          "doc": "Build-wide settings.",
+          "signature": "interface ManifestConfig",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "deadline",
+              "kind": "property",
+              "optional": true,
+              "signature": "deadline?: string | number",
+              "doc": "The run's deadline, as a duration or milliseconds."
+            },
+            {
+              "name": "unforceable",
+              "kind": "property",
+              "optional": false,
+              "signature": "unforceable: unknown",
+              "doc": "Targets `--force` may never re-run."
+            }
+          ]
+        },
+        {
+          "name": "ManifestGroup",
+          "kind": "interface",
+          "doc": "A parallel batch of targets.",
+          "signature": "interface ManifestGroup",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The group's field name."
+            },
+            {
+              "name": "members",
+              "kind": "property",
+              "optional": false,
+              "signature": "members: unknown",
+              "doc": "The targets in it."
+            }
+          ]
+        },
+        {
+          "name": "ManifestHooks",
+          "kind": "interface",
+          "doc": "Which build hooks the worker implements; the engine calls only those.",
+          "signature": "interface ManifestHooks",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "onStart",
+              "kind": "property",
+              "optional": false,
+              "signature": "onStart: boolean",
+              "doc": "`build.onStart`, before the first target."
+            },
+            {
+              "name": "onTargetStart",
+              "kind": "property",
+              "optional": false,
+              "signature": "onTargetStart: boolean",
+              "doc": "`build.onTargetStart { target }`, before each target."
+            },
+            {
+              "name": "onTargetEnd",
+              "kind": "property",
+              "optional": false,
+              "signature": "onTargetEnd: boolean",
+              "doc": "`build.onTargetEnd { target, status }`, after each target settles."
+            },
+            {
+              "name": "onFinish",
+              "kind": "property",
+              "optional": false,
+              "signature": "onFinish: boolean",
+              "doc": "`build.onFinish { ok }`, before `run.exit`."
+            }
+          ]
+        },
+        {
+          "name": "ManifestParameter",
+          "kind": "typeAlias",
+          "doc": "One build parameter as the worker describes it, by kind.",
+          "signature": "type ManifestParameter = ManifestParameterBase & unknown",
+          "deprecated": false
+        },
+        {
+          "name": "ManifestParameterBase",
+          "kind": "interface",
+          "doc": "What is common to every parameter kind.",
+          "signature": "interface ManifestParameterBase",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The field name the build declares it under."
+            },
+            {
+              "name": "description",
+              "kind": "property",
+              "optional": false,
+              "signature": "description: string",
+              "doc": "The `--help` description."
+            },
+            {
+              "name": "required",
+              "kind": "property",
+              "optional": false,
+              "signature": "required: boolean",
+              "doc": "Whether a value must be supplied."
+            },
+            {
+              "name": "array",
+              "kind": "property",
+              "optional": false,
+              "signature": "array: boolean",
+              "doc": "Whether the value is a comma-separated list."
+            },
+            {
+              "name": "secret",
+              "kind": "property",
+              "optional": false,
+              "signature": "secret: boolean",
+              "doc": "Whether the value is masked and redacted."
+            },
+            {
+              "name": "flag",
+              "kind": "property",
+              "optional": true,
+              "signature": "flag?: string",
+              "doc": "The CLI flag, when it is not derived from the name."
+            },
+            {
+              "name": "env",
+              "kind": "property",
+              "optional": true,
+              "signature": "env?: string",
+              "doc": "The environment variable, when it is not derived from the name."
+            }
+          ]
+        },
+        {
+          "name": "ManifestRetry",
+          "kind": "interface",
+          "doc": "Extra attempts after a failed body, and the pause between them.",
+          "signature": "interface ManifestRetry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "times",
+              "kind": "property",
+              "optional": false,
+              "signature": "times: number",
+              "doc": "How many more times to run the body after it fails."
+            },
+            {
+              "name": "delayMs",
+              "kind": "property",
+              "optional": false,
+              "signature": "delayMs: number",
+              "doc": "Milliseconds to wait between attempts."
+            }
+          ]
+        },
+        {
+          "name": "ManifestTarget",
+          "kind": "interface",
+          "doc": "One target as the worker describes it.",
+          "signature": "interface ManifestTarget",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "The target's name, also its CLI name."
+            },
+            {
+              "name": "kind",
+              "kind": "property",
+              "optional": false,
+              "signature": "kind: target | service",
+              "doc": "A plain target with a body, or a service the engine starts and stops."
+            },
+            {
+              "name": "ready",
+              "kind": "property",
+              "optional": false,
+              "signature": "ready: boolean",
+              "doc": "Whether the worker answers `service.ready` for this service."
+            },
+            {
+              "name": "readyTimeoutMs",
+              "kind": "property",
+              "optional": true,
+              "signature": "readyTimeoutMs?: number",
+              "doc": "How long the readiness probe may take before the service fails."
+            },
+            {
+              "name": "description",
+              "kind": "property",
+              "optional": false,
+              "signature": "description: string",
+              "doc": "The `--list` description."
+            },
+            {
+              "name": "dependsOn",
+              "kind": "property",
+              "optional": false,
+              "signature": "dependsOn: unknown",
+              "doc": "Names of targets this one depends on; each must be declared earlier."
+            },
+            {
+              "name": "unlisted",
+              "kind": "property",
+              "optional": false,
+              "signature": "unlisted: boolean",
+              "doc": "Hide from `--list` and `--help`."
+            },
+            {
+              "name": "inputs",
+              "kind": "property",
+              "optional": false,
+              "signature": "inputs: unknown",
+              "doc": "Input paths whose contents key the cache."
+            },
+            {
+              "name": "outputs",
+              "kind": "property",
+              "optional": false,
+              "signature": "outputs: unknown",
+              "doc": "Output paths that must exist for a cache hit."
+            },
+            {
+              "name": "produces",
+              "kind": "property",
+              "optional": false,
+              "signature": "produces: unknown",
+              "doc": "Artifact paths this target produces."
+            },
+            {
+              "name": "retry",
+              "kind": "property",
+              "optional": false,
+              "signature": "retry: ManifestRetry",
+              "doc": "The retry policy."
+            },
+            {
+              "name": "timeoutMs",
+              "kind": "property",
+              "optional": true,
+              "signature": "timeoutMs?: number",
+              "doc": "Per-attempt timeout in milliseconds, if any."
+            },
+            {
+              "name": "before",
+              "kind": "property",
+              "optional": false,
+              "signature": "before: unknown",
+              "doc": "Soft ordering: run before these targets when both are planned."
+            },
+            {
+              "name": "after",
+              "kind": "property",
+              "optional": false,
+              "signature": "after: unknown",
+              "doc": "Soft ordering: run after these targets when both are planned."
+            },
+            {
+              "name": "triggers",
+              "kind": "property",
+              "optional": false,
+              "signature": "triggers: unknown",
+              "doc": "Targets pulled in and run after this one."
+            },
+            {
+              "name": "proceedAfterFailure",
+              "kind": "property",
+              "optional": false,
+              "signature": "proceedAfterFailure: boolean",
+              "doc": "Keep the build running after this target fails."
+            },
+            {
+              "name": "always",
+              "kind": "property",
+              "optional": false,
+              "signature": "always: boolean",
+              "doc": "Run even after the build has failed."
+            },
+            {
+              "name": "dryRunnable",
+              "kind": "property",
+              "optional": false,
+              "signature": "dryRunnable: boolean",
+              "doc": "Run the body under `--dry-run` too."
+            },
+            {
+              "name": "requires",
+              "kind": "property",
+              "optional": false,
+              "signature": "requires: unknown",
+              "doc": "Parameters that must resolve before this target runs."
+            },
+            {
+              "name": "onCancel",
+              "kind": "property",
+              "optional": true,
+              "signature": "onCancel?: string",
+              "doc": "The compensation target to run when the run is cancelled after this one succeeded."
+            },
+            {
+              "name": "onFailure",
+              "kind": "property",
+              "optional": true,
+              "signature": "onFailure?: string",
+              "doc": "What this target's failure does: `fail`, `cancel-run`, or a compensation target."
+            },
+            {
+              "name": "condition",
+              "kind": "property",
+              "optional": false,
+              "signature": "condition: boolean",
+              "doc": "Whether the engine must ask `target.condition` before running this target."
+            },
+            {
+              "name": "cacheKey",
+              "kind": "property",
+              "optional": false,
+              "signature": "cacheKey: boolean",
+              "doc": "Whether the engine must ask `target.cacheKey` when fingerprinting this target."
+            },
+            {
+              "name": "lock",
+              "kind": "property",
+              "optional": false,
+              "signature": "lock: boolean",
+              "doc": "Whether `target.settings` answers a `lock` section for this target."
+            },
+            {
+              "name": "waitsFor",
+              "kind": "property",
+              "optional": false,
+              "signature": "waitsFor: boolean",
+              "doc": "Whether `target.settings` answers a `waitsFor` section for this target."
+            },
+            {
+              "name": "validateDuring",
+              "kind": "property",
+              "optional": false,
+              "signature": "validateDuring: boolean",
+              "doc": "Whether `target.settings` answers a `validateDuring` section for this target."
+            }
+          ]
+        },
+        {
+          "name": "materialize",
+          "kind": "function",
+          "doc": "Build the class. Dependencies must be declared before the targets that use\nthem, mirroring the forward-reference rule of a `zuke.ts` build; a violation\nthrows from the constructor with the offending target named. The ordering\nhints, triggers, compensations and group members may name any target.",
+          "signature": "function materialize(manifest: Manifest, runner: TargetRunner): unknown",
+          "deprecated": false
+        },
+        {
+          "name": "parseManifest",
+          "kind": "function",
+          "doc": "Validate a `build.describe` result.",
+          "signature": "function parseManifest(value: unknown): Manifest",
+          "deprecated": false
+        },
+        {
+          "name": "PROTOCOL_VERSION",
+          "kind": "variable",
+          "doc": "The protocol version this engine speaks.",
+          "signature": "const PROTOCOL_VERSION: 1",
+          "deprecated": false
+        },
+        {
+          "name": "sdkCommand",
+          "kind": "function",
+          "doc": "Read `sdk.command` from the `zuke.json` text, naming what is wrong if not.",
+          "signature": "function sdkCommand(configText: string, where: string): string[]",
+          "deprecated": false
+        },
+        {
+          "name": "TargetRunner",
+          "kind": "interface",
+          "doc": "What a materialised build needs from its host.",
+          "signature": "interface TargetRunner",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "configure",
+              "kind": "property",
+              "optional": false,
+              "signature": "configure: unknown",
+              "doc": "Tell the worker the resolved parameter values."
+            },
+            {
+              "name": "hook",
+              "kind": "property",
+              "optional": false,
+              "signature": "hook: unknown",
+              "doc": "Call a flagged build hook."
+            },
+            {
+              "name": "condition",
+              "kind": "property",
+              "optional": false,
+              "signature": "condition: unknown",
+              "doc": "Ask whether a target's condition holds."
+            },
+            {
+              "name": "cacheKey",
+              "kind": "property",
+              "optional": false,
+              "signature": "cacheKey: unknown",
+              "doc": "Ask for a target's extra cache key."
+            },
+            {
+              "name": "settings",
+              "kind": "property",
+              "optional": false,
+              "signature": "settings: unknown",
+              "doc": "Ask for a target's late settings."
+            },
+            {
+              "name": "waitCheck",
+              "kind": "property",
+              "optional": false,
+              "signature": "waitCheck: unknown",
+              "doc": "Ask whether a `resumeWhen` gate holds."
+            },
+            {
+              "name": "validate",
+              "kind": "property",
+              "optional": false,
+              "signature": "validate: unknown",
+              "doc": "Run one `validateDuring` check."
+            },
+            {
+              "name": "serviceStart",
+              "kind": "property",
+              "optional": false,
+              "signature": "serviceStart: unknown",
+              "doc": "Start a service; answers its handle."
+            },
+            {
+              "name": "serviceReady",
+              "kind": "property",
+              "optional": false,
+              "signature": "serviceReady: unknown",
+              "doc": "Ask whether a service is ready."
+            },
+            {
+              "name": "serviceStop",
+              "kind": "property",
+              "optional": false,
+              "signature": "serviceStop: unknown",
+              "doc": "Stop a service."
+            },
+            {
+              "name": "runTarget",
+              "kind": "property",
+              "optional": false,
+              "signature": "runTarget: unknown",
+              "doc": "Run the named target's body; reject when it fails."
+            },
+            {
+              "name": "finish",
+              "kind": "property",
+              "optional": false,
+              "signature": "finish: unknown",
+              "doc": "Tell the worker the run is over."
+            }
+          ]
+        },
+        {
+          "name": "ValidateDuringSpec",
+          "kind": "interface",
+          "doc": "Checks run on an interval while the body runs, as `ValidateDuringSettings` configures them.",
+          "signature": "interface ValidateDuringSpec",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "every",
+              "kind": "property",
+              "optional": true,
+              "signature": "every?: Duration",
+              "doc": "The interval."
+            },
+            {
+              "name": "checks",
+              "kind": "property",
+              "optional": false,
+              "signature": "checks: unknown",
+              "doc": "The checks' names, each answered by `target.validate`."
+            }
+          ]
+        },
+        {
+          "name": "WaitSpec",
+          "kind": "interface",
+          "doc": "A wait gate, as `WaitSettings` configures it.",
+          "signature": "interface WaitSpec",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "on",
+              "kind": "property",
+              "optional": false,
+              "signature": "on: WaitTriggerSpec",
+              "doc": "The trigger."
+            },
+            {
+              "name": "timeout",
+              "kind": "property",
+              "optional": true,
+              "signature": "timeout?: Duration",
+              "doc": "How long to wait before the timeout disposition applies."
+            },
+            {
+              "name": "onTimeout",
+              "kind": "property",
+              "optional": true,
+              "signature": "onTimeout?: string",
+              "doc": "`fail`, `cancel-run`, or a compensation target."
+            }
+          ]
+        },
+        {
+          "name": "WaitTriggerSpec",
+          "kind": "typeAlias",
+          "doc": "What a wait gate waits on.",
+          "signature": "type WaitTriggerSpec = unknown | unknown",
+          "deprecated": false
+        },
+        {
+          "name": "WorkerHost",
+          "kind": "class",
+          "doc": "The worker host. Start one with {@link WorkerHost.start}.",
+          "signature": "class WorkerHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "sdk",
+              "kind": "method",
+              "optional": false,
+              "signature": "sdk(): string",
+              "doc": "The SDK the worker announced itself as."
+            },
+            {
+              "name": "start",
+              "kind": "method",
+              "optional": false,
+              "signature": "start(options: WorkerOptions): Promise<WorkerHost>",
+              "doc": "Spawn the worker and wait for its `hello`."
+            },
+            {
+              "name": "describe",
+              "kind": "method",
+              "optional": false,
+              "signature": "describe(): Promise<Manifest>",
+              "doc": "Ask the worker to describe its build; a replacement must match it."
+            },
+            {
+              "name": "configure",
+              "kind": "method",
+              "optional": false,
+              "signature": "configure(params: ConfigureParams): Promise<void>",
+              "doc": "Tell the worker the resolved parameters; a replacement gets the same."
+            },
+            {
+              "name": "hook",
+              "kind": "method",
+              "optional": false,
+              "signature": "hook(name: HookName, params: unknown): Promise<void>",
+              "doc": "Call a build hook the manifest flagged and wait for it to settle."
+            },
+            {
+              "name": "condition",
+              "kind": "method",
+              "optional": false,
+              "signature": "condition(target: string): Promise<boolean>",
+              "doc": "Ask whether the named target's condition holds."
+            },
+            {
+              "name": "settings",
+              "kind": "method",
+              "optional": false,
+              "signature": "settings(target: ManifestTarget): Promise<LateSettings>",
+              "doc": "Ask for the late settings a target declared, once parameters resolved."
+            },
+            {
+              "name": "waitCheck",
+              "kind": "method",
+              "optional": false,
+              "signature": "waitCheck(target: string): Promise<boolean>",
+              "doc": "Ask whether a `resumeWhen` gate's predicate holds now."
+            },
+            {
+              "name": "validate",
+              "kind": "method",
+              "optional": false,
+              "signature": "validate(target: string, check: string): Promise<void>",
+              "doc": "Run one of a target's `validateDuring` checks; rejects with its message."
+            },
+            {
+              "name": "cacheKey",
+              "kind": "method",
+              "optional": false,
+              "signature": "cacheKey(target: string): Promise<string>",
+              "doc": "Ask for the named target's extra cache key."
+            },
+            {
+              "name": "runTarget",
+              "kind": "method",
+              "optional": false,
+              "signature": "runTarget(name: string, ctx: TargetContext): Promise<void>",
+              "doc": "Run one target's body in the worker, serving the calls it makes until it\nsettles. Rejects with the worker's message when the body fails."
+            },
+            {
+              "name": "serviceStart",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceStart(target: string): Promise<string>",
+              "doc": "Start a service in the worker; its start phase may `exec`."
+            },
+            {
+              "name": "serviceReady",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceReady(target: string, handle: string): Promise<boolean>",
+              "doc": "Ask whether a started service is ready."
+            },
+            {
+              "name": "serviceStop",
+              "kind": "method",
+              "optional": false,
+              "signature": "serviceStop(target: string, handle: string): Promise<void>",
+              "doc": "Stop a started service; its stop phase may `exec`."
+            },
+            {
+              "name": "finish",
+              "kind": "method",
+              "optional": false,
+              "signature": "finish(code: number, suspended?: boolean): Promise<void>",
+              "doc": "Tell the worker the run is over, or suspended at a gate, wait for it to\nexit, release everything. The run ends, not the host: the next request\n(an MCP server runs build after build in one process) spawns a fresh\nworker, described and configured anew."
+            },
+            {
+              "name": "close",
+              "kind": "method",
+              "optional": false,
+              "signature": "close(): Promise<void>",
+              "doc": "End the host for good: a pre-warm in flight is awaited and its worker\nstopped with the current one, and none is spawned after. A one-shot run\nneeds no call; it ends with its process."
+            },
+            {
+              "name": "kill",
+              "kind": "method",
+              "optional": false,
+              "signature": "kill(): void",
+              "doc": "Kill the worker outright, and whatever its service phases spawned."
+            }
+          ]
+        },
+        {
+          "name": "WorkerOptions",
+          "kind": "interface",
+          "doc": "How the host starts its worker.",
+          "signature": "interface WorkerOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "command",
+              "kind": "property",
+              "optional": false,
+              "signature": "command: unknown",
+              "doc": "The worker's argv, from `zuke.json`'s `sdk.command`."
+            },
+            {
+              "name": "cwd",
+              "kind": "property",
+              "optional": false,
+              "signature": "cwd: string",
+              "doc": "The directory to start the worker in."
+            },
+            {
+              "name": "connectTimeoutMs",
+              "kind": "property",
+              "optional": true,
+              "signature": "connectTimeoutMs?: number",
+              "doc": "How long to wait for the worker's `hello` before giving up."
+            },
+            {
+              "name": "graceMs",
+              "kind": "property",
+              "optional": true,
+              "signature": "graceMs?: number",
+              "doc": "How long a cancelled body may take to settle before the worker is killed."
+            },
+            {
+              "name": "prewarm",
+              "kind": "property",
+              "optional": true,
+              "signature": "prewarm?: boolean",
+              "doc": "Spawn and describe the next worker as soon as a run ends, so the next run\nof a long-lived host (the MCP server, which runs build after build in one\nprocess) finds one up instead of paying the spawn inside its request. Off\nby default: a one-shot run has no next run. A pre-warm that fails is\ndropped, and the next run spawns its own worker and meets the error."
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "@zuke/deno",
       "dir": "deno",
       "summary": "`@zuke/deno` — typed `DenoTasks` wrappers for the `deno` CLI, for use in",
@@ -51990,6 +52955,13 @@
               "optional": false,
               "signature": "launcher: string | null",
               "doc": "The absolute path of the executable `zuke` launcher at the root, run in\nplace of `deno run` — or `null` when there is none, or the platform\nreports no file mode to tell (Windows)."
+            },
+            {
+              "name": "engine",
+              "kind": "property",
+              "optional": false,
+              "signature": "engine: string | null",
+              "doc": "The `@zuke/engine` release that runs the build when the root has no\n`zuke.ts`: the `engine` field of its `zuke.json`, which then describes a\nbuild another SDK hosts. `null` when the root has its own build file."
             }
           ]
         },
@@ -52034,6 +53006,13 @@
               "optional": false,
               "signature": "uid(): number | null",
               "doc": "The current user's numeric id, or `null` where the platform has none."
+            },
+            {
+              "name": "readText",
+              "kind": "method",
+              "optional": false,
+              "signature": "readText(path: string): Promise<string>",
+              "doc": "The text of a file."
             }
           ]
         },
