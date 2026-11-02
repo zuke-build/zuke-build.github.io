@@ -5709,6 +5709,20 @@
               "optional": false,
               "signature": "writeFile(path: string, bytes: Uint8Array, mode?: number): Promise<void>",
               "doc": "Write a file, creating parent directories as needed, with the permission\nbits `mode` where the platform has them."
+            },
+            {
+              "name": "readLink",
+              "kind": "method",
+              "optional": true,
+              "signature": "readLink?(path: string): Promise<string>",
+              "doc": "The raw target of the symlink at `path`. A host without it archives every\nlink as a copy of what it points at, as older Zuke releases did."
+            },
+            {
+              "name": "symlink",
+              "kind": "method",
+              "optional": true,
+              "signature": "symlink?(target: string, path: string, type: file | dir): Promise<void>",
+              "doc": "Create a symlink at `path` pointing at `target`, creating parent\ndirectories as needed. `type` is what Windows needs to know and POSIX\nignores. A host without it refuses an archive that carries a link, so the\ntarget rebuilds."
             }
           ]
         },
@@ -6397,7 +6411,7 @@
         {
           "name": "remoteCacheKey",
           "kind": "function",
-          "doc": "The store key for a target's outputs: its name and input `fingerprint`. The\nname is sanitised so the key is safe as a filename and a URL path segment.",
+          "doc": "The store key for a target's outputs: its name and input `fingerprint`,\nbehind the {@link ARCHIVE_FORMAT} version. The name is sanitised so the key\nis safe as a filename and a URL path segment.",
           "signature": "function remoteCacheKey(name: string, fingerprint: string): string",
           "deprecated": false
         },
@@ -6661,7 +6675,7 @@
         {
           "name": "restoreOutputs",
           "kind": "function",
-          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\nsymlink or directory entry (which {@link archiveOutputs} never produces),\nwhen it lands under `.git` or `.zuke` (`.zuke/tools` aside), when — given\n`outputs` — it falls\noutside the target's declared outputs, and when the path it would be written\nto passes through, or is, a symlink that already exists on disk.\n\nThat last refusal is what makes the confinement real rather than lexical. The\narchive cannot plant a link, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
+          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\ndirectory entry (which {@link archiveOutputs} never produces), when it lands\nunder `.git` or `.zuke` (`.zuke/tools` aside), when — given `outputs` — it\nfalls outside the target's declared outputs, and when the path it would be\nwritten to passes through, or is, a symlink that already exists on disk.\n\nA symlink entry is restored only when its target is relative, stays inside\na declared output root that holds the link (with `..` only before the\ntarget's first name), and does not resolve into `.git` or `.zuke`; when no\nother entry shares its name or sits under it; and when the host can create\nlinks at all. Links are created after every file is written, so no write can\npass through one.\n\nThe on-disk refusal is what makes the confinement real rather than lexical.\nThe archive cannot plant a link that a write follows, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
           "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost, outputs?: unknown, maxBytes?: number): Promise<string[]>",
           "deprecated": false
         },
