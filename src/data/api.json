@@ -10025,6 +10025,13 @@
           "deprecated": false
         },
         {
+          "name": "importTool",
+          "kind": "function",
+          "doc": "The default {@link ToolResolver}: a dynamic import of the release from JSR,\nor from the workspace when it holds that version of the package.",
+          "signature": "async function importTool(pkg: string, version: string): Promise<Record<string, unknown>>",
+          "deprecated": false
+        },
+        {
           "name": "LateSettings",
           "kind": "interface",
           "doc": "What `target.settings` answers for one target: the sections it declared.",
@@ -10614,6 +10621,13 @@
           "deprecated": false
         },
         {
+          "name": "parseToolCall",
+          "kind": "function",
+          "doc": "Validate a `tool.call` request's params.",
+          "signature": "function parseToolCall(value: unknown): ToolCall",
+          "deprecated": false
+        },
+        {
           "name": "PROTOCOL_VERSION",
           "kind": "variable",
           "doc": "The protocol version this engine speaks.",
@@ -10626,6 +10640,29 @@
           "doc": "Read `sdk.command` from the `zuke.json` text, naming what is wrong if not.",
           "signature": "function sdkCommand(configText: string, where: string): string[]",
           "deprecated": false
+        },
+        {
+          "name": "SpawnBase",
+          "kind": "interface",
+          "doc": "The worker's environment and working directory: the base of every spawn.",
+          "signature": "interface SpawnBase",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "env",
+              "kind": "property",
+              "optional": false,
+              "signature": "env: Readonly<Record<string, string>>",
+              "doc": "The environment the wrapper's command inherits, under the caller's overrides."
+            },
+            {
+              "name": "cwd",
+              "kind": "property",
+              "optional": false,
+              "signature": "cwd: string",
+              "doc": "The working directory the command runs in, unless a setter moves it."
+            }
+          ]
         },
         {
           "name": "TargetRunner",
@@ -10719,6 +10756,64 @@
               "doc": "Tell the worker the run is over."
             }
           ]
+        },
+        {
+          "name": "ToolCall",
+          "kind": "interface",
+          "doc": "A `tool.call` request: a wrapper's task the engine runs on the worker's\nbehalf, with the worker's environment and directory under its settings.",
+          "signature": "interface ToolCall",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "target",
+              "kind": "property",
+              "optional": false,
+              "signature": "target: string",
+              "doc": "The target whose body or phase is asking, for attribution and cancellation."
+            },
+            {
+              "name": "package",
+              "kind": "property",
+              "optional": false,
+              "signature": "package: string",
+              "doc": "The wrapper's name after `@zuke/`, e.g. `docker`."
+            },
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "The wrapper's exact release, e.g. `1.4.0`."
+            },
+            {
+              "name": "tasks",
+              "kind": "property",
+              "optional": false,
+              "signature": "tasks: string",
+              "doc": "The task object the wrapper exports, e.g. `DockerTasks`."
+            },
+            {
+              "name": "task",
+              "kind": "property",
+              "optional": false,
+              "signature": "task: string",
+              "doc": "The task on it, e.g. `build`."
+            },
+            {
+              "name": "args",
+              "kind": "property",
+              "optional": false,
+              "signature": "args: unknown",
+              "doc": "The task's arguments as JSON. An argument that is an object with a single\n`configure` key is a settings lambda as data: an ordered list of\n`[setter, [arguments]]` pairs the engine applies to the task's settings."
+            }
+          ]
+        },
+        {
+          "name": "ToolResolver",
+          "kind": "typeAlias",
+          "doc": "Resolves a wrapper release to its module: what `tool.call` imports.",
+          "signature": "type ToolResolver = unknown",
+          "deprecated": false
         },
         {
           "name": "ValidateDuringSpec",
@@ -10949,6 +11044,13 @@
               "optional": true,
               "signature": "prewarm?: boolean",
               "doc": "Spawn and describe the next worker as soon as a run ends, so the next run\nof a long-lived host (the MCP server, which runs build after build in one\nprocess) finds one up instead of paying the spawn inside its request. Off\nby default: a one-shot run has no next run. A pre-warm that fails is\ndropped, and the next run spawns its own worker and meets the error."
+            },
+            {
+              "name": "tools",
+              "kind": "property",
+              "optional": true,
+              "signature": "tools?: ToolResolver",
+              "doc": "How a `tool.call` finds the wrapper release it names: a dynamic import of\n`jsr:@zuke/<package>@<version>` by default, which the workspace resolves\nlocally for a member's own version. A test hands in a module of its own."
             }
           ]
         }
