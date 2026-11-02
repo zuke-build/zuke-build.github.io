@@ -5723,6 +5723,13 @@
               "optional": true,
               "signature": "symlink?(target: string, path: string, type: file | dir): Promise<void>",
               "doc": "Create a symlink at `path` pointing at `target`, creating parent\ndirectories as needed. `type` is what Windows needs to know and POSIX\nignores. A host without it refuses an archive that carries a link, so the\ntarget rebuilds."
+            },
+            {
+              "name": "realPath",
+              "kind": "method",
+              "optional": true,
+              "signature": "realPath?(path: string): Promise<string>",
+              "doc": "The canonical path of `path`, every symlink resolved. Lets the archive walk\nnotice a directory link that loops back to a directory it is already\ninside; a host without it cannot, and such a loop recurses until the OS\nrefuses the path."
             }
           ]
         },
