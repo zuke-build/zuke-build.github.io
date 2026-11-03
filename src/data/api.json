@@ -576,7 +576,7 @@
         {
           "name": "archiveOutputs",
           "kind": "function",
-          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents,\neach file with its permission bits so a binary restores executable. A\ndeclared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory, other than `.zuke/tools` and whatever it holds.",
+          "doc": "Archive a target's `outputs` into a gzipped tar of their current contents,\neach file with its permission bits so a binary restores executable. A\ndeclared output that does not exist is skipped, as is anything under a\n`.git` or `.zuke` directory, other than `.zuke/tools` and whatever it holds.\n\nEach file is read only when the compressor asks for it, so what is held in\nmemory is the compressed archive plus the one file being added — not the\nwhole tree, which for a `node_modules` runs to gigabytes.",
           "signature": "async function archiveOutputs(outputs: unknown, host: OutputHost): Promise<Uint8Array>",
           "deprecated": false
         },
@@ -6448,7 +6448,7 @@
               "kind": "property",
               "optional": true,
               "signature": "maxInflatedBytes?: number",
-              "doc": "The most an artifact from this store may decompress to, in bytes, before\n{@link restoreOutputs} refuses it. Defaults to 2 GiB; raise it for a target\nwhose outputs are genuinely larger, such as a whole SDK. The restore holds\nthe inflated archive in memory, so the bound is also its memory ceiling."
+              "doc": "The most an artifact from this store may decompress to, in bytes, before\n{@link restoreOutputs} refuses it. Defaults to 2 GiB; raise it for a target\nwhose outputs are genuinely larger, such as a whole SDK. The restore streams\nthe inflated archive rather than holding it, so raising the bound does not\nraise its memory use: that is the compressed artifact plus one file."
             }
           ]
         },
