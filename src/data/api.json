@@ -53268,6 +53268,36 @@
           "deprecated": false
         },
         {
+          "name": "EnginePinHost",
+          "kind": "interface",
+          "doc": "What moving the pin reaches outside the process, injectable for tests.",
+          "signature": "interface EnginePinHost",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "readText",
+              "kind": "method",
+              "optional": false,
+              "signature": "readText(path: string): Promise<string>",
+              "doc": "Read a text file, rejecting when it cannot be read."
+            },
+            {
+              "name": "writeText",
+              "kind": "method",
+              "optional": false,
+              "signature": "writeText(path: string, text: string): Promise<void>",
+              "doc": "Write a text file, replacing what is there."
+            },
+            {
+              "name": "engineMeta",
+              "kind": "method",
+              "optional": false,
+              "signature": "engineMeta(): Promise<unknown>",
+              "doc": "Fetch and parse `@zuke/engine`'s JSR `meta.json`."
+            }
+          ]
+        },
+        {
           "name": "ImportFlags",
           "kind": "interface",
           "doc": "Flags accepted by `zuke import` — the setup flags plus `--from`.",
@@ -53446,6 +53476,22 @@
           ]
         },
         {
+          "name": "SdkSetupOptions",
+          "kind": "interface",
+          "doc": "What `--sdk python` scaffolds against.",
+          "signature": "interface SdkSetupOptions",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "engine",
+              "kind": "property",
+              "optional": false,
+              "signature": "engine: string",
+              "doc": "The exact `@zuke/engine` release `zuke.json` pins."
+            }
+          ]
+        },
+        {
           "name": "SetupFlags",
           "kind": "interface",
           "doc": "Flags accepted by `zuke setup`.",
@@ -53507,6 +53553,20 @@
               "optional": true,
               "signature": "bootstrapDeno?: boolean",
               "doc": "Which launchers to scaffold: `true` (`--bootstrap-deno`) for ones that\ninstall a pinned, checksum-verified Deno when none is on `PATH`, `false`\n(`--no-bootstrap-deno`) for ones that require it and fail closed. Unset:\nask when interactive, else take the default (bootstrap)."
+            },
+            {
+              "name": "sdk",
+              "kind": "property",
+              "optional": true,
+              "signature": "sdk?: string",
+              "doc": "The SDK whose build to scaffold (`--sdk python`): a `build.py` the engine\nruns, in place of a `zuke.ts`. Unset: a TypeScript build."
+            },
+            {
+              "name": "engine",
+              "kind": "property",
+              "optional": true,
+              "signature": "engine?: string",
+              "doc": "The exact `@zuke/engine` release to pin for an SDK build (`--engine`).\nUnset: the latest release, read from JSR at setup time."
             }
           ]
         },
@@ -53639,6 +53699,13 @@
               "optional": false,
               "signature": "meta(): Promise<unknown>",
               "doc": "Fetch and parse `@zuke/cli`'s JSR `meta.json`."
+            },
+            {
+              "name": "engineMeta",
+              "kind": "method",
+              "optional": false,
+              "signature": "engineMeta(): Promise<unknown>",
+              "doc": "Fetch and parse `@zuke/engine`'s JSR `meta.json`: the release\n`zuke setup --sdk` pins and `zuke upgrade --engine` moves a pin to."
             },
             {
               "name": "install",
