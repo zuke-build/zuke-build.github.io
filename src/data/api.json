@@ -53323,7 +53323,7 @@
               "kind": "property",
               "optional": true,
               "signature": "from?: ImportSource",
-              "doc": "Force a source (`package.json` or `makefile`); auto-detected when unset."
+              "doc": "Force a source (`package.json`, `makefile` or `pyproject`); auto-detected\nwhen unset."
             }
           ]
         },
@@ -53331,7 +53331,7 @@
           "name": "ImportSource",
           "kind": "typeAlias",
           "doc": "The kinds of project `zuke import` can read.",
-          "signature": "type ImportSource = package.json | Makefile",
+          "signature": "type ImportSource = package.json | Makefile | pyproject.toml",
           "deprecated": false
         },
         {
