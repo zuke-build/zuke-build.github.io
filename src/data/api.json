@@ -3805,11 +3805,25 @@
               "doc": "Fetch the archived outputs stored under `key`, or `null` if there are none."
             },
             {
+              "name": "getStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "getStream(key: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>> | null>",
+              "doc": "The archive stored under `key` as a stream, or `null` if there is none."
+            },
+            {
               "name": "put",
               "kind": "method",
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "putStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "putStream(key: string, artifact: ReadableStream<Uint8Array<ArrayBuffer>>): Promise<void>",
+              "doc": "Store the archive `artifact` streams under `key`. It is written under a\ntemporary name and renamed into place, so a reader on another machine\nnever sees a half-written archive."
             },
             {
               "name": "maxInflatedBytes",
@@ -4266,6 +4280,13 @@
               "doc": "Fetch the archived outputs stored under `key`, or `null` if there are none."
             },
             {
+              "name": "getStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "getStream(key: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>> | null>",
+              "doc": "The archive stored under `key` as a stream, or `null` if there is none."
+            },
+            {
               "name": "put",
               "kind": "method",
               "optional": false,
@@ -4562,6 +4583,13 @@
               "optional": false,
               "signature": "get(key: string): Promise<Uint8Array | null>",
               "doc": "Fetch the archived outputs stored under `key`, or `null` if there are none."
+            },
+            {
+              "name": "getStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "getStream(key: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>> | null>",
+              "doc": "The archive stored under `key` as a stream, or `null` if there is none.\nIt is bounded as it arrives rather than measured after: a store that\nanswers with an endless body would otherwise exhaust memory or disk\nbefore there was anything to reject."
             },
             {
               "name": "put",
@@ -6444,11 +6472,25 @@
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
             },
             {
+              "name": "getStream",
+              "kind": "method",
+              "optional": true,
+              "signature": "getStream?(key: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>> | null>",
+              "doc": "{@link RemoteCacheStore.get} as a stream, or `null` if there is nothing\nunder `key`: the executor writes it straight to a temporary file and\nrestores from there, so a large artifact is never held in memory. A store\nwithout it is read with `get`."
+            },
+            {
+              "name": "putStream",
+              "kind": "method",
+              "optional": true,
+              "signature": "putStream?(key: string, artifact: ReadableStream<Uint8Array<ArrayBuffer>>): Promise<void>",
+              "doc": "{@link RemoteCacheStore.put} from a stream, so the archive is written as\nit is compressed rather than buffered first. A store without it is given\nthe whole artifact through `put`."
+            },
+            {
               "name": "maxInflatedBytes",
               "kind": "property",
               "optional": true,
               "signature": "maxInflatedBytes?: number",
-              "doc": "The most an artifact from this store may decompress to, in bytes, before\n{@link restoreOutputs} refuses it. Defaults to 2 GiB; raise it for a target\nwhose outputs are genuinely larger, such as a whole SDK. The restore streams\nthe inflated archive rather than holding it, so raising the bound does not\nraise its memory use: that is the compressed artifact plus one file."
+              "doc": "The most an artifact from this store may decompress to, in bytes, before\n{@link restoreOutputs} refuses it. Defaults to 2 GiB; raise it for a target\nwhose outputs are genuinely larger, such as a whole SDK. The restore streams\nthe inflated archive rather than holding it, so raising the bound does not\nraise its memory use."
             }
           ]
         },
@@ -7443,6 +7485,13 @@
               "optional": false,
               "signature": "get(key: string): Promise<Uint8Array | null>",
               "doc": "Fetch the archived outputs stored under `key`, or `null` if there are none."
+            },
+            {
+              "name": "getStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "getStream(key: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>> | null>",
+              "doc": "The archive stored under `key` as a stream, or `null` if there is none."
             },
             {
               "name": "put",
