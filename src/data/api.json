@@ -2768,7 +2768,7 @@
               "kind": "method",
               "optional": false,
               "signature": "spawn(): SpawnedProcess",
-              "doc": "Start the command as a long-lived process **without** waiting for it to\nexit, returning a {@link SpawnedProcess} handle. Use this for a service —\na dev server, a database, `docker compose up` — that must keep running\nwhile other targets execute; stop it with {@link SpawnedProcess.stop}.\nstdout/stderr are inherited so the process's output is visible."
+              "doc": "Start the command as a long-lived process **without** waiting for it to\nexit, returning a {@link SpawnedProcess} handle. Use this for a service —\na dev server, a database, `docker compose up` — that must keep running\nwhile other targets execute; stop it with {@link SpawnedProcess.stop}.\nstdout/stderr are inherited so the process's output is visible. Inside a\ntarget that runs alongside others they are piped into that target's block\ninstead, so the service's output does not land in another target's block.\nA piped service is not attached to a terminal, so it may drop colours or\nbuffer its output, and one still running when the build exits loses its\noutput stream: stop it in teardown rather than leaving it behind."
             }
           ]
         },
@@ -7901,7 +7901,7 @@
         {
           "name": "SpawnedProcess",
           "kind": "class",
-          "doc": "A long-lived process started with {@link Command.spawn} — the handle a\n{@link https://jsr.io/@zuke/core service} keeps alive. Unlike awaiting a\n{@link Command}, spawning does not wait for the process to exit; call\n{@link SpawnedProcess.stop} to terminate it (which is also the default\nservice teardown). Its stdout/stderr are inherited so the process's own\noutput is visible.",
+          "doc": "A long-lived process started with {@link Command.spawn} — the handle a\n{@link https://jsr.io/@zuke/core service} keeps alive. Unlike awaiting a\n{@link Command}, spawning does not wait for the process to exit; call\n{@link SpawnedProcess.stop} to terminate it (which is also the default\nservice teardown). Its stdout/stderr are inherited so the process's own\noutput is visible, except while its target runs alongside others: then the\noutput goes to that target's block, and passes through live once the block\nhas been printed.",
           "signature": "class SpawnedProcess",
           "deprecated": false,
           "members": [
