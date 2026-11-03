@@ -28,6 +28,7 @@ const bigLogo = pathname === "/";
         </a>
       ))}
       <a class="nav__link" href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>
+      <a class="nav__link" href="https://pypi.org/project/zuke/" target="_blank" rel="noopener noreferrer">PyPI</a>
       <a class="nav__link" href="https://totollyshop.myspreadshop.net/" target="_blank" rel="noopener noreferrer">Swag</a>
 
       <span class="nav__sep" aria-hidden="true"></span>
@@ -170,12 +171,13 @@ const bigLogo = pathname === "/";
   }
   .nav__gh:hover { color: var(--ink); }
 
-  /* Compact header: the brand shrinks, secondary links (JSR, X) move to
+  /* Compact header: the brand shrinks, secondary links (JSR, PyPI, X) move to
      the footer, and the divider goes — so Docs / API / Examples, the theme
      toggle and GitHub all fit on a 360px-wide phone without overflow. */
   @media (max-width: 720px) {
     .nav__links { gap: 16px; }
     .nav__link[href="https://jsr.io/@zuke"] { display: none; }
+    .nav__link[href="https://pypi.org/project/zuke/"] { display: none; }
     .nav__link[href="https://totollyshop.myspreadshop.net/"] { display: none; }
   }
   @media (max-width: 560px) {
