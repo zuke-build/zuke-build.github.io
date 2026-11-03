@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "zuke@1.0.1",
+  "generated": "zuke@1.2.0",
   "packages": [
     {
       "name": "zuke",
@@ -21553,6 +21553,2849 @@
           ]
         },
         {
+          "name": "GhAppTokenSettings",
+          "kind": "class",
+          "doc": "Settings for GhAppTokenApi.appToken.",
+          "signature": "class GhAppTokenSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app_id",
+              "kind": "method",
+              "optional": false,
+              "signature": "app_id(id: str | float) -> Self",
+              "doc": "The GitHub App's id (the `App ID` on its settings page)."
+            },
+            {
+              "name": "private_key",
+              "kind": "method",
+              "optional": false,
+              "signature": "private_key(pem: str) -> Self",
+              "doc": "The app's private key, as the PEM's **contents** — GitHub issues PKCS#1\n(`BEGIN RSA PRIVATE KEY`); PKCS#8 is accepted too."
+            },
+            {
+              "name": "owner",
+              "kind": "method",
+              "optional": false,
+              "signature": "owner(login: str) -> Self",
+              "doc": "The user or organisation the app is installed on."
+            },
+            {
+              "name": "repositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositories(*names: str) -> Self",
+              "doc": "Scope the token to these repositories (names only, without the owner).\nOmit to cover every repository the installation can reach — prefer naming\nthem, so a leaked token is narrow."
+            },
+            {
+              "name": "permission",
+              "kind": "method",
+              "optional": false,
+              "signature": "permission(name: str, level: Literal['read', 'write', 'admin']) -> Self",
+              "doc": "Request one permission, e.g. `.permission(\"contents\", \"write\")`. Repeatable.\nNarrowing to what the target needs beats inheriting the app's full set;\nrequesting more than the installation grants is an error from GitHub.\n\nThe API names multi-word permissions with underscores (`pull_requests`), so\na hyphen is normalised to one. That spelling is the trap here:\n`create-github-app-token` takes its inputs as `permission-pull-requests`,\nand passing that form straight through is rejected as a permission the\ninstallation does not grant — which reads as a misconfigured app rather\nthan a misspelled key."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "Use a different REST base (GitHub Enterprise Server)."
+            }
+          ]
+        },
+        {
+          "name": "GhAppTokenSourceSettings",
+          "kind": "class",
+          "doc": "Settings for GhAppTokenApi.appTokenSource.",
+          "signature": "class GhAppTokenSourceSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(app_id: str, private_key: str) -> Self",
+              "doc": "The App's credentials — its numeric id and the PEM contents of its\nprivate key, as the build's parameters (`.secret()` for the key). Either\none unset at call time means \"no App\": the source yields the\nfallback. Both are read when the token is first needed, never at\nconstruction, so parameters declared on the build resolve first."
+            },
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository to mint for, as `owner/name`. Defaults to the repository\nthe run is on, `GITHUB_REPOSITORY`. Name it to refuse minting anywhere\nelse: a run whose `GITHUB_REPOSITORY` is another repository then gets the\nfallback, with a warning, rather than a token for this one minted into a\nbuild running elsewhere."
+            },
+            {
+              "name": "permission",
+              "kind": "method",
+              "optional": false,
+              "signature": "permission(name: str, level: Literal['read', 'write', 'admin']) -> Self",
+              "doc": "Narrow the token to one permission, e.g. `.permission(\"contents\", \"write\")`.\nRepeatable. Without any, the token holds the installation's whole grant,\nwhich is the App's configured permissions — the sane default for an App\nset up for one job. A hyphenated name is accepted as the mint accepts it."
+            },
+            {
+              "name": "fallback",
+              "kind": "method",
+              "optional": false,
+              "signature": "fallback(token: str) -> Self",
+              "doc": "The token yielded when no App is configured or the mint fails. Defaults\nto `GITHUB_TOKEN` from the environment — the workflow's own token, so a\nbuild that names an App still posts, as `github-actions[bot]`, wherever\nthe App is absent."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "Use a different REST base for the mint (GitHub Enterprise Server)."
+            }
+          ]
+        },
+        {
+          "name": "GhBodySettings",
+          "kind": "class",
+          "doc": "Base for the commands that take message text: `pr create`, `pr comment`,\n`pr edit`, `issue create`, `issue comment`.\n\ngh spells it `--body` for the text and `--body-file` for a file, with `-`\nmeaning standard input — the same pair on every one of them.",
+          "signature": "class GhBodySettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(text: str) -> Self",
+              "doc": "The message text (`--body`)."
+            },
+            {
+              "name": "body_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "body_file(path: str) -> Self",
+              "doc": "Read the message from a file (`--body-file`); `-` reads standard input."
+            }
+          ]
+        },
+        {
+          "name": "GhCacheDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh cache delete`.",
+          "signature": "class GhCacheDeleteSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(id_or_key: str | float) -> Self",
+              "doc": "The cache to delete, by its id or its key."
+            },
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all() -> Self",
+              "doc": "Delete every cache (`--all`), narrowed by ref when one is set."
+            },
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: str) -> Self",
+              "doc": "Restrict the deletion to one ref (`--ref`)."
+            },
+            {
+              "name": "succeed_on_no_caches",
+              "kind": "method",
+              "optional": false,
+              "signature": "succeed_on_no_caches() -> Self",
+              "doc": "Exit zero when there was nothing to delete (`--succeed-on-no-caches`)."
+            }
+          ]
+        },
+        {
+          "name": "GhCacheListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh cache list`.",
+          "signature": "class GhCacheListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "key",
+              "kind": "method",
+              "optional": false,
+              "signature": "key(prefix: str) -> Self",
+              "doc": "Only caches whose key starts with this (`--key`)."
+            },
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: str) -> Self",
+              "doc": "Only caches for this ref (`--ref`), e.g. `refs/heads/master`."
+            },
+            {
+              "name": "sort",
+              "kind": "method",
+              "optional": false,
+              "signature": "sort(field: Literal['created_at', 'last_accessed_at', 'size_in_bytes']) -> Self",
+              "doc": "What to order by (`--sort`); gh's default is `last_accessed_at`."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(direction: Literal['asc', 'desc']) -> Self",
+              "doc": "The direction (`--order`): `asc` or `desc`."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            }
+          ]
+        },
+        {
+          "name": "GhCommandSettings",
+          "kind": "class",
+          "doc": "Base for a typed `gh` subcommand: it contributes the command path (the\ngroup, the verb, and any operand) and its own flags, and inherits\neverything else from \"./settings.ts\".GhSettings.",
+          "signature": "class GhCommandSettings(GhSettings)",
+          "deprecated": false
+        },
+        {
+          "name": "GhContentsSettings",
+          "kind": "class",
+          "doc": "Settings for creating or updating one file.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them names only the file.",
+          "signature": "class GhContentsSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "path",
+              "kind": "method",
+              "optional": false,
+              "signature": "path(value: str) -> Self",
+              "doc": "The file's path inside the repository, e.g. `Formula/app.rb` (required).\nRelative, `/`-separated, with no `.` or `..` segment."
+            },
+            {
+              "name": "content",
+              "kind": "method",
+              "optional": false,
+              "signature": "content(text: str) -> Self",
+              "doc": "The file's new content, as text (required). Written as UTF-8."
+            },
+            {
+              "name": "message",
+              "kind": "method",
+              "optional": false,
+              "signature": "message(text: str) -> Self",
+              "doc": "The commit message (required)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: str) -> Self",
+              "doc": "The branch to write on. Defaults to the repository's default branch."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: str) -> Self",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: str) -> Self",
+              "doc": "The token to authenticate with — needs `contents: write` on the\nrepository. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "The API root, for GitHub Enterprise."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueCloseSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue close`.",
+          "signature": "class GhIssueCloseSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: str | float) -> Self",
+              "doc": "The issue — its number or URL (required)."
+            },
+            {
+              "name": "comment",
+              "kind": "method",
+              "optional": false,
+              "signature": "comment(text: str) -> Self",
+              "doc": "Leave a closing comment (`--comment`)."
+            },
+            {
+              "name": "reason",
+              "kind": "method",
+              "optional": false,
+              "signature": "reason(value: Literal['completed', 'not planned', 'duplicate']) -> Self",
+              "doc": "Why it is closed (`--reason`)."
+            },
+            {
+              "name": "duplicate_of",
+              "kind": "method",
+              "optional": false,
+              "signature": "duplicate_of(number_or_url: str | float) -> Self",
+              "doc": "Which issue it duplicates (`--duplicate-of`), by number or URL."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueCommentSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue comment`.",
+          "signature": "class GhIssueCommentSettings(GhBodySettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: str | float) -> Self",
+              "doc": "The issue — its number or URL (required)."
+            },
+            {
+              "name": "edit_last",
+              "kind": "method",
+              "optional": false,
+              "signature": "edit_last() -> Self",
+              "doc": "Edit your most recent comment instead of adding one (`--edit-last`)."
+            },
+            {
+              "name": "create_if_none",
+              "kind": "method",
+              "optional": false,
+              "signature": "create_if_none() -> Self",
+              "doc": "With editLast, post a new comment when there is none (`--create-if-none`)."
+            },
+            {
+              "name": "delete_last",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete_last() -> Self",
+              "doc": "Delete your most recent comment (`--delete-last`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue create`.",
+          "signature": "class GhIssueCreateSettings(GhBodySettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: str) -> Self",
+              "doc": "The issue's title (`--title`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(*logins: str) -> Self",
+              "doc": "Assign someone by login (`--assignee`), `@me` for yourself; repeatable."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(*names: str) -> Self",
+              "doc": "Add a label by name (`--label`); repeatable."
+            },
+            {
+              "name": "project",
+              "kind": "method",
+              "optional": false,
+              "signature": "project(*titles: str) -> Self",
+              "doc": "Add to a project by title (`--project`); repeatable."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name: str) -> Self",
+              "doc": "Add to a milestone by name (`--milestone`)."
+            },
+            {
+              "name": "type_",
+              "kind": "method",
+              "optional": false,
+              "signature": "type_(name: str) -> Self",
+              "doc": "Set the issue type by name (`--type`)."
+            },
+            {
+              "name": "parent",
+              "kind": "method",
+              "optional": false,
+              "signature": "parent(number_or_url: str | float) -> Self",
+              "doc": "File it as a sub-issue of this number or URL (`--parent`)."
+            },
+            {
+              "name": "template_name",
+              "kind": "method",
+              "optional": false,
+              "signature": "template_name(name: str) -> Self",
+              "doc": "The issue template to start the body from (`--template`)."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue list`.",
+          "signature": "class GhIssueListSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "method",
+              "optional": false,
+              "signature": "state(value: Literal['open', 'closed', 'all']) -> Self",
+              "doc": "Filter by state (`--state`): `open`, `closed`, or `all`."
+            },
+            {
+              "name": "author",
+              "kind": "method",
+              "optional": false,
+              "signature": "author(login: str) -> Self",
+              "doc": "Filter by author (`--author`)."
+            },
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: str) -> Self",
+              "doc": "Filter by the GitHub App that opened it (`--app`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(login: str) -> Self",
+              "doc": "Filter by assignee (`--assignee`)."
+            },
+            {
+              "name": "mention",
+              "kind": "method",
+              "optional": false,
+              "signature": "mention(login: str) -> Self",
+              "doc": "Filter by who is mentioned (`--mention`)."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name_or_number: str) -> Self",
+              "doc": "Filter by milestone number or title (`--milestone`)."
+            },
+            {
+              "name": "type_",
+              "kind": "method",
+              "optional": false,
+              "signature": "type_(name: str) -> Self",
+              "doc": "Filter by issue type (`--type`)."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(*names: str) -> Self",
+              "doc": "Filter by label (`--label`); repeatable."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(query: str) -> Self",
+              "doc": "Filter with a search query (`--search`)."
+            }
+          ]
+        },
+        {
+          "name": "GhIssueViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh issue view`.",
+          "signature": "class GhIssueViewSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: str | float) -> Self",
+              "doc": "The issue — its number or URL (required)."
+            },
+            {
+              "name": "comments",
+              "kind": "method",
+              "optional": false,
+              "signature": "comments() -> Self",
+              "doc": "Include the comments (`--comments`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelCloneSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label clone`.",
+          "signature": "class GhLabelCloneSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(slug: str) -> Self",
+              "doc": "The repository to copy the labels from, as `owner/name` (required)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force() -> Self",
+              "doc": "Overwrite labels of the same name in the destination (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label create`.",
+          "signature": "class GhLabelCreateSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The label's name (required)."
+            },
+            {
+              "name": "color",
+              "kind": "method",
+              "optional": false,
+              "signature": "color(hex: str) -> Self",
+              "doc": "Its colour (`--color`), as a hex triplet; gh accepts it with or without `#`."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: str) -> Self",
+              "doc": "Its description (`--description`)."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force() -> Self",
+              "doc": "Update the label when it already exists rather than failing (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label delete`.",
+          "signature": "class GhLabelDeleteSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The label to delete (required)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label edit`.",
+          "signature": "class GhLabelEditSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The label to edit, by its current name (required)."
+            },
+            {
+              "name": "new_name",
+              "kind": "method",
+              "optional": false,
+              "signature": "new_name(value: str) -> Self",
+              "doc": "Rename it (`--name`)."
+            },
+            {
+              "name": "color",
+              "kind": "method",
+              "optional": false,
+              "signature": "color(hex: str) -> Self",
+              "doc": "Set its colour (`--color`)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: str) -> Self",
+              "doc": "Set its description (`--description`)."
+            }
+          ]
+        },
+        {
+          "name": "GhLabelListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh label list`.",
+          "signature": "class GhLabelListSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(query: str) -> Self",
+              "doc": "Search names and descriptions (`--search`)."
+            },
+            {
+              "name": "sort",
+              "kind": "method",
+              "optional": false,
+              "signature": "sort(field: Literal['created', 'name']) -> Self",
+              "doc": "What to order by (`--sort`); gh's default is `created`."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(direction: Literal['asc', 'desc']) -> Self",
+              "doc": "The direction (`--order`): `asc` or `desc`."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            }
+          ]
+        },
+        {
+          "name": "GhPrChecksSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr checks`.",
+          "signature": "class GhPrChecksSettings(GhPrReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "watch() -> Self",
+              "doc": "Keep watching until the checks finish (`--watch`). A target that watches\nblocks until CI is done, so pair it with `.killAfter(...)` unless the wait\nis the point."
+            },
+            {
+              "name": "fail_fast",
+              "kind": "method",
+              "optional": false,
+              "signature": "fail_fast() -> Self",
+              "doc": "Stop watching at the first failure (`--fail-fast`)."
+            },
+            {
+              "name": "required",
+              "kind": "method",
+              "optional": false,
+              "signature": "required() -> Self",
+              "doc": "Only the checks marked required (`--required`)."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(seconds: float) -> Self",
+              "doc": "How often to refresh while watching (`--interval`), in seconds."
+            }
+          ]
+        },
+        {
+          "name": "GhPrCloseSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr close`.",
+          "signature": "class GhPrCloseSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: str | float) -> Self",
+              "doc": "The pull request — number, URL, or branch; defaults to the current branch's."
+            },
+            {
+              "name": "comment",
+              "kind": "method",
+              "optional": false,
+              "signature": "comment(text: str) -> Self",
+              "doc": "Leave a closing comment (`--comment`)."
+            },
+            {
+              "name": "delete_branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete_branch() -> Self",
+              "doc": "Delete the branch afterwards (`--delete-branch`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrCommentSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr comment`.",
+          "signature": "class GhPrCommentSettings(GhPrTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "edit_last",
+              "kind": "method",
+              "optional": false,
+              "signature": "edit_last() -> Self",
+              "doc": "Edit your most recent comment instead of adding one (`--edit-last`)."
+            },
+            {
+              "name": "create_if_none",
+              "kind": "method",
+              "optional": false,
+              "signature": "create_if_none() -> Self",
+              "doc": "With editLast, post a new comment when there is none (`--create-if-none`)."
+            },
+            {
+              "name": "delete_last",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete_last() -> Self",
+              "doc": "Delete your most recent comment (`--delete-last`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr create`.",
+          "signature": "class GhPrCreateSettings(GhBodySettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: str) -> Self",
+              "doc": "The pull request's title (`--title`)."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: str) -> Self",
+              "doc": "The branch to merge into (`--base`)."
+            },
+            {
+              "name": "head",
+              "kind": "method",
+              "optional": false,
+              "signature": "head(branch: str) -> Self",
+              "doc": "The branch holding the commits (`--head`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(*logins: str) -> Self",
+              "doc": "Assign someone by login (`--assignee`), `@me` for yourself; repeatable."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(*names: str) -> Self",
+              "doc": "Add a label by name (`--label`); repeatable."
+            },
+            {
+              "name": "reviewer",
+              "kind": "method",
+              "optional": false,
+              "signature": "reviewer(*handles: str) -> Self",
+              "doc": "Request a review from a person or team (`--reviewer`); repeatable."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name: str) -> Self",
+              "doc": "Add to a milestone by name (`--milestone`)."
+            },
+            {
+              "name": "project",
+              "kind": "method",
+              "optional": false,
+              "signature": "project(*titles: str) -> Self",
+              "doc": "Add to a project by title (`--project`); repeatable."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft() -> Self",
+              "doc": "Open it as a draft (`--draft`)."
+            },
+            {
+              "name": "fill",
+              "kind": "method",
+              "optional": false,
+              "signature": "fill() -> Self",
+              "doc": "Take the title and body from the commits (`--fill`)."
+            },
+            {
+              "name": "fill_first",
+              "kind": "method",
+              "optional": false,
+              "signature": "fill_first() -> Self",
+              "doc": "Take them from the first commit only (`--fill-first`)."
+            },
+            {
+              "name": "fill_verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "fill_verbose() -> Self",
+              "doc": "Take the body from every commit's message (`--fill-verbose`)."
+            },
+            {
+              "name": "dry_run",
+              "kind": "method",
+              "optional": false,
+              "signature": "dry_run() -> Self",
+              "doc": "Print what would be created without creating it (`--dry-run`)."
+            },
+            {
+              "name": "no_maintainer_edit",
+              "kind": "method",
+              "optional": false,
+              "signature": "no_maintainer_edit() -> Self",
+              "doc": "Refuse maintainer edits to the branch (`--no-maintainer-edit`)."
+            },
+            {
+              "name": "template_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "template_file(path: str) -> Self",
+              "doc": "A template file to seed the body from (`--template`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr edit`.",
+          "signature": "class GhPrEditSettings(GhPrTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: str) -> Self",
+              "doc": "Set the title (`--title`)."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: str) -> Self",
+              "doc": "Change the base branch (`--base`)."
+            },
+            {
+              "name": "add_label",
+              "kind": "method",
+              "optional": false,
+              "signature": "add_label(*names: str) -> Self",
+              "doc": "Add a label (`--add-label`); repeatable."
+            },
+            {
+              "name": "remove_label",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove_label(*names: str) -> Self",
+              "doc": "Remove a label (`--remove-label`); repeatable."
+            },
+            {
+              "name": "add_assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "add_assignee(*logins: str) -> Self",
+              "doc": "Add an assignee (`--add-assignee`); repeatable."
+            },
+            {
+              "name": "remove_assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove_assignee(*logins: str) -> Self",
+              "doc": "Remove an assignee (`--remove-assignee`); repeatable."
+            },
+            {
+              "name": "add_reviewer",
+              "kind": "method",
+              "optional": false,
+              "signature": "add_reviewer(*handles: str) -> Self",
+              "doc": "Request a review (`--add-reviewer`); repeatable."
+            },
+            {
+              "name": "remove_reviewer",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove_reviewer(*handles: str) -> Self",
+              "doc": "Drop a review request (`--remove-reviewer`); repeatable."
+            },
+            {
+              "name": "add_project",
+              "kind": "method",
+              "optional": false,
+              "signature": "add_project(*titles: str) -> Self",
+              "doc": "Add to a project by title (`--add-project`); repeatable."
+            },
+            {
+              "name": "remove_project",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove_project(*titles: str) -> Self",
+              "doc": "Take it off a project by title (`--remove-project`); repeatable."
+            },
+            {
+              "name": "milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "milestone(name: str) -> Self",
+              "doc": "Set the milestone (`--milestone`)."
+            },
+            {
+              "name": "remove_milestone",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove_milestone() -> Self",
+              "doc": "Clear the milestone (`--remove-milestone`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr list`.",
+          "signature": "class GhPrListSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "state",
+              "kind": "method",
+              "optional": false,
+              "signature": "state(value: Literal['open', 'closed', 'merged', 'all']) -> Self",
+              "doc": "Filter by state (`--state`): `open`, `closed`, `merged`, or `all`."
+            },
+            {
+              "name": "base",
+              "kind": "method",
+              "optional": false,
+              "signature": "base(branch: str) -> Self",
+              "doc": "Filter by base branch (`--base`)."
+            },
+            {
+              "name": "head",
+              "kind": "method",
+              "optional": false,
+              "signature": "head(branch: str) -> Self",
+              "doc": "Filter by head branch (`--head`)."
+            },
+            {
+              "name": "author",
+              "kind": "method",
+              "optional": false,
+              "signature": "author(login: str) -> Self",
+              "doc": "Filter by author (`--author`)."
+            },
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: str) -> Self",
+              "doc": "Filter by the GitHub App that opened it (`--app`)."
+            },
+            {
+              "name": "assignee",
+              "kind": "method",
+              "optional": false,
+              "signature": "assignee(login: str) -> Self",
+              "doc": "Filter by assignee (`--assignee`)."
+            },
+            {
+              "name": "label",
+              "kind": "method",
+              "optional": false,
+              "signature": "label(*names: str) -> Self",
+              "doc": "Filter by label (`--label`); repeatable."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            },
+            {
+              "name": "search",
+              "kind": "method",
+              "optional": false,
+              "signature": "search(query: str) -> Self",
+              "doc": "Filter with a search query (`--search`)."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft() -> Self",
+              "doc": "Only draft pull requests (`--draft`)."
+            }
+          ]
+        },
+        {
+          "name": "GhPrMergeSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr merge`.",
+          "signature": "class GhPrMergeSettings(GhPrTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "merge() -> Self",
+              "doc": "Merge with a merge commit (`--merge`)."
+            },
+            {
+              "name": "squash",
+              "kind": "method",
+              "optional": false,
+              "signature": "squash() -> Self",
+              "doc": "Squash the commits into one (`--squash`)."
+            },
+            {
+              "name": "rebase",
+              "kind": "method",
+              "optional": false,
+              "signature": "rebase() -> Self",
+              "doc": "Rebase the commits onto the base (`--rebase`)."
+            },
+            {
+              "name": "auto",
+              "kind": "method",
+              "optional": false,
+              "signature": "auto() -> Self",
+              "doc": "Merge once the requirements are met (`--auto`)."
+            },
+            {
+              "name": "disable_auto",
+              "kind": "method",
+              "optional": false,
+              "signature": "disable_auto() -> Self",
+              "doc": "Turn auto-merge off again (`--disable-auto`)."
+            },
+            {
+              "name": "admin",
+              "kind": "method",
+              "optional": false,
+              "signature": "admin() -> Self",
+              "doc": "Merge with administrator privileges (`--admin`)."
+            },
+            {
+              "name": "delete_branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete_branch() -> Self",
+              "doc": "Delete the branch afterwards (`--delete-branch`)."
+            },
+            {
+              "name": "subject",
+              "kind": "method",
+              "optional": false,
+              "signature": "subject(text: str) -> Self",
+              "doc": "The merge commit's subject (`--subject`)."
+            },
+            {
+              "name": "author_email",
+              "kind": "method",
+              "optional": false,
+              "signature": "author_email(address: str) -> Self",
+              "doc": "The merge commit's author email (`--author-email`)."
+            },
+            {
+              "name": "match_head_commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "match_head_commit(sha: str) -> Self",
+              "doc": "Refuse the merge unless the head is still this commit\n(`--match-head-commit`) — the guard against merging a PR that moved\nbetween the check and the merge."
+            }
+          ]
+        },
+        {
+          "name": "GhPrReadSettings",
+          "kind": "class",
+          "doc": "Base for the `pr` commands that read one pull request and can print JSON —\n`view` and `checks` — so the operand has one implementation across them.",
+          "signature": "class GhPrReadSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: str | float) -> Self",
+              "doc": "The pull request — number, URL, or branch; defaults to the current branch's."
+            }
+          ]
+        },
+        {
+          "name": "GhPrTargetSettings",
+          "kind": "class",
+          "doc": "Base for the `pr` commands that take a pull request and post text —\n`merge`, `comment`, and `edit` — so the operand and the `--body` pair have\none implementation across them.",
+          "signature": "class GhPrTargetSettings(GhBodySettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(value: str | float) -> Self",
+              "doc": "The pull request — its number, URL, or branch name. Omit it to act on the\nPR for the current branch, as gh does."
+            }
+          ]
+        },
+        {
+          "name": "GhPrViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh pr view`.",
+          "signature": "class GhPrViewSettings(GhPrReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "comments",
+              "kind": "method",
+              "optional": false,
+              "signature": "comments() -> Self",
+              "doc": "Include the comments (`--comments`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReadSettings",
+          "kind": "class",
+          "doc": "Base for the commands that can print JSON: `pr list`, `pr view`,\n`pr checks`, `issue list`, `issue view`, `release list`, `release view`.\n\ngh requires an explicit field list for `--json`, which is why the\nvalue-returning tasks pin one rather than leaving it to the caller.\n\nA `…ListEntries` reader parses the array `--json` prints, so `.jq(...)` and\n`.template(...)` — which replace that array with whatever they render —\nbelong on the plain `…List` task instead.",
+          "signature": "class GhReadSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "json",
+              "kind": "method",
+              "optional": false,
+              "signature": "json(*fields: str) -> Self",
+              "doc": "Emit JSON with these fields (`--json`), which gh requires by name — there\nis no \"all fields\" form."
+            },
+            {
+              "name": "jq",
+              "kind": "method",
+              "optional": false,
+              "signature": "jq(expression: str) -> Self",
+              "doc": "Filter the JSON with a jq expression (`--jq`)."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(text: str) -> Self",
+              "doc": "Format the JSON through a Go template (`--template`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseAssetSettings",
+          "kind": "class",
+          "doc": "Settings for GhReleaseAssetApi.uploadReleaseAsset.",
+          "signature": "class GhReleaseAssetSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: str) -> Self",
+              "doc": "The file to upload (required)."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The asset's name on the release. Defaults to the file's base name."
+            },
+            {
+              "name": "content_type",
+              "kind": "method",
+              "optional": false,
+              "signature": "content_type(value: str) -> Self",
+              "doc": "The asset's `content-type`. Defaults by extension (`.tar.gz`/`.tgz`,\n`.zip`, `.json`), then to `application/octet-stream`."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: str) -> Self",
+              "doc": "The `owner/repo` to upload to. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: str) -> Self",
+              "doc": "Attach to the release with this tag instead of the latest release."
+            },
+            {
+              "name": "refresh",
+              "kind": "method",
+              "optional": false,
+              "signature": "refresh() -> Self",
+              "doc": "Replace an asset the release already carries when its bytes differ from\nthe file's — compared by the sha256 digest the API reports — instead of\nkeeping it. An asset whose digest matches, or whose digest the API does\nnot report, is still kept: without a comparison to trust, replacement\nwould churn a published release's assets on every run, which is exactly\nwhat the default protects. For an asset that must track its source\nacross runs (an extension archive, a docs bundle) on a long-lived\nrelease."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: str) -> Self",
+              "doc": "The token to authenticate with — needs `contents: write`. Defaults to\n`GITHUB_TOKEN` in the environment, so it never has to reach argv."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "Use a different REST base (GitHub Enterprise Server)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release create`.",
+          "signature": "class GhReleaseCreateSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: str) -> Self",
+              "doc": "The tag to release (required); gh creates it when it does not exist."
+            },
+            {
+              "name": "files",
+              "kind": "method",
+              "optional": false,
+              "signature": "files(*paths: str) -> Self",
+              "doc": "Asset files to attach (positional); repeatable. gh reads a `#label`\nsuffix on a path as the asset's display label."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: str) -> Self",
+              "doc": "The release title (`--title`)."
+            },
+            {
+              "name": "notes",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes(text: str) -> Self",
+              "doc": "The release notes (`--notes`)."
+            },
+            {
+              "name": "notes_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes_file(path: str) -> Self",
+              "doc": "Read the notes from a file (`--notes-file`); `-` reads standard input."
+            },
+            {
+              "name": "generate_notes",
+              "kind": "method",
+              "optional": false,
+              "signature": "generate_notes() -> Self",
+              "doc": "Have GitHub write the title and notes (`--generate-notes`)."
+            },
+            {
+              "name": "notes_from_tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes_from_tag() -> Self",
+              "doc": "Take the notes from the tag's annotation (`--notes-from-tag`)."
+            },
+            {
+              "name": "notes_start_tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes_start_tag(name: str) -> Self",
+              "doc": "Generate notes starting from this tag (`--notes-start-tag`)."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft() -> Self",
+              "doc": "Save it as a draft rather than publishing (`--draft`)."
+            },
+            {
+              "name": "prerelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "prerelease() -> Self",
+              "doc": "Mark it a prerelease (`--prerelease`)."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest() -> Self",
+              "doc": "Mark it the latest release (`--latest`)."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(branch_or_sha: str) -> Self",
+              "doc": "The branch or commit to tag (`--target`)."
+            },
+            {
+              "name": "discussion_category",
+              "kind": "method",
+              "optional": false,
+              "signature": "discussion_category(name: str) -> Self",
+              "doc": "Open a discussion in this category (`--discussion-category`)."
+            },
+            {
+              "name": "verify_tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify_tag() -> Self",
+              "doc": "Abort unless the tag already exists on the remote (`--verify-tag`)."
+            },
+            {
+              "name": "fail_on_no_commits",
+              "kind": "method",
+              "optional": false,
+              "signature": "fail_on_no_commits() -> Self",
+              "doc": "Fail when there are no commits since the last release (`--fail-on-no-commits`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release delete`.",
+          "signature": "class GhReleaseDeleteSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: str) -> Self",
+              "doc": "The release to delete, by tag (required)."
+            },
+            {
+              "name": "cleanup_tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "cleanup_tag() -> Self",
+              "doc": "Delete the git tag as well (`--cleanup-tag`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation prompt (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseDownloadSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release download`.",
+          "signature": "class GhReleaseDownloadSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: str) -> Self",
+              "doc": "The release's tag; gh takes the latest release when it is omitted."
+            },
+            {
+              "name": "pattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "pattern(*globs: str) -> Self",
+              "doc": "Only assets matching this glob (`--pattern`); repeatable."
+            },
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: str) -> Self",
+              "doc": "The directory to download into (`--dir`)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: str) -> Self",
+              "doc": "Write a single asset to this file (`--output`); `-` writes standard output."
+            },
+            {
+              "name": "archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "archive(format: Literal['zip', 'tar.gz']) -> Self",
+              "doc": "Download the source archive instead of the assets (`--archive`)."
+            },
+            {
+              "name": "clobber",
+              "kind": "method",
+              "optional": false,
+              "signature": "clobber() -> Self",
+              "doc": "Overwrite files that already exist (`--clobber`)."
+            },
+            {
+              "name": "skip_existing",
+              "kind": "method",
+              "optional": false,
+              "signature": "skip_existing() -> Self",
+              "doc": "Leave files that already exist alone (`--skip-existing`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release edit`.",
+          "signature": "class GhReleaseEditSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: str) -> Self",
+              "doc": "The release to edit, by its current tag (required)."
+            },
+            {
+              "name": "new_tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "new_tag(name: str) -> Self",
+              "doc": "Move the release to a different tag (`--tag`)."
+            },
+            {
+              "name": "title",
+              "kind": "method",
+              "optional": false,
+              "signature": "title(text: str) -> Self",
+              "doc": "Set the title (`--title`)."
+            },
+            {
+              "name": "notes",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes(text: str) -> Self",
+              "doc": "Set the notes (`--notes`)."
+            },
+            {
+              "name": "notes_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "notes_file(path: str) -> Self",
+              "doc": "Read the notes from a file (`--notes-file`); `-` reads standard input."
+            },
+            {
+              "name": "draft",
+              "kind": "method",
+              "optional": false,
+              "signature": "draft() -> Self",
+              "doc": "Make it a draft (`--draft`)."
+            },
+            {
+              "name": "prerelease",
+              "kind": "method",
+              "optional": false,
+              "signature": "prerelease() -> Self",
+              "doc": "Mark it a prerelease (`--prerelease`)."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest() -> Self",
+              "doc": "Mark it the latest release (`--latest`)."
+            },
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(branch_or_sha: str) -> Self",
+              "doc": "Change the target branch or commit (`--target`)."
+            },
+            {
+              "name": "discussion_category",
+              "kind": "method",
+              "optional": false,
+              "signature": "discussion_category(name: str) -> Self",
+              "doc": "Open a discussion in this category when publishing (`--discussion-category`)."
+            },
+            {
+              "name": "verify_tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "verify_tag() -> Self",
+              "doc": "Abort unless the tag exists on the remote (`--verify-tag`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseEnsureSettings",
+          "kind": "class",
+          "doc": "Settings for ensuring a release exists.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them names only the release.",
+          "signature": "class GhReleaseEnsureSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: str) -> Self",
+              "doc": "The tag to release (required).\n\nIt should already exist. GitHub creates a missing tag on the default\nbranch rather than refusing, so a typo here publishes a tag as well as a\nrelease — which is why the caller that reconciles a backlog reads its tags\nfrom git rather than composing them."
+            },
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(text: str) -> Self",
+              "doc": "The release title (required), e.g. `Zuke Build v1.2.3`."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(text: str) -> Self",
+              "doc": "The release notes (required); pass `\"\"` for a release with none."
+            },
+            {
+              "name": "latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "latest(value: bool | None=None) -> Self",
+              "doc": "Move the repository's \"Latest release\" pointer onto this release.\n\nOff unless asked, which is the opposite of GitHub's own default — it\ntreats a new release as latest unless told otherwise. The default is\ninverted because the first thing this is used for is back-filling\nreleases a pipeline missed, and those are created oldest-first: taking\nGitHub's default would walk the pointer backwards through the backlog and\nleave it on whichever release was created last, which is the oldest one.\nNaming it explicitly costs the one caller that wants it a method call, and\ncosts the ones that do not want it nothing at all."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: str) -> Self",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: str) -> Self",
+              "doc": "The token to authenticate with — needs `contents: write`. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "The API root, for GitHub Enterprise."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseLatestSettings",
+          "kind": "class",
+          "doc": "Settings for marking a release as latest.\n\n`owner/repo` and the token fall back to the Actions environment, so a job\nthat already has them needs to name only the tag.",
+          "signature": "class GhReleaseLatestSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(value: str) -> Self",
+              "doc": "The tag whose release the pointer should name (required)."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: str) -> Self",
+              "doc": "`owner/repo`. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: str) -> Self",
+              "doc": "The token to authenticate with — needs `contents: write`. Defaults to `GITHUB_TOKEN`."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "The API root, for GitHub Enterprise."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release list`.",
+          "signature": "class GhReleaseListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            },
+            {
+              "name": "order",
+              "kind": "method",
+              "optional": false,
+              "signature": "order(direction: Literal['asc', 'desc']) -> Self",
+              "doc": "The order they come back in (`--order`): `asc` or `desc`."
+            },
+            {
+              "name": "exclude_drafts",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude_drafts() -> Self",
+              "doc": "Leave out drafts (`--exclude-drafts`)."
+            },
+            {
+              "name": "exclude_pre_releases",
+              "kind": "method",
+              "optional": false,
+              "signature": "exclude_pre_releases() -> Self",
+              "doc": "Leave out prereleases (`--exclude-pre-releases`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseUploadSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release upload`.",
+          "signature": "class GhReleaseUploadSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: str) -> Self",
+              "doc": "The release's tag (required)."
+            },
+            {
+              "name": "files",
+              "kind": "method",
+              "optional": false,
+              "signature": "files(*paths: str) -> Self",
+              "doc": "Asset files to attach (required); repeatable. gh reads a `#label` suffix\non a path as the asset's display label."
+            },
+            {
+              "name": "clobber",
+              "kind": "method",
+              "optional": false,
+              "signature": "clobber() -> Self",
+              "doc": "Replace an asset of the same name (`--clobber`)."
+            }
+          ]
+        },
+        {
+          "name": "GhReleaseViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh release view`.",
+          "signature": "class GhReleaseViewSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "tag",
+              "kind": "method",
+              "optional": false,
+              "signature": "tag(name: str) -> Self",
+              "doc": "The release's tag; gh shows the latest release when it is omitted."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoArchiveSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo archive` and `gh repo unarchive`.",
+          "signature": "class GhRepoArchiveSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository; gh acts on the current one otherwise."
+            },
+            {
+              "name": "unarchive",
+              "kind": "method",
+              "optional": false,
+              "signature": "unarchive() -> Self",
+              "doc": "Restore an archived repository instead — `gh repo unarchive`."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation gh otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoCloneSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo clone`.",
+          "signature": "class GhRepoCloneSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository, as `owner/name` or a URL (required)."
+            },
+            {
+              "name": "directory",
+              "kind": "method",
+              "optional": false,
+              "signature": "directory(path: str) -> Self",
+              "doc": "The directory to clone into; gh names it after the repository otherwise."
+            },
+            {
+              "name": "upstream_remote_name",
+              "kind": "method",
+              "optional": false,
+              "signature": "upstream_remote_name(name: str) -> Self",
+              "doc": "The remote name for a fork's parent (`--upstream-remote-name`)."
+            },
+            {
+              "name": "no_upstream",
+              "kind": "method",
+              "optional": false,
+              "signature": "no_upstream() -> Self",
+              "doc": "Do not add the upstream remote when cloning a fork (`--no-upstream`)."
+            },
+            {
+              "name": "git_args",
+              "kind": "method",
+              "optional": false,
+              "signature": "git_args(*args: str) -> Self",
+              "doc": "Flags for the underlying `git clone`, which gh takes after a `--`\nseparator — `.gitArgs(\"--depth=1\")` for a shallow clone."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoCommandSettings",
+          "kind": "class",
+          "doc": "Base for the `gh repo` commands that neither print JSON nor take `--repo`.\nGhRepoListSettings and GhRepoViewSettings do print JSON, so\nthey extend the read bases and call refuseRepoFlag themselves.",
+          "signature": "class GhRepoCommandSettings(GhCommandSettings)",
+          "deprecated": false
+        },
+        {
+          "name": "GhRepoCreateSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo create`.",
+          "signature": "class GhRepoCreateSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The repository's name, or `owner/name` to create it elsewhere (required)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: Literal['public', 'private', 'internal']) -> Self",
+              "doc": "How visible it is: `--public`, `--private`, or `--internal` (required)."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: str) -> Self",
+              "doc": "Its description (`--description`)."
+            },
+            {
+              "name": "homepage",
+              "kind": "method",
+              "optional": false,
+              "signature": "homepage(url: str) -> Self",
+              "doc": "Its homepage (`--homepage`)."
+            },
+            {
+              "name": "team",
+              "kind": "method",
+              "optional": false,
+              "signature": "team(name: str) -> Self",
+              "doc": "Grant an organization team access (`--team`)."
+            },
+            {
+              "name": "template",
+              "kind": "method",
+              "optional": false,
+              "signature": "template(slug: str) -> Self",
+              "doc": "Base it on a template repository (`--template`)."
+            },
+            {
+              "name": "gitignore",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitignore(name: str) -> Self",
+              "doc": "Start from a gitignore template (`--gitignore`)."
+            },
+            {
+              "name": "license",
+              "kind": "method",
+              "optional": false,
+              "signature": "license(name: str) -> Self",
+              "doc": "Add an open-source license (`--license`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(path: str) -> Self",
+              "doc": "Create it from a local repository (`--source`)."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote(name: str) -> Self",
+              "doc": "The remote name for the new repository (`--remote`)."
+            },
+            {
+              "name": "clone",
+              "kind": "method",
+              "optional": false,
+              "signature": "clone() -> Self",
+              "doc": "Clone it after creating it (`--clone`)."
+            },
+            {
+              "name": "push",
+              "kind": "method",
+              "optional": false,
+              "signature": "push() -> Self",
+              "doc": "Push the local commits to it (`--push`)."
+            },
+            {
+              "name": "add_readme",
+              "kind": "method",
+              "optional": false,
+              "signature": "add_readme() -> Self",
+              "doc": "Add a README (`--add-readme`)."
+            },
+            {
+              "name": "include_all_branches",
+              "kind": "method",
+              "optional": false,
+              "signature": "include_all_branches() -> Self",
+              "doc": "Copy every branch of the template, not just its default (`--include-all-branches`)."
+            },
+            {
+              "name": "disable_issues",
+              "kind": "method",
+              "optional": false,
+              "signature": "disable_issues() -> Self",
+              "doc": "Turn issues off (`--disable-issues`)."
+            },
+            {
+              "name": "disable_wiki",
+              "kind": "method",
+              "optional": false,
+              "signature": "disable_wiki() -> Self",
+              "doc": "Turn the wiki off (`--disable-wiki`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo delete`.",
+          "signature": "class GhRepoDeleteSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository to delete, as `owner/name` (required — see below)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation a delete otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoEditSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo edit`.",
+          "signature": "class GhRepoEditSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository to edit; gh edits the current one otherwise."
+            },
+            {
+              "name": "description",
+              "kind": "method",
+              "optional": false,
+              "signature": "description(text: str) -> Self",
+              "doc": "Set the description (`--description`)."
+            },
+            {
+              "name": "homepage",
+              "kind": "method",
+              "optional": false,
+              "signature": "homepage(url: str) -> Self",
+              "doc": "Set the homepage (`--homepage`)."
+            },
+            {
+              "name": "default_branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "default_branch(name: str) -> Self",
+              "doc": "Set the default branch (`--default-branch`)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: Literal['public', 'private', 'internal']) -> Self",
+              "doc": "Change the visibility (`--visibility`), which needs acceptVisibilityChangeConsequences."
+            },
+            {
+              "name": "accept_visibility_change_consequences",
+              "kind": "method",
+              "optional": false,
+              "signature": "accept_visibility_change_consequences() -> Self",
+              "doc": "Acknowledge what a visibility change does (`--accept-visibility-change-consequences`)."
+            },
+            {
+              "name": "add_topic",
+              "kind": "method",
+              "optional": false,
+              "signature": "add_topic(*names: str) -> Self",
+              "doc": "Add a topic (`--add-topic`); repeatable."
+            },
+            {
+              "name": "remove_topic",
+              "kind": "method",
+              "optional": false,
+              "signature": "remove_topic(*names: str) -> Self",
+              "doc": "Remove a topic (`--remove-topic`); repeatable."
+            },
+            {
+              "name": "enable_issues",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_issues(enabled: bool | None=None) -> Self",
+              "doc": "Turn issues on or off (`--enable-issues`)."
+            },
+            {
+              "name": "enable_wiki",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_wiki(enabled: bool | None=None) -> Self",
+              "doc": "Turn the wiki on or off (`--enable-wiki`)."
+            },
+            {
+              "name": "enable_projects",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_projects(enabled: bool | None=None) -> Self",
+              "doc": "Turn projects on or off (`--enable-projects`)."
+            },
+            {
+              "name": "enable_discussions",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_discussions(enabled: bool | None=None) -> Self",
+              "doc": "Turn discussions on or off (`--enable-discussions`)."
+            },
+            {
+              "name": "enable_auto_merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_auto_merge(enabled: bool | None=None) -> Self",
+              "doc": "Turn auto-merge on or off (`--enable-auto-merge`)."
+            },
+            {
+              "name": "enable_merge_commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_merge_commit(enabled: bool | None=None) -> Self",
+              "doc": "Allow or forbid merge commits (`--enable-merge-commit`)."
+            },
+            {
+              "name": "enable_squash_merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_squash_merge(enabled: bool | None=None) -> Self",
+              "doc": "Allow or forbid squash merges (`--enable-squash-merge`)."
+            },
+            {
+              "name": "enable_rebase_merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_rebase_merge(enabled: bool | None=None) -> Self",
+              "doc": "Allow or forbid rebase merges (`--enable-rebase-merge`)."
+            },
+            {
+              "name": "delete_branch_on_merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete_branch_on_merge(enabled: bool | None=None) -> Self",
+              "doc": "Delete the head branch after a merge, or stop (`--delete-branch-on-merge`)."
+            },
+            {
+              "name": "allow_forking",
+              "kind": "method",
+              "optional": false,
+              "signature": "allow_forking(enabled: bool | None=None) -> Self",
+              "doc": "Allow or forbid forking (`--allow-forking`)."
+            },
+            {
+              "name": "allow_update_branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "allow_update_branch(enabled: bool | None=None) -> Self",
+              "doc": "Allow or forbid updating a pull request branch (`--allow-update-branch`)."
+            },
+            {
+              "name": "enable_secret_scanning",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_secret_scanning(enabled: bool | None=None) -> Self",
+              "doc": "Turn secret scanning on or off (`--enable-secret-scanning`)."
+            },
+            {
+              "name": "enable_secret_scanning_push_protection",
+              "kind": "method",
+              "optional": false,
+              "signature": "enable_secret_scanning_push_protection(enabled: bool | None=None) -> Self",
+              "doc": "Turn push protection on or off (`--enable-secret-scanning-push-protection`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoForkSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo fork`.",
+          "signature": "class GhRepoForkSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository to fork; gh forks the current one otherwise."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "Create the fork in an organization (`--org`)."
+            },
+            {
+              "name": "fork_name",
+              "kind": "method",
+              "optional": false,
+              "signature": "fork_name(value: str) -> Self",
+              "doc": "Name the fork something else (`--fork-name`)."
+            },
+            {
+              "name": "remote_name",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote_name(value: str) -> Self",
+              "doc": "The remote name to add for the fork (`--remote-name`)."
+            },
+            {
+              "name": "clone",
+              "kind": "method",
+              "optional": false,
+              "signature": "clone() -> Self",
+              "doc": "Clone the fork after creating it (`--clone`)."
+            },
+            {
+              "name": "remote",
+              "kind": "method",
+              "optional": false,
+              "signature": "remote() -> Self",
+              "doc": "Add a git remote for the fork (`--remote`)."
+            },
+            {
+              "name": "default_branch_only",
+              "kind": "method",
+              "optional": false,
+              "signature": "default_branch_only() -> Self",
+              "doc": "Fork only the default branch (`--default-branch-only`)."
+            },
+            {
+              "name": "git_args",
+              "kind": "method",
+              "optional": false,
+              "signature": "git_args(*args: str) -> Self",
+              "doc": "Flags for the underlying `git clone`, passed after a `--` separator."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo list`.",
+          "signature": "class GhRepoListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "owner",
+              "kind": "method",
+              "optional": false,
+              "signature": "owner(login: str) -> Self",
+              "doc": "Whose repositories to list; gh lists your own when it is omitted."
+            },
+            {
+              "name": "language",
+              "kind": "method",
+              "optional": false,
+              "signature": "language(name: str) -> Self",
+              "doc": "Filter by primary language (`--language`)."
+            },
+            {
+              "name": "topic",
+              "kind": "method",
+              "optional": false,
+              "signature": "topic(*names: str) -> Self",
+              "doc": "Filter by topic (`--topic`); repeatable."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: Literal['public', 'private', 'internal']) -> Self",
+              "doc": "Filter by visibility (`--visibility`)."
+            },
+            {
+              "name": "archived",
+              "kind": "method",
+              "optional": false,
+              "signature": "archived() -> Self",
+              "doc": "Only archived repositories (`--archived`)."
+            },
+            {
+              "name": "no_archived",
+              "kind": "method",
+              "optional": false,
+              "signature": "no_archived() -> Self",
+              "doc": "Leave archived repositories out (`--no-archived`)."
+            },
+            {
+              "name": "fork",
+              "kind": "method",
+              "optional": false,
+              "signature": "fork() -> Self",
+              "doc": "Only forks (`--fork`)."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source() -> Self",
+              "doc": "Only repositories that are not forks (`--source`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 30."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoRenameSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo rename`.",
+          "signature": "class GhRepoRenameSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "new_name",
+              "kind": "method",
+              "optional": false,
+              "signature": "new_name(value: str) -> Self",
+              "doc": "The repository's new name, without the owner (required)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation a rename otherwise prompts for (`--yes`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoSetDefaultSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo set-default`.",
+          "signature": "class GhRepoSetDefaultSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug_or_remote: str) -> Self",
+              "doc": "The repository to make the default, as `owner/name` or a remote name."
+            },
+            {
+              "name": "unset",
+              "kind": "method",
+              "optional": false,
+              "signature": "unset() -> Self",
+              "doc": "Forget the current default instead (`--unset`)."
+            },
+            {
+              "name": "view",
+              "kind": "method",
+              "optional": false,
+              "signature": "view() -> Self",
+              "doc": "Report the current default instead (`--view`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoSyncSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo sync`.",
+          "signature": "class GhRepoSyncSettings(GhRepoCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "destination",
+              "kind": "method",
+              "optional": false,
+              "signature": "destination(slug: str) -> Self",
+              "doc": "The repository to update; gh syncs the local one otherwise."
+            },
+            {
+              "name": "source",
+              "kind": "method",
+              "optional": false,
+              "signature": "source(slug: str) -> Self",
+              "doc": "Where to sync from (`--source`); gh uses the fork's parent otherwise."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: str) -> Self",
+              "doc": "The branch to sync (`--branch`); gh uses the default branch otherwise."
+            },
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force() -> Self",
+              "doc": "Hard-reset the destination branch onto the source (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRepoViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh repo view`.",
+          "signature": "class GhRepoViewSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "repository",
+              "kind": "method",
+              "optional": false,
+              "signature": "repository(slug: str) -> Self",
+              "doc": "The repository, as `owner/name`; gh uses the current one otherwise."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: str) -> Self",
+              "doc": "View a particular branch (`--branch`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunCancelSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run cancel`.",
+          "signature": "class GhRunCancelSettings(GhRunTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "force",
+              "kind": "method",
+              "optional": false,
+              "signature": "force() -> Self",
+              "doc": "Cancel a run the ordinary request will not stop (`--force`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run delete`.",
+          "signature": "class GhRunDeleteSettings(GhRunTargetSettings)",
+          "deprecated": false
+        },
+        {
+          "name": "GhRunDownloadSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run download`.",
+          "signature": "class GhRunDownloadSettings(GhRunTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(*names: str) -> Self",
+              "doc": "Only artifacts with this exact name (`--name`); repeatable."
+            },
+            {
+              "name": "pattern",
+              "kind": "method",
+              "optional": false,
+              "signature": "pattern(*globs: str) -> Self",
+              "doc": "Only artifacts matching this glob (`--pattern`); repeatable."
+            },
+            {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(path: str) -> Self",
+              "doc": "The directory to download into (`--dir`); gh's default is the cwd."
+            }
+          ]
+        },
+        {
+          "name": "GhRunListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run list`.",
+          "signature": "class GhRunListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all() -> Self",
+              "doc": "Include runs of disabled workflows (`--all`)."
+            },
+            {
+              "name": "branch",
+              "kind": "method",
+              "optional": false,
+              "signature": "branch(name: str) -> Self",
+              "doc": "Filter by branch (`--branch`)."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(sha: str) -> Self",
+              "doc": "Filter by the commit that triggered them (`--commit`)."
+            },
+            {
+              "name": "created",
+              "kind": "method",
+              "optional": false,
+              "signature": "created(query: str) -> Self",
+              "doc": "Filter by creation date (`--created`), in GitHub's date-query syntax."
+            },
+            {
+              "name": "event",
+              "kind": "method",
+              "optional": false,
+              "signature": "event(name: str) -> Self",
+              "doc": "Filter by the event that triggered them (`--event`)."
+            },
+            {
+              "name": "status",
+              "kind": "method",
+              "optional": false,
+              "signature": "status(value: Literal['queued', 'completed', 'in_progress', 'requested', 'waiting', 'pending', 'action_required', 'cancelled', 'failure', 'neutral', 'skipped', 'stale', 'startup_failure', 'success', 'timed_out']) -> Self",
+              "doc": "Filter by status or conclusion (`--status`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user(login: str) -> Self",
+              "doc": "Filter by the user who triggered them (`--user`)."
+            },
+            {
+              "name": "workflow",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflow(name_or_id: str) -> Self",
+              "doc": "Filter by workflow, by name, id, or file name (`--workflow`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 20."
+            }
+          ]
+        },
+        {
+          "name": "GhRunRerunSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run rerun`.",
+          "signature": "class GhRunRerunSettings(GhRunTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "failed",
+              "kind": "method",
+              "optional": false,
+              "signature": "failed() -> Self",
+              "doc": "Rerun only the failed jobs and their dependencies (`--failed`)."
+            },
+            {
+              "name": "job",
+              "kind": "method",
+              "optional": false,
+              "signature": "job(job_id: str | float) -> Self",
+              "doc": "Rerun one job and its dependencies (`--job`), by job id."
+            },
+            {
+              "name": "debug",
+              "kind": "method",
+              "optional": false,
+              "signature": "debug() -> Self",
+              "doc": "Rerun with debug logging enabled (`--debug`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunTargetSettings",
+          "kind": "class",
+          "doc": "Base for the `run` commands that name one run. gh prompts for a run when the\noperand is omitted, so unlike a pull request there is no useful default.",
+          "signature": "class GhRunTargetSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(run_id: str | float) -> Self",
+              "doc": "The run — its id (required)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run view`.",
+          "signature": "class GhRunViewSettings(GhWebReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "selector",
+              "kind": "method",
+              "optional": false,
+              "signature": "selector(run_id: str | float) -> Self",
+              "doc": "The run — its id; gh shows a picker without one."
+            },
+            {
+              "name": "attempt",
+              "kind": "method",
+              "optional": false,
+              "signature": "attempt(number: float) -> Self",
+              "doc": "View an earlier attempt (`--attempt`)."
+            },
+            {
+              "name": "job",
+              "kind": "method",
+              "optional": false,
+              "signature": "job(job_id: str | float) -> Self",
+              "doc": "View one job of the run (`--job`), by job id."
+            },
+            {
+              "name": "log",
+              "kind": "method",
+              "optional": false,
+              "signature": "log() -> Self",
+              "doc": "Print the full log (`--log`)."
+            },
+            {
+              "name": "log_failed",
+              "kind": "method",
+              "optional": false,
+              "signature": "log_failed() -> Self",
+              "doc": "Print only the failed steps' log (`--log-failed`)."
+            },
+            {
+              "name": "exit_status",
+              "kind": "method",
+              "optional": false,
+              "signature": "exit_status() -> Self",
+              "doc": "Exit non-zero when the run failed (`--exit-status`)."
+            },
+            {
+              "name": "verbose",
+              "kind": "method",
+              "optional": false,
+              "signature": "verbose() -> Self",
+              "doc": "Include the individual job steps (`--verbose`)."
+            }
+          ]
+        },
+        {
+          "name": "GhRunWatchSettings",
+          "kind": "class",
+          "doc": "Settings for `gh run watch`.",
+          "signature": "class GhRunWatchSettings(GhRunTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "compact",
+              "kind": "method",
+              "optional": false,
+              "signature": "compact() -> Self",
+              "doc": "Report only the relevant and failed steps (`--compact`)."
+            },
+            {
+              "name": "exit_status",
+              "kind": "method",
+              "optional": false,
+              "signature": "exit_status() -> Self",
+              "doc": "Exit non-zero when the run fails (`--exit-status`)."
+            },
+            {
+              "name": "interval",
+              "kind": "method",
+              "optional": false,
+              "signature": "interval(seconds: float) -> Self",
+              "doc": "Seconds between refreshes (`--interval`); gh's default is 3."
+            }
+          ]
+        },
+        {
+          "name": "GhSarifSettings",
+          "kind": "class",
+          "doc": "Settings for GhSarifApi.uploadSarif.",
+          "signature": "class GhSarifSettings(Settings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(path: str) -> Self",
+              "doc": "The SARIF report to upload (required)."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(slug: str) -> Self",
+              "doc": "The `owner/repo` to upload for. Defaults to `GITHUB_REPOSITORY`."
+            },
+            {
+              "name": "commit",
+              "kind": "method",
+              "optional": false,
+              "signature": "commit(sha: str) -> Self",
+              "doc": "The commit SHA the results describe. Defaults to `GITHUB_SHA`."
+            },
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(ref: str) -> Self",
+              "doc": "The full ref the results describe (`refs/heads/main`). Defaults to `GITHUB_REF`."
+            },
+            {
+              "name": "token",
+              "kind": "method",
+              "optional": false,
+              "signature": "token(value: str) -> Self",
+              "doc": "The token to authenticate with — needs `security-events: write`. Defaults to\n`GITHUB_TOKEN` in the environment, so it never has to reach argv."
+            },
+            {
+              "name": "checkout_uri",
+              "kind": "method",
+              "optional": false,
+              "signature": "checkout_uri(uri: str) -> Self",
+              "doc": "The URI of the checkout the results are relative to (`file:///…`)."
+            },
+            {
+              "name": "base_url",
+              "kind": "method",
+              "optional": false,
+              "signature": "base_url(url: str) -> Self",
+              "doc": "Use a different REST base (GitHub Enterprise Server)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh secret delete`.",
+          "signature": "class GhSecretDeleteSettings(GhSecretScopeSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The secret's name (required)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh secret list`.",
+          "signature": "class GhSecretListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: Literal['actions', 'agents', 'codespaces', 'dependabot']) -> Self",
+              "doc": "Which application's secrets to list (`--app`)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "List an organization's secrets (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "List an environment's secrets (`--env`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user() -> Self",
+              "doc": "List your own secrets (`--user`)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretScopeSettings",
+          "kind": "class",
+          "doc": "Base for the `secret` commands that name one scope: the application, and\nwhether the secret belongs to a repository, an organization, an\nenvironment, or the authenticated user.",
+          "signature": "class GhSecretScopeSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "app",
+              "kind": "method",
+              "optional": false,
+              "signature": "app(name: Literal['actions', 'agents', 'codespaces', 'dependabot']) -> Self",
+              "doc": "Which application reads it (`--app`); gh's default is `actions`."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "Scope it to an organization (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "Scope it to a deployment environment (`--env`)."
+            },
+            {
+              "name": "user",
+              "kind": "method",
+              "optional": false,
+              "signature": "user() -> Self",
+              "doc": "Scope it to the authenticated user (`--user`)."
+            },
+            {
+              "name": "repositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositories(*names: str) -> Self",
+              "doc": "Share an organization secret with these repositories (`--repos`)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: Literal['all', 'private', 'selected']) -> Self",
+              "doc": "The visibility of an organization secret (`--visibility`)."
+            }
+          ]
+        },
+        {
+          "name": "GhSecretSetSettings",
+          "kind": "class",
+          "doc": "Settings for `gh secret set`.",
+          "signature": "class GhSecretSetSettings(GhSecretScopeSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The secret's name (required)."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(value: str) -> Self",
+              "doc": "The secret's value (`--body`). Omit it and gh reads standard input, which\nkeeps the value out of the process's arguments — see the module docs."
+            },
+            {
+              "name": "env_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "env_file(path: str) -> Self",
+              "doc": "Read names and values from a dotenv file (`--env-file`)."
+            },
+            {
+              "name": "no_store",
+              "kind": "method",
+              "optional": false,
+              "signature": "no_store() -> Self",
+              "doc": "Print the encrypted value instead of storing it (`--no-store`)."
+            },
+            {
+              "name": "no_repos_selected",
+              "kind": "method",
+              "optional": false,
+              "signature": "no_repos_selected() -> Self",
+              "doc": "Share the organization secret with no repositories (`--no-repos-selected`)."
+            }
+          ]
+        },
+        {
           "name": "GhSettings",
           "kind": "class",
           "doc": "Settings for a `gh` invocation.",
@@ -21576,6 +24419,531 @@
           "deprecated": false,
           "members": [
             {
+              "name": "app_token",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async app_token(ctx: ServiceContext, configure: Callable[[GhAppTokenSettings], GhAppTokenSettings] | None=None) -> object",
+              "doc": "Mint a GitHub App installation token, scoped to the repositories and\npermissions the settings request. The returned token is registered with the\nActions log masker, so it is safe to pass onward through `env`."
+            },
+            {
+              "name": "app_token_source",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async app_token_source(ctx: ServiceContext, configure: Callable[[GhAppTokenSourceSettings], GhAppTokenSourceSettings] | None=None) -> object",
+              "doc": "A token **source** for the App: a function that mints the installation\ntoken the first time it is called and returns the same token after, or\nyields `GITHUB_TOKEN` when the App is not configured — the credential a\nbuild hands to an AI reviewer's `.commentToken(...)` so its reviews post\nas the App where it is installed and as `github-actions[bot]` everywhere\nelse. Nothing runs until the first call.\n\n``ts\nappId = parameter(\"GitHub App id\").env(\"REVIEW_APP_ID\");\nappKey = parameter(\"GitHub App key\").secret().env(\"REVIEW_APP_KEY\");\nbotToken = GhTasks.appTokenSource((s) => s.app(this.appId, this.appKey));\n``"
+            },
+            {
+              "name": "upload_sarif",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async upload_sarif(ctx: ServiceContext, configure: Callable[[GhSarifSettings], GhSarifSettings] | None=None) -> object",
+              "doc": "Upload a SARIF report to GitHub code scanning, so its findings land in the\nrepository's Security tab. Needs a token with `security-events: write`."
+            },
+            {
+              "name": "upload_release_asset",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async upload_release_asset(ctx: ServiceContext, configure: Callable[[GhReleaseAssetSettings], GhReleaseAssetSettings] | None=None) -> object",
+              "doc": "Attach a file to a GitHub release — the latest release by default, or the\none named by `.tag(...)`. Idempotent: an asset the release already\ncarries under the same name is kept as-is (unless `.refresh()` asks for\none with different bytes to be replaced), and a repository with no\nreleases resolves to `state: \"no-release\"` rather than throwing. Needs a\ntoken with `contents: write`."
+            },
+            {
+              "name": "mark_release_latest",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async mark_release_latest(ctx: ServiceContext, configure: Callable[[GhReleaseLatestSettings], GhReleaseLatestSettings] | None=None) -> object",
+              "doc": "Point the repository's \"Latest release\" at the release for `.tag(...)`.\n\nIdempotent, and quiet about it: a pointer already on the tag's release is\nleft untouched rather than re-written, so an unattended pipeline can run\nthis unconditionally without churning the release's audit history. A tag\nwith no release resolves to `state: \"no-release\"` rather than throwing —\nthe release may be cut by a later, human step — while a tag that does not\nexist at all is an error, because the caller named it. Needs a token with\n`contents: write`."
+            },
+            {
+              "name": "ensure_release",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async ensure_release(ctx: ServiceContext, configure: Callable[[GhReleaseEnsureSettings], GhReleaseEnsureSettings] | None=None) -> object",
+              "doc": "Publish a release for `.tag(...)` unless it already has one.\n\nReads the tag's release first and returns `state: \"exists\"` when there is\none, writing nothing — so an unattended pipeline can run this on every\npush without overwriting notes a maintainer wrote by hand. Needs a token\nwith `contents: write`."
+            },
+            {
+              "name": "create_or_update_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async create_or_update_file(ctx: ServiceContext, configure: Callable[[GhContentsSettings], GhContentsSettings] | None=None) -> object",
+              "doc": "Write one file through the contents API, creating it or replacing its\ncontent — or, when it already holds exactly this content, writing nothing\nand reporting `unchanged`.\n\nA write that loses a race (the file changed between the read and the\nwrite) is read once more: if the file now holds this content the result is\n`unchanged`, otherwise the conflict is raised rather than overwritten."
+            },
+            {
+              "name": "pr_create",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_create(ctx: ServiceContext, configure: Callable[[GhPrCreateSettings], GhPrCreateSettings] | None=None) -> ExecResult",
+              "doc": "Open a pull request: `gh pr create`. Needs the `gh` binary and its auth;\n\"./pull_request.ts\".GhPullRequestApi.pullRequest is the REST path,\nwhich needs a token instead."
+            },
+            {
+              "name": "pr_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_list(ctx: ServiceContext, configure: Callable[[GhPrListSettings], GhPrListSettings] | None=None) -> ExecResult",
+              "doc": "List pull requests: `gh pr list`."
+            },
+            {
+              "name": "pr_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_list_entries(ctx: ServiceContext, configure: Callable[[GhPrListSettings], GhPrListSettings] | None=None) -> object",
+              "doc": "The pull requests as parsed GhPullRequestEntry values. The\n`--json` field set is pinned, since gh requires one by name."
+            },
+            {
+              "name": "pr_view",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_view(ctx: ServiceContext, configure: Callable[[GhPrViewSettings], GhPrViewSettings] | None=None) -> ExecResult",
+              "doc": "Show a pull request: `gh pr view`."
+            },
+            {
+              "name": "pr_checks",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_checks(ctx: ServiceContext, configure: Callable[[GhPrChecksSettings], GhPrChecksSettings] | None=None) -> ExecResult",
+              "doc": "Report a pull request's checks: `gh pr checks`."
+            },
+            {
+              "name": "pr_merge",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_merge(ctx: ServiceContext, configure: Callable[[GhPrMergeSettings], GhPrMergeSettings] | None=None) -> ExecResult",
+              "doc": "Merge a pull request: `gh pr merge`."
+            },
+            {
+              "name": "pr_comment",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_comment(ctx: ServiceContext, configure: Callable[[GhPrCommentSettings], GhPrCommentSettings] | None=None) -> ExecResult",
+              "doc": "Comment on a pull request: `gh pr comment`."
+            },
+            {
+              "name": "pr_edit",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_edit(ctx: ServiceContext, configure: Callable[[GhPrEditSettings], GhPrEditSettings] | None=None) -> ExecResult",
+              "doc": "Change a pull request's metadata: `gh pr edit`."
+            },
+            {
+              "name": "pr_close",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async pr_close(ctx: ServiceContext, configure: Callable[[GhPrCloseSettings], GhPrCloseSettings] | None=None) -> ExecResult",
+              "doc": "Close a pull request: `gh pr close`."
+            },
+            {
+              "name": "issue_create",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async issue_create(ctx: ServiceContext, configure: Callable[[GhIssueCreateSettings], GhIssueCreateSettings] | None=None) -> ExecResult",
+              "doc": "Open an issue: `gh issue create`."
+            },
+            {
+              "name": "issue_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async issue_list(ctx: ServiceContext, configure: Callable[[GhIssueListSettings], GhIssueListSettings] | None=None) -> ExecResult",
+              "doc": "List issues: `gh issue list`."
+            },
+            {
+              "name": "issue_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async issue_list_entries(ctx: ServiceContext, configure: Callable[[GhIssueListSettings], GhIssueListSettings] | None=None) -> object",
+              "doc": "The issues as parsed GhIssueEntry values. The `--json` field set\nis pinned, since gh requires one by name."
+            },
+            {
+              "name": "issue_view",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async issue_view(ctx: ServiceContext, configure: Callable[[GhIssueViewSettings], GhIssueViewSettings] | None=None) -> ExecResult",
+              "doc": "Show an issue: `gh issue view`."
+            },
+            {
+              "name": "issue_comment",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async issue_comment(ctx: ServiceContext, configure: Callable[[GhIssueCommentSettings], GhIssueCommentSettings] | None=None) -> ExecResult",
+              "doc": "Comment on an issue: `gh issue comment`."
+            },
+            {
+              "name": "issue_close",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async issue_close(ctx: ServiceContext, configure: Callable[[GhIssueCloseSettings], GhIssueCloseSettings] | None=None) -> ExecResult",
+              "doc": "Close an issue: `gh issue close`."
+            },
+            {
+              "name": "release_create",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_create(ctx: ServiceContext, configure: Callable[[GhReleaseCreateSettings], GhReleaseCreateSettings] | None=None) -> ExecResult",
+              "doc": "Publish a release: `gh release create`."
+            },
+            {
+              "name": "release_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_list(ctx: ServiceContext, configure: Callable[[GhReleaseListSettings], GhReleaseListSettings] | None=None) -> ExecResult",
+              "doc": "List releases: `gh release list`."
+            },
+            {
+              "name": "release_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_list_entries(ctx: ServiceContext, configure: Callable[[GhReleaseListSettings], GhReleaseListSettings] | None=None) -> object",
+              "doc": "The releases as parsed GhReleaseEntry values. The `--json` field\nset is pinned, since gh requires one by name."
+            },
+            {
+              "name": "release_view",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_view(ctx: ServiceContext, configure: Callable[[GhReleaseViewSettings], GhReleaseViewSettings] | None=None) -> ExecResult",
+              "doc": "Show a release: `gh release view`."
+            },
+            {
+              "name": "release_upload",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_upload(ctx: ServiceContext, configure: Callable[[GhReleaseUploadSettings], GhReleaseUploadSettings] | None=None) -> ExecResult",
+              "doc": "Attach assets to a release: `gh release upload`. Needs the `gh` binary;\n\"./release_asset.ts\".GhReleaseAssetApi.uploadReleaseAsset is the\nREST path, which needs a token instead."
+            },
+            {
+              "name": "release_download",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_download(ctx: ServiceContext, configure: Callable[[GhReleaseDownloadSettings], GhReleaseDownloadSettings] | None=None) -> ExecResult",
+              "doc": "Download a release's assets: `gh release download`."
+            },
+            {
+              "name": "release_edit",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_edit(ctx: ServiceContext, configure: Callable[[GhReleaseEditSettings], GhReleaseEditSettings] | None=None) -> ExecResult",
+              "doc": "Change a release: `gh release edit`."
+            },
+            {
+              "name": "release_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async release_delete(ctx: ServiceContext, configure: Callable[[GhReleaseDeleteSettings], GhReleaseDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Remove a release: `gh release delete`."
+            },
+            {
+              "name": "run_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_list(ctx: ServiceContext, configure: Callable[[GhRunListSettings], GhRunListSettings] | None=None) -> ExecResult",
+              "doc": "List workflow runs: `gh run list`."
+            },
+            {
+              "name": "run_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_list_entries(ctx: ServiceContext, configure: Callable[[GhRunListSettings], GhRunListSettings] | None=None) -> object",
+              "doc": "The runs as parsed GhRunEntry values — the reader a build branches\non. The `--json` field set is pinned, since gh requires one by name."
+            },
+            {
+              "name": "run_view",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_view(ctx: ServiceContext, configure: Callable[[GhRunViewSettings], GhRunViewSettings] | None=None) -> ExecResult",
+              "doc": "Show a run: `gh run view`."
+            },
+            {
+              "name": "run_rerun",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_rerun(ctx: ServiceContext, configure: Callable[[GhRunRerunSettings], GhRunRerunSettings] | None=None) -> ExecResult",
+              "doc": "Rerun a run, or its failed jobs: `gh run rerun`."
+            },
+            {
+              "name": "run_cancel",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_cancel(ctx: ServiceContext, configure: Callable[[GhRunCancelSettings], GhRunCancelSettings] | None=None) -> ExecResult",
+              "doc": "Stop a run: `gh run cancel`."
+            },
+            {
+              "name": "run_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_delete(ctx: ServiceContext, configure: Callable[[GhRunDeleteSettings], GhRunDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Remove a run: `gh run delete`."
+            },
+            {
+              "name": "run_download",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_download(ctx: ServiceContext, configure: Callable[[GhRunDownloadSettings], GhRunDownloadSettings] | None=None) -> ExecResult",
+              "doc": "Fetch a run's artifacts: `gh run download`."
+            },
+            {
+              "name": "run_watch",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async run_watch(ctx: ServiceContext, configure: Callable[[GhRunWatchSettings], GhRunWatchSettings] | None=None) -> ExecResult",
+              "doc": "Follow a run until it finishes: `gh run watch`. A target that watches\nblocks until Actions is done, so pair it with `.killAfter(...)` unless\nthe wait is the point."
+            },
+            {
+              "name": "workflow_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async workflow_list(ctx: ServiceContext, configure: Callable[[GhWorkflowListSettings], GhWorkflowListSettings] | None=None) -> ExecResult",
+              "doc": "List workflows: `gh workflow list`."
+            },
+            {
+              "name": "workflow_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async workflow_list_entries(ctx: ServiceContext, configure: Callable[[GhWorkflowListSettings], GhWorkflowListSettings] | None=None) -> object",
+              "doc": "The workflows as parsed GhWorkflowEntry values. The `--json` field\nset is pinned, since gh requires one by name."
+            },
+            {
+              "name": "workflow_view",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async workflow_view(ctx: ServiceContext, configure: Callable[[GhWorkflowViewSettings], GhWorkflowViewSettings] | None=None) -> ExecResult",
+              "doc": "Show a workflow, or its YAML: `gh workflow view`."
+            },
+            {
+              "name": "workflow_run",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async workflow_run(ctx: ServiceContext, configure: Callable[[GhWorkflowRunSettings], GhWorkflowRunSettings] | None=None) -> ExecResult",
+              "doc": "Dispatch a workflow: `gh workflow run`. This returns once the dispatch is\naccepted; \"./workflow.ts\".githubWorkflow is the wait trigger that\nsuspends the build until the run finishes."
+            },
+            {
+              "name": "workflow_enable",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async workflow_enable(ctx: ServiceContext, configure: Callable[[GhWorkflowEnableSettings], GhWorkflowEnableSettings] | None=None) -> ExecResult",
+              "doc": "Turn a workflow on: `gh workflow enable`."
+            },
+            {
+              "name": "workflow_disable",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async workflow_disable(ctx: ServiceContext, configure: Callable[[GhWorkflowDisableSettings], GhWorkflowDisableSettings] | None=None) -> ExecResult",
+              "doc": "Turn a workflow off: `gh workflow disable`."
+            },
+            {
+              "name": "secret_set",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async secret_set(ctx: ServiceContext, configure: Callable[[GhSecretSetSettings], GhSecretSetSettings] | None=None) -> ExecResult",
+              "doc": "Store a secret: `gh secret set`. A value passed as `.body(...)` becomes an\nargv entry and is readable in a process listing — see the module docs of\n\"./secret.ts\".GhSecretSetSettings for the alternatives."
+            },
+            {
+              "name": "secret_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async secret_list(ctx: ServiceContext, configure: Callable[[GhSecretListSettings], GhSecretListSettings] | None=None) -> ExecResult",
+              "doc": "List the secrets' names: `gh secret list`."
+            },
+            {
+              "name": "secret_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async secret_list_entries(ctx: ServiceContext, configure: Callable[[GhSecretListSettings], GhSecretListSettings] | None=None) -> object",
+              "doc": "The secrets as parsed GhSecretEntry values — names and metadata;\nGitHub never returns a secret's value."
+            },
+            {
+              "name": "secret_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async secret_delete(ctx: ServiceContext, configure: Callable[[GhSecretDeleteSettings], GhSecretDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Remove a secret: `gh secret delete`."
+            },
+            {
+              "name": "variable_set",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async variable_set(ctx: ServiceContext, configure: Callable[[GhVariableSetSettings], GhVariableSetSettings] | None=None) -> ExecResult",
+              "doc": "Store a variable: `gh variable set`."
+            },
+            {
+              "name": "variable_get",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async variable_get(ctx: ServiceContext, configure: Callable[[GhVariableGetSettings], GhVariableGetSettings] | None=None) -> ExecResult",
+              "doc": "Read a variable: `gh variable get`."
+            },
+            {
+              "name": "variable_value",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async variable_value(ctx: ServiceContext, configure: Callable[[GhVariableGetSettings], GhVariableGetSettings] | None=None) -> object",
+              "doc": "A variable's value, with the trailing newline gh prints removed."
+            },
+            {
+              "name": "variable_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async variable_list(ctx: ServiceContext, configure: Callable[[GhVariableListSettings], GhVariableListSettings] | None=None) -> ExecResult",
+              "doc": "List variables: `gh variable list`."
+            },
+            {
+              "name": "variable_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async variable_list_entries(ctx: ServiceContext, configure: Callable[[GhVariableListSettings], GhVariableListSettings] | None=None) -> object",
+              "doc": "The variables as parsed GhVariableEntry values, values included —\na variable is not a secret."
+            },
+            {
+              "name": "variable_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async variable_delete(ctx: ServiceContext, configure: Callable[[GhVariableDeleteSettings], GhVariableDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Remove a variable: `gh variable delete`."
+            },
+            {
+              "name": "cache_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async cache_list(ctx: ServiceContext, configure: Callable[[GhCacheListSettings], GhCacheListSettings] | None=None) -> ExecResult",
+              "doc": "List the Actions caches: `gh cache list`."
+            },
+            {
+              "name": "cache_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async cache_list_entries(ctx: ServiceContext, configure: Callable[[GhCacheListSettings], GhCacheListSettings] | None=None) -> object",
+              "doc": "The caches as parsed GhCacheEntry values — what a build reads to\ndecide which ones to reclaim."
+            },
+            {
+              "name": "cache_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async cache_delete(ctx: ServiceContext, configure: Callable[[GhCacheDeleteSettings], GhCacheDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Reclaim caches: `gh cache delete`."
+            },
+            {
+              "name": "repo_clone",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_clone(ctx: ServiceContext, configure: Callable[[GhRepoCloneSettings], GhRepoCloneSettings] | None=None) -> ExecResult",
+              "doc": "Clone a repository: `gh repo clone`."
+            },
+            {
+              "name": "repo_create",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_create(ctx: ServiceContext, configure: Callable[[GhRepoCreateSettings], GhRepoCreateSettings] | None=None) -> ExecResult",
+              "doc": "Create a repository: `gh repo create`."
+            },
+            {
+              "name": "repo_view",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_view(ctx: ServiceContext, configure: Callable[[GhRepoViewSettings], GhRepoViewSettings] | None=None) -> ExecResult",
+              "doc": "Show a repository: `gh repo view`."
+            },
+            {
+              "name": "repo_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_list(ctx: ServiceContext, configure: Callable[[GhRepoListSettings], GhRepoListSettings] | None=None) -> ExecResult",
+              "doc": "List repositories: `gh repo list`."
+            },
+            {
+              "name": "repo_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_list_entries(ctx: ServiceContext, configure: Callable[[GhRepoListSettings], GhRepoListSettings] | None=None) -> object",
+              "doc": "The repositories as parsed GhRepositoryEntry values. The `--json`\nfield set is pinned, since gh requires one by name."
+            },
+            {
+              "name": "repo_fork",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_fork(ctx: ServiceContext, configure: Callable[[GhRepoForkSettings], GhRepoForkSettings] | None=None) -> ExecResult",
+              "doc": "Fork a repository: `gh repo fork`."
+            },
+            {
+              "name": "repo_sync",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_sync(ctx: ServiceContext, configure: Callable[[GhRepoSyncSettings], GhRepoSyncSettings] | None=None) -> ExecResult",
+              "doc": "Bring a fork up to date: `gh repo sync`."
+            },
+            {
+              "name": "repo_edit",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_edit(ctx: ServiceContext, configure: Callable[[GhRepoEditSettings], GhRepoEditSettings] | None=None) -> ExecResult",
+              "doc": "Change a repository's settings: `gh repo edit`."
+            },
+            {
+              "name": "repo_rename",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_rename(ctx: ServiceContext, configure: Callable[[GhRepoRenameSettings], GhRepoRenameSettings] | None=None) -> ExecResult",
+              "doc": "Rename a repository: `gh repo rename`."
+            },
+            {
+              "name": "repo_archive",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_archive(ctx: ServiceContext, configure: Callable[[GhRepoArchiveSettings], GhRepoArchiveSettings] | None=None) -> ExecResult",
+              "doc": "Archive or unarchive a repository: `gh repo archive`/`unarchive`."
+            },
+            {
+              "name": "repo_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_delete(ctx: ServiceContext, configure: Callable[[GhRepoDeleteSettings], GhRepoDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Delete a repository: `gh repo delete`. Needs the `delete_repo` scope."
+            },
+            {
+              "name": "repo_set_default",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async repo_set_default(ctx: ServiceContext, configure: Callable[[GhRepoSetDefaultSettings], GhRepoSetDefaultSettings] | None=None) -> ExecResult",
+              "doc": "Choose the repository gh acts on by default: `gh repo set-default`."
+            },
+            {
+              "name": "label_list",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async label_list(ctx: ServiceContext, configure: Callable[[GhLabelListSettings], GhLabelListSettings] | None=None) -> ExecResult",
+              "doc": "List labels: `gh label list`."
+            },
+            {
+              "name": "label_list_entries",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async label_list_entries(ctx: ServiceContext, configure: Callable[[GhLabelListSettings], GhLabelListSettings] | None=None) -> object",
+              "doc": "The labels as parsed GhLabelEntry values. The `--json` field set\nis pinned, since gh requires one by name."
+            },
+            {
+              "name": "label_create",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async label_create(ctx: ServiceContext, configure: Callable[[GhLabelCreateSettings], GhLabelCreateSettings] | None=None) -> ExecResult",
+              "doc": "Add a label: `gh label create`."
+            },
+            {
+              "name": "label_edit",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async label_edit(ctx: ServiceContext, configure: Callable[[GhLabelEditSettings], GhLabelEditSettings] | None=None) -> ExecResult",
+              "doc": "Change a label: `gh label edit`."
+            },
+            {
+              "name": "label_delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async label_delete(ctx: ServiceContext, configure: Callable[[GhLabelDeleteSettings], GhLabelDeleteSettings] | None=None) -> ExecResult",
+              "doc": "Remove a label: `gh label delete`."
+            },
+            {
+              "name": "label_clone",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async label_clone(ctx: ServiceContext, configure: Callable[[GhLabelCloneSettings], GhLabelCloneSettings] | None=None) -> ExecResult",
+              "doc": "Copy another repository's labels: `gh label clone`."
+            },
+            {
               "name": "run",
               "kind": "method",
               "optional": false,
@@ -21588,6 +24956,283 @@
               "optional": false,
               "signature": "static async api(ctx: ServiceContext, endpoint: str, configure: Callable[[GhApiSettings], GhApiSettings] | None=None) -> ExecResult",
               "doc": "Call a REST endpoint through `gh api`, with the user's `gh` credentials —\nfor operations that have no CLI verb, e.g. starring a repository:\n`GhTasks.api(\"user/starred/zuke-build/zuke\", (s) => s.method(\"PUT\"))`."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableDeleteSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable delete`.",
+          "signature": "class GhVariableDeleteSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The variable's name (required)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "Delete an organization variable (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "Delete an environment variable (`--env`)."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableGetSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable get`.",
+          "signature": "class GhVariableGetSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The variable's name (required)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "Read an organization variable (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "Read an environment variable (`--env`)."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable list`.",
+          "signature": "class GhVariableListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "List an organization's variables (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "List an environment's variables (`--env`)."
+            }
+          ]
+        },
+        {
+          "name": "GhVariableSetSettings",
+          "kind": "class",
+          "doc": "Settings for `gh variable set`.",
+          "signature": "class GhVariableSetSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "method",
+              "optional": false,
+              "signature": "name(value: str) -> Self",
+              "doc": "The variable's name (required)."
+            },
+            {
+              "name": "body",
+              "kind": "method",
+              "optional": false,
+              "signature": "body(value: str) -> Self",
+              "doc": "Its value (`--body`); omit it and gh reads standard input."
+            },
+            {
+              "name": "env_file",
+              "kind": "method",
+              "optional": false,
+              "signature": "env_file(path: str) -> Self",
+              "doc": "Read names and values from a dotenv file (`--env-file`)."
+            },
+            {
+              "name": "org",
+              "kind": "method",
+              "optional": false,
+              "signature": "org(name: str) -> Self",
+              "doc": "Scope it to an organization (`--org`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "Scope it to a deployment environment (`--env`)."
+            },
+            {
+              "name": "repositories",
+              "kind": "method",
+              "optional": false,
+              "signature": "repositories(*names: str) -> Self",
+              "doc": "Share an organization variable with these repositories (`--repos`)."
+            },
+            {
+              "name": "visibility",
+              "kind": "method",
+              "optional": false,
+              "signature": "visibility(value: Literal['all', 'private', 'selected']) -> Self",
+              "doc": "The visibility of an organization variable (`--visibility`)."
+            }
+          ]
+        },
+        {
+          "name": "GhWebReadSettings",
+          "kind": "class",
+          "doc": "Base for the read commands that also take `--web`: every one of them except\n`release list`, which gh gives no browser view. Keeping `.web()` here rather\nthan on GhReadSettings is what stops a build offering a flag gh\nwould reject.",
+          "signature": "class GhWebReadSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "web",
+              "kind": "method",
+              "optional": false,
+              "signature": "web() -> Self",
+              "doc": "Open the result in a browser instead of printing it (`--web`). A build\nhas no browser, so this is for a developer running the target by hand."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowDisableSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow disable`.",
+          "signature": "class GhWorkflowDisableSettings(GhWorkflowTargetSettings)",
+          "deprecated": false
+        },
+        {
+          "name": "GhWorkflowEnableSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow enable`.",
+          "signature": "class GhWorkflowEnableSettings(GhWorkflowTargetSettings)",
+          "deprecated": false
+        },
+        {
+          "name": "GhWorkflowListSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow list`.",
+          "signature": "class GhWorkflowListSettings(GhReadSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "all",
+              "kind": "method",
+              "optional": false,
+              "signature": "all() -> Self",
+              "doc": "Include disabled workflows (`--all`)."
+            },
+            {
+              "name": "limit",
+              "kind": "method",
+              "optional": false,
+              "signature": "limit(count: float) -> Self",
+              "doc": "Cap how many are fetched (`--limit`); gh's default is 50."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowRunSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow run` — dispatching a `workflow_dispatch` run.",
+          "signature": "class GhWorkflowRunSettings(GhWorkflowTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: str) -> Self",
+              "doc": "The branch or tag to run it on (`--ref`)."
+            },
+            {
+              "name": "field",
+              "kind": "method",
+              "optional": false,
+              "signature": "field(key: str, value: str | float | bool) -> Self",
+              "doc": "An input, as `--field key=value`. gh reads a leading `@` in the value as\na file to read, so use rawField for a value that starts with one."
+            },
+            {
+              "name": "raw_field",
+              "kind": "method",
+              "optional": false,
+              "signature": "raw_field(key: str, value: str | float | bool) -> Self",
+              "doc": "An input passed verbatim (`--raw-field`), with no `@` file syntax."
+            },
+            {
+              "name": "json_input",
+              "kind": "method",
+              "optional": false,
+              "signature": "json_input() -> Self",
+              "doc": "Read the whole input object as JSON on standard input (`--json`)."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowTargetSettings",
+          "kind": "class",
+          "doc": "Base for the `workflow` commands that name one workflow, which gh takes by\nfile name, name, or numeric id.",
+          "signature": "class GhWorkflowTargetSettings(GhCommandSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "workflow",
+              "kind": "method",
+              "optional": false,
+              "signature": "workflow(name_or_id: str | float) -> Self",
+              "doc": "The workflow — its file name, its name, or its id (required)."
+            }
+          ]
+        },
+        {
+          "name": "GhWorkflowViewSettings",
+          "kind": "class",
+          "doc": "Settings for `gh workflow view`.\n\nUnlike the other viewing commands this one prints no JSON — gh gives it\n`--yaml` and `--web` but no `--json` — so it does not carry the read flags.",
+          "signature": "class GhWorkflowViewSettings(GhWorkflowTargetSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "ref",
+              "kind": "method",
+              "optional": false,
+              "signature": "ref(name: str) -> Self",
+              "doc": "The branch or tag holding the version to view (`--ref`)."
+            },
+            {
+              "name": "yaml",
+              "kind": "method",
+              "optional": false,
+              "signature": "yaml() -> Self",
+              "doc": "Print the workflow's YAML rather than its summary (`--yaml`)."
+            },
+            {
+              "name": "web",
+              "kind": "method",
+              "optional": false,
+              "signature": "web() -> Self",
+              "doc": "Open it in a browser instead of printing it (`--web`). A build has no\nbrowser, so this is for a developer running the target by hand."
             }
           ]
         }
