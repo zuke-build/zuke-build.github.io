@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "Marketing and documentation site for Zuke — a code-first, strongly-typed build automation system for Deno & TypeScript.",
+  "description": "Marketing and documentation site for Zuke — a code-first, strongly-typed build automation system.",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",

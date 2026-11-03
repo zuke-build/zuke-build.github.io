@@ -26,6 +26,32 @@ class MyBuild extends Build {
 
 await run(MyBuild);`;
 
+// The same build in Python: a worker the engine hosts (see /docs/engine).
+const heroPySnippet = `from zuke import Build, run, target
+from zuke import ci as cicd
+from zuke.tools.docker import DockerTasks
+
+class MyBuild(Build):
+    # declare a pipeline → generates .github/workflows
+    ci = cicd().provider("github")
+
+    lint = target().executes(lambda ctx: ctx.sh("ruff", "check", "."))
+
+    test = (
+        target()
+        .description("Unit tests")
+        .depends_on(lint)
+        .executes(lambda ctx: ctx.sh("pytest", "-q"))
+    )
+
+    image = (
+        target()
+        .depends_on(test)
+        .executes(lambda ctx: DockerTasks.build(ctx, lambda s: s.tag("app:dev")))
+    )
+
+run(MyBuild)`;
+
 const ciBuildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
 import { DenoTasks } from "jsr:@zuke/deno";
 
@@ -208,9 +234,11 @@ const featureGroups = [
     label: "the model",
     items: [
       { t: "Typed, refactor-safe dependencies", d: "Targets reference each other with this.target — not strings. Rename one and every reference updates." },
-      { t: "Just TypeScript", d: "Ordinary async functions with full types, editor support, and debugging. No YAML, no bespoke DSL." },
+      { t: "Just code, in your language", d: "Ordinary functions with full types, editor support, and debugging — TypeScript today, Python next, more SDKs coming. No YAML, no bespoke DSL." },
+      { t: "Testable and reusable", d: "A build is a class. Unit-test a target like any other code, run a build in-process from a test, and share targets through a base class or a package." },
       { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
-      { t: "Zero runtime dependencies", d: "Ships on Deno with nothing else to install. The launcher installs Deno for you on first run." },
+      { t: "One engine, thin SDKs", d: "Scheduling, caching, retries, locks, services, CI generation and every tool wrapper live in the engine once. An SDK only describes the build and runs the bodies." },
+      { t: "Zero runtime dependencies", d: "The engine ships with nothing else to install, whatever language the build is in. The launcher installs Deno for you on first run." },
       { t: "Extensible by design", d: "Extend ToolSettings to build your own typed wrapper for any tool — no fork required." },
       { t: "Starts from what you have", d: "zuke import reads your package.json scripts or Makefile and writes a target per task — && chains become steps, run delegations become dependsOn." },
     ],
@@ -429,19 +457,19 @@ const cdMoreIcons: Record<string, string> = {
   <section class="hero">
     <div class="container hero__grid">
       <div class="hero__copy">
-        <span class="eyebrow">Build automation · Deno &amp; TypeScript</span>
+        <span class="eyebrow">Build automation · builds as typed code</span>
         <h1 class="hero__title">
           Builds you can <span class="gradient-text">refactor</span>,
-          not just run.
+          test, and reuse.
         </h1>
         <p class="lead">
           Zuke <span class="hero__ipa" title="pronounced “zook”">/zuːk/</span>
-          is a code-first, strongly-typed build system. Define targets as
-          TypeScript class fields, wire dependencies with a fluent API, and let
-          Zuke resolve and run them in topological order. The same file
-          <strong>generates your CI YAML</strong> and is served to
-          <strong>AI agents</strong> as typed tools — with zero runtime
-          dependencies.
+          is a code-first, strongly-typed build system. A build is a class in
+          your language: targets are fields, dependencies are real references
+          the type checker sees, and every tool is a typed API. One engine runs
+          it — <strong>TypeScript today, Python next, more SDKs coming</strong> —
+          <strong>generates your CI YAML</strong> from it, and serves it to
+          <strong>AI agents</strong> as typed tools. Zero runtime dependencies.
         </p>
         <div class="hero__cta">
           <a class="btn btn-primary" href="/docs">Get started →</a>
@@ -481,6 +509,8 @@ const cdMoreIcons: Record<string, string> = {
             <button class="hero__tab is-active" role="tab" aria-selected="true"
               aria-controls="hero-src" id="hero-tab-src" type="button">zuke.ts</button>
             <button class="hero__tab" role="tab" aria-selected="false"
+              aria-controls="hero-py" id="hero-tab-py" type="button">build.py</button>
+            <button class="hero__tab" role="tab" aria-selected="false"
               aria-controls="hero-run" id="hero-tab-run" type="button">
               <span class="hero__tabrun">▶</span> zuke build
             </button>
@@ -489,6 +519,10 @@ const cdMoreIcons: Record<string, string> = {
 
         <div class="hero__pane" id="hero-src" role="tabpanel" aria-labelledby="hero-tab-src" tabindex="0">
           <CopyCode code={heroSnippet} lang="ts" />
+        </div>
+
+        <div class="hero__pane" id="hero-py" role="tabpanel" aria-labelledby="hero-tab-py" tabindex="0" hidden>
+          <CopyCode code={heroPySnippet} lang="python" />
         </div>
 
         <div class="hero__pane" id="hero-run" role="tabpanel" aria-labelledby="hero-tab-run" tabindex="0" hidden>
@@ -516,7 +550,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
     </div>
 
     <div class="container hero__strip">
-      <span>Deno-native</span>
+      <span>One engine, many languages</span>
       <span class="dotsep">•</span>
       <span>Zero runtime deps</span>
       <span class="dotsep">•</span>
@@ -639,6 +673,49 @@ build    <span class="t-ok">Succeeded</span>      2.2s
       </div>
       <div data-reveal>
         <DagDiagram />
+      </div>
+    </div>
+  </section>
+
+  <!-- ░░ ENGINE & WORKERS ░░ -->
+  <section class="section sec-engine" id="engine">
+    <div class="container dag-grid">
+      <div class="engine-flow panel" data-reveal aria-label="The launcher starts the engine, the engine starts your build file as a worker, and the two talk over a local socket">
+        <div class="engine-flow__box">
+          <span class="engine-flow__k">you</span>
+          <code>./zuke test</code>
+          <span class="engine-flow__d">the launcher — installs Deno, starts the engine</span>
+        </div>
+        <span class="engine-flow__arrow" aria-hidden="true">→</span>
+        <div class="engine-flow__box engine-flow__box--engine">
+          <span class="engine-flow__k">engine</span>
+          <code>@zuke/engine</code>
+          <span class="engine-flow__d">plans the graph · runs every command · caches, locks, retries, resumes · generates CI · serves agents</span>
+        </div>
+        <span class="engine-flow__arrow" aria-hidden="true">⇄</span>
+        <div class="engine-flow__box">
+          <span class="engine-flow__k">worker</span>
+          <code>build.py</code> <span class="engine-flow__or">or</span> <code>zuke.ts</code>
+          <span class="engine-flow__d">describes the targets, runs their bodies — in your language</span>
+        </div>
+      </div>
+      <div data-reveal>
+        <span class="eyebrow">Engine &amp; workers <span class="tag-new">New</span></span>
+        <h2>One engine.<br />Any language.</h2>
+        <p class="lead">
+          The hard parts of a build system are written once, in the engine.
+          Your build file is a thin <em>worker</em>: it tells the engine what
+          the targets are and runs a body when asked. Every command a body runs
+          goes through the engine, so a Python build gets the same injection-free
+          shell, redaction, caching, locks and resume as a TypeScript one.
+        </p>
+        <ul class="ticks">
+          <li>TypeScript builds run the engine in-process; any other language runs beside it as a worker.</li>
+          <li>Every typed tool wrapper reaches every language — SDK facades are generated from the engine's spec.</li>
+          <li>Published conformance cases are the contract: an SDK that passes them behaves exactly like <code>zuke.ts</code>.</li>
+          <li>Python is the first SDK, more language SDKs are coming — the engine is the same for all of them.</li>
+        </ul>
+        <a class="btn btn-ghost" href="/docs/engine">How the engine and workers work →</a>
       </div>
     </div>
   </section>
@@ -1797,7 +1874,9 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           run your first target. Already have <code>package.json</code> scripts or a
           <code>Makefile</code>? Swap <code>zuke setup</code> for
           <code>zuke import</code> and start from a target per task instead of a
-          blank page.
+          blank page. Writing Python? The
+          <a href="/docs/engine#python">Python SDK</a> runs the same engine from a
+          <code>build.py</code>, and more language SDKs are coming.
         </p>
         <CopyBlock
           label="Install the CLI — pick one"
@@ -1866,6 +1945,7 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
     cursor: pointer;
     transition: color 0.15s ease, background 0.15s ease;
   }
+  .hero__tab { white-space: nowrap; }
   .hero__tab:hover { color: var(--term-dim); }
   .hero__tab.is-active {
     color: var(--term-ink);
@@ -2173,6 +2253,45 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   }
   .dag-note a { color: var(--cyan); text-decoration: none; }
   .dag-note a:hover { text-decoration: underline; }
+
+  /* engine & workers */
+  .sec-engine { border-bottom: 1px solid var(--border); }
+  .engine-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+  }
+  .engine-flow__box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    min-width: 0;
+  }
+  .engine-flow__box--engine {
+    border-color: color-mix(in oklch, var(--accent) 55%, var(--border));
+    background: color-mix(in oklch, var(--accent) 9%, var(--bg));
+  }
+  .engine-flow__k {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .engine-flow__box code { font-size: 0.92rem; }
+  .engine-flow__or { color: var(--text-faint); font-size: 0.85rem; }
+  .engine-flow__d { font-size: 0.86rem; color: var(--text-dim); }
+  .engine-flow__arrow {
+    align-self: center;
+    font-size: 1.3rem;
+    color: var(--cyan);
+    transform: rotate(90deg);
+  }
 
   /* shell */
   .shell-grid {
