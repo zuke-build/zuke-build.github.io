@@ -6317,6 +6317,13 @@
           "deprecated": false
         },
         {
+          "name": "redactLine",
+          "kind": "function",
+          "doc": "Mask every registered secret in `line`, or return it unchanged if none.",
+          "signature": "function redactLine(line: string): string",
+          "deprecated": false
+        },
+        {
           "name": "Redactor",
           "kind": "class",
           "doc": "Collects secret values and masks them in text. Register a value with\n{@link Redactor.add} and rewrite a line with {@link Redactor.redact}; empty\nstrings are ignored (they would match everywhere) and duplicates are recorded\nonce. Longer secrets are applied first so a secret that contains another is\nmasked whole rather than partially.",
@@ -10860,7 +10867,7 @@
               "kind": "property",
               "optional": false,
               "signature": "args: unknown",
-              "doc": "The task's arguments as JSON. An argument that is an object with a single\n`configure` key is a settings lambda as data: an ordered list of\n`[setter, [arguments]]` pairs the engine applies to the task's settings."
+              "doc": "The task's arguments as JSON. An argument that is an object with a single\n`configure` key is a settings lambda as data: an ordered list of\n`[setter, [arguments]]` pairs the engine applies to the task's settings.\nA setter's argument of the same form is a nested lambda, applied to the\nsettings that setter hands it."
             }
           ]
         },
@@ -56264,6 +56271,36 @@
           ]
         },
         {
+          "name": "AiTasks",
+          "kind": "variable",
+          "doc": "Typed task functions over the reviewers, for a build that calls rather than declares them.",
+          "signature": "const AiTasks: AiTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "AiTasksApi",
+          "kind": "interface",
+          "doc": "The tasks of {@link AiTasks}.",
+          "signature": "interface AiTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "review",
+              "kind": "method",
+              "optional": false,
+              "signature": "review(configure: Configure<ReviewSettings>): Promise<void>",
+              "doc": "Run the configured reviewers as peers of one target, in order. Throws when\na reviewer's gate trips, as the target it guards would fail."
+            },
+            {
+              "name": "preflight",
+              "kind": "method",
+              "optional": false,
+              "signature": "preflight(configure: Configure<ReviewSettings>): Promise<void>",
+              "doc": "Run the reviewers' preflight: on a comment-started run, refuse a commenter\nwho may not start a review. A no-op on any other run."
+            }
+          ]
+        },
+        {
           "name": "Assessment",
           "kind": "interface",
           "doc": "The structured result of a review.",
@@ -57383,6 +57420,71 @@
           "doc": "A repository secret named to a workflow: the build's parameter, or its name.",
           "signature": "type ReviewSecret = AnyParameter | string",
           "deprecated": false
+        },
+        {
+          "name": "ReviewSettings",
+          "kind": "class",
+          "doc": "The reviewers one `AiTasks.review` runs, as `.validateBefore(a, b)` would\nrun them, and the target they review for.",
+          "signature": "class ReviewSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "target",
+              "kind": "method",
+              "optional": false,
+              "signature": "target(name: string): this",
+              "doc": "The target the reviewers are attached to, named in their output; `review` by default."
+            },
+            {
+              "name": "generic",
+              "kind": "method",
+              "optional": false,
+              "signature": "generic(configure?: Configure<Reviewer>): this",
+              "doc": "Add a code-quality reviewer, as {@link genericReviewer} makes it."
+            },
+            {
+              "name": "security",
+              "kind": "method",
+              "optional": false,
+              "signature": "security(configure?: Configure<Reviewer>): this",
+              "doc": "Add a security reviewer, as {@link securityReviewer} makes it."
+            },
+            {
+              "name": "secrets",
+              "kind": "method",
+              "optional": false,
+              "signature": "secrets(configure?: Configure<Reviewer>): this",
+              "doc": "Add a leaked-secrets reviewer, as {@link secretsReviewer} makes it."
+            },
+            {
+              "name": "correctness",
+              "kind": "method",
+              "optional": false,
+              "signature": "correctness(configure?: Configure<Reviewer>): this",
+              "doc": "Add a correctness reviewer, as {@link correctnessReviewer} makes it."
+            },
+            {
+              "name": "license",
+              "kind": "method",
+              "optional": false,
+              "signature": "license(configure?: Configure<Reviewer>): this",
+              "doc": "Add a license reviewer, as {@link licenseReviewer} makes it."
+            },
+            {
+              "name": "target_",
+              "kind": "method",
+              "optional": false,
+              "signature": "target_(): string",
+              "doc": "The target name."
+            },
+            {
+              "name": "reviewers_",
+              "kind": "method",
+              "optional": false,
+              "signature": "reviewers_(): unknown",
+              "doc": "The reviewers, in the order they were added."
+            }
+          ]
         },
         {
           "name": "RunScope",
