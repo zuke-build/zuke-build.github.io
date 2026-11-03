@@ -10,7 +10,7 @@ export default defineConfig({
   // The API reference moved from /docs/api to the standalone /api section.
   redirects: {
     "/docs/api": "/api",
-    "/docs/api/[pkg]": "/api/[pkg]",
+    "/docs/api/[...slug]": "/api/[...slug]",
   },
   markdown: {
     shikiConfig: {

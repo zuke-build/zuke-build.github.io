@@ -1,82 +1,17 @@
 ---
 import { Code } from "astro:components";
-import ApiLayout from "../../layouts/ApiLayout.astro";
-import api from "../../data/api.json";
+import ApiLayout from "../layouts/ApiLayout.astro";
+import type { ApiPackage, Sdk } from "../data/sdks.ts";
+import { renderDoc, renderParagraph } from "./api_doc.ts";
 
-interface ApiMember {
-  name: string;
-  kind: string;
-  optional: boolean;
-  signature: string;
-  doc: string;
-}
-interface ApiSymbol {
-  name: string;
-  kind: string;
-  doc: string;
-  signature: string;
-  deprecated: boolean;
-  members?: ApiMember[];
-}
-interface ApiPackage {
-  name: string;
-  dir: string;
-  summary: string;
-  symbols: ApiSymbol[];
-}
-
-export function getStaticPaths() {
-  return (api.packages as ApiPackage[]).map((pkg) => ({
-    params: { pkg: pkg.dir },
-    props: { pkg },
-  }));
-}
-
+// One package of one SDK's reference. Rendered by
+// src/pages/api/[...slug].astro for every package of every SDK.
 interface Props {
+  sdk: Sdk;
   pkg: ApiPackage;
 }
-const { pkg } = Astro.props;
-
-// A tiny, safe markdown-lite pass: escapes HTML first, then re-introduces a
-// handful of jsDoc constructs as tags — code fences, inline `code`,
-// **bold**, {@link X} — so a symbol's doc reads like prose without pulling
-// in a markdown dependency for text that's already close to plain text.
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-const renderInline = (escaped: string) =>
-  escaped
-    .replace(
-      /\{@link\s+([^\s}|]+)(?:\s*\|\s*([^}]+))?\}/g,
-      (_, ref: string, label?: string) => `<code>${(label ?? ref).trim()}</code>`,
-    )
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
-
-const renderParagraph = (text: string) =>
-  renderInline(escapeHtml(text.replace(/\n+/g, " ").trim()));
-
-function renderDoc(doc: string): string {
-  if (!doc) return "";
-  const parts: string[] = [];
-  const fence = /```[a-zA-Z0-9]*\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let lead = true;
-  let match: RegExpExecArray | null;
-  const flushText = (text: string) => {
-    for (const para of text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)) {
-      parts.push(`<p${lead ? ' class="doc-lead"' : ""}>${renderParagraph(para)}</p>`);
-      lead = false;
-    }
-  };
-  while ((match = fence.exec(doc))) {
-    flushText(doc.slice(lastIndex, match.index));
-    parts.push(`<pre class="doc-pre"><code>${escapeHtml(match[1].replace(/\n$/, ""))}</code></pre>`);
-    lastIndex = fence.lastIndex;
-  }
-  flushText(doc.slice(lastIndex));
-  return parts.join("\n");
-}
+const { sdk, pkg } = Astro.props;
+const link = sdk.registry(pkg);
 
 const kindLabel: Record<string, string> = {
   function: "function",
@@ -95,16 +30,15 @@ const toc = [
 ---
 
 <ApiLayout
+  sdk={sdk}
   title={pkg.name}
   description={pkg.summary}
   toc={toc}
 >
-  <p class="apiback" data-pagefind-ignore><a href="/api">← API reference</a></p>
-  <p class="lead">{pkg.summary}</p>
+  <p class="apiback" data-pagefind-ignore><a href={sdk.apiBase}>← {sdk.label} API reference</a></p>
+  <p class="lead" set:html={renderParagraph(pkg.summary)} />
   <p class="apilinks">
-    <a href={`https://jsr.io/${pkg.name}`} target="_blank" rel="noopener">
-      {pkg.name} on JSR ↗
-    </a>
+    <a href={link.href} target="_blank" rel="noopener">{link.label}</a>
     <span class="apilinks__count">{pkg.symbols.length} symbols</span>
   </p>
 
@@ -137,7 +71,7 @@ const toc = [
         </div>
 
         {sym.signature && (
-          <Code code={sym.signature} lang="ts" theme="night-owl" />
+          <Code code={sym.signature} lang={sdk.lang as Parameters<typeof Code>[0]["lang"]} theme="night-owl" />
         )}
 
         {sym.doc && <div class="symcard__doc" set:html={renderDoc(sym.doc)} />}

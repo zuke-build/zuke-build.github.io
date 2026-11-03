@@ -97,11 +97,18 @@ Total                  17.8s
     Zuke is a code-first, strongly-typed build automation system. A build is a
     plain class — targets are class fields, dependencies are real references,
     and one engine runs everything in topological order. This guide gets you
-    from zero to your first green build in TypeScript, the SDK that ships today;
-    Python is next, more language SDKs are coming, and
-    <a href="/docs/engine">Engine &amp; workers</a> explains how they share one
-    engine.
+    from zero to your first green build in TypeScript.
   </p>
+  <div class="note">
+    <p>
+      <strong>Writing Python?</strong> Start with the
+      <a href="/docs/python">Python quickstart</a> — <code>zuke setup --sdk
+      python</code> scaffolds a <code>build.py</code> that runs on the same
+      engine, with the same CLI. More language SDKs are coming;
+      <a href="/docs/engine">Engine &amp; workers</a> explains how they all share
+      one engine.
+    </p>
+  </div>
 
   <h2 id="install">Install</h2>
   <p>
@@ -285,6 +292,7 @@ Total                  17.8s
   <h2 id="next">Next steps</h2>
   <ul>
     <li><a href="/docs/recipes/generate-ci">Recipes</a> — the things a small project wants first: <a href="/docs/recipes/replace-shell-scripts">replace your shell scripts</a> with the <code>$</code> shell, <a href="/docs/recipes/generate-ci">generate your CI</a> and stop editing YAML, <a href="/docs/recipes/release-a-library">release a small library</a> as one chain of targets, and <a href="/docs/recipes/keep-dependencies-current">keep dependencies current</a> on a schedule instead of by memory.</li>
+    <li><a href="/docs/python">Python quickstart</a> — the same model as typed Python: <code>zuke setup --sdk python</code>, a <code>build.py</code>, and every tool wrapper as a <code>zuke.tools</code> facade.</li>
     <li><a href="/docs/engine">Engine &amp; workers</a> — how a build runs: one engine does the scheduling, every command and the state, and your build file is a thin worker in TypeScript or Python, with more language SDKs coming.</li>
     <li><a href="/docs/concepts">Core concepts</a> — targets, dependencies, groups, caching, conditional execution, the <code>$</code> shell, parameters, code-first CI/CD, and extending Zuke.</li>
     <li><a href="/docs/services">Service targets</a> — declare a long-lived process (dev server, database, mock API) with <code>service()</code>; Zuke starts it, waits until it's ready, and tears it down.</li>

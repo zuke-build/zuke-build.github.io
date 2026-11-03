@@ -53,6 +53,16 @@ await helmUpgrade((s) => s.arg("api", "./chart").flag("install").cwd("infra"));
     refactor-safe and editor-completable. The rest are the engine and plugins the
     wrappers are built on.
   </p>
+  <div class="note">
+    <p>
+      <strong>In Python</strong>, every wrapper below is a generated module
+      under <code>zuke.tools</code> — <code>@zuke/docker</code> is
+      <code>zuke.tools.docker</code> — with the same tasks and setters in
+      snake_case, called as <code>DockerTasks.build(ctx, lambda s: ...)</code>.
+      See <a href="/docs/python/context#tools">Tool facades</a> and the
+      <a href="/api/python">Python API reference</a>.
+    </p>
+  </div>
 
   <h2 id="model">The wrapper model</h2>
   <p>

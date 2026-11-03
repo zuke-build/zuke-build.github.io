@@ -1,0 +1,348 @@
+---
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "build", label: "The build class" },
+  { id: "targets", label: "Targets" },
+  { id: "ordering", label: "Dependencies & ordering" },
+  { id: "failure", label: "Retries, timeouts & failure" },
+  { id: "parameters", label: "Parameters" },
+  { id: "groups", label: "Groups" },
+  { id: "caching", label: "Conditions & caching" },
+  { id: "services", label: "Services" },
+  { id: "gates", label: "Locks, gates & checks" },
+  { id: "ci", label: "CI files" },
+  { id: "hooks", label: "Hooks & build settings" },
+];
+
+const buildSnippet = `from zuke import Build, run, target
+
+
+class App(Build):
+    clean = target().description("Remove dist/").executes(lambda ctx: ctx.sh("rm", "-rf", "dist"))
+    build = target().description("Build the wheel").depends_on(clean).executes(
+        lambda ctx: ctx.sh("uv", "build")
+    )
+    default = target().depends_on(build)
+
+
+run(App)`;
+
+const asyncSnippet = `from zuke import Build, Context, run, target
+
+
+async def release(ctx: Context) -> None:
+    version = (await ctx.sh("git", "describe", "--tags")).stdout.strip()
+    await ctx.log(f"releasing {version}")
+    await ctx.sh("uv", "publish")
+
+
+class App(Build):
+    test = target().executes(lambda ctx: ctx.sh("pytest", "-q"))
+    publish = target().depends_on(test).executes(release)`;
+
+const orderingSnippet = `class App(Build):
+    lint = target().executes(lambda ctx: ctx.sh("ruff", "check", "."))
+    test = target().depends_on(lint).executes(lambda ctx: ctx.sh("pytest", "-q"))
+    # Soft ordering: only when both are planned. A string names a later field.
+    docs = target().after(test).before("publish").executes(lambda ctx: ctx.sh("mkdocs", "build"))
+    # Pull notify in after this one, whenever this one runs.
+    publish = target().depends_on(test).triggers("notify").executes(lambda ctx: ctx.sh("uv", "publish"))
+    notify = target().always().executes(lambda ctx: ctx.log("done"))`;
+
+const failureSnippet = `class App(Build):
+    flaky = target().retry(2, delay="10s").timeout("5m").executes(
+        lambda ctx: ctx.sh("pytest", "-q", "tests/e2e")
+    )
+    rollback = target().unlisted().executes(lambda ctx: ctx.sh("./rollback.sh"))
+    deploy = (
+        target()
+        .depends_on(flaky)
+        .on_failure(rollback)       # or "fail" (the default) or "cancel-run"
+        .on_cancel(rollback)        # compensate if the run is cancelled later
+        .executes(lambda ctx: ctx.sh("./deploy.sh"))
+    )`;
+
+const paramSnippet = `class App(Build):
+    env = parameter("target environment").options("staging", "production").required()
+    workers = parameter("upload workers").number().default(4)
+    verbose = parameter("chatty output").boolean()
+    regions = parameter("regions to deploy").array()
+    api_token = parameter("deploy token").env("DEPLOY_TOKEN").secret()
+    dry_run = parameter("plan only").boolean().flag("dry-run")
+
+    deploy = (
+        target()
+        .requires(env, api_token)
+        .executes(lambda ctx: ctx.log(f"{env.value} with {workers.value} workers"))
+    )`;
+
+const groupSnippet = `from zuke import group
+
+class App(Build):
+    lint = target().executes(lambda ctx: ctx.sh("ruff", "check", "."))
+    types = target().executes(lambda ctx: ctx.sh("pyright"))
+    test = target().executes(lambda ctx: ctx.sh("pytest", "-q"))
+    # A parallel batch: the three run together, each after its own dependencies.
+    checks = group(lint, types, test)`;
+
+const cacheSnippet = `import os
+
+class App(Build):
+    build = (
+        target()
+        .inputs("src/**/*.py", "pyproject.toml")
+        .outputs("dist/")
+        .cache_key(lambda: os.environ.get("PYTHON_VERSION", ""))
+        .executes(lambda ctx: ctx.sh("uv", "build"))
+    )
+    publish = (
+        target()
+        .depends_on(build)
+        .condition(lambda: os.environ.get("CI") == "true")
+        .executes(lambda ctx: ctx.sh("uv", "publish"))
+    )`;
+
+const serviceSnippet = `from zuke import Build, ServiceContext, run, service, target
+
+
+async def start_db(ctx: ServiceContext) -> str:
+    result = await ctx.sh("docker", "run", "-d", "-p", "5432:5432", "postgres:17")
+    return result.stdout.strip()          # the handle: the container id
+
+
+async def db_ready(ctx: ServiceContext, container: str) -> bool:
+    probe = await ctx.sh("docker", "exec", container, "pg_isready", check=False)
+    return probe.code == 0
+
+
+class App(Build):
+    db = (
+        service()
+        .description("postgres for the tests")
+        .start(start_db)
+        .ready(db_ready, timeout="30s")
+        .stop(lambda ctx, container: ctx.sh("docker", "rm", "-f", container))
+    )
+    test = target().depends_on(db).executes(lambda ctx: ctx.sh("pytest", "-q"))
+
+
+run(App)`;
+
+const gateSnippet = `async def check_health() -> None:
+    ...  # raise to report a problem
+
+
+class App(Build):
+    env = parameter("environment").default("staging")
+
+    deploy = (
+        target()
+        # One deploy per environment at a time, across every run and machine.
+        .lock(lambda s: s.key(f"deploy-{env.value}").ttl("1h").wait_up_to("10m"))
+        .executes(lambda ctx: ctx.sh("./deploy.sh"))
+    )
+    approve = (
+        target()
+        .depends_on(deploy)
+        # Suspend the run until: zuke resume <run> --signal approved
+        .waits_for(lambda s: s.external_signal("approved").timeout("72h").on_timeout("cancel-run"))
+    )
+    soak = (
+        target()
+        .depends_on(approve)
+        .validate_during(lambda s: s.every("30s").check("healthy", check_health))
+        .executes(lambda ctx: ctx.sh("./soak.sh"))
+    )`;
+
+const ciSnippet = `from zuke import Build, ci, invoke, run, target
+
+
+class App(Build):
+    lint = target().executes(lambda ctx: ctx.sh("ruff", "check", "."))
+    test = target().depends_on(lint).executes(lambda ctx: ctx.sh("pytest", "-q"))
+
+    # zuke generate-ci writes it; zuke generate-ci --check fails on drift.
+    pipeline = (
+        ci()
+        .path(".github/workflows/ci.yml")
+        .invokes(lint, invoke(test, matrix={"os": ["ubuntu-latest", "macos-latest"]}))
+    )
+    # Or one job per target, with the dependencies as needs: edges.
+    nightly = ci().path(".github/workflows/nightly.yml").fan_out()
+
+
+run(App)`;
+
+const hooksSnippet = `class App(Build):
+    deadline = "2h"                  # the whole run may take at most this long
+
+    test = target().executes(lambda ctx: ctx.sh("pytest", "-q"))
+    publish = target().depends_on(test).executes(lambda ctx: ctx.sh("uv", "publish"))
+    unforceable = (publish,)         # --force may never re-run these
+
+    def on_start(self) -> None:
+        print("starting")            # a stray print becomes a log line
+
+    async def on_target_end(self, target: str, status: str) -> None:
+        ...
+
+    def on_finish(self, ok: bool) -> None:
+        ...`;
+---
+
+<DocsLayout
+  title="Authoring in Python"
+  description="Write a Zuke build in Python: targets and their options, dependencies and ordering, parameters, groups, caching, services, locks and gates, CI files, and hooks."
+  toc={toc}
+>
+  <p class="lead">
+    Everything a build declares is a field of a class extending
+    <code>Build</code>, configured with chained setters. The engine reads the
+    fields, plans the graph and runs it; this page walks through what you can
+    declare. Every option shown is in the
+    <a href="/api/python/zuke">Python API reference</a> with its full signature.
+  </p>
+
+  <h2 id="build">The build class</h2>
+  <CopyCode code={buildSnippet} lang="python" />
+  <p>
+    Each field built with <code>target()</code> is a target, named by its
+    field: <code>zuke build</code> runs <code>clean</code> then
+    <code>build</code>. A target named <code>default</code> runs when no target
+    is named. The last line, <code>run(App)</code>, makes the file a build when
+    the engine starts it and does nothing when the file is imported — so a
+    test can import the class.
+  </p>
+  <p>
+    A body is any callable taking the context, sync or async. A lambda that
+    returns <code>ctx.sh(...)</code> is awaited for you; for more than one
+    step, write an <code>async def</code>:
+  </p>
+  <CopyCode code={asyncSnippet} lang="python" />
+
+  <h2 id="targets">Targets</h2>
+  <p>Every setter returns the target, so they chain. The ones you will reach for most:</p>
+  <table>
+    <thead><tr><th>Setter</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>.description(text)</code></td><td>The line <code>--list</code> and <code>--help</code> show.</td></tr>
+      <tr><td><code>.depends_on(*targets)</code></td><td>Targets that must succeed first; each a sibling field declared above.</td></tr>
+      <tr><td><code>.executes(body)</code></td><td>The body, sync or async.</td></tr>
+      <tr><td><code>.unlisted()</code></td><td>Hide it from <code>--list</code> and <code>--help</code>.</td></tr>
+      <tr><td><code>.requires(*parameters)</code></td><td>Parameters that must have a value before it runs.</td></tr>
+      <tr><td><code>.dry_runnable()</code></td><td>Run the body under <code>--dry-run</code>, where the engine prints each command instead of running it; otherwise the body is skipped.</td></tr>
+      <tr><td><code>.produces(*paths)</code></td><td>Artifact paths it produces.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="ordering">Dependencies &amp; ordering</h2>
+  <CopyCode code={orderingSnippet} lang="python" />
+  <ul>
+    <li><code>depends_on</code> takes the field itself. Fields initialise top to bottom, so a target may only depend on one declared above it; the engine names a forward reference as an error.</li>
+    <li><code>before</code>, <code>after</code> and <code>triggers</code> also take a string, for a field declared later.</li>
+    <li><code>before</code>/<code>after</code> only order targets that are both planned; <code>triggers</code> pulls its targets in.</li>
+    <li><code>always()</code> runs even after the build failed; <code>proceed_after_failure()</code> keeps the build going past this target's failure.</li>
+  </ul>
+
+  <h2 id="failure">Retries, timeouts &amp; failure</h2>
+  <CopyCode code={failureSnippet} lang="python" />
+  <p>
+    Durations are a string such as <code>"250ms"</code>, <code>"10s"</code>,
+    <code>"5m"</code>, <code>"4h"</code> or <code>"1d"</code>, or an integer of
+    milliseconds. <code>retry(times, delay)</code> runs the body up to
+    <code>times</code> more times; <code>timeout</code> fails an attempt that
+    runs longer. See <a href="/docs/orchestration">Orchestration</a> for how
+    cancellation and compensation unwind a run.
+  </p>
+
+  <h2 id="parameters">Parameters</h2>
+  <CopyCode code={paramSnippet} lang="python" />
+  <p>
+    <code>parameter(description)</code> starts a string parameter;
+    <code>.number()</code>, <code>.boolean()</code> and <code>.array()</code>
+    recast it, and <code>.options(...)</code> restricts it. The engine resolves
+    each one from its flag, its environment variable or its default before any
+    body runs, and <code>.value</code> holds the typed result —
+    <code>str | None</code>, <code>float | None</code>, <code>bool | None</code>
+    or a list — so pyright makes you handle the unset case.
+    <code>.secret()</code> redacts the value from every log and record.
+  </p>
+  <div class="note">
+    <p>
+      The flag and environment variable come from the field name the way the
+      engine derives them for every SDK: <code>env</code> is
+      <code>--env</code> and <code>ENV</code>. A snake_case name keeps its
+      underscore in the flag — <code>dry_run</code> would be
+      <code>--dry_run</code> — so set <code>.flag("dry-run")</code> when you
+      want kebab case. See <a href="/docs/parameters#naming">Flags and
+      environment variables</a>.
+    </p>
+  </div>
+
+  <h2 id="groups">Groups</h2>
+  <CopyCode code={groupSnippet} lang="python" />
+  <p>
+    Members of a group run concurrently with one another whenever they run,
+    each still waiting for its own dependencies — no <code>--parallel</code>
+    flag needed. A group lists its members, so declare it below them. Targets
+    outside a group stay serialized unless you pass <code>--parallel</code> to
+    the whole run.
+  </p>
+
+  <h2 id="caching">Conditions &amp; caching</h2>
+  <CopyCode code={cacheSnippet} lang="python" />
+  <p>
+    <code>inputs</code> and <code>outputs</code> fingerprint a target: when its
+    inputs are unchanged and its outputs exist, the engine reports it
+    <code>cached</code> and skips the body. <code>cache_key</code> adds a value
+    of your own to the fingerprint. <code>condition</code> is asked just before
+    the target's turn and skips it when it answers false. Both may be sync or
+    async. See <a href="/docs/caching">Caching</a>.
+  </p>
+
+  <h2 id="services">Services</h2>
+  <CopyCode code={serviceSnippet} lang="python" />
+  <p>
+    A service is a target the engine starts before its dependants and stops
+    after them. <code>start</code> answers a handle, which <code>ready</code>
+    and <code>stop</code> receive; <code>ready</code> is polled until it answers
+    true or its timeout passes. All three phases may run commands through the
+    context. See <a href="/docs/services">Service targets</a>.
+  </p>
+
+  <h2 id="gates">Locks, gates &amp; checks</h2>
+  <CopyCode code={gateSnippet} lang="python" />
+  <ul>
+    <li><code>.lock(...)</code> holds a cross-run lock while the target runs; a key is required. See <a href="/docs/locks">Cross-run locks</a>.</li>
+    <li><code>.waits_for(...)</code> suspends the run at the target until an external signal arrives, or until <code>resume_when(check, every=...)</code> answers true. See <a href="/docs/state">Durable run state</a>.</li>
+    <li><code>.validate_during(...)</code> runs named checks on an interval while the body runs; a check fails the target by raising.</li>
+  </ul>
+  <p>
+    These lambdas are evaluated after parameters resolve, so a key or a timeout
+    may read <code>.value</code>, as the lock key above does.
+  </p>
+
+  <h2 id="ci">CI files</h2>
+  <CopyCode code={ciSnippet} lang="python" />
+  <p>
+    A <code>ci()</code> field declares a pipeline file, rendered by
+    <code>zuke generate-ci</code> for GitHub Actions (the default), GitLab CI,
+    Azure Pipelines or Bitbucket. <code>.invokes(...)</code> lists the targets
+    to run as jobs, with <code>invoke(target, ...)</code> adjusting one;
+    <code>.fan_out()</code> makes one job per target instead. Every job runs the
+    committed launcher, so a runner needs nothing installed. See
+    <a href="/docs/recipes/generate-ci">Generate your CI</a>.
+  </p>
+
+  <h2 id="hooks">Hooks &amp; build settings</h2>
+  <CopyCode code={hooksSnippet} lang="python" />
+  <p>
+    Override <code>on_start</code>, <code>on_target_start</code>,
+    <code>on_target_end</code> or <code>on_finish</code>, sync or async; the
+    engine calls only the ones you override. <code>deadline</code> bounds the
+    whole run, and <code>unforceable</code> lists targets <code>--force</code>
+    may never re-run.
+  </p>
+</DocsLayout>

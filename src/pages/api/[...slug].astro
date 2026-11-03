@@ -1,0 +1,27 @@
+---
+// Every SDK's API reference from one route: the first SDK in
+// src/data/sdks.ts at /api and /api/<pkg>, every other one at /api/<id> and
+// /api/<id>/<pkg>. A new SDK in that list gets its pages with no new file here.
+import ApiIndex from "../../components/ApiIndex.astro";
+import ApiPackage from "../../components/ApiPackage.astro";
+import { sdks, type ApiPackage as Pkg, type Sdk } from "../../data/sdks.ts";
+
+export function getStaticPaths() {
+  return sdks.flatMap((sdk) => {
+    const base = sdk.apiBase.replace(/^\/api\/?/, "");
+    const at = (rest: string) => [base, rest].filter(Boolean).join("/") || undefined;
+    return [
+      { params: { slug: at("") }, props: { sdk, pkg: undefined } },
+      ...sdk.api.packages.map((pkg) => ({ params: { slug: at(pkg.dir) }, props: { sdk, pkg } })),
+    ];
+  });
+}
+
+interface Props {
+  sdk: Sdk;
+  pkg: Pkg | undefined;
+}
+const { sdk, pkg } = Astro.props;
+---
+
+{pkg ? <ApiPackage sdk={sdk} pkg={pkg} /> : <ApiIndex sdk={sdk} />}

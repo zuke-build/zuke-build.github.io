@@ -1,0 +1,230 @@
+---
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "install", label: "Install" },
+  { id: "scaffold", label: "Scaffold a Python build" },
+  { id: "first-build", label: "Your first build" },
+  { id: "run", label: "Running it" },
+  { id: "existing", label: "Into an existing project" },
+  { id: "ci", label: "On CI" },
+  { id: "engine", label: "The engine pin" },
+  { id: "differences", label: "What differs from TypeScript" },
+  { id: "next", label: "Next steps" },
+];
+
+const installSnippet = `deno install -A -g -n zuke jsr:@zuke/cli   # any OS, with Deno
+brew install zuke-build/tap/zuke           # macOS, Linux
+choco install zuke                         # Windows`;
+
+const setupSnippet = `zuke setup --sdk python   # build.py, zuke.json, the launchers
+zuke                      # run the default target`;
+
+const starterSnippet = `# /// script
+# requires-python = ">=3.12"
+# dependencies = ["zuke"]
+# ///
+"""Your project's build. Run a target with ./zuke <target>."""
+
+from zuke import Build, run, target
+
+
+class App(Build):
+    """The targets of this project."""
+
+    hello = (
+        target()
+        .description("A sample target, replace me with real work")
+        .executes(lambda ctx: ctx.log("Hello from Zuke!"))
+    )
+
+    # Convention: default runs when no target is named.
+    default = target().description("Default target").depends_on(hello)
+
+
+run(App)`;
+
+const zukeJsonSnippet = `{
+  "name": "App",
+  "sdk": { "command": ["uv", "run", "build.py"] },
+  "engine": "1.2.1"
+}`;
+
+const buildSnippet = `from zuke import Build, ci, parameter, run, target
+from zuke.tools.docker import DockerTasks
+
+
+class App(Build):
+    tag = parameter("image tag").default("dev")
+    pipeline = ci().path(".github/workflows/ci.yml")
+
+    lint = target().description("ruff").executes(lambda ctx: ctx.sh("ruff", "check", "."))
+    test = target().depends_on(lint).executes(lambda ctx: ctx.sh("pytest", "-q"))
+    image = (
+        target()
+        .depends_on(test)
+        .executes(
+            lambda ctx: DockerTasks.build(
+                ctx, lambda s: s.tag(f"app:{tag.value}").file("Dockerfile")
+            )
+        )
+    )
+
+
+run(App)`;
+
+const runSnippet = `zuke image                 # lint, test, then image — once each, in order
+zuke image --tag 1.4.0     # parameters are flags (or TAG in the environment)
+zuke --list                # every target, its description and dependencies
+zuke graph --output=html   # the dependency graph, interactive
+zuke generate-ci           # write the workflow the ci() field declares
+zuke mcp                   # serve the build to an agent as typed tools`;
+
+const existingSnippet = `uv add --dev zuke   # or: pip install zuke`;
+
+const ciSnippet = `./zuke ci       # Linux and macOS: bootstraps a pinned Deno, then runs the engine
+./zuke.ps1 ci   # Windows`;
+
+const upgradeSnippet = `zuke upgrade --engine          # move zuke.json to the latest @zuke/engine
+zuke upgrade --engine 1.2.1    # or to an exact release`;
+---
+
+<DocsLayout
+  title="Python quickstart"
+  description="Write a Zuke build in typed Python: install the CLI, scaffold build.py with zuke setup --sdk python, and run your first targets on the Zuke engine."
+  toc={toc}
+>
+  <p class="lead">
+    A Zuke build in Python is a class whose fields are targets, with
+    dependencies the type checker sees and a typed facade for every tool. The
+    Zuke <a href="/docs/engine">engine</a> runs it — scheduling, every command,
+    caching, locks, resume, CI generation and the MCP server — exactly as it
+    runs a TypeScript build. This page gets you from nothing to a green build.
+  </p>
+
+  <h2 id="install">Install</h2>
+  <p>
+    You need the <code>zuke</code> command and
+    <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a>.
+    Install the CLI one of three ways; each is the same program.
+  </p>
+  <CopyCode code={installSnippet} lang="bash" multi />
+  <p>
+    The Python package is <a href="https://pypi.org/project/zuke/" target="_blank" rel="noopener noreferrer"><code>zuke</code> on PyPI</a>.
+    It needs Python 3.12 or newer and has no runtime dependencies. A scaffolded
+    build installs it by itself, so there is nothing to <code>pip install</code> yet.
+  </p>
+
+  <h2 id="scaffold">Scaffold a Python build</h2>
+  <p>In your project:</p>
+  <CopyCode code={setupSnippet} lang="bash" multi />
+  <p>
+    <code>zuke setup --sdk python</code> writes a starter <code>build.py</code>,
+    a <code>zuke.json</code>, the <code>./zuke</code> and <code>zuke.ps1</code>
+    launchers and a <code>.gitignore</code>, and no <code>deno.json</code>. The
+    starter carries inline script metadata, so <code>uv run build.py</code>
+    installs the <code>zuke</code> package with no project file of its own:
+  </p>
+  <CopyCode code={starterSnippet} lang="python" />
+  <p>
+    <code>zuke.json</code> names the command that starts your build and the
+    exact engine release that runs it:
+  </p>
+  <CopyCode code={zukeJsonSnippet} lang="json" />
+  <p>
+    The other <code>setup</code> flags work as they do for TypeScript —
+    <code>--mcp</code> registers the build's MCP server for your agent, and
+    <code>--engine &lt;version&gt;</code> pins a release without asking the
+    network. See the <a href="/docs/cli">CLI reference</a>.
+  </p>
+
+  <h2 id="first-build">Your first build</h2>
+  <p>Replace the sample target with real work:</p>
+  <CopyCode code={buildSnippet} lang="python" />
+  <ul>
+    <li><code>depends_on(lint)</code> is a reference to the sibling field, not a string: pyright sees it, a rename moves every use, and a typo fails before anything runs. A target may only depend on fields declared <strong>above</strong> it.</li>
+    <li><code>ctx.sh(...)</code> runs a command through the engine — argv only, no shell — and raises <code>CommandError</code> on a non-zero exit.</li>
+    <li><code>DockerTasks.build(ctx, lambda s: ...)</code> is the typed Docker wrapper, configured with a settings lambda exactly like <code>DockerTasks.build((s) =&gt; ...)</code> in TypeScript.</li>
+    <li><code>tag.value</code> is the parameter's resolved value, set by the engine before any body runs.</li>
+    <li><code>run(App)</code> makes the file a build; it does nothing when the file is imported.</li>
+  </ul>
+
+  <h2 id="run">Running it</h2>
+  <p>
+    With the CLI installed, drive the build from anywhere inside the project,
+    exactly as a TypeScript one:
+  </p>
+  <CopyCode code={runSnippet} lang="bash" multi />
+  <p>
+    <code>zuke --help</code> lists the build's live targets and parameters, and
+    <code>zuke --version</code> names the <code>zuke.json</code> and the engine
+    release it runs.
+  </p>
+
+  <h2 id="existing">Into an existing project</h2>
+  <p>
+    A project with its own <code>pyproject.toml</code> can add the package as a
+    dev dependency instead:
+  </p>
+  <CopyCode code={existingSnippet} lang="bash" />
+  <p>
+    Then delete the <code># /// script</code> block from <code>build.py</code>:
+    uv runs a script that carries that block in an environment of its own, and
+    one without it in your project's environment, beside your own tools. The
+    scaffolded <code>sdk.command</code>, <code>["uv", "run", "build.py"]</code>,
+    stays as it is.
+  </p>
+
+  <h2 id="ci">On CI</h2>
+  <p>
+    A CI runner has no <code>zuke</code> command, so it runs the committed
+    launchers. They download a pinned, checksum-verified Deno on first use and
+    run the engine; uv provides the Python side.
+  </p>
+  <CopyCode code={ciSnippet} lang="bash" multi />
+  <p>
+    Better still, let the build write its own pipeline: the <code>ci()</code>
+    field above becomes <code>.github/workflows/ci.yml</code> with
+    <code>zuke generate-ci</code>, and <code>zuke generate-ci --check</code>
+    fails when the committed file drifts. See
+    <a href="/docs/python/authoring#ci">CI files</a>.
+  </p>
+
+  <h2 id="engine">The engine pin</h2>
+  <p>
+    <code>zuke.json</code>'s <code>engine</code> is an exact release, never a
+    range, so the engine cannot change between two runs. Move it deliberately:
+  </p>
+  <CopyCode code={upgradeSnippet} lang="bash" multi />
+
+  <h2 id="differences">What differs from TypeScript</h2>
+  <p>The model, the CLI and every engine feature are the same. The spelling is Python's:</p>
+  <table>
+    <thead><tr><th>TypeScript</th><th>Python</th></tr></thead>
+    <tbody>
+      <tr><td><code>class CI extends Build</code></td><td><code>class CI(Build)</code></td></tr>
+      <tr><td><code>.dependsOn(this.lint)</code></td><td><code>.depends_on(lint)</code></td></tr>
+      <tr><td><code>.executes(async () =&gt; ...)</code></td><td><code>.executes(lambda ctx: ...)</code> or an <code>async def body(ctx)</code></td></tr>
+      <tr><td><code>await $`pytest -q`</code></td><td><code>await ctx.sh("pytest", "-q")</code></td></tr>
+      <tr><td><code>import {"{ DockerTasks }"} from "@zuke/docker"</code></td><td><code>from zuke.tools.docker import DockerTasks</code></td></tr>
+      <tr><td><code>DockerTasks.build((s) =&gt; s.tag("a"))</code></td><td><code>DockerTasks.build(ctx, lambda s: s.tag("a"))</code></td></tr>
+      <tr><td><code>cicd(&#123; provider: "github" &#125;)</code></td><td><code>ci().provider("github")</code></td></tr>
+      <tr><td><code>await run(CI)</code></td><td><code>run(CI)</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    <code>zuke add</code>, <code>remove</code>, <code>cache</code> and
+    <code>relock</code> manage a project's own Deno code, so they refuse a
+    Python build: its tool wrappers come with the SDK, as <code>zuke.tools</code>.
+  </p>
+
+  <h2 id="next">Next steps</h2>
+  <ul>
+    <li><a href="/docs/python/authoring">Authoring in Python</a> — targets and their options, parameters, groups, services, CI files and hooks.</li>
+    <li><a href="/docs/python/context">Bodies, context &amp; tools</a> — what a body gets in <code>ctx</code>, durable state, and the typed tool facades.</li>
+    <li><a href="/api/python">Python API reference</a> — every class, function and facade, generated from the package's docstrings.</li>
+    <li><a href="/docs/engine">Engine &amp; workers</a> — how a Python build runs on the engine.</li>
+    <li><a href="/docs/concepts">Core concepts</a> — the build, target and graph model, shared by every SDK; its samples are TypeScript.</li>
+  </ul>
+</DocsLayout>

@@ -1,0 +1,178 @@
+---
+import CopyCode from "../../../components/CopyCode.astro";
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "bodies", label: "Bodies" },
+  { id: "commands", label: "Running commands" },
+  { id: "context", label: "The context" },
+  { id: "state", label: "Durable state" },
+  { id: "tools", label: "Tool facades" },
+  { id: "testing", label: "Testing a build" },
+];
+
+const bodySnippet = `from zuke import Build, Context, run, target
+
+
+async def build_wheel(ctx: Context) -> None:
+    if ctx.dry_run:
+        await ctx.log("dry run: nothing will be uploaded")
+    result = await ctx.sh("uv", "build")
+    await ctx.summary({"wheel": result.stdout.strip().splitlines()[-1]})
+
+
+class App(Build):
+    wheel = target().executes(build_wheel)                  # an async def
+    hello = target().executes(lambda ctx: ctx.log("hi"))    # a lambda returning an awaitable
+    count = target().executes(lambda ctx: None)             # or plain sync code`;
+
+const shSnippet = `from zuke import CommandError
+
+async def body(ctx: Context) -> None:
+    out = await ctx.sh("git", "rev-parse", "HEAD")           # ExecResult(code, stdout, stderr)
+    sha = out.stdout.strip()
+    await ctx.sh("pytest", "-q", cwd="tests", env={"CI": "1"})
+    probe = await ctx.sh("pg_isready", check=False)          # no raise; read probe.code
+    try:
+        await ctx.sh("false")
+    except CommandError as error:
+        await ctx.log(f"{error.argv} failed with {error.result.code}")`;
+
+const stateSnippet = `VERSION = "1.4.0"
+
+
+async def deploy(ctx: Context) -> None:
+    state = await ctx.state.get()                 # what this target last wrote
+    if state.get("deployed") == VERSION:
+        return
+    await ctx.sh("./deploy.sh", VERSION)
+    await ctx.state.set({"deployed": VERSION})    # merged, kept across runs and resumes
+
+    build = await ctx.outcome_of("build")         # what another target did this run
+    if build is not None and build.status == "succeeded":
+        ...`;
+
+const toolSnippet = `from zuke import Build, Context, run, target
+from zuke.tools.docker import DockerTasks
+from zuke.tools.git import GitTasks
+
+
+async def image(ctx: Context) -> None:
+    sha = (await GitTasks.rev_parse(ctx, lambda s: s.rev("HEAD").short())).stdout.strip()
+    await DockerTasks.build(ctx, lambda s: s.tag(f"app:{sha}").file("Dockerfile").pull())
+    await DockerTasks.push(ctx, lambda s: s.image(f"app:{sha}"))`;
+
+const testSnippet = `from build import App
+
+
+def test_publish_runs_after_the_tests() -> None:
+    assert App.publish.manifest()["dependsOn"] == ["test"]
+
+
+def test_the_targets_are_declared() -> None:
+    assert list(App.targets_) == ["lint", "test", "publish"]`;
+---
+
+<DocsLayout
+  title="Bodies, context & tools"
+  description="What a Python target body can do: run commands through the engine, read the run through ctx, keep durable state, and call every Zuke tool wrapper through its typed facade."
+  toc={toc}
+>
+  <p class="lead">
+    A target's body is ordinary Python. It gets one argument, <code>ctx</code>,
+    which is its line to the engine: every command, every tool call, every log
+    line and every piece of state goes through it, so the engine can apply
+    dry-run, redaction, timeouts and cancellation the same way it does for a
+    TypeScript build.
+  </p>
+
+  <h2 id="bodies">Bodies</h2>
+  <CopyCode code={bodySnippet} lang="python" />
+  <p>
+    A body may be a function, an <code>async def</code> or a lambda, and
+    whatever it returns is awaited when it is awaitable — so
+    <code>lambda ctx: ctx.sh(...)</code> runs the command. A body fails the
+    target by raising. The worker's own stdout and stderr become log lines, so
+    a stray <code>print</code> cannot break the run, but
+    <code>await ctx.log(...)</code> is the way to say something.
+  </p>
+
+  <h2 id="commands">Running commands</h2>
+  <CopyCode code={shSnippet} lang="python" />
+  <p>
+    <code>ctx.sh(*argv)</code> asks the engine to run a command. Arguments are
+    discrete — there is no shell, so a value with spaces or quotes is one
+    argument and nothing can be injected. It runs in the build's directory and
+    environment (a <code>uv run</code> virtualenv included); <code>cwd</code>,
+    <code>env</code> and <code>stdin</code> adjust one call. A non-zero exit
+    raises <code>CommandError</code>, which carries the <code>argv</code> and
+    the <code>result</code>; pass <code>check=False</code> to read the code
+    yourself. Output is streamed to the log, captured into the
+    <code>ExecResult</code>, and redacted of every secret.
+  </p>
+
+  <h2 id="context">The context</h2>
+  <table>
+    <thead><tr><th>Member</th><th>What it gives you</th></tr></thead>
+    <tbody>
+      <tr><td><code>await ctx.sh(*argv, ...)</code></td><td>Run a command through the engine.</td></tr>
+      <tr><td><code>await ctx.log(line)</code></td><td>A log line attributed to this target.</td></tr>
+      <tr><td><code>await ctx.secret(value)</code></td><td>Redact a value from everything the run prints or records from now on.</td></tr>
+      <tr><td><code>await ctx.summary(pairs)</code></td><td>Notes in this target's row of the build summary.</td></tr>
+      <tr><td><code>ctx.state</code>, <code>ctx.state_of(target)</code></td><td>Durable state of this target, or another.</td></tr>
+      <tr><td><code>await ctx.outcome_of(target)</code>, <code>await ctx.outcomes()</code></td><td>What other targets did in this run.</td></tr>
+      <tr><td><code>await ctx.plan()</code></td><td>The planned targets and each one's dependencies.</td></tr>
+      <tr><td><code>await ctx.signals()</code></td><td>The external signals the run has received.</td></tr>
+      <tr><td><code>ctx.run_id</code>, <code>ctx.dry_run</code>, <code>ctx.target</code></td><td>The run's id, whether it is a dry run, and this target's name.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    A service's phases get the smaller <code>ServiceContext</code>:
+    <code>sh</code>, <code>log</code>, <code>secret</code> and
+    <code>target</code>. Every member is in the
+    <a href="/api/python/zuke#Context">API reference</a>.
+  </p>
+
+  <h2 id="state">Durable state</h2>
+  <CopyCode code={stateSnippet} lang="python" />
+  <p>
+    The engine keeps each target's state in the run record, across runs and
+    across a suspended run's resume. <code>set</code> merges a patch;
+    <code>try_set</code> merges it only if the engine will record it now and
+    says whether it did. See <a href="/docs/state">Durable run state</a>.
+  </p>
+
+  <h2 id="tools">Tool facades</h2>
+  <p>
+    Every typed wrapper the engine ships — Docker, Kubernetes, Helm, Terraform,
+    the cloud CLIs, npm, Git, GitHub, the AI reviewers and the rest — has a
+    module under <code>zuke.tools</code>, generated from the engine's own tool
+    spec, so it matches the TypeScript wrapper setter for setter:
+  </p>
+  <CopyCode code={toolSnippet} lang="python" />
+  <p>
+    A task takes the context first, then a settings lambda. The lambda records
+    the setters it calls, and the facade sends them to the engine in one call;
+    the engine runs the real wrapper with your build's environment and
+    directory, under the run's dry-run, redaction and cancellation. Pyright and
+    your editor complete every task and setter. The
+    <a href="/docs/tools">tool catalog</a> lists the wrappers — a
+    <code>@zuke/docker</code> there is <code>zuke.tools.docker</code> here —
+    and the <a href="/api/python">Python API reference</a> has every facade.
+  </p>
+  <div class="note">
+    <p>
+      Reach for a facade before <code>ctx.sh</code>: when a tool has a
+      <code>zuke.tools</code> module, its typed settings, argv purity and tool
+      resolution come with it.
+    </p>
+  </div>
+
+  <h2 id="testing">Testing a build</h2>
+  <p>
+    <code>run(App)</code> does nothing on import, so a build file is an ordinary
+    module your tests can import. Each target describes itself, which makes the
+    graph checkable without running anything:
+  </p>
+  <CopyCode code={testSnippet} lang="python" />
+</DocsLayout>
