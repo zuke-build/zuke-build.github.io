@@ -72,7 +72,7 @@ const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuk
     always the same thing: the Zuke <strong>engine</strong>. Your build file is a
     <strong>worker</strong> — it tells the engine what the targets are and runs a
     target's body when the engine asks. Everything else happens in the engine,
-    once, for every language. TypeScript builds run on it today, Python is the
+    once, for every language. TypeScript builds run on it, Python is the
     first language SDK, and more language SDKs are coming on the same contract.
   </p>
 
@@ -238,15 +238,15 @@ const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuk
   <CopyCode code={runSnippet} lang="bash" multi />
   <div class="note">
     <p>
-      <strong>Status.</strong> The Python SDK lives at
-      <a href="https://github.com/zuke-build/zuke-python" target="_blank" rel="noopener noreferrer">zuke-build/zuke-python</a>
-      and is being finished slice by slice. The worker loop, the authoring
-      surface, the body context, hooks, gates, services and the generated tool
-      facades are in, the worker passes every conformance case of the engine,
-      and the repository's own gate runs as a Zuke build on it. The first PyPI
-      release is being cut; until then, follow the repository. Python is the
-      first SDK, not the last: more language SDKs are coming, each one a thin
-      worker over the same engine.
+      <strong>Get started.</strong> The SDK is
+      <a href="https://pypi.org/project/zuke/" target="_blank" rel="noopener noreferrer"><code>zuke</code> on PyPI</a>,
+      built at <a href="https://github.com/zuke-build/zuke-python" target="_blank" rel="noopener noreferrer">zuke-build/zuke-python</a>,
+      and its worker passes every conformance case of the engine it pins.
+      <code>zuke setup --sdk python</code> scaffolds a project; the
+      <a href="/docs/python">Python quickstart</a> walks through it, and the
+      <a href="/api/python">Python API reference</a> documents every class and
+      facade. Python is the first SDK, not the last: more language SDKs are
+      coming, each one a thin worker over the same engine.
     </p>
   </div>
 

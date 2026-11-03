@@ -1,39 +1,40 @@
 ---
 import DocsLayout from "./DocsLayout.astro";
-import api from "../data/api.json";
+import { sdks, type Sdk } from "../data/sdks.ts";
 
 interface Props {
+  sdk: Sdk;
   title: string;
   description?: string;
   toc?: { id: string; label: string }[];
 }
-const { title, description, toc = [] } = Astro.props;
+const { sdk, title, description, toc = [] } = Astro.props;
 
 // Standalone API section: same three-column layout as docs, but the sidebar
-// lists the generated packages instead of the docs nav.
+// lists one overview per SDK and the current SDK's generated packages.
 const nav = [
   {
     group: "API reference",
-    items: [{ href: "/api", label: "Overview" }],
+    items: sdks.map((s) => ({ href: s.apiBase, label: s.label })),
   },
   {
-    group: "Packages",
-    items: api.packages.map((pkg) => ({
-      href: `/api/${pkg.dir}`,
+    group: `${sdk.label} packages`,
+    items: sdk.api.packages.map((pkg) => ({
+      href: `${sdk.apiBase}/${pkg.dir}`,
       label: pkg.name,
     })),
   },
   {
     group: "More",
     items: [
-      { href: "/docs", label: "Docs" },
+      { href: sdk.docs[0]?.href ?? "/docs", label: `${sdk.label} docs` },
       { href: "/examples", label: "Examples" },
-      { href: "https://jsr.io/@zuke", label: "JSR packages ↗" },
+      sdk.registryHome,
     ],
   },
 ];
 ---
 
-<DocsLayout title={title} description={description} toc={toc} nav={nav} suffix="Zuke API" section="API">
+<DocsLayout title={title} description={description} toc={toc} nav={nav} suffix={`Zuke ${sdk.label} API`} section="API">
   <slot />
 </DocsLayout>

@@ -1,4 +1,5 @@
 ---
+import { sdks } from "../data/sdks.ts";
 import Base from "./Base.astro";
 import Search from "../components/Search.astro";
 
@@ -39,6 +40,10 @@ const docsNav: NavGroup[] = [
       { href: "/docs/console", label: "Console output" },
     ],
   },
+  // One group per language SDK with a guide of its own (src/data/sdks.ts).
+  ...sdks
+    .filter((sdk) => sdk.docs.length > 0)
+    .map((sdk) => ({ group: `${sdk.label} SDK`, items: sdk.docs })),
   {
     group: "Recipes",
     items: [

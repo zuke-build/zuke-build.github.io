@@ -234,7 +234,7 @@ const featureGroups = [
     label: "the model",
     items: [
       { t: "Typed, refactor-safe dependencies", d: "Targets reference each other with this.target — not strings. Rename one and every reference updates." },
-      { t: "Just code, in your language", d: "Ordinary functions with full types, editor support, and debugging — TypeScript today, Python next, more SDKs coming. No YAML, no bespoke DSL." },
+      { t: "Just code, in your language", d: "Ordinary functions with full types, editor support, and debugging — TypeScript or Python today, more SDKs coming. No YAML, no bespoke DSL." },
       { t: "Testable and reusable", d: "A build is a class. Unit-test a target like any other code, run a build in-process from a test, and share targets through a base class or a package." },
       { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
       { t: "One engine, thin SDKs", d: "Scheduling, caching, retries, locks, services, CI generation and every tool wrapper live in the engine once. An SDK only describes the build and runs the bodies." },
@@ -467,7 +467,7 @@ const cdMoreIcons: Record<string, string> = {
           is a code-first, strongly-typed build system. A build is a class in
           your language: targets are fields, dependencies are real references
           the type checker sees, and every tool is a typed API. One engine runs
-          it — <strong>TypeScript today, Python next, more SDKs coming</strong> —
+          it — <strong>TypeScript or Python today, more SDKs coming</strong> —
           <strong>generates your CI YAML</strong> from it, and serves it to
           <strong>AI agents</strong> as typed tools. Zero runtime dependencies.
         </p>
@@ -492,9 +492,12 @@ const cdMoreIcons: Record<string, string> = {
           <CopyBlock
             label="Then scaffold and run"
             lines={[
+              "# a TypeScript build, zuke.ts",
               "zuke setup",
-              "./zuke",
-              "./zuke generate-ci",
+              "# or a Python build, build.py",
+              "zuke setup --sdk python",
+              "zuke",
+              "zuke generate-ci",
             ]}
           />
         </div>
@@ -715,7 +718,10 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <li>Published conformance cases are the contract: an SDK that passes them behaves exactly like <code>zuke.ts</code>.</li>
           <li>Python is the first SDK, more language SDKs are coming — the engine is the same for all of them.</li>
         </ul>
-        <a class="btn btn-ghost" href="/docs/engine">How the engine and workers work →</a>
+        <div class="engine-links">
+          <a class="btn btn-ghost" href="/docs/engine">How the engine and workers work →</a>
+          <a class="btn btn-ghost" href="/docs/python">Python quickstart →</a>
+        </div>
       </div>
     </div>
   </section>
@@ -1874,9 +1880,10 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           run your first target. Already have <code>package.json</code> scripts or a
           <code>Makefile</code>? Swap <code>zuke setup</code> for
           <code>zuke import</code> and start from a target per task instead of a
-          blank page. Writing Python? The
-          <a href="/docs/engine#python">Python SDK</a> runs the same engine from a
-          <code>build.py</code>, and more language SDKs are coming.
+          blank page. Writing Python? <code>zuke setup --sdk python</code>
+          scaffolds a <code>build.py</code> on the same engine — see the
+          <a href="/docs/python">Python quickstart</a> — and more language SDKs
+          are coming.
         </p>
         <CopyBlock
           label="Install the CLI — pick one"
@@ -2286,6 +2293,7 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
   .engine-flow__box code { font-size: 0.92rem; }
   .engine-flow__or { color: var(--text-faint); font-size: 0.85rem; }
   .engine-flow__d { font-size: 0.86rem; color: var(--text-dim); }
+  .engine-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
   .engine-flow__arrow {
     align-self: center;
     font-size: 1.3rem;

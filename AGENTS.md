@@ -112,19 +112,41 @@ content with `reducedMotion: "reduce"` as above.
 ## Generated files — never edit by hand
 
 Four files are regenerated from the Zuke repository by `zuke syncWebsite` on
-every release, which opens a PR against this repo. Editing them here is
-pointless: the next release overwrites the change.
+every release, and one from the Python SDK's repository by its
+`sync_website` target on every PyPI release. Each opens a PR against this
+repo. Editing them here is pointless: the next release overwrites the change.
 
-| File                   | Source                                    |
-| ---------------------- | ----------------------------------------- |
-| `public/llms.txt`      | the Zuke repo's `apiDocs` flow            |
-| `public/llms-full.txt` | the Zuke repo's `apiDocs` flow            |
-| `src/data/api.json`    | the Zuke repo's `apiReference` flow       |
-| `src/data/tools.ts`    | `build/website_tools.ts` in the Zuke repo |
+| File                       | Source                                              |
+| -------------------------- | --------------------------------------------------- |
+| `public/llms.txt`          | the Zuke repo's `apiDocs` flow                      |
+| `public/llms-full.txt`     | the Zuke repo's `apiDocs` flow                      |
+| `src/data/api.json`        | the Zuke repo's `apiReference` flow                 |
+| `src/data/tools.ts`        | `build/website_tools.ts` in the Zuke repo           |
+| `src/data/api-python.json` | zuke-python's `api_reference` (`src/zuke/_reference.py`) |
 
 Everything else — the landing page, every docs and examples page,
 `src/data/users.ts` — is hand-maintained here. `packageCount` is derived from
 the synced `tools.ts`, so never hard-code a package count in copy.
+
+## Language SDKs
+
+The site documents one engine and a build SDK per language. TypeScript's guide
+is the main docs; every other SDK has its own guide under
+`src/pages/docs/<id>/`. [`src/data/sdks.ts`](./src/data/sdks.ts) is the one list
+of SDKs: the API reference routes (`/api` for the first entry, `/api/<id>` for
+the rest, all from `src/pages/api/[...slug].astro`), the language tabs on the
+API overview, the API sidebar and the docs sidebar's per-SDK group are all
+derived from it. To add a language:
+
+1. Have the SDK's repository emit the `api.json` contract (schema 1, the shape
+   `src/data/api.json` already has) and sync it to `src/data/api-<id>.json`, as
+   zuke-python's `sync_website` does.
+2. Add its entry to `src/data/sdks.ts`, importing that file.
+3. Write its guide under `src/pages/docs/<id>/` and list the pages in the
+   entry's `docs`.
+
+Prose about the SDK traces to its own repository: its README, its docstrings
+(which are the API reference) and its `CHANGELOG.md`.
 
 ## Content accuracy
 

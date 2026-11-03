@@ -1,6 +1,15 @@
 ---
-import ApiLayout from "../../layouts/ApiLayout.astro";
-import api from "../../data/api.json";
+import ApiLayout from "../layouts/ApiLayout.astro";
+import { sdks, type Sdk } from "../data/sdks.ts";
+import { renderParagraph } from "./api_doc.ts";
+
+// One SDK's API overview: its search and its package grid. Rendered by
+// src/pages/api/[...slug].astro for every entry of src/data/sdks.ts.
+interface Props {
+  sdk: Sdk;
+}
+const { sdk } = Astro.props;
+const api = sdk.api;
 
 const toc = [
   { id: "search", label: "Search" },
@@ -14,8 +23,8 @@ const searchIndex = api.packages.flatMap((pkg) =>
   pkg.symbols.map((sym) => ({
     n: sym.name,
     k: sym.kind,
-    p: pkg.dir,
-    h: `/api/${pkg.dir}#${sym.name}`,
+    p: pkg.name,
+    h: `${sdk.apiBase}/${pkg.dir}#${sym.name}`,
   }))
 );
 
@@ -23,14 +32,24 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
 ---
 
 <ApiLayout
-  title="API reference"
-  description={`The full typed @zuke API — every exported function, class, interface, and type across all ${api.packages.length} packages, generated straight from source.`}
+  sdk={sdk}
+  title={`${sdk.label} API reference`}
+  description={`The full typed Zuke ${sdk.label} API — every public function, class, and type across all ${api.packages.length} packages, generated straight from source.`}
   toc={toc}
 >
+  <nav class="sdktabs" aria-label="API reference language" data-pagefind-ignore>
+    {sdks.map((s) => (
+      <a
+        class:list={["sdktabs__tab", { "is-active": s.id === sdk.id }]}
+        href={s.apiBase}
+        aria-current={s.id === sdk.id ? "page" : undefined}
+      >{s.label}</a>
+    ))}
+  </nav>
   <p class="lead">
-    The full typed <code>@zuke</code> surface — every exported function, class,
-    interface, type, and constant across all <strong>{api.packages.length} packages</strong>,
-    generated straight from source with <code>deno doc</code>. Nothing here is
+    The full typed Zuke surface for <strong>{sdk.label}</strong> — every public
+    function, class, and type across all <strong>{api.packages.length} packages</strong>,
+    generated <Fragment set:html={sdk.apiSource} />. Nothing here is
     hand-written, so it can't drift from what actually ships.
   </p>
 
@@ -44,7 +63,7 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
       type="text"
       id="apisearch-input"
       class="apisearch__input"
-      placeholder={`Search ${totalSymbols} symbols… (e.g. "target", "AbsolutePath")`}
+      placeholder={`Search ${totalSymbols} symbols… (e.g. "target")`}
       autocomplete="off"
       spellcheck="false"
       role="combobox"
@@ -65,12 +84,12 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
   <p>Every package is documented on its own page — signatures, doc text, and members.</p>
   <div class="apigrid">
     {api.packages.map((pkg) => (
-      <a class="apicard" href={`/api/${pkg.dir}`}>
+      <a class="apicard" href={`${sdk.apiBase}/${pkg.dir}`}>
         <div class="apicard__head">
           <code class="apicard__name">{pkg.name}</code>
           <span class="apicard__count">{pkg.symbols.length}</span>
         </div>
-        <p class="apicard__summary">{pkg.summary}</p>
+        <p class="apicard__summary" set:html={renderParagraph(pkg.summary)} />
       </a>
     ))}
   </div>
@@ -114,7 +133,7 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
           <a href="${m.h}" tabindex="-1">
             <code class="apisearch__symname">${escapeHtml(m.n)}</code>
             <span class="apisearch__kind">${escapeHtml(m.k)}</span>
-            <span class="apisearch__pkg">@zuke/${escapeHtml(m.p)}</span>
+            <span class="apisearch__pkg">${escapeHtml(m.p)}</span>
           </a>
         </li>`,
         )
@@ -181,6 +200,29 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
 </script>
 
 <style>
+  .sdktabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 0 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .sdktabs .sdktabs__tab {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    text-decoration: none;
+  }
+  .sdktabs__tab:hover { color: var(--ink); }
+  .sdktabs__tab.is-active {
+    color: var(--ink);
+    background: color-mix(in oklch, var(--accent) 16%, transparent);
+  }
   .apisearch {
     position: relative;
     margin: 4px 0 32px;
@@ -253,7 +295,7 @@ const totalSymbols = api.packages.reduce((n, p) => n + p.symbols.length, 0);
     gap: 12px;
     margin: 18px 0 8px;
   }
-  .apicard {
+  .apigrid .apicard {
     display: flex;
     flex-direction: column;
     gap: 8px;
