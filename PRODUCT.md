@@ -10,15 +10,15 @@ web
 
 ## Users
 
-Backend and full-stack developers who own their project's builds and CI/CD — a broad audience rather than a single narrow segment. They work day to day in TypeScript and are comfortable on the command line, and they arrive already carrying the pain of string-keyed task runners and hand-maintained YAML pipelines that drift, break on rename, and can't be refactored. Their job on this site is to size Zuke up fast: decide whether a code-first, strongly-typed build system is worth adopting, and if so, install it and run a first build the same visit. The marketing surface (the landing page) and the people who use the product are the same person, so the page speaks to a working developer as a peer, not to a buyer.
+Backend and full-stack developers who own their project's builds and CI/CD — a broad audience rather than a single narrow segment. They work day to day in a typed language — TypeScript or Python today, with more SDKs coming — and are comfortable on the command line, and they arrive already carrying the pain of string-keyed task runners and hand-maintained YAML pipelines that drift, break on rename, and can't be refactored. Their job on this site is to size Zuke up fast: decide whether a code-first, strongly-typed build system is worth adopting, and if so, install it and run a first build the same visit. The marketing surface (the landing page) and the people who use the product are the same person, so the page speaks to a working developer as a peer, not to a buyer.
 
 ## Product Purpose
 
-Zuke is a code-first, strongly-typed build automation system for Deno and TypeScript. Targets are declared as class fields, dependencies are wired with a fluent typed API, and Zuke resolves the graph and runs everything in topological order with zero runtime dependencies. This site exists to convert an evaluating developer into a hands-on user: success is a visitor who installs the CLI, scaffolds a `zuke.ts`, and runs their first target. Everything on the page — the live code samples, the build-log and CI mockups, the tool catalog — serves that single conversion, not brand awareness for its own sake.
+Zuke is a code-first, strongly-typed build automation system. A build is a typed class in the project's own language — targets are class fields, dependencies are wired with a fluent typed API — and one engine resolves the graph and runs everything in topological order with zero runtime dependencies. The engine hosts a build written in any language through a thin worker SDK: TypeScript runs in-process, Python is the first worker SDK, and more are coming. The lead claim is builds as typed code — refactorable, testable, reusable — not the runtime underneath. This site exists to convert an evaluating developer into a hands-on user: success is a visitor who installs the CLI, scaffolds a `zuke.ts`, and runs their first target. Everything on the page — the live code samples, the build-log and CI mockups, the tool catalog — serves that single conversion, not brand awareness for its own sake.
 
 ## Positioning
 
-CI/CD as code, generated and verified. You declare your pipeline once in real TypeScript, and Zuke generates the GitHub Actions / GitLab / Azure YAML and checks it stays in sync on every run — the build and its CI are one typed source of truth, not two things you keep aligned by hand. This is the claim every section reinforces.
+CI/CD as code, generated and verified. You declare your pipeline once in real typed code, and Zuke generates the GitHub Actions / GitLab / Azure YAML and checks it stays in sync on every run — the build and its CI are one typed source of truth, not two things you keep aligned by hand. This is the claim every section reinforces.
 
 ## Conversion & proof
 
@@ -27,7 +27,7 @@ CI/CD as code, generated and verified. You declare your pipeline once in real Ty
 - The line a visitor remembers after 10 seconds: your build and your CI are the same typed code, and Zuke keeps them honest.
 - Belief ladder (what a visitor must accept, in order, before installing):
   1. String-keyed task runners and hand-written CI YAML are fragile — a rename breaks them and nothing catches it.
-  2. A build defined as ordinary typed TypeScript is refactor-safe: references are real values the compiler checks.
+  2. A build defined as ordinary typed code is refactor-safe, testable and reusable: references are real values the type checker sees, in TypeScript or Python.
   3. Zuke generates the CI/CD YAML from that same typed build and verifies it's up to date, so the pipeline can't silently drift.
   4. It's low-risk to try: zero runtime dependencies, published on JSR, and the launcher installs Deno for you on first run.
 - Proof on hand: this site dogfoods Zuke (it builds itself via `zuke.ts`); a rendered build graph and worked examples stand in for testimonials. No customer logos or case studies supplied yet — add them to `.impeccable/assets/proof/` when available.
@@ -46,7 +46,7 @@ Precise, confident, technical. Zuke speaks to developers as peers who value corr
 
 - **Show the mechanism.** Every claim earns its place with real code, a live output mockup, or a rendered graph. Prefer a runnable example to an adjective.
 - **Practice what you preach.** The site is built by Zuke itself; that dogfooding is proof, and the page should keep surfacing it.
-- **Types are the story.** Refactor-safety, generated-and-verified CI, and typed tool wrappers are the throughline — reinforce it, don't bury it under feature breadth.
+- **Types are the story, not the runtime.** Refactor-safety, generated-and-verified CI, and typed tool wrappers are the throughline — reinforce it, don't bury it under feature breadth. Deno is how the engine ships, not the pitch; the language of the build is the visitor's own.
 - **Confident, never hyped.** Substance over superlatives. The AI capabilities are gated, concrete primitives, not the brand's whole voice.
 - **Distinct on purpose.** Actively avoid the AI-slop defaults; the neon dev-tool identity is a deliberate stance to protect, not a template to fill.
 

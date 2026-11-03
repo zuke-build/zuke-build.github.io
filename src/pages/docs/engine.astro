@@ -1,0 +1,376 @@
+---
+import { Code } from "astro:components";
+import CopyCode from "../../components/CopyCode.astro";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "two-processes", label: "Two processes, one build" },
+  { id: "who-does-what", label: "Who does what" },
+  { id: "a-run", label: "A run, step by step" },
+  { id: "commands", label: "Commands & tool wrappers" },
+  { id: "typescript", label: "TypeScript builds" },
+  { id: "python", label: "A Python build" },
+  { id: "zuke-json", label: "zuke.json & the launcher" },
+  { id: "own-sdk", label: "Writing an SDK" },
+  { id: "under-the-hood", label: "Under the hood" },
+];
+
+const pythonSnippet = `from zuke import Build, parameter, run, target
+from zuke.tools.docker import DockerTasks
+
+
+class CI(Build):
+    tag = parameter("image tag").default("dev")
+
+    lint = target().description("ruff").executes(lambda ctx: ctx.sh("ruff", "check", "."))
+    test = target().depends_on(lint).executes(lambda ctx: ctx.sh("pytest", "-q"))
+    image = (
+        target()
+        .depends_on(test)
+        .executes(
+            lambda ctx: DockerTasks.build(
+                ctx, lambda s: s.tag(f"app:{tag.value}").file("Dockerfile")
+            )
+        )
+    )
+
+
+run(CI)`;
+
+const zukeJsonSnippet = `{
+  "name": "App",
+  "sdk": { "command": ["uv", "run", "build.py"] },
+  "engine": "1.2.0"
+}`;
+
+const runSnippet = `./zuke --list        # the targets, as build.py describes them
+./zuke test          # lint, then test — every command spawned by the engine
+./zuke generate-ci   # the CI files the build declares
+./zuke mcp           # the build as typed tools for an agent`;
+
+const engineRunSnippet = `deno run -A jsr:@zuke/engine@1.2.0 test`;
+
+const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuke-python","protocol":1,"env":{…},"cwd":"/app"}}
+← {"jsonrpc":"2.0","id":1,"method":"build.describe"}
+→ {"jsonrpc":"2.0","id":1,"result":{"name":"CI","targets":[…],"parameters":[…],…}}
+← {"jsonrpc":"2.0","id":2,"method":"build.configure","params":{"parameters":{"tag":"dev"}}}
+← {"jsonrpc":"2.0","id":3,"method":"target.run","params":{"target":"lint","runId":"…","dryRun":false}}
+→ {"jsonrpc":"2.0","id":10,"method":"exec","params":{"target":"lint","argv":["ruff","check","."]}}
+← {"jsonrpc":"2.0","id":10,"result":{"code":0,"stdout":"","stderr":""}}
+→ {"jsonrpc":"2.0","id":3,"result":{}}
+…
+← {"jsonrpc":"2.0","method":"run.exit","params":{"code":0}}`;
+---
+
+<DocsLayout
+  title="Engine & workers"
+  description="How a Zuke build runs: one engine does the work, and a thin worker — your build file, in TypeScript or Python — describes the build and runs the target bodies when asked."
+  toc={toc}
+>
+  <p class="lead">
+    A Zuke build is typed code in the language of your project. What runs it is
+    always the same thing: the Zuke <strong>engine</strong>. Your build file is a
+    <strong>worker</strong> — it tells the engine what the targets are and runs a
+    target's body when the engine asks. Everything else happens in the engine,
+    once, for every language. TypeScript builds run on it today, Python is the
+    first language SDK, and more language SDKs are coming on the same contract.
+  </p>
+
+  <h2 id="two-processes">Two processes, one build</h2>
+  <p>
+    When you run <code>./zuke test</code> in a Python project, two processes
+    start. The launcher starts the engine. The engine starts your
+    <code>build.py</code> and the two talk over a private connection on your
+    machine for the rest of the run.
+  </p>
+  <div class="flow" aria-label="The launcher starts the engine, the engine starts the worker, and the two talk over a local socket">
+    <div class="flow__box">
+      <span class="flow__k">you</span>
+      <code>./zuke test</code>
+      <span class="flow__d">the launcher</span>
+    </div>
+    <span class="flow__arrow" aria-hidden="true">→</span>
+    <div class="flow__box flow__box--engine">
+      <span class="flow__k">engine</span>
+      <code>@zuke/engine</code>
+      <span class="flow__d">plans the graph, runs every command, keeps the state</span>
+    </div>
+    <span class="flow__arrow" aria-hidden="true">⇄</span>
+    <div class="flow__box">
+      <span class="flow__k">worker</span>
+      <code>build.py</code>
+      <span class="flow__d">describes the targets, runs their bodies</span>
+    </div>
+  </div>
+  <p>
+    The split is deliberate. The hard parts of a build system — ordering,
+    retries, timeouts, cancellation, caching, locks, resumable runs, service
+    lifecycles, CI generation, the MCP server, the output — are written once, in
+    the engine. A language SDK only has to do two small things: describe the
+    build and run a body. That is what makes a new language cheap to add, and
+    what guarantees a Python build and a TypeScript build behave identically.
+  </p>
+
+  <h2 id="who-does-what">Who does what</h2>
+  <table>
+    <thead>
+      <tr><th>The engine</th><th>The worker (your build file)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Parses the command line, resolves <a href="/docs/parameters">parameters</a>, and plans the graph in topological order.</td>
+        <td>Hands the engine a <em>manifest</em>: the targets, their dependencies, retries, timeouts, inputs and outputs, the parameters, the groups, the services, and the CI files it declares.</td>
+      </tr>
+      <tr>
+        <td>Runs every subprocess: argv only, no shell, output captured and <a href="/docs/secrets">redacted</a>, dry-run, timeout and cancel handled in one place.</td>
+        <td>Runs a target's body when told to, and asks the engine to run each command on its behalf.</td>
+      </tr>
+      <tr>
+        <td>Owns the <a href="/docs/caching">cache</a>, the <a href="/docs/state">durable run records</a>, <a href="/docs/locks">locks</a>, resume, and <a href="/docs/services">service</a> start, readiness and stop.</td>
+        <td>Answers the small questions only the build can: does this target's condition hold, what is its extra cache key, is this service ready.</td>
+      </tr>
+      <tr>
+        <td>Loads and runs every typed <a href="/docs/tools">tool wrapper</a> — Docker, npm, Deno, Git, the cloud CLIs — on the worker's behalf.</td>
+        <td>Calls a wrapper through a generated, typed facade in its own language; the engine runs the real thing.</td>
+      </tr>
+      <tr>
+        <td>Renders the <a href="/docs/console">build log</a> and summary, generates CI, serves the <a href="/docs/mcp">MCP server</a>.</td>
+        <td>Logs lines; even a stray <code>print</code> arrives in the log rather than on the wire.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="a-run">A run, step by step</h2>
+  <ol>
+    <li>
+      <strong>Start.</strong> <code>./zuke test</code> reads <code>zuke.json</code>,
+      finds the engine version and the worker command, and starts the engine.
+    </li>
+    <li>
+      <strong>Hello.</strong> The engine opens a private connection on your
+      machine and starts the worker with its address and a one-time token. The
+      worker connects, says which SDK it is, and sends its environment and
+      working directory — so a <code>uv run</code> virtualenv is what every
+      later command sees.
+    </li>
+    <li>
+      <strong>Describe.</strong> The engine asks for the manifest. From here on
+      the targets, the <code>--list</code> output, the <code>--help</code>, the
+      graph and the generated CI are all the engine's, with the build's data in
+      them.
+    </li>
+    <li>
+      <strong>Configure.</strong> The engine resolves parameters from flags,
+      environment and defaults and tells the worker the values, so
+      <code>tag.value</code> is set before any body runs.
+    </li>
+    <li>
+      <strong>Run.</strong> For each target in order the engine checks the cache,
+      takes the lock, asks the condition, and tells the worker to run the body.
+      While the body runs, each <code>ctx.sh(…)</code> or tool call is a request
+      back to the engine, which spawns it and answers with the result. Retries,
+      timeouts and cancellation apply to the body exactly as to a TypeScript
+      target.
+    </li>
+    <li>
+      <strong>Finish.</strong> The engine records the run, prints the summary,
+      tells the worker the run is over, and waits for it to exit. If the engine
+      itself dies, the worker's connection ends and it exits on its own; the
+      engine never leaves a build file running.
+    </li>
+  </ol>
+
+  <h2 id="commands">Commands &amp; tool wrappers</h2>
+  <p>
+    A body never spawns a process itself. <code>ctx.sh("pytest", "-q")</code>
+    sends the argv to the engine, which runs it the way the <code>$</code> shell
+    does in TypeScript: as discrete arguments, never a shell string, so there is
+    nothing to inject into; output is streamed to the log and captured; secrets
+    are redacted; <code>--dry-run</code> prints instead of running; a timeout
+    or a cancel kills the process. One implementation, every language.
+  </p>
+  <p>
+    The typed tool wrappers work the same way. The engine publishes a
+    machine-readable spec of every <code>@zuke/*</code> wrapper — its tasks,
+    their settings, every setter — and an SDK generates its facades from it.
+    <code>DockerTasks.build(ctx, lambda s: s.tag("app:dev"))</code> in Python
+    sends the engine the wrapper's name and release, the task, and the setters
+    the lambda called. The engine loads that exact wrapper release and runs it
+    with the worker's environment and directory. So the whole catalogue of
+    wrappers is available in every language from day one, at the same version
+    pinned for everyone.
+  </p>
+  <div class="note">
+    <p>
+      A call the engine cannot satisfy is refused by name — the wrapper, the
+      task, or the setter it could not find — rather than failing somewhere
+      inside. A task that throws fails the call with its message, and a cancel
+      cuts it short.
+    </p>
+  </div>
+
+  <h2 id="typescript">TypeScript builds</h2>
+  <p>
+    A <code>zuke.ts</code> build is the same model with one process fewer.
+    <code>@zuke/core</code> <em>is</em> the engine, as a library: a TypeScript
+    build imports it, and <code>run(MyBuild)</code> hosts the build in-process
+    with no socket in between. The <code>@zuke/engine</code> package is that
+    same core with a worker host in front of it, for a build written in another
+    language. Every feature on this site — caching, locks, resume, services,
+    canary releases, the MCP server, AI review — is core, so it reaches both
+    kinds of build the day it ships.
+  </p>
+
+  <h2 id="python">A Python build</h2>
+  <p>
+    Python is the first SDK. A build is a class whose fields are targets;
+    dependencies are references the type checker sees; each body gets a
+    <code>ctx</code> that runs commands through the engine; and every tool
+    wrapper has a typed facade under <code>zuke.tools</code>.
+  </p>
+  <CopyCode code={pythonSnippet} lang="python" />
+  <p>
+    Beside it, <code>zuke.json</code> names the worker command and the exact
+    engine release that runs it:
+  </p>
+  <CopyCode code={zukeJsonSnippet} lang="json" />
+  <p>Then the familiar surface, served by the engine:</p>
+  <CopyCode code={runSnippet} lang="bash" multi />
+  <div class="note">
+    <p>
+      <strong>Status.</strong> The Python SDK lives at
+      <a href="https://github.com/zuke-build/zuke-python" target="_blank" rel="noopener noreferrer">zuke-build/zuke-python</a>
+      and is being finished slice by slice. The worker loop, the authoring
+      surface, the body context, hooks, gates, services and the generated tool
+      facades are in, the worker passes every conformance case of the engine,
+      and the repository's own gate runs as a Zuke build on it. The first PyPI
+      release is being cut; until then, follow the repository. Python is the
+      first SDK, not the last: more language SDKs are coming, each one a thin
+      worker over the same engine.
+    </p>
+  </div>
+
+  <h2 id="zuke-json">zuke.json &amp; the launcher</h2>
+  <p>
+    A project with a <code>zuke.ts</code> runs it directly. A project with no
+    <code>zuke.ts</code> holds a build another SDK hosts, and its
+    <code>zuke.json</code> says how: <code>sdk.command</code> is the worker's
+    argv, and <code>engine</code> is the exact <code>@zuke/engine</code> release
+    to run it with — <code>"1.2.0"</code>, never a range, so the engine cannot
+    float between two runs. The <code>./zuke</code> launcher (and the global
+    <code>zuke</code> command, which forwards into the project) then runs:
+  </p>
+  <Code code={engineRunSnippet} lang="bash" theme="night-owl" />
+  <p>
+    The launcher bootstraps Deno itself, so a CI runner needs nothing
+    pre-installed, and it adds <code>--frozen</code> when a <code>deno.lock</code>
+    sits beside <code>zuke.json</code>. It refuses, naming the field, when
+    <code>engine</code> is missing or is not an exact version. Upgrading the
+    engine is editing one number and committing it.
+  </p>
+
+  <h2 id="own-sdk">Writing an SDK</h2>
+  <p>
+    The engine is built to host a build in any language, and the contract an
+    SDK has to meet is published as data, not prose:
+  </p>
+  <ul>
+    <li>
+      <strong>Conformance cases.</strong> Under
+      <a href="https://github.com/zuke-build/zuke/tree/master/packages/engine/conformance" target="_blank" rel="noopener noreferrer"><code>packages/engine/conformance</code></a>
+      each case is one manifest, one command line, and the exact calls the
+      engine makes in order — retries, conditions, cache keys, locks, services,
+      hooks, suspend and resume, a worker that crashes mid-body, an engine that
+      dies. The engine replays them against a scripted worker in its own test
+      suite, and an SDK replays them against its real worker. Passing every case
+      is what "speaks the protocol" means.
+    </li>
+    <li>
+      <strong>The tool spec.</strong>
+      <a href="https://github.com/zuke-build/zuke/tree/master/packages/engine/spec" target="_blank" rel="noopener noreferrer"><code>packages/engine/spec/tools.json</code></a>
+      describes every wrapper's tasks and settings, so an SDK generates its typed
+      facades instead of writing them by hand — and regenerates them when it
+      vendors a newer spec.
+    </li>
+    <li>
+      <strong>Versioning.</strong> A protocol change lands in the engine first.
+      An SDK pins the engine release it was tested against and moves forward
+      deliberately.
+    </li>
+  </ul>
+
+  <h2 id="under-the-hood">Under the hood</h2>
+  <p>
+    For the curious, the whole transport fits in a paragraph. The engine listens
+    on loopback TCP and accepts exactly one connection. It starts the worker with
+    three environment variables — the address, a per-run token, and the protocol
+    version — and the two exchange newline-delimited
+    <a href="https://www.jsonrpc.org/specification" target="_blank" rel="noopener noreferrer">JSON-RPC 2.0</a>
+    messages. The worker's own stdout and stderr are piped to the engine as log
+    lines, so the socket is the only channel that carries protocol. The worker
+    ignores <kbd>Ctrl-C</kbd>; the engine drives shutdown, so a cancelled run is
+    one coordinated stop rather than two processes racing to die.
+  </p>
+  <p>A trimmed transcript of the Python build above:</p>
+  <Code code={helloSnippet} lang="text" theme="night-owl" />
+  <p>
+    Engine-to-worker calls are <code>build.describe</code>,
+    <code>build.configure</code>, the <code>build.on*</code> hooks the manifest
+    flagged, <code>target.run</code>, <code>target.condition</code>,
+    <code>target.cacheKey</code>, <code>target.settings</code>,
+    <code>target.validate</code>, <code>service.start</code>,
+    <code>service.ready</code>, <code>service.stop</code>, and finally
+    <code>run.exit</code> (or <code>run.cancel</code>). Worker-to-engine calls
+    are <code>exec</code>, <code>tool.call</code>, <code>log</code>,
+    <code>state.get</code>/<code>set</code>/<code>trySet</code>,
+    <code>secret.register</code> and <code>signals</code> — the
+    <a href="/docs/run-context">run context</a> a body already has in
+    TypeScript, served over the wire. The full shapes, with the guard that
+    rejects each malformed field by name, are in the
+    <a href="https://jsr.io/@zuke/engine" target="_blank" rel="noopener noreferrer"><code>@zuke/engine</code></a>
+    API docs.
+  </p>
+</DocsLayout>
+
+<style>
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    margin: 22px 0 18px;
+  }
+  .flow__box {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .flow__box--engine {
+    border-color: color-mix(in oklch, var(--accent) 55%, var(--border));
+    background: color-mix(in oklch, var(--accent) 9%, transparent);
+  }
+  .flow__k {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .flow__box code { font-size: 0.9rem; }
+  .flow__d { font-size: 0.86rem; color: var(--text-dim); }
+  .flow__arrow {
+    align-self: center;
+    font-size: 1.3rem;
+    color: var(--cyan);
+    flex: 0 0 auto;
+  }
+  @media (max-width: 720px) {
+    .flow { flex-direction: column; }
+    .flow__arrow { transform: rotate(90deg); align-self: center; }
+  }
+</style>

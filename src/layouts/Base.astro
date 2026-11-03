@@ -8,9 +8,9 @@ interface Props {
   description?: string;
 }
 const {
-  title = "Zuke — code-first build automation for Deno & TypeScript",
+  title = "Zuke — builds as typed code, in your language",
   description =
-    "Zuke is a code-first, strongly-typed build automation system for Deno & TypeScript. Define targets as class fields, wire dependencies with a fluent API, and ship with zero runtime dependencies.",
+    "Zuke is a code-first, strongly-typed build automation system. Write your build as a typed class — TypeScript today, Python next, more SDKs coming — and one engine runs it, generates your CI, and serves it to AI agents, with zero runtime dependencies.",
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://zuke-build.github.io");
