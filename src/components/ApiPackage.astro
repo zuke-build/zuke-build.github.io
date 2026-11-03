@@ -77,20 +77,21 @@ const toc = [
         {sym.doc && <div class="symcard__doc" set:html={renderDoc(sym.doc)} />}
 
         {sym.members?.length ? (
-          <table class="dtable">
-            <thead>
-              <tr><th>Member</th><th>Signature</th><th>Doc</th></tr>
-            </thead>
-            <tbody>
-              {sym.members.map((m) => (
-                <tr>
-                  <td><code>{m.name}{m.optional ? "?" : ""}</code></td>
-                  <td><code>{m.signature}</code></td>
-                  <td set:html={renderParagraph(m.doc)} />
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ul class="members" aria-label={`${sym.name} members`}>
+            {sym.members.map((m) => {
+              // The signature already starts with the name (after any
+              // static/async prefix), so emphasise it in place.
+              const at = m.signature.indexOf(m.name);
+              return (
+                <li class="member">
+                  <code class="member__sig">{at < 0 ? m.signature : (
+                    <>{m.signature.slice(0, at)}<strong>{m.name}</strong>{m.signature.slice(at + m.name.length)}</>
+                  )}</code>
+                  {m.doc && <p class="member__doc" set:html={renderParagraph(m.doc)} />}
+                </li>
+              );
+            })}
+          </ul>
         ) : null}
       </section>
     ))}
@@ -243,7 +244,38 @@ const toc = [
     margin: 10px 0 12px;
   }
 
-  .symcard .dtable { margin: 12px 0 4px; }
+  /* members: one per row, the full signature then its doc, so neither is
+     squeezed into a narrow column */
+  .members {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--border);
+  }
+  .member {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .member:last-child { border-bottom: 0; padding-bottom: 0; }
+  .symcard code.member__sig {
+    display: block;
+    background: none;
+    padding: 0;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    /* wrap at spaces; break inside a token only when one alone is too wide */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .member__sig strong { color: var(--ink); font-weight: 700; }
+  .symcard .member__doc {
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
 
   /* compact screens: the sticky menu bar sits under the header too */
   @media (max-width: 860px) {
