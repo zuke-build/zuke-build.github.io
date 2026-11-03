@@ -3793,7 +3793,7 @@
         {
           "name": "FileSystemCacheStore",
           "kind": "class",
-          "doc": "A {@link RemoteCacheStore} backed by a shared or mounted directory.",
+          "doc": "A {@link RemoteCacheStore} backed by a shared or mounted directory.\n\nOn POSIX an entry is refused (a warned rebuild) unless the current user owns\nit and neither its group nor others may write it: anyone who can replace an\narchive chooses files a later target runs. Windows has no such bits, so the\ncheck is skipped there.",
           "signature": "class FileSystemCacheStore",
           "deprecated": false,
           "members": [
@@ -3809,7 +3809,7 @@
               "kind": "method",
               "optional": false,
               "signature": "getStream(key: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>> | null>",
-              "doc": "The archive stored under `key` as a stream, or `null` if there is none."
+              "doc": "The archive stored under `key` as a stream, or `null` if there is none.\nRefused when another user owns it or it is group- or world-writable."
             },
             {
               "name": "put",
@@ -3847,6 +3847,13 @@
               "optional": true,
               "signature": "maxInflatedBytes?: number",
               "doc": "The most a fetched artifact may decompress to, in bytes — see\n{@link RemoteCacheStore.maxInflatedBytes}. Defaults to 2 GiB."
+            },
+            {
+              "name": "uid",
+              "kind": "property",
+              "optional": true,
+              "signature": "uid?: unknown",
+              "doc": "The current user's id, or `null` where the platform has none (Windows).\nDefaults to `Deno.uid`; overridable for tests."
             }
           ]
         },
@@ -4573,7 +4580,7 @@
         {
           "name": "HttpCacheStore",
           "kind": "class",
-          "doc": "A {@link RemoteCacheStore} backed by HTTP: `GET <url>/<key>` fetches an\nartifact (a `404` means a miss) and `PUT <url>/<key>` stores one. Works with\nany object store or cache server that speaks plain HTTP GET/PUT — an S3, GCS,\nor R2 bucket behind a URL, or a self-hosted cache endpoint.\n\n**Security.** The `url` (and `token`) are *trusted configuration*: outputs are\nuploaded to that host and archives are extracted from it, so point it only at\na cache you control, and prefer a {@link \"./params.ts\" | secret parameter} or\nan environment variable over a hard-coded value. On CI, restrict egress to\nthe cache host so a misconfigured or overridden URL can't exfiltrate\nartifacts. A restored archive cannot name a path outside the workspace, cannot\ncarry a link or directory entry, and is refused if the path it would land on\npasses through a symlink the workspace already holds — so a poisoned store\ncannot write outside the workspace (see {@link restoreOutputs}). An artifact\nlarger than {@link HttpCacheStoreOptions.maxArtifactBytes} is refused before\nit is buffered, and {@link restoreOutputs} separately bounds what it\ndecompresses to.",
+          "doc": "A {@link RemoteCacheStore} backed by HTTP: `GET <url>/<key>` fetches an\nartifact (a `404` means a miss) and `PUT <url>/<key>` stores one. Works with\nany object store or cache server that speaks plain HTTP GET/PUT — an S3, GCS,\nor R2 bucket behind a URL, or a self-hosted cache endpoint.\n\n**Security.** The `url` (and `token`) are *trusted configuration*: outputs are\nuploaded to that host and archives are extracted from it, so point it only at\na cache you control, and prefer a {@link \"./params.ts\" | secret parameter} or\nan environment variable over a hard-coded value. On CI, restrict egress to\nthe cache host so a misconfigured or overridden URL can't exfiltrate\nartifacts. A restored archive cannot name a path outside the workspace, cannot\ncarry a link or directory entry, and is refused if the path it would land on\npasses through a symlink the workspace already holds — so a poisoned store\ncannot write outside the workspace (see {@link restoreOutputs}). An artifact\nlarger than {@link HttpCacheStoreOptions.maxArtifactBytes} is refused before\nit is buffered, and {@link restoreOutputs} separately bounds what it\ndecompresses to. Within the declared outputs, though, a store writer\nchooses what is restored unless `ZUKE_REMOTE_CACHE_SIGNING_KEY` is set\n({@link \"./cache.ts\".OpenCacheOptions.signingKey}).",
           "signature": "class HttpCacheStore",
           "deprecated": false,
           "members": [
@@ -5672,6 +5679,13 @@
               "optional": true,
               "signature": "warn?: unknown",
               "doc": "Report a non-fatal remote-cache error (a get/put failure never fails the build)."
+            },
+            {
+              "name": "signingKey",
+              "kind": "property",
+              "optional": true,
+              "signature": "signingKey?: string",
+              "doc": "A secret that authenticates the remote store's artifacts — the executor\npasses `ZUKE_REMOTE_CACHE_SIGNING_KEY`. With it, each upload is stored\nwith an HMAC-SHA256 trailer under a key of its own (`<key>.signed`), and\nan artifact whose MAC is missing or wrong is refused and rebuilt, so\nwriting to the store no longer chooses what a restore writes. Without it,\nanything under the plain key is restored, and signed artifacts are never\nread."
             }
           ]
         },
@@ -6731,7 +6745,7 @@
         {
           "name": "restoreOutputs",
           "kind": "function",
-          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\ndirectory entry (which {@link archiveOutputs} never produces), when it lands\nunder `.git` or `.zuke` (`.zuke/tools` aside), when — given `outputs` — it\nfalls outside the target's declared outputs, and when the path it would be\nwritten to passes through, or is, a symlink that already exists on disk.\n\nA symlink entry is restored only when its target is relative, stays inside\na declared output root that holds the link (with `..` only before the\ntarget's first name), and does not resolve into `.git` or `.zuke`; when no\nother entry shares its name or sits under it; and when the host can create\nlinks at all. Links are created after every file is written, so no write can\npass through one.\n\nThe on-disk refusal is what makes the confinement real rather than lexical.\nThe archive cannot plant a link that a write follows, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
+          "doc": "Restore the files in `artifact` (a gzipped tar produced by\n{@link archiveOutputs}) to disk, returning the paths written.\n\nEvery entry is validated before anything is written, so a rejected archive\nleaves no half-written, partially-trusted output tree. An entry is refused\nwhen its name is absolute or escapes the workspace with `..`, when it is a\ndirectory entry (which {@link archiveOutputs} never produces), when it lands\nunder `.git` or `.zuke` (`.zuke/tools` aside), when it is an install marker\n({@link isInstallMarker}), when it holds a colon (which names an NTFS\nalternate data stream, so `marker.json::$DATA` would write the marker), when\n— given `outputs` — it falls outside the target's declared outputs, and when the path it would be\nwritten to passes through, or is, a symlink that already exists on disk.\n\nA symlink entry is restored only when its target is relative, stays inside\na declared output root that holds the link (with `..` only before the\ntarget's first name), and does not resolve into `.git` or `.zuke`; when no\nother entry shares its name or sits under it; and when the host can create\nlinks at all. Links are created after every file is written, so no write can\npass through one.\n\nThe on-disk refusal is what makes the confinement real rather than lexical.\nThe archive cannot plant a link that a write follows, but a workspace can already hold one at a\ndeclared output — `dist -> /tmp/build`, a checked-out `bazel-bin`, a Windows\njunction — and `writeFile` follows it. Such a workspace no longer restores\nfrom the remote cache and rebuilds instead; the link is left alone, because\nthe layout is the owner's and silently replacing it would be its own\nsurprise.\n",
           "signature": "async function restoreOutputs(artifact: Uint8Array, host: OutputHost, outputs?: unknown, maxBytes?: number): Promise<string[]>",
           "deprecated": false
         },
