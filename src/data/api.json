@@ -52319,6 +52319,13 @@
               "doc": "Generate a new local tap (`brew tap-new`)."
             },
             {
+              "name": "trust",
+              "kind": "method",
+              "optional": false,
+              "signature": "trust(configure: Configure<BrewTrustSettings>): Promise<CommandOutput>",
+              "doc": "Trust a non-official tap's formulae, casks or commands (`brew trust`)."
+            },
+            {
               "name": "repository",
               "kind": "method",
               "optional": false,
@@ -52368,6 +52375,50 @@
               "optional": false,
               "signature": "retry(): this",
               "doc": "Retry once if the test fails (`--retry`)."
+            }
+          ]
+        },
+        {
+          "name": "BrewTrustSettings",
+          "kind": "class",
+          "doc": "Settings for `brew trust`, which lets Homebrew load a non-official tap's\nformulae, casks or commands. Current Homebrew refuses to load them from a tap\nit has not been told to trust.",
+          "signature": "class BrewTrustSettings extends BrewCommandSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "targets",
+              "kind": "method",
+              "optional": false,
+              "signature": "targets(...names: string[]): this",
+              "doc": "What to trust: taps, formulae, casks or commands by name; repeatable."
+            },
+            {
+              "name": "tap",
+              "kind": "method",
+              "optional": false,
+              "signature": "tap(): this",
+              "doc": "The names are taps (`--tap`)."
+            },
+            {
+              "name": "formula",
+              "kind": "method",
+              "optional": false,
+              "signature": "formula(): this",
+              "doc": "The names are formulae (`--formula`)."
+            },
+            {
+              "name": "cask",
+              "kind": "method",
+              "optional": false,
+              "signature": "cask(): this",
+              "doc": "The names are casks (`--cask`)."
+            },
+            {
+              "name": "externalCommand",
+              "kind": "method",
+              "optional": false,
+              "signature": "externalCommand(): this",
+              "doc": "The names are external commands (`--command`)."
             }
           ]
         },
@@ -52945,7 +52996,7 @@
               "kind": "method",
               "optional": false,
               "signature": "verify(configure: Configure<HomebrewVerifySettings>): Promise<void>",
-              "doc": "Install a formula file through a throwaway local tap, run its test, then\nuninstall it and remove the tap — the cleanup runs whether or not the\ninstall and test succeeded."
+              "doc": "Install a formula file through a throwaway local tap, trusted first, run\nits test, then uninstall it and remove the tap — the cleanup runs whether\nor not the install and test succeeded."
             },
             {
               "name": "verifyJob",
