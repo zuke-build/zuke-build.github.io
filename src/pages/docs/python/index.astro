@@ -14,9 +14,8 @@ const toc = [
   { id: "next", label: "Next steps" },
 ];
 
-const installSnippet = `deno install -A -g -n zuke jsr:@zuke/cli   # any OS, with Deno
-brew install zuke-build/tap/zuke           # macOS, Linux
-choco install zuke                         # Windows`;
+const installSnippet = `brew install zuke-build/tap/zuke   # macOS, Linux
+choco install zuke                 # Windows`;
 
 const setupSnippet = `zuke setup --sdk python   # build.py, zuke.json, the launchers
 zuke                      # run the default target`;
@@ -48,7 +47,7 @@ run(App)`;
 const zukeJsonSnippet = `{
   "name": "App",
   "sdk": { "command": ["uv", "run", "build.py"] },
-  "engine": "1.2.1"
+  "engine": "1.4.0"
 }`;
 
 const buildSnippet = `from zuke import Build, ci, parameter, run, target
@@ -83,11 +82,12 @@ zuke mcp                   # serve the build to an agent as typed tools`;
 
 const existingSnippet = `uv add --dev zuke   # or: pip install zuke`;
 
-const ciSnippet = `./zuke ci       # Linux and macOS: bootstraps a pinned Deno, then runs the engine
+const ciSnippet = `./zuke ci       # Linux and macOS: downloads the pinned zuke on first use, then runs it
 ./zuke.ps1 ci   # Windows`;
 
-const upgradeSnippet = `zuke upgrade --engine          # move zuke.json to the latest @zuke/engine
-zuke upgrade --engine 1.2.1    # or to an exact release`;
+const upgradeSnippet = `zuke upgrade --engine            # move the launchers and the pin to the latest zuke
+zuke upgrade --engine 2.4.0      # or to an exact zuke release
+zuke upgrade --engine --dry-run  # list what it would rewrite`;
 ---
 
 <DocsLayout
@@ -105,15 +105,18 @@ zuke upgrade --engine 1.2.1    # or to an exact release`;
 
   <h2 id="install">Install</h2>
   <p>
-    You need the <code>zuke</code> command and
-    <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a>.
-    Install the CLI one of three ways; each is the same program.
+    You need <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer">uv</a>,
+    and the <code>zuke</code> command to drive a build from your shell. It is
+    a standalone binary that carries the engine and every tool wrapper, so a
+    Python build needs <strong>no Deno, anywhere</strong>:
   </p>
   <CopyCode code={installSnippet} lang="bash" multi />
   <p>
     The Python package is <a href="https://pypi.org/project/zuke/" target="_blank" rel="noopener noreferrer"><code>zuke</code> on PyPI</a>.
     It needs Python 3.12 or newer and has no runtime dependencies. A scaffolded
     build installs it by itself, so there is nothing to <code>pip install</code> yet.
+    A machine without <code>zuke</code>, such as a CI runner, needs only the
+    project's launchers: they download the same binary (see <a href="#ci">On CI</a>).
   </p>
 
   <h2 id="scaffold">Scaffold a Python build</h2>
@@ -133,10 +136,13 @@ zuke upgrade --engine 1.2.1    # or to an exact release`;
   </p>
   <CopyCode code={zukeJsonSnippet} lang="json" />
   <p>
-    The other <code>setup</code> flags work as they do for TypeScript —
-    <code>--mcp</code> registers the build's MCP server for your agent, and
-    <code>--engine &lt;version&gt;</code> pins a release without asking the
-    network. See the <a href="/docs/cli">CLI reference</a>.
+    The launchers pin one <code>zuke</code> release: the one that ran
+    <code>setup</code>, or the one <code>--zuke &lt;version&gt;</code> names.
+    <code>zuke.json</code> pins the engine inside it.
+    <code>--no-bootstrap</code> writes launchers that require <code>zuke</code>
+    on <code>PATH</code> and fail closed without it, instead of downloading it,
+    and <code>--mcp</code> registers the build's MCP server for your agent as
+    <code>zuke mcp</code>. See the <a href="/docs/cli#project">CLI reference</a>.
   </p>
 
   <h2 id="first-build">Your first build</h2>
@@ -179,8 +185,12 @@ zuke upgrade --engine 1.2.1    # or to an exact release`;
   <h2 id="ci">On CI</h2>
   <p>
     A CI runner has no <code>zuke</code> command, so it runs the committed
-    launchers. They download a pinned, checksum-verified Deno on first use and
-    run the engine; uv provides the Python side.
+    launchers. They pin one <code>zuke</code> release and the SHA-256 of each
+    platform's archive. On first use they download it from the GitHub release,
+    verify it against the pin, keep it under <code>~/.zuke</code>
+    (<code>ZUKE_INSTALL</code>) and run it. <code>ZUKE_RELEASES_URL</code>
+    names a mirror, whose download is verified the same way. uv provides the
+    Python side, and a CI job needs nothing else.
   </p>
   <CopyCode code={ciSnippet} lang="bash" multi />
   <p>
@@ -194,9 +204,17 @@ zuke upgrade --engine 1.2.1    # or to an exact release`;
   <h2 id="engine">The engine pin</h2>
   <p>
     <code>zuke.json</code>'s <code>engine</code> is an exact release, never a
-    range, so the engine cannot change between two runs. Move it deliberately:
+    range, so the engine cannot change between two runs. Each <code>zuke</code>
+    release carries one engine, so the launchers and the pin move together,
+    deliberately, and never by hand:
   </p>
   <CopyCode code={upgradeSnippet} lang="bash" multi />
+  <p>
+    It rewrites <code>./zuke</code> and <code>zuke.ps1</code> to pin that
+    release and its archives' digests, keeping their variant, and
+    <code>zuke.json</code>'s <code>engine</code> to the engine inside it. It
+    also moves a project still on the old Deno launchers to the binary ones.
+  </p>
 
   <h2 id="differences">What differs from TypeScript</h2>
   <p>The model, the CLI and every engine feature are the same. The spelling is Python's:</p>

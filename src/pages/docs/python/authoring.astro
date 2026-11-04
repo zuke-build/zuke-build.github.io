@@ -332,7 +332,8 @@ const hooksSnippet = `class App(Build):
     Azure Pipelines or Bitbucket. <code>.invokes(...)</code> lists the targets
     to run as jobs, with <code>invoke(target, ...)</code> adjusting one;
     <code>.fan_out()</code> makes one job per target instead. Every job runs the
-    committed launcher, so a runner needs nothing installed. See
+    committed launcher, which downloads the pinned <code>zuke</code>, so a
+    runner needs only uv. See
     <a href="/docs/recipes/generate-ci">Generate your CI</a>.
   </p>
 

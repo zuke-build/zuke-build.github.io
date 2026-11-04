@@ -35,6 +35,12 @@ const mcpJsonSnippet = `{
   }
 }`;
 
+const mcpJsonPythonSnippet = `{
+  "mcpServers": {
+    "zuke": { "command": "zuke", "args": ["mcp"] }
+  }
+}`;
+
 const registerSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp`;
 
 const registerAllowRunSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
@@ -157,8 +163,10 @@ const authorizeSnippet = `class ControlPlane extends Build {
   <p>
     The process reads JSON-RPC from stdin and writes responses to stdout; its one
     startup line goes to stderr so it never corrupts the protocol stream. It runs
-    until stdin closes. (Read <code>zuke</code> as <code>deno run -A zuke.ts</code>
-    until the launcher binary ships.)
+    until stdin closes. Here <code>zuke</code> is the installed CLI, which
+    forwards to the project's build; <code>./zuke mcp</code> through the
+    launcher, or <code>deno run -A zuke.ts mcp</code> for a <code>zuke.ts</code>
+    build, runs the same server.
   </p>
 
   <h2 id="register">Registering with a client</h2>
@@ -172,8 +180,14 @@ const authorizeSnippet = `class ControlPlane extends Build {
     file is merged around its other servers.
   </p>
   <CopyCode code={setupMcpSnippet} lang="bash" multi />
-  <p>What it writes:</p>
+  <p>What it writes for a <code>zuke.ts</code> build:</p>
   <Code code={mcpJsonSnippet} lang="json" />
+  <p>
+    For a <a href="/docs/python">Python build</a> it registers the
+    <code>zuke</code> command instead, which serves the build on the engine it
+    carries, with no Deno:
+  </p>
+  <Code code={mcpJsonPythonSnippet} lang="json" />
   <p>
     Any client also takes the command directly — any client that speaks
     stdio MCP works the same way. In Claude Code, give it

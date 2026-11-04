@@ -133,16 +133,14 @@ Total                  17.8s
   <CopyCode code={firstRunSnippet} lang="bash" />
   <div class="note">
     <p>
-      The launcher <code>zuke setup</code> scaffolds runs <code>zuke.ts</code>
-      with the Deno on your <code>PATH</code>, and points at Deno's install docs
-      when there isn't one — a generated launcher has no pinned checksum to
-      verify a download against. For a fresh checkout that needs
-      <em>nothing</em> installed, copy Zuke's own
-      <a href="https://github.com/zuke-build/zuke/blob/master/zuke"><code>zuke</code></a>
-      / <a href="https://github.com/zuke-build/zuke/blob/master/zuke.ps1"><code>zuke.ps1</code></a>
-      launchers into your repo instead: they install a pinned Deno on first use,
-      verified against a per-platform SHA-256 (override with
-      <code>DENO_VERSION</code> plus its <code>DENO_SHA256</code>).
+      The <code>zuke</code> / <code>zuke.ps1</code> launchers
+      <code>zuke setup</code> writes are the same scripts Zuke's own repository
+      runs on. When there is no Deno on <code>PATH</code> they install a pinned
+      one on first use, verified against a per-platform SHA-256 (override with
+      <code>DENO_VERSION</code> plus its <code>DENO_SHA256</code>), so a fresh
+      checkout needs <em>nothing</em> installed. <code>zuke setup
+      --no-bootstrap</code> writes launchers that require Deno on
+      <code>PATH</code> and fail closed without it instead.
     </p>
   </div>
 
