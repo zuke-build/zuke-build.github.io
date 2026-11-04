@@ -238,7 +238,7 @@ const featureGroups = [
       { t: "Testable and reusable", d: "A build is a class. Unit-test a target like any other code, run a build in-process from a test, and share targets through a base class or a package." },
       { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
       { t: "One engine, thin SDKs", d: "Scheduling, caching, retries, locks, services, CI generation and every tool wrapper live in the engine once. An SDK only describes the build and runs the bodies." },
-      { t: "Zero runtime dependencies", d: "The engine ships with nothing else to install, whatever language the build is in. The launcher installs Deno for you on first run." },
+      { t: "Zero runtime dependencies", d: "Nothing else to install, and each SDK stays on its own stack: a TypeScript build's launcher fetches Deno, a Python build's fetches the zuke binary. Neither ever needs the other's toolchain." },
       { t: "Extensible by design", d: "Extend ToolSettings to build your own typed wrapper for any tool — no fork required." },
       { t: "Starts from what you have", d: "zuke import reads your package.json scripts or Makefile and writes a target per task — && chains become steps, run delegations become dependsOn." },
     ],
@@ -481,7 +481,7 @@ const cdMoreIcons: Record<string, string> = {
           <CopyBlock
             label="Install the CLI — pick one"
             lines={[
-              "# from JSR, any OS with Deno",
+              "# from JSR, for a Deno user",
               "deno install -A -g -n zuke jsr:@zuke/cli",
               "# with Homebrew, macOS and Linux",
               "brew install zuke-build/tap/zuke",
@@ -494,7 +494,7 @@ const cdMoreIcons: Record<string, string> = {
             lines={[
               "# a TypeScript build, zuke.ts",
               "zuke setup",
-              "# or a Python build, build.py",
+              "# or a Python build, no Deno needed",
               "zuke setup --sdk python",
               "zuke",
               "zuke generate-ci",
@@ -687,7 +687,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <div class="engine-flow__box">
           <span class="engine-flow__k">you</span>
           <code>./zuke test</code>
-          <span class="engine-flow__d">the launcher — installs Deno, starts the engine</span>
+          <span class="engine-flow__d">the launcher — fetches its pinned runtime, starts the engine</span>
         </div>
         <span class="engine-flow__arrow" aria-hidden="true">→</span>
         <div class="engine-flow__box engine-flow__box--engine">
@@ -1880,8 +1880,9 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
           run your first target. Already have <code>package.json</code> scripts or a
           <code>Makefile</code>? Swap <code>zuke setup</code> for
           <code>zuke import</code> and start from a target per task instead of a
-          blank page. Writing Python? <code>zuke setup --sdk python</code>
-          scaffolds a <code>build.py</code> on the same engine — see the
+          blank page. Writing Python? Install with Homebrew or Chocolatey, and
+          <code>zuke setup --sdk python</code> scaffolds a <code>build.py</code>
+          on the same engine, with no Deno anywhere — see the
           <a href="/docs/python">Python quickstart</a> — and more language SDKs
           are coming.
         </p>

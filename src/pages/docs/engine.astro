@@ -40,15 +40,13 @@ run(CI)`;
 const zukeJsonSnippet = `{
   "name": "App",
   "sdk": { "command": ["uv", "run", "build.py"] },
-  "engine": "1.2.0"
+  "engine": "1.4.0"
 }`;
 
 const runSnippet = `./zuke --list        # the targets, as build.py describes them
 ./zuke test          # lint, then test — every command spawned by the engine
 ./zuke generate-ci   # the CI files the build declares
 ./zuke mcp           # the build as typed tools for an agent`;
-
-const engineRunSnippet = `deno run -A jsr:@zuke/engine@1.2.0 test`;
 
 const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuke-python","protocol":1,"env":{…},"cwd":"/app"}}
 ← {"jsonrpc":"2.0","id":1,"method":"build.describe"}
@@ -256,17 +254,25 @@ const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuk
     <code>zuke.ts</code> holds a build another SDK hosts, and its
     <code>zuke.json</code> says how: <code>sdk.command</code> is the worker's
     argv, and <code>engine</code> is the exact <code>@zuke/engine</code> release
-    to run it with — <code>"1.2.0"</code>, never a range, so the engine cannot
-    float between two runs. The <code>./zuke</code> launcher (and the global
-    <code>zuke</code> command, which forwards into the project) then runs:
+    to run it with — <code>"1.4.0"</code>, never a range, so the engine cannot
+    float between two runs.
   </p>
-  <Code code={engineRunSnippet} lang="bash" theme="night-owl" />
   <p>
-    The launcher bootstraps Deno itself, so a CI runner needs nothing
-    pre-installed, and it adds <code>--frozen</code> when a <code>deno.lock</code>
-    sits beside <code>zuke.json</code>. It refuses, naming the field, when
-    <code>engine</code> is missing or is not an exact version. Upgrading the
-    engine is editing one number and committing it.
+    Each SDK runs on its own stack only: a Python build never needs Deno. It
+    runs on the standalone <code>zuke</code> binary, which carries the engine
+    and every tool wrapper. The <code>./zuke</code> and <code>zuke.ps1</code>
+    launchers pin one <code>zuke</code> release, with the SHA-256 of each
+    platform's archive. On first use they download it from the GitHub release,
+    verify it and keep it under <code>~/.zuke</code>, so a CI runner needs only
+    the SDK's own toolchain. The global <code>zuke</code> command runs the
+    build the same way from anywhere inside the project.
+  </p>
+  <p>
+    A pin the installed <code>zuke</code> cannot serve goes to the project's
+    launcher, which runs the release it pins. With no launcher, it is refused
+    with how to get a <code>zuke</code> that serves it; it never falls back to
+    another stack. The launchers and the pin move together, with
+    <code>zuke upgrade --engine [&lt;version&gt;]</code>, never by hand.
   </p>
 
   <h2 id="own-sdk">Writing an SDK</h2>

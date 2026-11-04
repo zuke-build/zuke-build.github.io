@@ -5,7 +5,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
 const toc = [
   { id: "two-commands", label: "Two commands named zuke" },
-  { id: "project", label: "Project: setup, import, doc, version" },
+  { id: "project", label: "Project: setup, import, doc, upgrade" },
   { id: "running", label: "Running targets" },
   { id: "graph-ci", label: "Graph & CI" },
   { id: "state", label: "State & orchestration" },
@@ -13,7 +13,7 @@ const toc = [
   { id: "env", label: "Environment variables" },
 ];
 
-const installCliSnippet = `# from JSR, any OS with Deno
+const installCliSnippet = `# from JSR, for a Deno user
 deno install -A -g -n zuke jsr:@zuke/cli
 # with Homebrew, macOS and Linux
 brew install zuke-build/tap/zuke
@@ -29,11 +29,18 @@ zuke setup --dir services/api     # scaffold into a subdirectory
 zuke setup --name ApiBuild --yes  # name the Build class, skip prompts
 zuke setup --launcher-name make   # write ./make when a zuke/ dir is in the way
 zuke setup --mcp                  # also write .mcp.json so agents find the build
-zuke setup --no-bootstrap-deno    # launchers that require Deno on PATH`;
+zuke setup --no-bootstrap         # launchers that need their runtime on PATH
+zuke setup --sdk python           # a Python build.py, with no Deno`;
 
-const importSnippet = `zuke import                       # auto-detect package.json scripts or a Makefile
+const importSnippet = `zuke import                       # auto-detect package.json, a Makefile or pyproject.toml
 zuke import --from package.json   # force the source
-zuke import --from makefile --yes`;
+zuke import --from makefile --yes
+zuke import --from pyproject      # a build.py from a pyproject.toml task table`;
+
+const upgradeSnippet = `zuke upgrade                      # the global CLI, from JSR, to the latest release
+zuke upgrade 2.4.0                # or to an exact one
+zuke upgrade --engine             # a Python project: its launchers and pin, to the latest zuke
+zuke upgrade --engine 2.4.0 --dry-run`;
 
 const docSnippet = `zuke doc core            # → deno doc jsr:@zuke/core
 zuke doc @scope/pkg      # a scoped package
@@ -133,7 +140,7 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   <CopyCode code={installCliSnippet} lang="bash" multi />
   <p>Scaffold <code>zuke.ts</code> and the <code>./zuke</code> launcher:</p>
   <CopyCode code={installSetupSnippet} lang="bash" />
-  <p>Everything after setup runs through the scaffolded launcher (<code>./zuke build</code> is <code>deno run -A zuke.ts build</code>):</p>
+  <p>Everything after setup runs through the scaffolded launcher (for a <code>zuke.ts</code> build, <code>./zuke build</code> is <code>deno run -A zuke.ts build</code>):</p>
   <CopyCode code={installLaunchSnippet} lang="bash" />
 
   <h2 id="two-commands">Two commands named <code>zuke</code></h2>
@@ -151,8 +158,9 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     </li>
     <li>
       <strong>The build launcher</strong> — the <code>./zuke</code> script
-      <code>setup</code> writes, which is just <code>deno run -A zuke.ts</code>
-      — drives <em>your</em> build: it runs targets and hosts every build-aware
+      <code>setup</code> writes, which for a <code>zuke.ts</code> build is just
+      <code>deno run -A zuke.ts</code>, and for a Python build runs the
+      <code>zuke</code> binary it pins — drives <em>your</em> build: it runs targets and hosts every build-aware
       command (<code>graph</code>, <code>generate-ci</code>,
       <code>completions</code>, <code>runs</code>, <code>resume</code>,
       <code>cancel</code>, <code>mcp</code>, <code>register</code>, and its own
@@ -175,7 +183,7 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
     </p>
   </div>
 
-  <h2 id="project">Project: <code>setup</code>, <code>import</code>, <code>doc</code>, <code>version</code></h2>
+  <h2 id="project">Project: <code>setup</code>, <code>import</code>, <code>doc</code>, <code>upgrade</code></h2>
   <p>
     <code>zuke setup</code> scaffolds a starter <code>zuke.ts</code> and a
     <code>./zuke</code> launcher into a directory. It prompts for the build class
@@ -195,14 +203,19 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
       <tr><td><code>--yes</code>, <code>-y</code></td><td>accept defaults without prompting</td></tr>
       <tr><td><code>--mcp</code></td><td>also write a <code>.mcp.json</code> registering the build's own <a href="/docs/mcp">MCP server</a>, so an agent client picks the build up from the first commit. An existing file is merged around its other servers, and an existing <code>zuke</code> entry is kept unless <code>--force</code> is set</td></tr>
       <tr><td><code>--allow-run</code></td><td>register the MCP server with execution enabled; implies <code>--mcp</code></td></tr>
-      <tr><td><code>--bootstrap-deno</code> / <code>--no-bootstrap-deno</code></td><td>which launchers to write. The default (and what <code>--yes</code> takes) installs a pinned, checksum-verified Deno when none is on <code>PATH</code>, so a checkout needs nothing up front; <code>--no-</code> writes launchers that require Deno on <code>PATH</code> and fail closed without it — for a project that must never download a tool from its build entry point</td></tr>
+      <tr><td><code>--bootstrap</code> / <code>--no-bootstrap</code></td><td>which launchers to write. The default (and what <code>--yes</code> takes) downloads the build's pinned, checksum-verified runtime when it is missing: Deno for a <code>zuke.ts</code> build, the <code>zuke</code> binary for a Python one. So a checkout needs nothing up front. <code>--no-</code> writes launchers that require that runtime on <code>PATH</code> and fail closed without it — for a project that must never download a tool from its build entry point. <code>--bootstrap-deno</code> / <code>--no-bootstrap-deno</code> are the older spellings</td></tr>
+      <tr><td><code>--sdk python</code></td><td>scaffold a build the Python SDK describes instead: a starter <code>build.py</code>, a <code>zuke.json</code> naming its <code>sdk.command</code> and the <code>@zuke/engine</code> release, and launchers that run the <code>zuke</code> binary. No <code>deno.json</code>, and nothing from Deno's stack. See the <a href="/docs/python">Python quickstart</a></td></tr>
+      <tr><td><code>--zuke &lt;version&gt;</code></td><td>with <code>--sdk python</code>, the <code>zuke</code> release the launchers pin (default: the running <code>zuke</code>'s own); <code>zuke.json</code> pins the engine inside it</td></tr>
     </tbody>
   </table>
   <p>
     <code>zuke import</code> takes the same flags plus <code>--from</code>, and
     generates a <code>zuke.ts</code> from an existing project's build scripts —
     a <code>package.json</code>'s <code>scripts</code> or a <code>Makefile</code>.
-    Without <code>--from</code> it auto-detects the source.
+    From a <code>pyproject.toml</code> task table (poe, pdm, hatch, taskipy or
+    rye) it scaffolds a Python build instead, as <code>setup --sdk python</code>
+    would, and takes <code>--zuke</code> as that does. Without
+    <code>--from</code> it auto-detects the source, in that order.
   </p>
   <CopyCode code={importSnippet} lang="bash" multi />
   <table class="dtable">
@@ -210,7 +223,7 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
       <tr><th><code>zuke import</code></th><th>Effect</th></tr>
     </thead>
     <tbody>
-      <tr><td><code>--from &lt;source&gt;</code></td><td><code>package.json</code> or <code>makefile</code>; auto-detected when omitted</td></tr>
+      <tr><td><code>--from &lt;source&gt;</code></td><td><code>package.json</code>, <code>makefile</code> or <code>pyproject</code>; auto-detected when omitted</td></tr>
       <tr><td><code>--dir</code>, <code>--name</code>, <code>--force</code>, <code>--yes</code></td><td>as for <code>setup</code></td></tr>
     </tbody>
   </table>
@@ -231,6 +244,20 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   <p>
     <code>zuke --version</code> (or <code>-V</code>) prints the CLI version.
   </p>
+  <p>
+    <code>zuke upgrade [&lt;version&gt;]</code> reinstalls a JSR-installed CLI
+    at the latest release, or at <code>&lt;version&gt;</code>. A Homebrew or
+    Chocolatey install is told to run <code>brew upgrade zuke</code> or
+    <code>choco upgrade zuke</code> instead. With <code>--engine</code> it moves
+    a Python project rather than the CLI: it rewrites the <code>./zuke</code>
+    and <code>zuke.ps1</code> launchers to pin the latest <code>zuke</code>
+    release, or <code>&lt;version&gt;</code>, with its archives' digests, and
+    <code>zuke.json</code>'s <code>engine</code> to the engine inside it. It
+    keeps the launcher variant, and moves a project still on the old Deno
+    launchers to the binary ones. <code>--dry-run</code> only lists what it
+    would do.
+  </p>
+  <CopyCode code={upgradeSnippet} lang="bash" multi />
 
   <h3 id="completions"><code>./zuke completions</code></h3>
   <p>
