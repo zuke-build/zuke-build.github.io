@@ -10095,10 +10095,47 @@
           "deprecated": false
         },
         {
+          "name": "EmbeddedRelease",
+          "kind": "interface",
+          "doc": "One wrapper release compiled into the binary.",
+          "signature": "interface EmbeddedRelease",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "The release's version, such as `1.4.0`."
+            },
+            {
+              "name": "load",
+              "kind": "property",
+              "optional": false,
+              "signature": "load: unknown",
+              "doc": "Load the release's module: a literal `import(...)` the compile embeds."
+            }
+          ]
+        },
+        {
+          "name": "embeddedTools",
+          "kind": "function",
+          "doc": "The {@link ToolResolver} of a binary holding `releases`, by package name\nafter `@zuke/`. A package it does not hold, or a release that does not\nserve the version asked for, is refused with a message naming both and the\ntwo ways past it.",
+          "signature": "function embeddedTools(releases: Readonly<Record<string, EmbeddedRelease>>): ToolResolver",
+          "deprecated": false
+        },
+        {
           "name": "HookName",
           "kind": "typeAlias",
           "doc": "The hooks a worker may implement, named as the `build.*` methods are.",
           "signature": "type HookName = unknown",
+          "deprecated": false
+        },
+        {
+          "name": "hostedBuild",
+          "kind": "function",
+          "doc": "Start the worker the `zuke.json` above the working directory names, and\nmaterialise the build it describes. `tools` resolves a `tool.call`'s\nwrapper release, a `jsr:` import when omitted.",
+          "signature": "async function hostedBuild(tools?: ToolResolver): Promise<unknown>",
           "deprecated": false
         },
         {
@@ -10716,6 +10753,13 @@
           "kind": "function",
           "doc": "Read `sdk.command` from the `zuke.json` text, naming what is wrong if not.",
           "signature": "function sdkCommand(configText: string, where: string): string[]",
+          "deprecated": false
+        },
+        {
+          "name": "servesRelease",
+          "kind": "function",
+          "doc": "Whether the release `carried` serves what was asked for as `wanted`: the\nsame major version, and no older than `wanted`, which semantic versioning\nsays is compatible. A prerelease is older than its release, so it serves\nonly an older release or itself. A version that is not an exact release\nserves nothing and is served by nothing.",
+          "signature": "function servesRelease(carried: string, wanted: string): boolean",
           "deprecated": false
         },
         {
@@ -53173,6 +53217,50 @@
       "summary": "`@zuke/cli` — the `zuke` command. Install it globally with",
       "symbols": [
         {
+          "name": "binaryMain",
+          "kind": "function",
+          "doc": "The compiled `zuke` binary's entry point: {@link main} with every default\nand the `engine` the binary carries, so a project with no `zuke.ts` runs on\nit with no Deno installed.",
+          "signature": "function binaryMain(args: string[], engine: EmbeddedEngine): Promise<number>",
+          "deprecated": false
+        },
+        {
+          "name": "BinaryPin",
+          "kind": "interface",
+          "doc": "The pinned `zuke` release, the engine inside it, and each archive's digest.",
+          "signature": "interface BinaryPin",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "The release, without the tag's `cli-v` prefix, e.g. `\"2.4.0\"`."
+            },
+            {
+              "name": "engine",
+              "kind": "property",
+              "optional": false,
+              "signature": "engine: string",
+              "doc": "The `@zuke/engine` release compiled into it."
+            },
+            {
+              "name": "checksums",
+              "kind": "property",
+              "optional": false,
+              "signature": "checksums: Readonly<Record<BinaryTarget, string>>",
+              "doc": "Lowercase hex SHA-256 of each target's archive."
+            }
+          ]
+        },
+        {
+          "name": "BinaryTarget",
+          "kind": "typeAlias",
+          "doc": "A platform a `zuke` release ships a binary for, as its archive names it.",
+          "signature": "type BinaryTarget = aarch64-apple-darwin | x86_64-apple-darwin | aarch64-unknown-linux-gnu | x86_64-unknown-linux-gnu | x86_64-pc-windows-msvc",
+          "deprecated": false
+        },
+        {
           "name": "BuildLocation",
           "kind": "interface",
           "doc": "Where a forwarded command runs, and how.",
@@ -53282,6 +53370,43 @@
           "deprecated": false
         },
         {
+          "name": "EMBEDDED_ENGINE_ENV",
+          "kind": "variable",
+          "doc": "Set to `1` in the environment of the process that runs a hosted build on\nthe binary's own engine: the compiled entry reads it, before the CLI does,\nand removes it, so nothing the build starts inherits it.",
+          "signature": "const EMBEDDED_ENGINE_ENV: ZUKE_EMBEDDED_ENGINE",
+          "deprecated": false
+        },
+        {
+          "name": "EmbeddedEngine",
+          "kind": "interface",
+          "doc": "The engine a compiled `zuke` carries, as its entry point describes it.",
+          "signature": "interface EmbeddedEngine",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "serves",
+              "kind": "method",
+              "optional": false,
+              "signature": "serves(pin: string): boolean",
+              "doc": "Whether the compiled-in release serves the one `zuke.json` pins."
+            },
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "The `@zuke/engine` release compiled in, such as `1.3.0`."
+            },
+            {
+              "name": "program",
+              "kind": "property",
+              "optional": false,
+              "signature": "program: string",
+              "doc": "The executable to start in engine mode: the binary itself."
+            }
+          ]
+        },
+        {
           "name": "EnginePinHost",
           "kind": "interface",
           "doc": "What moving the pin reaches outside the process, injectable for tests.",
@@ -53289,11 +53414,18 @@
           "deprecated": false,
           "members": [
             {
+              "name": "entry",
+              "kind": "method",
+              "optional": false,
+              "signature": "entry(path: string): Promise<file | missing | other>",
+              "doc": "What is at `path`, not following a link: a regular `file`, nothing\n(`missing`), or `other` — a directory, or a link, which a write would\nfollow out of the project."
+            },
+            {
               "name": "readText",
               "kind": "method",
               "optional": false,
               "signature": "readText(path: string): Promise<string>",
-              "doc": "Read a text file, rejecting when it cannot be read."
+              "doc": "Read a regular text file."
             },
             {
               "name": "writeText",
@@ -53303,13 +53435,27 @@
               "doc": "Write a text file, replacing what is there."
             },
             {
-              "name": "engineMeta",
+              "name": "cliMeta",
               "kind": "method",
               "optional": false,
-              "signature": "engineMeta(): Promise<unknown>",
-              "doc": "Fetch and parse `@zuke/engine`'s JSR `meta.json`."
+              "signature": "cliMeta(): Promise<unknown>",
+              "doc": "Fetch and parse `@zuke/cli`'s JSR `meta.json`, whose latest is the newest zuke."
+            },
+            {
+              "name": "binaryPin",
+              "kind": "method",
+              "optional": false,
+              "signature": "binaryPin(version: string): Promise<BinaryPin>",
+              "doc": "Resolve the pin of a `zuke` release."
             }
           ]
+        },
+        {
+          "name": "FORWARDED_ENV",
+          "kind": "variable",
+          "doc": "Set to `1` in a launcher's environment, so a launcher that itself calls the\nglobal `zuke` gets the bare `deno run` instead of itself again, endlessly.",
+          "signature": "const FORWARDED_ENV: ZUKE_FORWARDED",
+          "deprecated": false
         },
         {
           "name": "ImportFlags",
@@ -53374,8 +53520,8 @@
         {
           "name": "main",
           "kind": "function",
-          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, `buildProbe`, `upgradeHost` and\n`projectHost` are injectable for testing.",
-          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe, upgradeHost?: UpgradeHost, projectHost?: ProjectHost): Promise<number>",
+          "doc": "The CLI entry point. Returns a process exit code; `host`, `prompter`,\n`docRunner`, `starActions`, `buildRunner`, `buildProbe`, `upgradeHost` and\n`projectHost` are injectable for testing. `engine` is the engine the\ncompiled binary carries, absent under `deno run`: see {@link binaryMain}.",
+          "signature": "async function main(args: string[], host?: SetupHost, prompter?: Prompter, docRunner?: DocRunner, starActions?: StarActions, buildRunner?: BuildRunner, buildProbe?: BuildProbe, upgradeHost?: UpgradeHost, projectHost?: ProjectHost, engine?: EmbeddedEngine): Promise<number>",
           "deprecated": false
         },
         {
@@ -53422,6 +53568,13 @@
           "signature": "interface ProjectHost",
           "deprecated": false,
           "members": [
+            {
+              "name": "entry",
+              "kind": "method",
+              "optional": false,
+              "signature": "entry(path: string): Promise<file | missing | other>",
+              "doc": "What is at `path`, not following a link: a regular `file`, nothing\n(`missing`), or `other` — a directory, or a link, which a write would\nfollow out of the project."
+            },
             {
               "name": "readText",
               "kind": "method",
@@ -53497,11 +53650,11 @@
           "deprecated": false,
           "members": [
             {
-              "name": "engine",
+              "name": "pin",
               "kind": "property",
               "optional": false,
-              "signature": "engine: string",
-              "doc": "The exact `@zuke/engine` release `zuke.json` pins."
+              "signature": "pin: BinaryPin",
+              "doc": "The `zuke` release the launchers run; `zuke.json` pins the engine it\ncarries."
             }
           ]
         },
@@ -53566,7 +53719,7 @@
               "kind": "property",
               "optional": true,
               "signature": "bootstrapDeno?: boolean",
-              "doc": "Which launchers to scaffold: `true` (`--bootstrap-deno`) for ones that\ninstall a pinned, checksum-verified Deno when none is on `PATH`, `false`\n(`--no-bootstrap-deno`) for ones that require it and fail closed. Unset:\nask when interactive, else take the default (bootstrap)."
+              "doc": "Which launchers to scaffold: `true` (`--bootstrap`) for ones that\ndownload their pinned, checksum-verified runtime when it is missing —\nDeno for a `zuke.ts` build, the `zuke` binary for a hosted one — `false`\n(`--no-bootstrap`) for ones that require it on `PATH` and fail closed.\nUnset: ask when interactive, else take the default (bootstrap)."
             },
             {
               "name": "sdk",
@@ -53576,11 +53729,11 @@
               "doc": "The SDK whose build to scaffold (`--sdk python`): a `build.py` the engine\nruns, in place of a `zuke.ts`. Unset: a TypeScript build."
             },
             {
-              "name": "engine",
+              "name": "zuke",
               "kind": "property",
               "optional": true,
-              "signature": "engine?: string",
-              "doc": "The exact `@zuke/engine` release to pin for an SDK build (`--engine`).\nUnset: the latest release, read from JSR at setup time."
+              "signature": "zuke?: string",
+              "doc": "The `zuke` release an SDK build's launchers run (`--zuke`), whose engine\n`zuke.json` pins. Unset: this zuke's own release."
             }
           ]
         },
@@ -53715,11 +53868,11 @@
               "doc": "Fetch and parse `@zuke/cli`'s JSR `meta.json`."
             },
             {
-              "name": "engineMeta",
+              "name": "binaryPin",
               "kind": "method",
               "optional": false,
-              "signature": "engineMeta(): Promise<unknown>",
-              "doc": "Fetch and parse `@zuke/engine`'s JSR `meta.json`: the release\n`zuke setup --sdk` pins and `zuke upgrade --engine` moves a pin to."
+              "signature": "binaryPin(version: string): Promise<BinaryPin>",
+              "doc": "Resolve the pin of `zuke` release `version`, which `zuke setup --sdk`\nscaffolds a hosted build's launchers with and `zuke upgrade --engine`\nmoves them to: its archives' digests and the engine it carries."
             },
             {
               "name": "install",
