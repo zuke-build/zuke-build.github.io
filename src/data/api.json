@@ -1413,6 +1413,57 @@
           "deprecated": false
         },
         {
+          "name": "ChildProcess",
+          "kind": "interface",
+          "doc": "A started child process: what the shell reads, writes and waits on. A\nstream is there to use only when its {@link ProcessStdio} was `piped`;\nreading one that was not throws.",
+          "signature": "interface ChildProcess",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "kill",
+              "kind": "method",
+              "optional": false,
+              "signature": "kill(signal?: Signal): void",
+              "doc": "Deliver a signal to the process. Throws if it has already exited."
+            },
+            {
+              "name": "pid",
+              "kind": "property",
+              "optional": false,
+              "signature": "pid: number",
+              "doc": "The operating-system process id."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: Promise<CommandStatus>",
+              "doc": "Resolves when the process exits."
+            },
+            {
+              "name": "stdin",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdin: WritableStream<Uint8Array>",
+              "doc": "The child's input."
+            },
+            {
+              "name": "stdout",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdout: ReadableStream<Uint8Array>",
+              "doc": "The child's output."
+            },
+            {
+              "name": "stderr",
+              "kind": "property",
+              "optional": false,
+              "signature": "stderr: ReadableStream<Uint8Array>",
+              "doc": "The child's error output."
+            }
+          ]
+        },
+        {
           "name": "CiActionRef",
           "kind": "interface",
           "doc": "A pinned action reference, and the version its commit corresponds to.\n\nThe version is emitted as a trailing `# v1.2.3` comment, which is not\ndecoration: Dependabot reads it to know which version a pinned SHA is, and\nrewrites both together when it bumps. A generated workflow that dropped it\nwould leave automated bumps with no version to track.",
