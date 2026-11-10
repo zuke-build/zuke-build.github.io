@@ -53691,7 +53691,14 @@
               "kind": "property",
               "optional": true,
               "signature": "name?: string",
-              "doc": "Build class name for the starter `zuke.ts`."
+              "doc": "Build class name for the starter build file."
+            },
+            {
+              "name": "buildFile",
+              "kind": "property",
+              "optional": true,
+              "signature": "buildFile?: string",
+              "doc": "The TypeScript build file's name (`--build-file`). Unset: ask, else `build.ts`."
             },
             {
               "name": "dir",
