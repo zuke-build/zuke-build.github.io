@@ -53289,11 +53289,18 @@
               "doc": "The absolute path of the executable `zuke` launcher at the root, run in\nplace of `deno run` — or `null` when there is none, or the platform\nreports no file mode to tell (Windows)."
             },
             {
+              "name": "build",
+              "kind": "property",
+              "optional": false,
+              "signature": "build: string",
+              "doc": "The build file's name: the one the root's `zuke.json` names in its\n`build` field, `zuke.ts` when it names none."
+            },
+            {
               "name": "engine",
               "kind": "property",
               "optional": false,
               "signature": "engine: string | null",
-              "doc": "The `@zuke/engine` release that runs the build when the root has no\n`zuke.ts`: the `engine` field of its `zuke.json`, which then describes a\nbuild another SDK hosts. `null` when the root has its own build file."
+              "doc": "The `@zuke/engine` release that runs the build when the root has no\nbuild file: the `engine` field of its `zuke.json`, which then describes a\nbuild another SDK hosts. `null` when the root has its own build file."
             }
           ]
         },
