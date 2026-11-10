@@ -2805,6 +2805,36 @@
           ]
         },
         {
+          "name": "CommandStatus",
+          "kind": "interface",
+          "doc": "How a process ended.",
+          "signature": "interface CommandStatus",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "success",
+              "kind": "property",
+              "optional": false,
+              "signature": "success: boolean",
+              "doc": "Whether it exited with code 0."
+            },
+            {
+              "name": "code",
+              "kind": "property",
+              "optional": false,
+              "signature": "code: number",
+              "doc": "Its exit code."
+            },
+            {
+              "name": "signal",
+              "kind": "property",
+              "optional": false,
+              "signature": "signal: Signal | null",
+              "doc": "The signal that ended it, or `null` when it exited on its own."
+            }
+          ]
+        },
+        {
           "name": "CommandTimeoutError",
           "kind": "class",
           "doc": "Raised when a command is killed for exceeding its {@link Command.killAfter}\nbudget. Thrown regardless of {@link Command.noThrow}, since a timeout is a\ndistinct, exceptional outcome from a normal non-zero exit.",
@@ -4504,6 +4534,13 @@
           ]
         },
         {
+          "name": "HostOs",
+          "kind": "typeAlias",
+          "doc": "The host operating system by its raw name, before {@link operatingSystem}\nnormalises it: the names the Rust target triples use, which are the ones\nZuke has always passed around.",
+          "signature": "type HostOs = darwin | linux | android | windows | freebsd | netbsd | aix | solaris | illumos",
+          "deprecated": false
+        },
+        {
           "name": "hostPlatform",
           "kind": "function",
           "doc": "The current host's {@link Platform} (from `Deno.build`, with the OS\nnormalised) — the analogue of {@link \"./host.ts\".isCI} for \"what machine am I\nrunning on\". Its `os` is a Zuke {@link OperatingSystem} (`macos`, not\n`darwin`); use the `osLabel`/`archLabel` helpers to name it for a download URL.\n\n```ts\nconst p = hostPlatform();\np.os;                                          // \"linux\" | \"macos\" | \"windows\"\nconst cpu = p.archLabel({ x86_64: \"amd64\", aarch64: \"arm64\" });\n```",
@@ -5692,14 +5729,14 @@
         {
           "name": "operatingSystem",
           "kind": "function",
-          "doc": "The operating system as a Zuke {@link OperatingSystem}: `darwin` becomes\n`macos`, `windows` stays `windows`, and every other Unix (`linux`, the BSDs,\n`solaris`, …) is reported as `linux`. Pass a raw `Deno.build.os` value to\nnormalise it; defaults to the running host — the platform analogue of\n{@link isCI}.\n\n```ts\nimport { operatingSystem } from \"@zuke/core\";\nif (operatingSystem() === \"macos\") { ... }\n```",
-          "signature": "function operatingSystem(os?: Deno.build.os): OperatingSystem",
+          "doc": "The operating system as a Zuke {@link OperatingSystem}: `darwin` becomes\n`macos`, `windows` stays `windows`, and every other Unix (`linux`, the BSDs,\n`solaris`, …) is reported as `linux`. Pass a raw {@link HostOs} value to\nnormalise it; defaults to the running host — the platform analogue of\n{@link isCI}.\n\n```ts\nimport { operatingSystem } from \"@zuke/core\";\nif (operatingSystem() === \"macos\") { ... }\n```",
+          "signature": "function operatingSystem(os?: HostOs): OperatingSystem",
           "deprecated": false
         },
         {
           "name": "OperatingSystem",
           "kind": "typeAlias",
-          "doc": "The operating systems Zuke recognises — Deno's raw `Deno.build.os` values\nnormalised to a friendly set (notably `darwin` → `macos`). Used across the\necosystem so builds branch on `\"macos\"` rather than the surprising `\"darwin\"`.",
+          "doc": "The operating systems Zuke recognises — the raw {@link HostOs} names\nnormalised to a friendly set (notably `darwin` → `macos`). Used across the\necosystem so builds branch on `\"macos\"` rather than the surprising `\"darwin\"`.",
           "signature": "type OperatingSystem = linux | macos | windows",
           "deprecated": false
         },
@@ -6204,7 +6241,7 @@
           "name": "prependPath",
           "kind": "function",
           "doc": "Prepend `dir` to the process `PATH`, and return the new value. A tool\nprovisioned into `dir` (e.g. the `bin` directory of an {@link \"./install.ts\".installTree}\nruntime) then resolves for the rest of the build: the shell `$`, `Command`,\nand every tool wrapper spawn subprocesses that inherit `Deno.env`, so the\n`node_modules/.bin` shims and `NpmTasks` that assume a `node`/`npm` on `PATH`\nfind the provisioned one.\n\nIdempotent — a directory already on `PATH` is left in place, not duplicated —\nand uses the platform separator (`;` on Windows, `:` elsewhere).\n",
-          "signature": "function prependPath(dir: PathLike, os?: Deno.build.os): string",
+          "signature": "function prependPath(dir: PathLike, os?: HostOs): string",
           "deprecated": false
         },
         {
@@ -7848,8 +7885,15 @@
           "name": "shimFallbackArgv",
           "kind": "function",
           "doc": "On Windows, wrap an argv in a `cmd /c` invocation so `.cmd`/`.bat` shims\n(such as npm's) become spawnable; returns `null` on other platforms.\n",
-          "signature": "function shimFallbackArgv(argv: ReadonlyArray<string>, os: Deno.build.os): string[] | null",
+          "signature": "function shimFallbackArgv(argv: ReadonlyArray<string>, os: HostOs): string[] | null",
           "deprecated": true
+        },
+        {
+          "name": "Signal",
+          "kind": "typeAlias",
+          "doc": "A POSIX signal name, as a process is sent one or reports dying of one.",
+          "signature": "type Signal = SIGABRT | SIGALRM | SIGBREAK | SIGBUS | SIGCHLD | SIGCONT | SIGEMT | SIGFPE | SIGHUP | SIGILL | SIGINFO | SIGINT | SIGIO | SIGPOLL | SIGUNUSED | SIGKILL | SIGPIPE | SIGPROF | SIGPWR | SIGQUIT | SIGSEGV | SIGSTKFLT | SIGSTOP | SIGSYS | SIGTERM | SIGTRAP | SIGTSTP | SIGTTIN | SIGTTOU | SIGURG | SIGUSR1 | SIGUSR2 | SIGVTALRM | SIGWINCH | SIGXCPU | SIGXFSZ",
+          "deprecated": false
         },
         {
           "name": "SignalRecord",
@@ -7937,14 +7981,14 @@
               "name": "status",
               "kind": "method",
               "optional": false,
-              "signature": "status(): Promise<Deno.CommandStatus>",
+              "signature": "status(): Promise<CommandStatus>",
               "doc": "Resolves when the process exits (immediate success for a dry-run stub)."
             },
             {
               "name": "stop",
               "kind": "method",
               "optional": false,
-              "signature": "stop(signal?: Deno.Signal, graceMs?: number): Promise<void>",
+              "signature": "stop(signal?: Signal, graceMs?: number): Promise<void>",
               "doc": "Terminate the process and wait for it to exit. Sends `signal` (default\n`SIGTERM`); if the process has not exited within `graceMs` (default 5s), it\nescalates to `SIGKILL` so a process that ignores `SIGTERM` cannot hang\nteardown. A process that has already exited is treated as stopped. A\ndry-run stub (no child) is a no-op."
             }
           ]
@@ -9649,8 +9693,8 @@
               "name": "os_",
               "kind": "property",
               "optional": false,
-              "signature": "os_: Deno.build.os",
-              "doc": "The platform identifier used when resolving a tool from `node_modules`,\nwhich on Windows means looking for the `.cmd` shim rather than the bare\nname.\n\nIn production this is always `Deno.build.os`. It is exposed as a public\nfield — rather than read from `Deno.build.os` inline — so that tests can\npin a specific platform without spawning a subprocess or touching the\nenvironment:\n\n```ts\nconst s = new MyToolSettings();\ns.os_ = \"windows\"; // resolve as Windows would, on any host\n```\n\nThe trailing underscore signals an internal test seam: do not rely on this\nfield in production code."
+              "signature": "os_: HostOs",
+              "doc": "The platform identifier used when resolving a tool from `node_modules`,\nwhich on Windows means looking for the `.cmd` shim rather than the bare\nname.\n\nIn production this is always the running host's. It is exposed as a public\nfield — rather than read inline — so that tests can\npin a specific platform without spawning a subprocess or touching the\nenvironment:\n\n```ts\nconst s = new MyToolSettings();\ns.os_ = \"windows\"; // resolve as Windows would, on any host\n```\n\nThe trailing underscore signals an internal test seam: do not rely on this\nfield in production code."
             }
           ]
         },
@@ -10024,7 +10068,7 @@
           "name": "windowsCmdShim",
           "kind": "function",
           "doc": "On Windows, wrap a resolved `.cmd`/`.bat` shim in `cmd /c`. Returns `argv`\nunchanged on other platforms or when the binary is not a batch shim.\n",
-          "signature": "function windowsCmdShim(argv: ReadonlyArray<string>, os: Deno.build.os): string[]",
+          "signature": "function windowsCmdShim(argv: ReadonlyArray<string>, os: HostOs): string[]",
           "deprecated": true
         },
         {
