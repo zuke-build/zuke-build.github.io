@@ -4594,7 +4594,7 @@
         {
           "name": "hostPlatform",
           "kind": "function",
-          "doc": "The current host's {@link Platform} (from `Deno.build`, with the OS\nnormalised) — the analogue of {@link \"./host.ts\".isCI} for \"what machine am I\nrunning on\". Its `os` is a Zuke {@link OperatingSystem} (`macos`, not\n`darwin`); use the `osLabel`/`archLabel` helpers to name it for a download URL.\n\n```ts\nconst p = hostPlatform();\np.os;                                          // \"linux\" | \"macos\" | \"windows\"\nconst cpu = p.archLabel({ x86_64: \"amd64\", aarch64: \"arm64\" });\n```",
+          "doc": "The current host's {@link Platform} (from the runtime, with the OS\nnormalised) — the analogue of {@link \"./host.ts\".isCI} for \"what machine am I\nrunning on\". Its `os` is a Zuke {@link OperatingSystem} (`macos`, not\n`darwin`); use the `osLabel`/`archLabel` helpers to name it for a download URL.\n\n```ts\nconst p = hostPlatform();\np.os;                                          // \"linux\" | \"macos\" | \"windows\"\nconst cpu = p.archLabel({ x86_64: \"amd64\", aarch64: \"arm64\" });\n```",
           "signature": "function hostPlatform(): Platform",
           "deprecated": false
         },
