@@ -3934,7 +3934,7 @@
               "kind": "property",
               "optional": true,
               "signature": "uid?: unknown",
-              "doc": "The current user's id, or `null` where the platform has none (Windows).\nDefaults to `Deno.uid`; overridable for tests."
+              "doc": "The current user's id, or `null` where the platform has none (Windows).\nDefaults to the user the process runs as; overridable for tests."
             }
           ]
         },
