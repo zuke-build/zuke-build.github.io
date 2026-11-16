@@ -3165,7 +3165,7 @@
         {
           "name": "defaultStateHost",
           "kind": "variable",
-          "doc": "The real, `Deno`-backed {@link StateHost}.",
+          "doc": "The real {@link StateHost}, over the file system.",
           "signature": "const defaultStateHost: StateHost",
           "deprecated": false
         },
