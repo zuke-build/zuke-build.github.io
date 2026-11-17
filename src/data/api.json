@@ -1431,14 +1431,14 @@
               "kind": "property",
               "optional": false,
               "signature": "pid: number",
-              "doc": "The operating-system process id."
+              "doc": "The operating-system process id; `-1` for a child that never started."
             },
             {
               "name": "status",
               "kind": "property",
               "optional": false,
               "signature": "status: Promise<CommandStatus>",
-              "doc": "Resolves when the process exits."
+              "doc": "Resolves when the process exits. Rejects if it could not be started."
             },
             {
               "name": "stdin",
@@ -8040,7 +8040,7 @@
               "kind": "method",
               "optional": false,
               "signature": "stop(signal?: Signal, graceMs?: number): Promise<void>",
-              "doc": "Terminate the process and wait for it to exit. Sends `signal` (default\n`SIGTERM`); if the process has not exited within `graceMs` (default 5s), it\nescalates to `SIGKILL` so a process that ignores `SIGTERM` cannot hang\nteardown. A process that has already exited is treated as stopped. A\ndry-run stub (no child) is a no-op."
+              "doc": "Terminate the process and wait for it to exit. Sends `signal` (default\n`SIGTERM`); if the process has not exited within `graceMs` (default 5s), it\nescalates to `SIGKILL` so a process that ignores `SIGTERM` cannot hang\nteardown. A process that has already exited is treated as stopped. A\ndry-run stub (no child) is a no-op. Rejects with the reason for a process\nthat could not be started, where that was not already thrown by `spawn`."
             }
           ]
         },
