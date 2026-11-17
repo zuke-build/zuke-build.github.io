@@ -3593,7 +3593,7 @@
               "kind": "property",
               "optional": true,
               "signature": "readEnv?: unknown",
-              "doc": "Reads an environment variable as a parameter fallback. Defaults to\n`Deno.env.get` (returning `undefined` when env access is unavailable);\noverridable so parameter resolution can be tested hermetically."
+              "doc": "Reads an environment variable as a parameter fallback. Defaults to\nthe process environment (returning `undefined` when env access is unavailable);\noverridable so parameter resolution can be tested hermetically."
             },
             {
               "name": "prompt",
@@ -6291,7 +6291,7 @@
         {
           "name": "prependPath",
           "kind": "function",
-          "doc": "Prepend `dir` to the process `PATH`, and return the new value. A tool\nprovisioned into `dir` (e.g. the `bin` directory of an {@link \"./install.ts\".installTree}\nruntime) then resolves for the rest of the build: the shell `$`, `Command`,\nand every tool wrapper spawn subprocesses that inherit `Deno.env`, so the\n`node_modules/.bin` shims and `NpmTasks` that assume a `node`/`npm` on `PATH`\nfind the provisioned one.\n\nIdempotent — a directory already on `PATH` is left in place, not duplicated —\nand uses the platform separator (`;` on Windows, `:` elsewhere).\n",
+          "doc": "Prepend `dir` to the process `PATH`, and return the new value. A tool\nprovisioned into `dir` (e.g. the `bin` directory of an {@link \"./install.ts\".installTree}\nruntime) then resolves for the rest of the build: the shell `$`, `Command`,\nand every tool wrapper spawn subprocesses that inherit the environment, so the\n`node_modules/.bin` shims and `NpmTasks` that assume a `node`/`npm` on `PATH`\nfind the provisioned one.\n\nIdempotent — a directory already on `PATH` is left in place, not duplicated —\nand uses the platform separator (`;` on Windows, `:` elsewhere).\n",
           "signature": "function prependPath(dir: PathLike, os?: HostOs): string",
           "deprecated": false
         },
