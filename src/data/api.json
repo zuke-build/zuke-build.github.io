@@ -5926,7 +5926,7 @@
               "kind": "property",
               "optional": true,
               "signature": "isTerminal?: unknown",
-              "doc": "Whether stdout is an interactive terminal; defaults to asking Deno."
+              "doc": "Whether stdout is an interactive terminal; defaults to asking the system."
             }
           ]
         },
@@ -7275,7 +7275,7 @@
               "kind": "property",
               "optional": true,
               "signature": "args?: string[]",
-              "doc": "Command-line arguments. Defaults to `Deno.args`."
+              "doc": "Command-line arguments. Defaults to the arguments the process was started with."
             },
             {
               "name": "plugins",
