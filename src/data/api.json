@@ -8302,6 +8302,34 @@
               "optional": false,
               "signature": "userId(): number | null",
               "doc": "The id of the user this process runs as, or `null` on Windows."
+            },
+            {
+              "name": "arch",
+              "kind": "method",
+              "optional": false,
+              "signature": "arch(): string",
+              "doc": "The CPU architecture: `x86_64` or `aarch64`, by the names Deno uses, on\nevery runtime. Any other CPU is named as the runtime's `process.arch`\nreports it."
+            },
+            {
+              "name": "cwd",
+              "kind": "method",
+              "optional": false,
+              "signature": "cwd(): string",
+              "doc": "The process's current working directory."
+            },
+            {
+              "name": "isTerminal",
+              "kind": "method",
+              "optional": false,
+              "signature": "isTerminal(stream: StandardStream): boolean",
+              "doc": "Whether `stream` is connected to a terminal."
+            },
+            {
+              "name": "exit",
+              "kind": "method",
+              "optional": false,
+              "signature": "exit(code: number): never",
+              "doc": "End the process with exit `code`.\n"
             }
           ]
         },
@@ -8801,6 +8829,13 @@
           "kind": "function",
           "doc": "Split `input` into argv the way a POSIX shell would, honouring the **quoting\nrules only**:\n\n- Unquoted runs of whitespace separate arguments; leading, trailing, and\n  repeated whitespace produce no empty arguments.\n- Single quotes are fully literal — no escape sequences at all, so `'a\\b'`\n  yields `a\\b`.\n- Inside double quotes a backslash escapes only `\"`, `\\`, `` ` ``, `$`, and a\n  newline; before anything else it stays literal, so `\"\\d+\"` yields `\\d+`\n  rather than silently losing the backslash.\n- Outside quotes a backslash escapes the following character, so `a\\ b` is one\n  argument.\n- A backslash-newline pair is a line continuation and is removed, both\n  unquoted and inside double quotes; a backslash at the very end of the input\n  is a dangling continuation and is dropped.\n- Adjacent segments concatenate (`a\"b c\"d` → `ab cd`) and a quoted empty\n  string is a real, empty argument (`''` → `[\"\"]`).\n\n**Non-goals**, deliberately not implemented — the input is turned into argv,\nnever interpreted: no variable expansion (`\"$HOME\"` stays `$HOME`), no\nglobbing, no tilde expansion, no command substitution, and no operator\nhandling of any kind (`|`, `&&`, `;`, `>` are ordinary characters). A caller\nthat needs those must split on them itself, or run a real shell.\n\n`\\r` is treated as a separator alongside space, tab, and newline so a command\nline read from a CRLF file cannot smuggle an invisible carriage return into an\nargument.\n",
           "signature": "function splitShellArgs(input: string): string[]",
+          "deprecated": false
+        },
+        {
+          "name": "StandardStream",
+          "kind": "typeAlias",
+          "doc": "A standard stream of the process, for {@link RuntimeTasksApi.isTerminal}.",
+          "signature": "type StandardStream = stdin | stdout | stderr",
           "deprecated": false
         },
         {
