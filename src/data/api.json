@@ -59330,7 +59330,7 @@
               "kind": "method",
               "optional": false,
               "signature": "readEnv(reader: unknown): this",
-              "doc": "Read environment variables through `reader` instead of `Deno.env`."
+              "doc": "Read environment variables through `reader` instead of the process environment."
             },
             {
               "name": "sleep",
@@ -60388,7 +60388,7 @@
               "kind": "method",
               "optional": false,
               "signature": "remove(path: string): Promise<void>",
-              "doc": "Remove a file."
+              "doc": "Remove a file; one that is already gone is not an error."
             },
             {
               "name": "exists",
