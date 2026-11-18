@@ -164,6 +164,27 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "runId",
+              "kind": "property",
+              "optional": false,
+              "signature": "runId: string",
+              "doc": "The run that could not be resumed."
+            },
+            {
+              "name": "by",
+              "kind": "property",
+              "optional": false,
+              "signature": "by: string",
+              "doc": "The actor already running it."
+            },
+            {
+              "name": "at",
+              "kind": "property",
+              "optional": false,
+              "signature": "at: string",
+              "doc": "ISO-8601 time it went `running`."
             }
           ]
         },
@@ -2836,6 +2857,27 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "command",
+              "kind": "property",
+              "optional": false,
+              "signature": "command: string",
+              "doc": "The command line that failed (argv joined by spaces)."
+            },
+            {
+              "name": "code",
+              "kind": "property",
+              "optional": false,
+              "signature": "code: number",
+              "doc": "The process exit code."
+            },
+            {
+              "name": "stderr",
+              "kind": "property",
+              "optional": false,
+              "signature": "stderr: string",
+              "doc": "Captured stderr, if any."
             }
           ]
         },
@@ -2852,6 +2894,41 @@
               "optional": false,
               "signature": "text(): string",
               "doc": "Trimmed stdout, prefixed with a one-line notice when {@link truncated} — so\na caller reading the output cannot mistake a tail for the whole of it."
+            },
+            {
+              "name": "code",
+              "kind": "property",
+              "optional": false,
+              "signature": "code: number",
+              "doc": "The process exit code."
+            },
+            {
+              "name": "stdout",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdout: string",
+              "doc": "Captured standard output."
+            },
+            {
+              "name": "stderr",
+              "kind": "property",
+              "optional": false,
+              "signature": "stderr: string",
+              "doc": "Captured standard error."
+            },
+            {
+              "name": "truncated",
+              "kind": "property",
+              "optional": false,
+              "signature": "truncated: boolean",
+              "doc": "Whether either captured stream hit the capture cap, in which case it holds\nonly its tail — the newest bytes — and its beginning is gone. See\n{@link Command.maxCapturedBytes}."
+            },
+            {
+              "name": "maxCapturedBytes",
+              "kind": "property",
+              "optional": false,
+              "signature": "maxCapturedBytes: number",
+              "doc": "The per-stream capture cap that applied, in bytes."
             }
           ]
         },
@@ -2898,6 +2975,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "command",
+              "kind": "property",
+              "optional": false,
+              "signature": "command: string",
+              "doc": "The command line that timed out (argv joined by spaces)."
+            },
+            {
+              "name": "timeoutMs",
+              "kind": "property",
+              "optional": false,
+              "signature": "timeoutMs: number",
+              "doc": "The elapsed-time budget, in milliseconds, that was exceeded."
             }
           ]
         },
@@ -4329,6 +4420,27 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "runId",
+              "kind": "property",
+              "optional": false,
+              "signature": "runId: string",
+              "doc": "The run that was refused."
+            },
+            {
+              "name": "owner",
+              "kind": "property",
+              "optional": false,
+              "signature": "owner: string",
+              "doc": "The origin recorded on the run."
+            },
+            {
+              "name": "self",
+              "kind": "property",
+              "optional": false,
+              "signature": "self: string",
+              "doc": "The origin of the build in this process."
             }
           ]
         },
@@ -5262,6 +5374,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "holder",
+              "kind": "property",
+              "optional": false,
+              "signature": "holder: LockHolder",
+              "doc": "Who currently holds the contended lock."
             }
           ]
         },
@@ -7260,6 +7379,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "runId",
+              "kind": "property",
+              "optional": false,
+              "signature": "runId: string",
+              "doc": "The run that could not be resumed."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: RunStatus",
+              "doc": "The status it was in instead of `suspended`."
             }
           ]
         },
@@ -7929,6 +8062,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "quote",
+              "kind": "property",
+              "optional": false,
+              "signature": "quote: string",
+              "doc": "The quote character that was never closed — `'` or `\"`."
+            },
+            {
+              "name": "offset",
+              "kind": "property",
+              "optional": false,
+              "signature": "offset: number",
+              "doc": "The zero-based index in the input at which that quote was opened."
             }
           ]
         },
@@ -8011,6 +8158,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "error",
+              "kind": "property",
+              "optional": false,
+              "signature": "error: string",
+              "doc": "Slack's `error` code from the `chat.postMessage` response."
             }
           ]
         },
@@ -8041,6 +8195,13 @@
               "optional": false,
               "signature": "stop(signal?: Signal, graceMs?: number): Promise<void>",
               "doc": "Terminate the process and wait for it to exit. Sends `signal` (default\n`SIGTERM`); if the process has not exited within `graceMs` (default 5s), it\nescalates to `SIGKILL` so a process that ignores `SIGTERM` cannot hang\nteardown. A process that has already exited is treated as stopped. A\ndry-run stub (no child) is a no-op. Rejects with the reason for a process\nthat could not be started, where that was not already thrown by `spawn`."
+            },
+            {
+              "name": "commandLine",
+              "kind": "property",
+              "optional": false,
+              "signature": "commandLine: string",
+              "doc": "The command line the process was started with (argv joined by spaces)."
             }
           ]
         },
@@ -9625,6 +9786,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "tool",
+              "kind": "property",
+              "optional": false,
+              "signature": "tool: string",
+              "doc": "The binary that could not be resolved."
             }
           ]
         },
