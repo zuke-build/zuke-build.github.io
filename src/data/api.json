@@ -3328,6 +3328,36 @@
           "deprecated": false
         },
         {
+          "name": "DirectoryEntry",
+          "kind": "interface",
+          "doc": "One entry of a directory, as {@link FileTasksApi.readDirectory} lists it.",
+          "signature": "interface DirectoryEntry",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: string",
+              "doc": "Its name, without the directory's path."
+            },
+            {
+              "name": "isFile",
+              "kind": "property",
+              "optional": false,
+              "signature": "isFile: boolean",
+              "doc": "Whether it is a regular file; a link to one is not."
+            },
+            {
+              "name": "isDirectory",
+              "kind": "property",
+              "optional": false,
+              "signature": "isDirectory: boolean",
+              "doc": "Whether it is a directory; a link to one is not."
+            }
+          ]
+        },
+        {
           "name": "DiscordAnnouncementSettings",
           "kind": "class",
           "doc": "Fluent settings for {@link AnnounceTasksApi.discord}. Bot mode\n(`.bot().token(t).channel(c)`) posts through the REST API with a bot token.",
@@ -3508,6 +3538,29 @@
           "doc": "Resolve a {@link StateStore} from the environment, or `undefined` when none is\nconfigured. `ZUKE_STATE_URL` (with an optional `ZUKE_STATE_TOKEN`) selects an\n{@link HttpStateStore}; otherwise `ZUKE_STATE_DIR` selects a\n{@link FileSystemStateStore}.",
           "signature": "function envStateStore(readEnv: unknown, host: StateHost): StateStore | undefined",
           "deprecated": false
+        },
+        {
+          "name": "EnvTasks",
+          "kind": "variable",
+          "doc": "The process environment, on whichever runtime the build runs on.\n\n```ts\nimport { EnvTasks } from \"@zuke/core\";\n\nconst token = EnvTasks.get(\"GITHUB_TOKEN\");\n```",
+          "signature": "const EnvTasks: EnvTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "EnvTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link EnvTasks}.",
+          "signature": "interface EnvTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "get",
+              "kind": "method",
+              "optional": false,
+              "signature": "get(name: string): string | undefined",
+              "doc": "The value of the environment variable `name`, or `undefined` when it is\nnot set. A runtime that denies reading the environment, as Deno can, reads\nas unset rather than throwing."
+            }
+          ]
         },
         {
           "name": "envVarName",
@@ -4182,7 +4235,7 @@
               "name": "writeText",
               "kind": "method",
               "optional": false,
-              "signature": "writeText(path: PathLike, content: string): Promise<void>",
+              "signature": "writeText(path: PathLike, content: string, configure?: Configure<WriteSettings>): Promise<void>",
               "doc": "Write `content` to the file at `path`, creating or truncating it."
             },
             {
@@ -4191,6 +4244,76 @@
               "optional": false,
               "signature": "readJson(path: PathLike): Promise<T>",
               "doc": "Read and parse the JSON file at `path`."
+            },
+            {
+              "name": "readBytes",
+              "kind": "method",
+              "optional": false,
+              "signature": "readBytes(path: PathLike): Promise<Uint8Array>",
+              "doc": "Read the file at `path` as bytes."
+            },
+            {
+              "name": "writeBytes",
+              "kind": "method",
+              "optional": false,
+              "signature": "writeBytes(path: PathLike, data: Uint8Array, configure?: Configure<WriteSettings>): Promise<void>",
+              "doc": "Write `data` to the file at `path`, replacing it unless `createNew`."
+            },
+            {
+              "name": "stat",
+              "kind": "method",
+              "optional": false,
+              "signature": "stat(path: PathLike): Promise<PathInfo>",
+              "doc": "What `path` resolves to, following a final link."
+            },
+            {
+              "name": "statSync",
+              "kind": "method",
+              "optional": false,
+              "signature": "statSync(path: PathLike): PathInfo",
+              "doc": "{@link FileTasksApi.stat}, without waiting."
+            },
+            {
+              "name": "lstat",
+              "kind": "method",
+              "optional": false,
+              "signature": "lstat(path: PathLike): Promise<PathInfo>",
+              "doc": "What is at `path` itself: a final link is described, not followed."
+            },
+            {
+              "name": "realPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "realPath(path: PathLike): Promise<string>",
+              "doc": "`path` with every link in it resolved, as an absolute path."
+            },
+            {
+              "name": "readDirectory",
+              "kind": "method",
+              "optional": false,
+              "signature": "readDirectory(path: PathLike): Promise<DirectoryEntry[]>",
+              "doc": "The entries of the directory at `path`, in no particular order."
+            },
+            {
+              "name": "makeTempDirectory",
+              "kind": "method",
+              "optional": false,
+              "signature": "makeTempDirectory(configure?: Configure<TempDirectorySettings>): Promise<string>",
+              "doc": "Create a directory of its own under the system's temporary directory and\nreturn its path. Removing it is the caller's job."
+            },
+            {
+              "name": "chmod",
+              "kind": "method",
+              "optional": false,
+              "signature": "chmod(path: PathLike, mode: number): Promise<void>",
+              "doc": "Set the permission bits of `path`. Not for Windows, which has none."
+            },
+            {
+              "name": "isNotFound",
+              "kind": "method",
+              "optional": false,
+              "signature": "isNotFound(error: unknown): error is Error",
+              "doc": "Whether `error` means the path was not there, on any runtime: the check\na caller makes before treating a missing file as empty."
             }
           ]
         },
@@ -5355,6 +5478,43 @@
           ]
         },
         {
+          "name": "ListenSettings",
+          "kind": "class",
+          "doc": "Where {@link NetTasks.listen} listens.",
+          "signature": "class ListenSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "hostname",
+              "kind": "method",
+              "optional": false,
+              "signature": "hostname(address: string): this",
+              "doc": "The address to listen on (default `127.0.0.1`, reachable only from this\nmachine). `0.0.0.0` accepts connections from anywhere the network allows."
+            },
+            {
+              "name": "port",
+              "kind": "method",
+              "optional": false,
+              "signature": "port(number: number): this",
+              "doc": "The port to listen on (default `0`, which lets the system choose)."
+            },
+            {
+              "name": "hostname_",
+              "kind": "property",
+              "optional": false,
+              "signature": "hostname_: string",
+              "doc": "The address to listen on; see {@link hostname}."
+            },
+            {
+              "name": "port_",
+              "kind": "property",
+              "optional": false,
+              "signature": "port_: number",
+              "doc": "The port to listen on; see {@link port}."
+            }
+          ]
+        },
+        {
           "name": "listStoreLocks",
           "kind": "function",
           "doc": "The locks `store` holds, or a friendly failure when the backend cannot\nenumerate them.\n\nAn empty array reads as \"nobody holds anything\", which is the worst possible\nanswer to give someone looking at a wedged resource, so a store with no\n{@link StateStore.listLocks} says so rather than answering.\n",
@@ -5800,6 +5960,96 @@
           "doc": "Point `settings` at a binary that cannot exist, so running it raises a\n{@link \"./tooling.ts\".ToolNotFoundError} without ever launching a real\nprocess — the way a wrapper test proves each of its task functions reaches\nexecution.\n\nThe platform is pinned to `linux` so the assertion reads the same on every\nrunner, rather than depending on how the host reports a missing binary:\n\n```ts\nawait assertRejects(() => BiomeTasks.check(missingTool), ToolNotFoundError);\n```",
           "signature": "function missingTool(settings: S): S",
           "deprecated": false
+        },
+        {
+          "name": "NetConnection",
+          "kind": "interface",
+          "doc": "One accepted TCP connection.",
+          "signature": "interface NetConnection",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "write",
+              "kind": "method",
+              "optional": false,
+              "signature": "write(bytes: Uint8Array): Promise<void>",
+              "doc": "Send `bytes`, resolving once they are handed to the operating system."
+            },
+            {
+              "name": "closeWrite",
+              "kind": "method",
+              "optional": false,
+              "signature": "closeWrite(): Promise<void>",
+              "doc": "Close this side's half: the other side reads an end, and may still send."
+            },
+            {
+              "name": "close",
+              "kind": "method",
+              "optional": false,
+              "signature": "close(): void",
+              "doc": "Close the connection in both directions, at once."
+            },
+            {
+              "name": "readable",
+              "kind": "property",
+              "optional": false,
+              "signature": "readable: ReadableStream<Uint8Array>",
+              "doc": "What the other side sends. It ends when the other side closes its half,\nand errors when the connection is reset."
+            }
+          ]
+        },
+        {
+          "name": "NetListener",
+          "kind": "interface",
+          "doc": "A TCP port being listened on.",
+          "signature": "interface NetListener",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "accept",
+              "kind": "method",
+              "optional": false,
+              "signature": "accept(): Promise<NetConnection>",
+              "doc": "The next connection, as it arrives.\n"
+            },
+            {
+              "name": "close",
+              "kind": "method",
+              "optional": false,
+              "signature": "close(): void",
+              "doc": "Stop listening. Connections already accepted stay open."
+            },
+            {
+              "name": "port",
+              "kind": "property",
+              "optional": false,
+              "signature": "port: number",
+              "doc": "The port, which the system chose when `0` was asked for."
+            }
+          ]
+        },
+        {
+          "name": "NetTasks",
+          "kind": "variable",
+          "doc": "TCP sockets, on whichever runtime the build runs on.",
+          "signature": "const NetTasks: NetTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "NetTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link NetTasks}.",
+          "signature": "interface NetTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "listen",
+              "kind": "method",
+              "optional": false,
+              "signature": "listen(configure?: Configure<ListenSettings>): Promise<NetListener>",
+              "doc": "Listen as `configure` says: on loopback, on a port the system chooses,\nunless set otherwise. Every accepted connection sends a\nshort message at once rather than holding it for more.\n\n```ts\nconst listener = await NetTasks.listen((s) => s.port(8080));\n```"
+            }
+          ]
         },
         {
           "name": "NO_BANNER_ENV",
@@ -6306,6 +6556,57 @@
           "deprecated": false
         },
         {
+          "name": "PathInfo",
+          "kind": "interface",
+          "doc": "What is at a path, as {@link FileTasksApi.stat} and its kin report it.",
+          "signature": "interface PathInfo",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "isFile",
+              "kind": "property",
+              "optional": false,
+              "signature": "isFile: boolean",
+              "doc": "Whether it is a regular file."
+            },
+            {
+              "name": "isDirectory",
+              "kind": "property",
+              "optional": false,
+              "signature": "isDirectory: boolean",
+              "doc": "Whether it is a directory."
+            },
+            {
+              "name": "isSymlink",
+              "kind": "property",
+              "optional": false,
+              "signature": "isSymlink: boolean",
+              "doc": "Whether it is a symbolic link; only ever true from `lstat`."
+            },
+            {
+              "name": "size",
+              "kind": "property",
+              "optional": false,
+              "signature": "size: number",
+              "doc": "Its size in bytes."
+            },
+            {
+              "name": "mode",
+              "kind": "property",
+              "optional": false,
+              "signature": "mode: number | null",
+              "doc": "Its permission and type bits, or `null` on Windows, whose files have no\nPOSIX permissions to report."
+            },
+            {
+              "name": "uid",
+              "kind": "property",
+              "optional": false,
+              "signature": "uid: number | null",
+              "doc": "The id of the user who owns it, or `null` on Windows, which has none."
+            }
+          ]
+        },
+        {
           "name": "PathLike",
           "kind": "typeAlias",
           "doc": "A filesystem path accepted by Zuke APIs: either a plain string or an\n{@link AbsolutePath}. Anywhere a tool wrapper or build helper takes a path,\nit accepts a `PathLike` and coerces it to a string.",
@@ -6413,6 +6714,201 @@
           "doc": "Prepend `dir` to the process `PATH`, and return the new value. A tool\nprovisioned into `dir` (e.g. the `bin` directory of an {@link \"./install.ts\".installTree}\nruntime) then resolves for the rest of the build: the shell `$`, `Command`,\nand every tool wrapper spawn subprocesses that inherit the environment, so the\n`node_modules/.bin` shims and `NpmTasks` that assume a `node`/`npm` on `PATH`\nfind the provisioned one.\n\nIdempotent — a directory already on `PATH` is left in place, not duplicated —\nand uses the platform separator (`;` on Windows, `:` elsewhere).\n",
           "signature": "function prependPath(dir: PathLike, os?: HostOs): string",
           "deprecated": false
+        },
+        {
+          "name": "ProcessOutput",
+          "kind": "interface",
+          "doc": "How a process run to its end finished, and what it wrote to its pipes.",
+          "signature": "interface ProcessOutput",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "stdout",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdout: Uint8Array",
+              "doc": "What it wrote to stdout; empty unless stdout was `piped`."
+            },
+            {
+              "name": "stderr",
+              "kind": "property",
+              "optional": false,
+              "signature": "stderr: Uint8Array",
+              "doc": "What it wrote to stderr; empty unless stderr was `piped`."
+            }
+          ]
+        },
+        {
+          "name": "ProcessSettings",
+          "kind": "class",
+          "doc": "How a child process is started, for `ProcessTasks.spawn` and\n`ProcessTasks.run`:\n\n```ts\nconst output = await ProcessTasks.run(\"git\", (s) =>\n  s.args(\"rev-parse\", \"HEAD\").cwd(repo).stdout(\"piped\"));\n```\n\nWith nothing set, the child gets no arguments, the parent's working\ndirectory and environment, and inherits all three standard streams.",
+          "signature": "class ProcessSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "args",
+              "kind": "method",
+              "optional": false,
+              "signature": "args(...values: string[]): this",
+              "doc": "Arguments, one per value: nothing re-splits or re-quotes them.\nAccumulates across calls."
+            },
+            {
+              "name": "cwd",
+              "kind": "method",
+              "optional": false,
+              "signature": "cwd(path: string): this",
+              "doc": "The working directory (default: the parent's)."
+            },
+            {
+              "name": "env",
+              "kind": "method",
+              "optional": false,
+              "signature": "env(name: string, value: string): this",
+              "doc": "Set `name` to `value` in the child's environment, on top of what it\ninherits. Accumulates across calls."
+            },
+            {
+              "name": "clearEnv",
+              "kind": "method",
+              "optional": false,
+              "signature": "clearEnv(): this",
+              "doc": "Start from an empty environment, so the variables set with {@link env}\nare all the child sees. On Windows under Node the variables the system\nneeds are still passed on."
+            },
+            {
+              "name": "stdin",
+              "kind": "method",
+              "optional": false,
+              "signature": "stdin(how: ProcessStdio): this",
+              "doc": "How the child's stdin is connected (default `inherit`)."
+            },
+            {
+              "name": "stdout",
+              "kind": "method",
+              "optional": false,
+              "signature": "stdout(how: ProcessStdio): this",
+              "doc": "How the child's stdout is connected (default `inherit`); `piped` to read\nor collect it."
+            },
+            {
+              "name": "stderr",
+              "kind": "method",
+              "optional": false,
+              "signature": "stderr(how: ProcessStdio): this",
+              "doc": "How the child's stderr is connected (default `inherit`); `piped` to read\nor collect it."
+            },
+            {
+              "name": "signal",
+              "kind": "method",
+              "optional": false,
+              "signature": "signal(abort: AbortSignal): this",
+              "doc": "Terminate the child when `abort` is aborted."
+            },
+            {
+              "name": "args_",
+              "kind": "property",
+              "optional": false,
+              "signature": "args_: string[]",
+              "doc": "The arguments; see {@link args}."
+            },
+            {
+              "name": "cwd_",
+              "kind": "property",
+              "optional": false,
+              "signature": "cwd_: string | undefined",
+              "doc": "The working directory; see {@link cwd}."
+            },
+            {
+              "name": "env_",
+              "kind": "property",
+              "optional": false,
+              "signature": "env_: Record<string, string>",
+              "doc": "Variables added to the environment; see {@link env}."
+            },
+            {
+              "name": "clearEnv_",
+              "kind": "property",
+              "optional": false,
+              "signature": "clearEnv_: boolean",
+              "doc": "Whether to start from an empty environment; see {@link clearEnv}."
+            },
+            {
+              "name": "stdin_",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdin_: ProcessStdio",
+              "doc": "How stdin is connected; see {@link stdin}."
+            },
+            {
+              "name": "stdout_",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdout_: ProcessStdio",
+              "doc": "How stdout is connected; see {@link stdout}."
+            },
+            {
+              "name": "stderr_",
+              "kind": "property",
+              "optional": false,
+              "signature": "stderr_: ProcessStdio",
+              "doc": "How stderr is connected; see {@link stderr}."
+            },
+            {
+              "name": "signal_",
+              "kind": "property",
+              "optional": false,
+              "signature": "signal_: AbortSignal | undefined",
+              "doc": "What terminates the child when aborted; see {@link signal}."
+            }
+          ]
+        },
+        {
+          "name": "ProcessStdio",
+          "kind": "typeAlias",
+          "doc": "How one of a child's standard streams is connected.",
+          "signature": "type ProcessStdio = inherit | piped | null",
+          "deprecated": false
+        },
+        {
+          "name": "ProcessTasks",
+          "kind": "variable",
+          "doc": "Child processes and signals, on whichever runtime the build runs on.",
+          "signature": "const ProcessTasks: ProcessTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "ProcessTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link ProcessTasks}.",
+          "signature": "interface ProcessTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "spawn",
+              "kind": "method",
+              "optional": false,
+              "signature": "spawn(command: string, configure?: Configure<ProcessSettings>): ChildProcess",
+              "doc": "Start `command` and return the running child.\n"
+            },
+            {
+              "name": "run",
+              "kind": "method",
+              "optional": false,
+              "signature": "run(command: string, configure?: Configure<ProcessSettings>): Promise<ProcessOutput>",
+              "doc": "Run `command` to its end, collecting what it writes to the streams that\nare `piped`.\n"
+            },
+            {
+              "name": "addSignalListener",
+              "kind": "method",
+              "optional": false,
+              "signature": "addSignalListener(signal: Signal, handler: unknown): void",
+              "doc": "Call `handler` each time this process receives `signal`. On Windows only\n`SIGINT` and `SIGBREAK` arrive, and Deno refuses a listener for any other\nthere, so a portable caller listens for those two on Windows."
+            },
+            {
+              "name": "removeSignalListener",
+              "kind": "method",
+              "optional": false,
+              "signature": "removeSignalListener(signal: Signal, handler: unknown): void",
+              "doc": "Stop calling `handler` for `signal`."
+            }
+          ]
         },
         {
           "name": "protectedResource",
@@ -7715,6 +8211,101 @@
           ]
         },
         {
+          "name": "RuntimeFacts",
+          "kind": "interface",
+          "doc": "What is known about the runtime the process is running on.",
+          "signature": "interface RuntimeFacts",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "name",
+              "kind": "property",
+              "optional": false,
+              "signature": "name: deno | node",
+              "doc": "The runtime's name, as a person would type it."
+            },
+            {
+              "name": "version",
+              "kind": "property",
+              "optional": false,
+              "signature": "version: string",
+              "doc": "Its version, e.g. `2.8.3`."
+            },
+            {
+              "name": "typescript",
+              "kind": "property",
+              "optional": false,
+              "signature": "typescript: string | undefined",
+              "doc": "The TypeScript version it bundles, where it says."
+            },
+            {
+              "name": "standalone",
+              "kind": "property",
+              "optional": false,
+              "signature": "standalone: boolean",
+              "doc": "Whether the process is a compiled binary with the runtime inside it,\nand not the runtime started on a script."
+            }
+          ]
+        },
+        {
+          "name": "RuntimeTasks",
+          "kind": "variable",
+          "doc": "Facts about the running process, on whichever runtime it is.",
+          "signature": "const RuntimeTasks: RuntimeTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "RuntimeTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link RuntimeTasks}.",
+          "signature": "interface RuntimeTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "facts",
+              "kind": "method",
+              "optional": false,
+              "signature": "facts(): RuntimeFacts",
+              "doc": "Which runtime this is, its version, and whether it is a compiled binary."
+            },
+            {
+              "name": "os",
+              "kind": "method",
+              "optional": false,
+              "signature": "os(): HostOs",
+              "doc": "The operating system, by the names Deno uses: `windows`, `darwin`, …"
+            },
+            {
+              "name": "execPath",
+              "kind": "method",
+              "optional": false,
+              "signature": "execPath(): string",
+              "doc": "The path of the executable running this process."
+            },
+            {
+              "name": "mainModule",
+              "kind": "method",
+              "optional": false,
+              "signature": "mainModule(): string",
+              "doc": "The URL of the module the process was started on."
+            },
+            {
+              "name": "args",
+              "kind": "method",
+              "optional": false,
+              "signature": "args(): string[]",
+              "doc": "The arguments the process was started with, after the module."
+            },
+            {
+              "name": "userId",
+              "kind": "method",
+              "optional": false,
+              "signature": "userId(): number | null",
+              "doc": "The id of the user this process runs as, or `null` on Windows."
+            }
+          ]
+        },
+        {
           "name": "S3CacheStore",
           "kind": "class",
           "doc": "A {@link RemoteCacheStore} over an S3-compatible bucket: the HTTP store's\n`GET`/`PUT <url>/<key>`, each request carrying `x-amz-content-sha256` and\na SigV4 `Authorization` for the service `s3`.\n\nA miss is a `404`, which S3 answers only to a caller allowed `s3:ListBucket`\non the bucket; without it a missing key is a `403`, reported as a lookup\nfailure (and a rebuild) rather than a miss. Grant `s3:GetObject`,\n`s3:PutObject` and `s3:ListBucket`. Entries are never evicted by the store:\nput a lifecycle rule on the prefix.",
@@ -8348,6 +8939,29 @@
           "doc": "A `() =>` factory the kit calls once to obtain the store under test.",
           "signature": "type StateStoreFactory = unknown",
           "deprecated": false
+        },
+        {
+          "name": "StreamTasks",
+          "kind": "variable",
+          "doc": "Byte streams, on whichever runtime the build runs on.",
+          "signature": "const StreamTasks: StreamTasksApi",
+          "deprecated": false
+        },
+        {
+          "name": "StreamTasksApi",
+          "kind": "interface",
+          "doc": "The shape of {@link StreamTasks}.",
+          "signature": "interface StreamTasksApi",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "toFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "toFile(path: PathLike, data: ReadableStream<Uint8Array>, configure?: Configure<WriteSettings>): Promise<void>",
+              "doc": "Write everything `data` carries to the file at `path`, as `configure`\nsays: replacing it unless `createNew`, in which case nothing is read from\na stream whose path is taken. A stream that fails leaves the file with\nwhat had arrived, and the failure is thrown.\n\n```ts\nawait StreamTasks.toFile(\"app.zip\", response.body, (s) => s.createNew());\n```"
+            }
+          ]
         },
         {
           "name": "stripAnsi",
@@ -9465,6 +10079,29 @@
           ]
         },
         {
+          "name": "TempDirectorySettings",
+          "kind": "class",
+          "doc": "How `FileTasks.makeTempDirectory` names the directory:\n\n```ts\nconst dir = await FileTasks.makeTempDirectory((s) => s.prefix(\"zuke-pack-\"));\n```",
+          "signature": "class TempDirectorySettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "prefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "prefix(start: string): this",
+              "doc": "How the directory's name starts (default `zuke-`)."
+            },
+            {
+              "name": "prefix_",
+              "kind": "property",
+              "optional": false,
+              "signature": "prefix_: string | undefined",
+              "doc": "How the directory's name starts; see {@link prefix}."
+            }
+          ]
+        },
+        {
           "name": "TestCounts",
           "kind": "interface",
           "doc": "The counts a test run produced — the one shape every test-runner wrapper\nmaps its runner's own summary line onto, so `DenoTasks.test`,\n`VitestTasks.run`, `JestTasks.run` and the rest all put the same labels on\ntheir rows. `passed` and `failed` are always known; the rest are the\noptional categories a runner may or may not have, left out when it has none.",
@@ -10303,6 +10940,43 @@
               "optional": false,
               "signature": "resolution: ToolResolution",
               "doc": "The resolution strategy the wrapper must use when nothing overrides it:\n`\"node_modules\"` for a JS-ecosystem tool installed under `node_modules`,\n`\"path\"` for a natively installed one. Required, with no default: an\nnpm-distributed wrapper that forgot to override `defaultResolution()` is\nexactly the bug this kit exists to catch, and a default would let that\nwrapper's test pass by saying nothing."
+            }
+          ]
+        },
+        {
+          "name": "WriteSettings",
+          "kind": "class",
+          "doc": "How a file is written, for `FileTasks.writeText`, `FileTasks.writeBytes`\nand `StreamTasks.toFile`:\n\n```ts\nawait FileTasks.writeText(\"key.pem\", pem, (s) => s.mode(0o600).createNew());\n```\n\nWith nothing set, the file is created or replaced with the system's default\npermissions.",
+          "signature": "class WriteSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "mode",
+              "kind": "method",
+              "optional": false,
+              "signature": "mode(bits: number): this",
+              "doc": "The file's permission bits, such as `0o600`, applied to a file that\nalready exists too. Windows has none and ignores it."
+            },
+            {
+              "name": "createNew",
+              "kind": "method",
+              "optional": false,
+              "signature": "createNew(): this",
+              "doc": "Fail with an `AlreadyExists` when anything is at the path, instead of\nreplacing it. The check and the create are one step, so of several\nwriters racing for a path exactly one succeeds."
+            },
+            {
+              "name": "mode_",
+              "kind": "property",
+              "optional": false,
+              "signature": "mode_: number | undefined",
+              "doc": "The permission bits to give the file; see {@link mode}."
+            },
+            {
+              "name": "createNew_",
+              "kind": "property",
+              "optional": false,
+              "signature": "createNew_: boolean",
+              "doc": "Whether to refuse a path already taken; see {@link createNew}."
             }
           ]
         },
