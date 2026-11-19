@@ -12167,6 +12167,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name, `\"CoverageThresholdError\"`."
+            },
+            {
+              "name": "failures",
+              "kind": "property",
+              "optional": false,
+              "signature": "failures: string[]",
+              "doc": "One human-readable message per metric that fell short."
             }
           ]
         },
@@ -33648,6 +33655,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "task",
+              "kind": "property",
+              "optional": false,
+              "signature": "task: string",
+              "doc": "The reader that could not use the output, e.g. `GcloudTasks.logEntryCount`."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": false,
+              "signature": "detail: string",
+              "doc": "What was wrong with the output, without quoting it."
             }
           ]
         },
@@ -36903,6 +36924,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "queryId",
+              "kind": "property",
+              "optional": false,
+              "signature": "queryId: string",
+              "doc": "The id `logs start-query` returned."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: string",
+              "doc": "The last status `logs get-query-results` reported."
             }
           ]
         },
@@ -37044,6 +37079,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "task",
+              "kind": "property",
+              "optional": false,
+              "signature": "task: string",
+              "doc": "The reader that could not use the output, e.g. `AwsTasks.metricValue`."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": false,
+              "signature": "detail: string",
+              "doc": "What was wrong with the output, without quoting it."
             }
           ]
         },
@@ -38736,6 +38785,13 @@
               "optional": false,
               "signature": "revision(name: string): this",
               "doc": "The revision to activate or deactivate (`--revision`)."
+            },
+            {
+              "name": "verb_",
+              "kind": "property",
+              "optional": false,
+              "signature": "verb_: activate | deactivate",
+              "doc": "`activate` or `deactivate`."
             }
           ]
         },
@@ -39961,6 +40017,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "task",
+              "kind": "property",
+              "optional": false,
+              "signature": "task: string",
+              "doc": "The reader that could not use the output, e.g. `AzTasks.metricValue`."
+            },
+            {
+              "name": "detail",
+              "kind": "property",
+              "optional": false,
+              "signature": "detail: string",
+              "doc": "What was wrong with the output, without quoting it."
             }
           ]
         },
@@ -45446,6 +45516,13 @@
               "optional": false,
               "signature": "silent(): this",
               "doc": "Do not print the response body (`--silent`)."
+            },
+            {
+              "name": "endpoint",
+              "kind": "property",
+              "optional": false,
+              "signature": "endpoint: string",
+              "doc": "The REST endpoint path, or `graphql`."
             }
           ]
         },
@@ -58977,6 +59054,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error's class name, for `instanceof`-free identification."
+            },
+            {
+              "name": "bytes",
+              "kind": "property",
+              "optional": false,
+              "signature": "bytes: number",
+              "doc": "The UTF-8 length of the text that was refused."
+            },
+            {
+              "name": "level",
+              "kind": "property",
+              "optional": false,
+              "signature": "level: ErrorCorrectionLevel",
+              "doc": "The error-correction level the text was refused at."
             }
           ]
         },
@@ -59278,6 +59369,27 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "request",
+              "kind": "property",
+              "optional": false,
+              "signature": "request: string",
+              "doc": "The request, e.g. `GET /v1/apps`."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": false,
+              "signature": "status: number",
+              "doc": "The HTTP status."
+            },
+            {
+              "name": "errors",
+              "kind": "property",
+              "optional": false,
+              "signature": "errors: ReadonlyArray<AppStoreConnectErrorDetail>",
+              "doc": "The errors the response listed, possibly none."
             }
           ]
         },
@@ -59912,6 +60024,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "failures",
+              "kind": "property",
+              "optional": false,
+              "signature": "failures: ReadonlyArray<KeychainCleanupFailure>",
+              "doc": "Each cleanup step that threw, in the order they ran."
             }
           ]
         },
@@ -60011,6 +60130,20 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "submission",
+              "kind": "property",
+              "optional": false,
+              "signature": "submission: NotarytoolSubmission",
+              "doc": "The submission as `notarytool submit` reported it."
+            },
+            {
+              "name": "log",
+              "kind": "property",
+              "optional": false,
+              "signature": "log: NotarytoolLog | undefined",
+              "doc": "The submission's notarization log, or `undefined` if it could not be fetched."
             }
           ]
         },
@@ -60155,6 +60288,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "stdout",
+              "kind": "property",
+              "optional": false,
+              "signature": "stdout: string",
+              "doc": "What notarytool printed on stdout."
             }
           ]
         },
@@ -61785,6 +61925,13 @@
               "optional": false,
               "signature": "name: string",
               "doc": "The error name."
+            },
+            {
+              "name": "status",
+              "kind": "property",
+              "optional": true,
+              "signature": "status?: number",
+              "doc": "The HTTP status of the refused request, or `undefined` when no request was refused."
             }
           ]
         },
