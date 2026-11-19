@@ -17443,6 +17443,13 @@
               "doc": "Manage dist-tags: `npm dist-tag add|rm|ls`."
             },
             {
+              "name": "trust",
+              "kind": "method",
+              "optional": false,
+              "signature": "trust(configure?: Configure<NpmTrustSettings>): Promise<CommandOutput>",
+              "doc": "Manage trusted publishers: `npm trust github|gitlab|circleci|list|revoke`."
+            },
+            {
               "name": "view",
               "kind": "method",
               "optional": false,
@@ -17627,6 +17634,99 @@
               "optional": false,
               "signature": "cidr(...ranges: string[]): this",
               "doc": "Restrict a created token to these ranges (`--cidr=<range>`); repeatable."
+            },
+            {
+              "name": "otp",
+              "kind": "method",
+              "optional": false,
+              "signature": "otp(code: string): this",
+              "doc": "Provide a one-time password.\n\nCarried in `npm_config_otp` rather than on the command line — see\n{@link NpmSettings.applyOtp} for why."
+            }
+          ]
+        },
+        {
+          "name": "NpmTrustSettings",
+          "kind": "class",
+          "doc": "Settings for `npm trust`. Pick the subcommand with {@link github},\n{@link gitlab}, {@link circleci}, {@link list}, or {@link revoke}; the\nprovider flags apply to the three provider subcommands.",
+          "signature": "class NpmTrustSettings extends NpmSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "github",
+              "kind": "method",
+              "optional": false,
+              "signature": "github(pkg?: string, file?: string): this",
+              "doc": "Trust a GitHub Actions workflow (`trust github [<pkg>]`)."
+            },
+            {
+              "name": "gitlab",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitlab(pkg?: string, file?: string): this",
+              "doc": "Trust a GitLab CI/CD pipeline file (`trust gitlab [<pkg>]`)."
+            },
+            {
+              "name": "circleci",
+              "kind": "method",
+              "optional": false,
+              "signature": "circleci(pkg?: string, file?: string): this",
+              "doc": "Trust a CircleCI pipeline (`trust circleci [<pkg>]`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(pkg?: string): this",
+              "doc": "List a package's trusted publishers (`trust list [<pkg>]`), the default."
+            },
+            {
+              "name": "revoke",
+              "kind": "method",
+              "optional": false,
+              "signature": "revoke(id: string, pkg?: string): this",
+              "doc": "Remove a trusted publisher by id (`trust revoke [<pkg>] --id=<id>`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(name: string): this",
+              "doc": "The workflow or pipeline file to trust (`--file=<name>`)."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(name: string): this",
+              "doc": "The source repository as `owner/name` (`--repo=<owner/name>`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: string): this",
+              "doc": "Bind the trust to a deployment environment (`--environment=<name>`)."
+            },
+            {
+              "name": "allowPublish",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowPublish(): this",
+              "doc": "Let the trusted workflow publish the package (`--allow-publish`)."
+            },
+            {
+              "name": "allowStagePublish",
+              "kind": "method",
+              "optional": false,
+              "signature": "allowStagePublish(): this",
+              "doc": "Let the trusted workflow stage a publish (`--allow-stage-publish`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes(): this",
+              "doc": "Skip the confirmation prompt (`--yes`)."
             },
             {
               "name": "otp",
