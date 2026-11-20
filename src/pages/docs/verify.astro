@@ -16,8 +16,6 @@ npm audit signatures`;
 
 const rebuildSnippet = `git clone https://github.com/zuke-build/zuke
 cd zuke
-# Tags are <package>-v<version>
-git checkout core-v1.83.0
 ./zuke npmVerify`;
 
 const binarySnippet = `# The archive is one the release lists, byte for byte:
@@ -98,8 +96,8 @@ gh attestation verify zuke-<version>-x86_64-unknown-linux-gnu.tar.gz \\
 
   <h2 id="rebuild">Rebuild and compare</h2>
   <p>
-    <code>npmVerify</code> is a target in Zuke's own build. Run it from a clone
-    at a release tag:
+    <code>npmVerify</code> is a target in Zuke's own build. Run it from any clone
+    of the repository; there is no tag to check out:
   </p>
   <Code code={rebuildSnippet} lang="sh" theme="night-owl" />
   <p>For every published package version, it:</p>
@@ -107,17 +105,19 @@ gh attestation verify zuke-<version>-x86_64-unknown-linux-gnu.tar.gz \\
     <li>
       Requires an SLSA provenance attestation, and verifies it with Sigstore
       against Zuke's exact identity: the <code>release.yml</code> workflow of
-      <code>zuke-build/zuke</code> on <code>master</code>, issued by GitHub, with
-      the certificate naming the release commit.
+      <code>zuke-build/zuke</code> on <code>master</code>, issued by GitHub. The
+      certificate names the commit the package was built from, and that commit
+      must be on <code>master</code>.
     </li>
     <li>
       Checks that the signed statement names the exact bytes npm serves, by
       their sha512.
     </li>
     <li>
-      Rebuilds the package with the pinned compiler, installs the published
-      version the way npm does (with install scripts off), and compares every
-      installed file with the rebuild, byte for byte.
+      Rebuilds the package from that commit, in a clean checkout of it, with
+      that commit's own build scripts and pinned compiler. It installs the
+      published version the way npm does (with install scripts off) and
+      compares every installed file with the rebuild, byte for byte.
     </li>
     <li>
       Compares the registry's manifest, the copy npm acts on when it installs,
@@ -128,13 +128,25 @@ gh attestation verify zuke-<version>-x86_64-unknown-linux-gnu.tar.gz \\
     </li>
   </ol>
   <p>
-    <em>Proves</em> the package was built by Zuke's release workflow from the
-    named commit, that the bytes npm serves are the ones that workflow signed,
-    and that they are what this checkout compiles to. On the release tag itself
-    that is the commit's own build. For a package released earlier and unchanged
-    since its tag, the source is checked against the tag and the compiler is
-    this checkout's.
+    <em>Proves</em> the package was built by Zuke's release workflow from a
+    commit on <code>master</code>, that the bytes npm serves are the ones that
+    workflow signed, and that they are exactly what that commit compiles to.
+    Zuke publishes a version to npm only when its package is unchanged since
+    its release tag, so the npm and JSR packages of the same version carry the
+    same source.
   </p>
+  <div class="note">
+    <p>
+      One exception: the first npm publish, on 20 November 2026, built every
+      package from one commit, <code>09d0edc</code>. For a package that changed
+      after its release, that npm version carries the newer source rather than
+      the JSR files of the same version. Its provenance says so, and
+      <code>npmVerify</code> proves exactly that. The same run left a
+      <code>0.0.0-stage</code> version on each package: npm's own placeholder
+      for staged publishing, a stub with no code that is never
+      <code>latest</code>.
+    </p>
+  </div>
   <p>
     Zuke's release workflow runs the same check after every publish, on Linux,
     macOS and Windows, with no secrets. The <strong>Verify npm packages</strong>
