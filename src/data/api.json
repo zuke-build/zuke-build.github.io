@@ -4672,8 +4672,8 @@
         {
           "name": "glob",
           "kind": "function",
-          "doc": "Expand a glob pattern to the matching paths, sorted for determinism. The walk\nstarts at the pattern's static prefix, so anchor patterns (e.g.\n`src/**\\/*.ts`) to avoid scanning the whole tree. Symlinked directories are\nnot followed.\n\nA relative pattern is resolved against `cwd` and its matches are returned\nrelative to it. An **absolute** pattern (a leading `/`, or a `C:`-style drive)\nnames its own root: `cwd` plays no part and the matches come back absolute.",
-          "signature": "async function glob(pattern: string, options?: GlobOptions): Promise<string[]>",
+          "doc": "Expand a glob pattern to the matching paths, sorted for determinism. The walk\nstarts at the pattern's static prefix, so anchor patterns (e.g.\n`src/**\\/*.ts`) to avoid scanning the whole tree. Symlinked directories are\nnot followed.\n\nA relative pattern is resolved against `cwd` and its matches are returned\nrelative to it. An **absolute** pattern (a leading `/`, or a `C:`-style drive)\nnames its own root: `cwd` plays no part and the matches come back absolute.\n\nA directory removed while the walk runs, after its parent was listed and\nbefore it is read itself, has no matches and is skipped; any other error\nreading a directory rejects.",
+          "signature": "function glob(pattern: string, options?: GlobOptions): Promise<string[]>",
           "deprecated": false
         },
         {
