@@ -1,0 +1,183 @@
+---
+import { Code } from "astro:components";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "why", label: "Why this page exists" },
+  { id: "jsr", label: "JSR packages" },
+  { id: "npm", label: "npm packages" },
+  { id: "rebuild", label: "Rebuild and compare" },
+  { id: "binaries", label: "The zuke binary" },
+  { id: "limits", label: "What none of this proves" },
+];
+
+const auditSnippet = `# In your own project, after installing:
+npm audit signatures`;
+
+const rebuildSnippet = `git clone https://github.com/zuke-build/zuke
+cd zuke
+./zuke npmVerify`;
+
+const binarySnippet = `# The archive is one the release lists, byte for byte:
+sha256sum --ignore-missing --check SHA256SUMS
+
+# It was built by Zuke's release workflow, from this repository:
+gh attestation verify zuke-<version>-x86_64-unknown-linux-gnu.tar.gz \\
+  --repo zuke-build/zuke \\
+  --signer-workflow zuke-build/zuke/.github/workflows/release.yml \\
+  --source-ref refs/heads/master`;
+---
+
+<DocsLayout
+  title="Verify what you install"
+  description="How to check that a Zuke package or binary was built by Zuke's public release workflow from a public commit, and for npm, that it is exactly what that commit compiles to. Each check says what it proves and what it does not."
+  toc={toc}
+>
+  <p class="lead">
+    Zuke runs your build, with your credentials. You should not have to take
+    our word for what is in it. Every package and binary we publish can be
+    checked against this repository, and for npm you can rebuild it yourself and
+    compare the bytes.
+  </p>
+
+  <h2 id="why">Why this page exists</h2>
+  <p>
+    Each check below says what it <strong>proves</strong> and what it
+    <strong>does not</strong>. Together they answer two questions: who built
+    this, and is it what the public source says it is. None of them proves the
+    source is free of bugs; that is what code review, the test suite and the
+    <a href="https://github.com/zuke-build/zuke/blob/master/SECURITY.md">security policy</a>
+    are for.
+  </p>
+
+  <h2 id="jsr">JSR packages (<code>@zuke/*</code>)</h2>
+  <ul>
+    <li>
+      <strong>Provenance.</strong> Every version is published from Zuke's release
+      workflow through OIDC, and JSR records a
+      <a href="https://www.sigstore.dev/">Sigstore</a> provenance attestation
+      for it. Open the version on <a href="https://jsr.io/@zuke/core">jsr.io</a>
+      and check its provenance panel: it names
+      <code>zuke-build/zuke</code>, the exact commit, and the workflow run.
+      <em>Proves</em> which workflow and commit published it.
+      <em>Does not prove</em> anything about that commit's content.
+    </li>
+    <li>
+      <strong>Source as published.</strong> JSR packages are the committed
+      TypeScript files, with no compile step, so a version can be diffed
+      directly against its provenance commit. <em>Proves</em> the files are that
+      commit's. <em>Does not prove</em> the commit is sound.
+    </li>
+  </ul>
+
+  <h2 id="npm">npm packages (<code>@zuke-build/*</code>)</h2>
+  <p>
+    On npm, the same packages are compiled to JavaScript with
+    <code>tsc</code> before they are published, so there is a build step to
+    trust. These checks cover it.
+  </p>
+  <ul>
+    <li>
+      <strong>The provenance badge.</strong> npmjs.com shows a "Built and signed
+      on GitHub Actions" badge on each version, linking the commit and the
+      workflow run. <em>Proves</em> which workflow and commit built it.
+      <em>Does not prove</em> the files are what that commit compiles to.
+    </li>
+    <li>
+      <strong><code>npm audit signatures</code>.</strong> Run it in your own
+      project after installing.
+      <Code code={auditSnippet} lang="sh" theme="night-owl" />
+      <em>Proves</em> each tarball carries npm's registry signature, and that
+      some Sigstore identity signed its provenance. <em>Does not prove</em> the
+      identity is Zuke's: npm applies no identity policy. The rebuild below
+      checks that.
+    </li>
+  </ul>
+
+  <h2 id="rebuild">Rebuild and compare</h2>
+  <p>
+    <code>npmVerify</code> is a target in Zuke's own build. Run it from any clone
+    of the repository; there is no tag to check out:
+  </p>
+  <Code code={rebuildSnippet} lang="sh" theme="night-owl" />
+  <p>For every published package version, it:</p>
+  <ol>
+    <li>
+      Requires an SLSA provenance attestation, and verifies it with Sigstore
+      against Zuke's exact identity: the <code>release.yml</code> workflow of
+      <code>zuke-build/zuke</code> on <code>master</code>, issued by GitHub. The
+      certificate names the commit the package was built from, and that commit
+      must be on <code>master</code>.
+    </li>
+    <li>
+      Checks that the signed statement names the exact bytes npm serves, by
+      their sha512.
+    </li>
+    <li>
+      Rebuilds the package from that commit, in a clean checkout of it, with
+      that commit's own build scripts and pinned compiler. It installs the
+      published version the way npm does (with install scripts off) and
+      compares every installed file with the rebuild, byte for byte.
+    </li>
+    <li>
+      Compares the registry's manifest, the copy npm acts on when it installs,
+      with the rebuild for every field that changes what npm runs or resolves:
+      scripts, dependencies, executables, platform limits, entry points. A
+      tampered manifest that adds an install script fails here, even when the
+      files match.
+    </li>
+  </ol>
+  <p>
+    <em>Proves</em> the package was built by Zuke's release workflow from a
+    commit on <code>master</code>, that the bytes npm serves are the ones that
+    workflow signed, and that they are exactly what that commit compiles to.
+    Zuke publishes a version to npm only when its package is unchanged since
+    its release tag, so the npm and JSR packages of the same version carry the
+    same source.
+  </p>
+  <div class="note">
+    <p>
+      One exception: the first npm publish, on 20 November 2026, built every
+      package from one commit, <code>09d0edc</code>. For a package that changed
+      after its release, that npm version carries the newer source rather than
+      the JSR files of the same version. Its provenance says so, and
+      <code>npmVerify</code> proves exactly that. The same run left a
+      <code>0.0.0-stage</code> version on each package: npm's own placeholder
+      for staged publishing, a stub with no code that is never
+      <code>latest</code>.
+    </p>
+  </div>
+  <p>
+    Zuke's release workflow runs the same check after every publish, on Linux,
+    macOS and Windows, with no secrets. The <strong>Verify npm packages</strong>
+    job's logs are public on the
+    <a href="https://github.com/zuke-build/zuke/actions/workflows/release.yml">release workflow</a>.
+    That shows the rebuild agrees on three operating systems; running it
+    yourself means you do not have to trust our CI.
+  </p>
+
+  <h2 id="binaries">The zuke binary</h2>
+  <p>
+    Every binary release lists the SHA-256 of each archive and carries a
+    build-provenance attestation. Homebrew, Chocolatey and the
+    <code>./zuke</code> launchers check the pinned SHA-256 on every download. To
+    verify one yourself:
+  </p>
+  <Code code={binarySnippet} lang="sh" theme="night-owl" />
+  <p>
+    <em>Proves</em> the archive was built by Zuke's release workflow from this
+    repository, and is the one the release lists. <em>Does not prove</em> the
+    source is sound.
+  </p>
+
+  <h2 id="limits">What none of this proves</h2>
+  <p>
+    These checks tie what you install to a public commit and a public workflow.
+    They do not prove that commit is free of bugs or of a malicious change that
+    was reviewed and merged. If a version fails any of these checks, or its
+    provenance names another repository or a commit not on
+    <code>master</code>, treat it as compromised and report it as the
+    <a href="https://github.com/zuke-build/zuke/blob/master/SECURITY.md">security policy</a>
+    describes.
+  </p>
+</DocsLayout>
