@@ -54445,6 +54445,13 @@
               "doc": "The build file's name: the one the root's `zuke.json` names in its\n`build` field, `zuke.ts` when it names none."
             },
             {
+              "name": "runtime",
+              "kind": "property",
+              "optional": false,
+              "signature": "runtime: ProjectRuntime",
+              "doc": "The runtime the build file runs on: the `runtime` field of the root's\n`zuke.json`, `deno` when it names none."
+            },
+            {
               "name": "engine",
               "kind": "property",
               "optional": false,
@@ -54507,7 +54514,7 @@
         {
           "name": "BuildRunner",
           "kind": "typeAlias",
-          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path — and resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.\n`env` adds variables to the environment the child inherits.",
+          "doc": "Runs `program <args>` from `root` — Deno when `program` is omitted, else the\nproject's launcher at that path, or {@link NODE} for a build file on Node —\nand resolves to its exit code: the\ninjectable subprocess seam, so the forwarding is testable without a build.\n`env` adds variables to the environment the child inherits.",
           "signature": "type BuildRunner = unknown",
           "deprecated": false
         },
@@ -54767,6 +54774,13 @@
               "doc": "The version of the Deno that runs the command."
             }
           ]
+        },
+        {
+          "name": "ProjectRuntime",
+          "kind": "typeAlias",
+          "doc": "A runtime a project's build file can run on.",
+          "signature": "type ProjectRuntime = deno | node",
+          "deprecated": false
         },
         {
           "name": "Prompter",
