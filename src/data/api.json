@@ -1529,6 +1529,13 @@
               "doc": "Install this Deno version, for a job that runs `deno` directly rather than\nthrough the `./zuke` launcher (which bootstraps its own)."
             },
             {
+              "name": "nodeVersion",
+              "kind": "property",
+              "optional": true,
+              "signature": "nodeVersion?: string",
+              "doc": "Install this Node version, for a build whose `zuke.json` says\n`\"runtime\": \"node\"` and a job that runs `node` or `npm` directly rather\nthan through the `./zuke` launcher (which bootstraps its own)."
+            },
+            {
               "name": "actionsCache",
               "kind": "property",
               "optional": true,
