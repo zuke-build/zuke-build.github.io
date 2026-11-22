@@ -54906,6 +54906,13 @@
               "doc": "The SDK whose build to scaffold (`--sdk python`): a `build.py` the engine\nruns, in place of a `zuke.ts`. Unset: a TypeScript build."
             },
             {
+              "name": "runtime",
+              "kind": "property",
+              "optional": true,
+              "signature": "runtime?: string",
+              "doc": "The runtime of a TypeScript build (`--runtime deno|node`). Unset: Deno, asked when interactive."
+            },
+            {
               "name": "zuke",
               "kind": "property",
               "optional": true,
