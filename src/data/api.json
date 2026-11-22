@@ -54767,6 +54767,13 @@
               "doc": "Run `deno <denoArgs>` in `cwd`, returning its exit code."
             },
             {
+              "name": "npm",
+              "kind": "method",
+              "optional": false,
+              "signature": "npm(npmArgs: string[], cwd: string): Promise<number>",
+              "doc": "Run `npm <npmArgs>` in `cwd`, a Node project's root, returning its exit\ncode."
+            },
+            {
               "name": "denoVersion",
               "kind": "method",
               "optional": false,
