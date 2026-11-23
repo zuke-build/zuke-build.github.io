@@ -12426,6 +12426,50 @@
           ]
         },
         {
+          "name": "DenoBundlePlatform",
+          "kind": "typeAlias",
+          "doc": "The platform `deno bundle` builds for (`--platform`).",
+          "signature": "type DenoBundlePlatform = deno | browser",
+          "deprecated": false
+        },
+        {
+          "name": "DenoBundleSettings",
+          "kind": "class",
+          "doc": "Settings for `deno bundle`.",
+          "signature": "class DenoBundleSettings extends DenoSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "script",
+              "kind": "method",
+              "optional": false,
+              "signature": "script(path: PathLike): this",
+              "doc": "The entrypoint to bundle (required)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: PathLike): this",
+              "doc": "The file to write (`--output`); without it the bundle goes to stdout."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: DenoBundlePlatform): this",
+              "doc": "The platform to bundle for (`--platform`). `deno`, the default, leaves\n`node:` built-ins as imports, which is what a Node program needs too."
+            },
+            {
+              "name": "minify",
+              "kind": "method",
+              "optional": false,
+              "signature": "minify(): this",
+              "doc": "Minify the output (`--minify`)."
+            }
+          ]
+        },
+        {
           "name": "DenoCacheInfo",
           "kind": "interface",
           "doc": "The cache locations `deno info --json` reports when given no module.",
@@ -15292,6 +15336,13 @@
               "optional": false,
               "signature": "compile(configure?: Configure<DenoCompileSettings>): Promise<CommandOutput>",
               "doc": "Build a self-contained executable: `deno compile`."
+            },
+            {
+              "name": "bundle",
+              "kind": "method",
+              "optional": false,
+              "signature": "bundle(configure?: Configure<DenoBundleSettings>): Promise<CommandOutput>",
+              "doc": "Bundle a module and its dependencies into one file: `deno bundle`."
             },
             {
               "name": "clean",
