@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "zuke@1.3.0",
+  "generated": "zuke@1.4.0",
   "packages": [
     {
       "name": "zuke",
@@ -1292,7 +1292,7 @@
     {
       "name": "zuke.tools.ai",
       "dir": "ai",
-      "summary": "`@zuke/ai` 2.13.0: `@zuke/ai` — AI-powered code review for Zuke builds.",
+      "summary": "`@zuke/ai` 2.13.1: `@zuke/ai` — AI-powered code review for Zuke builds.",
       "symbols": [
         {
           "name": "AiTasks",
@@ -11128,7 +11128,7 @@
     {
       "name": "zuke.tools.deno",
       "dir": "deno",
-      "summary": "`@zuke/deno` 1.5.0: `@zuke/deno` — typed `DenoTasks` wrappers for the `deno` CLI, for use in Zuke build targets.",
+      "summary": "`@zuke/deno` 1.6.0: `@zuke/deno` — typed `DenoTasks` wrappers for the `deno` CLI, for use in Zuke build targets.",
       "symbols": [
         {
           "name": "DenoAddSettings",
@@ -11338,6 +11338,43 @@
               "optional": false,
               "signature": "release_notes(path: str) -> Self",
               "doc": "Release notes file to prepend to in conventional-commits mode (`--release-notes`)."
+            }
+          ]
+        },
+        {
+          "name": "DenoBundleSettings",
+          "kind": "class",
+          "doc": "Settings for `deno bundle`.",
+          "signature": "class DenoBundleSettings(DenoSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "script",
+              "kind": "method",
+              "optional": false,
+              "signature": "script(path: str) -> Self",
+              "doc": "The entrypoint to bundle (required)."
+            },
+            {
+              "name": "output",
+              "kind": "method",
+              "optional": false,
+              "signature": "output(path: str) -> Self",
+              "doc": "The file to write (`--output`); without it the bundle goes to stdout."
+            },
+            {
+              "name": "platform",
+              "kind": "method",
+              "optional": false,
+              "signature": "platform(value: Literal['deno', 'browser']) -> Self",
+              "doc": "The platform to bundle for (`--platform`). `deno`, the default, leaves\n`node:` built-ins as imports, which is what a Node program needs too."
+            },
+            {
+              "name": "minify",
+              "kind": "method",
+              "optional": false,
+              "signature": "minify() -> Self",
+              "doc": "Minify the output (`--minify`)."
             }
           ]
         },
@@ -13930,6 +13967,13 @@
               "optional": false,
               "signature": "static async compile(ctx: ServiceContext, configure: Callable[[DenoCompileSettings], DenoCompileSettings] | None=None) -> ExecResult",
               "doc": "Build a self-contained executable: `deno compile`."
+            },
+            {
+              "name": "bundle",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async bundle(ctx: ServiceContext, configure: Callable[[DenoBundleSettings], DenoBundleSettings] | None=None) -> ExecResult",
+              "doc": "Bundle a module and its dependencies into one file: `deno bundle`."
             },
             {
               "name": "clean",
@@ -34086,7 +34130,7 @@
     {
       "name": "zuke.tools.npm",
       "dir": "npm",
-      "summary": "`@zuke/npm` 1.3.1: `@zuke/npm` — typed `NpmTasks` wrappers for the `npm` CLI, for use in Zuke build targets (including builds that drive Node projects).",
+      "summary": "`@zuke/npm` 1.4.0: `@zuke/npm` — typed `NpmTasks` wrappers for the `npm` CLI, for use in Zuke build targets (including builds that drive Node projects).",
       "symbols": [
         {
           "name": "NpmAccessSettings",
@@ -35145,6 +35189,13 @@
               "doc": "Manage dist-tags: `npm dist-tag add|rm|ls`."
             },
             {
+              "name": "trust",
+              "kind": "method",
+              "optional": false,
+              "signature": "static async trust(ctx: ServiceContext, configure: Callable[[NpmTrustSettings], NpmTrustSettings] | None=None) -> ExecResult",
+              "doc": "Manage trusted publishers: `npm trust github|gitlab|circleci|list|revoke`."
+            },
+            {
               "name": "view",
               "kind": "method",
               "optional": false,
@@ -35329,6 +35380,99 @@
               "optional": false,
               "signature": "cidr(*ranges: str) -> Self",
               "doc": "Restrict a created token to these ranges (`--cidr=<range>`); repeatable."
+            },
+            {
+              "name": "otp",
+              "kind": "method",
+              "optional": false,
+              "signature": "otp(code: str) -> Self",
+              "doc": "Provide a one-time password.\n\nCarried in `npm_config_otp` rather than on the command line — see\nNpmSettings.applyOtp for why."
+            }
+          ]
+        },
+        {
+          "name": "NpmTrustSettings",
+          "kind": "class",
+          "doc": "Settings for `npm trust`. Pick the subcommand with github,\ngitlab, circleci, list, or revoke; the\nprovider flags apply to the three provider subcommands.",
+          "signature": "class NpmTrustSettings(NpmSettings)",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "github",
+              "kind": "method",
+              "optional": false,
+              "signature": "github(pkg: str | None=None, file: str | None=None) -> Self",
+              "doc": "Trust a GitHub Actions workflow (`trust github [<pkg>]`)."
+            },
+            {
+              "name": "gitlab",
+              "kind": "method",
+              "optional": false,
+              "signature": "gitlab(pkg: str | None=None, file: str | None=None) -> Self",
+              "doc": "Trust a GitLab CI/CD pipeline file (`trust gitlab [<pkg>]`)."
+            },
+            {
+              "name": "circleci",
+              "kind": "method",
+              "optional": false,
+              "signature": "circleci(pkg: str | None=None, file: str | None=None) -> Self",
+              "doc": "Trust a CircleCI pipeline (`trust circleci [<pkg>]`)."
+            },
+            {
+              "name": "list",
+              "kind": "method",
+              "optional": false,
+              "signature": "list(pkg: str | None=None) -> Self",
+              "doc": "List a package's trusted publishers (`trust list [<pkg>]`), the default."
+            },
+            {
+              "name": "revoke",
+              "kind": "method",
+              "optional": false,
+              "signature": "revoke(id: str, pkg: str | None=None) -> Self",
+              "doc": "Remove a trusted publisher by id (`trust revoke [<pkg>] --id=<id>`)."
+            },
+            {
+              "name": "file",
+              "kind": "method",
+              "optional": false,
+              "signature": "file(name: str) -> Self",
+              "doc": "The workflow or pipeline file to trust (`--file=<name>`)."
+            },
+            {
+              "name": "repo",
+              "kind": "method",
+              "optional": false,
+              "signature": "repo(name: str) -> Self",
+              "doc": "The source repository as `owner/name` (`--repo=<owner/name>`)."
+            },
+            {
+              "name": "environment",
+              "kind": "method",
+              "optional": false,
+              "signature": "environment(name: str) -> Self",
+              "doc": "Bind the trust to a deployment environment (`--environment=<name>`)."
+            },
+            {
+              "name": "allow_publish",
+              "kind": "method",
+              "optional": false,
+              "signature": "allow_publish() -> Self",
+              "doc": "Let the trusted workflow publish the package (`--allow-publish`)."
+            },
+            {
+              "name": "allow_stage_publish",
+              "kind": "method",
+              "optional": false,
+              "signature": "allow_stage_publish() -> Self",
+              "doc": "Let the trusted workflow stage a publish (`--allow-stage-publish`)."
+            },
+            {
+              "name": "yes",
+              "kind": "method",
+              "optional": false,
+              "signature": "yes() -> Self",
+              "doc": "Skip the confirmation prompt (`--yes`)."
             },
             {
               "name": "otp",
