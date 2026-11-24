@@ -62498,7 +62498,7 @@
               "kind": "method",
               "optional": false,
               "signature": "readEnv(reader: unknown): this",
-              "doc": "Read environment variables through `reader` instead of `Deno.env`."
+              "doc": "Read environment variables through `reader` instead of the process environment."
             },
             {
               "name": "sleep",
