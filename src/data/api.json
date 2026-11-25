@@ -3157,6 +3157,29 @@
           ]
         },
         {
+          "name": "ConnectSettings",
+          "kind": "class",
+          "doc": "Where {@link NetTasks.connect} connects.",
+          "signature": "class ConnectSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "hostname",
+              "kind": "method",
+              "optional": false,
+              "signature": "hostname(address: string): this",
+              "doc": "The address to connect to (default `127.0.0.1`, this machine)."
+            },
+            {
+              "name": "hostname_",
+              "kind": "property",
+              "optional": false,
+              "signature": "hostname_: string",
+              "doc": "The address to connect to; see {@link hostname}."
+            }
+          ]
+        },
+        {
           "name": "CopyOptions",
           "kind": "interface",
           "doc": "Options for {@link FileTasksApi.copy}.",
@@ -3566,6 +3589,20 @@
               "optional": false,
               "signature": "get(name: string): string | undefined",
               "doc": "The value of the environment variable `name`, or `undefined` when it is\nnot set. A runtime that denies reading the environment, as Deno can, reads\nas unset rather than throwing."
+            },
+            {
+              "name": "set",
+              "kind": "method",
+              "optional": false,
+              "signature": "set(name: string, value: string): void",
+              "doc": "Set the environment variable `name` to `value` for this process and the\nprocesses it starts from now on."
+            },
+            {
+              "name": "delete",
+              "kind": "method",
+              "optional": false,
+              "signature": "delete(name: string): void",
+              "doc": "Remove the environment variable `name`; a no-op when it is not set."
             }
           ]
         },
@@ -3949,6 +3986,13 @@
           "deprecated": false
         },
         {
+          "name": "FetchHandler",
+          "kind": "typeAlias",
+          "doc": "A handler that answers a web request with a web response.",
+          "signature": "type FetchHandler = unknown",
+          "deprecated": false
+        },
+        {
           "name": "fileSecret",
           "kind": "function",
           "doc": "A {@link SecretSource} that reads a file and takes its content as the secret\nvalue — for a mounted Kubernetes/Docker secret or a CI-provided file.\nConfigure it through a {@link FileSecretSettings} lambda.\n\n```ts\nparameter(\"Registry password\").secret().from(\n  fileSecret((s) => s.path(\"/run/secrets/registry_password\")),\n);\n```",
@@ -4309,6 +4353,13 @@
               "doc": "Create a directory of its own under the system's temporary directory and\nreturn its path. Removing it is the caller's job."
             },
             {
+              "name": "makeTempFile",
+              "kind": "method",
+              "optional": false,
+              "signature": "makeTempFile(configure?: Configure<TempFileSettings>): Promise<string>",
+              "doc": "Create an empty file of its own under the system's temporary directory\nand return its path. Removing it is the caller's job."
+            },
+            {
               "name": "chmod",
               "kind": "method",
               "optional": false,
@@ -4321,6 +4372,13 @@
               "optional": false,
               "signature": "isNotFound(error: unknown): error is Error",
               "doc": "Whether `error` means the path was not there, on any runtime: the check\na caller makes before treating a missing file as empty."
+            },
+            {
+              "name": "isAlreadyExists",
+              "kind": "method",
+              "optional": false,
+              "signature": "isAlreadyExists(error: unknown): error is Error",
+              "doc": "Whether `error` means something was already at the path, on any runtime:\nthe check a caller makes when a create that must be new loses a race."
             }
           ]
         },
@@ -5971,7 +6029,7 @@
         {
           "name": "NetConnection",
           "kind": "interface",
-          "doc": "One accepted TCP connection.",
+          "doc": "One TCP connection, accepted or opened.",
           "signature": "interface NetConnection",
           "deprecated": false,
           "members": [
@@ -6036,6 +6094,29 @@
           ]
         },
         {
+          "name": "NetServer",
+          "kind": "interface",
+          "doc": "An HTTP server {@link NetTasks.serve} started.",
+          "signature": "interface NetServer",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "close",
+              "kind": "method",
+              "optional": false,
+              "signature": "close(): Promise<void>",
+              "doc": "Stop serving, resolving once the server has closed."
+            },
+            {
+              "name": "port",
+              "kind": "property",
+              "optional": false,
+              "signature": "port: number",
+              "doc": "The port, which the system chose when `0` was asked for."
+            }
+          ]
+        },
+        {
           "name": "NetTasks",
           "kind": "variable",
           "doc": "TCP sockets, on whichever runtime the build runs on.",
@@ -6055,6 +6136,20 @@
               "optional": false,
               "signature": "listen(configure?: Configure<ListenSettings>): Promise<NetListener>",
               "doc": "Listen as `configure` says: on loopback, on a port the system chooses,\nunless set otherwise. Every accepted connection sends a\nshort message at once rather than holding it for more.\n\n```ts\nconst listener = await NetTasks.listen((s) => s.port(8080));\n```"
+            },
+            {
+              "name": "connect",
+              "kind": "method",
+              "optional": false,
+              "signature": "connect(port: number, configure?: Configure<ConnectSettings>): Promise<NetConnection>",
+              "doc": "Connect to `port`, on loopback unless `configure` names another host.\n\n```ts\nconst connection = await NetTasks.connect(8080);\n```\n"
+            },
+            {
+              "name": "serve",
+              "kind": "method",
+              "optional": false,
+              "signature": "serve(handler: FetchHandler, configure?: Configure<ListenSettings>): Promise<NetServer>",
+              "doc": "Answer HTTP requests with `handler`, listening where `configure` says, as\n{@link listen} does, until the server is closed.\n\n```ts\nconst server = await NetTasks.serve(() => new Response(\"ok\"));\nawait fetch(`http://127.0.0.1:${server.port}/`);\nawait server.close();\n```"
             }
           ]
         },
@@ -8325,6 +8420,13 @@
               "doc": "The process's current working directory."
             },
             {
+              "name": "chdir",
+              "kind": "method",
+              "optional": false,
+              "signature": "chdir(path: PathLike): void",
+              "doc": "Make `path` the process's working directory."
+            },
+            {
               "name": "isTerminal",
               "kind": "method",
               "optional": false,
@@ -10140,6 +10242,43 @@
               "optional": false,
               "signature": "prefix_: string | undefined",
               "doc": "How the directory's name starts; see {@link prefix}."
+            }
+          ]
+        },
+        {
+          "name": "TempFileSettings",
+          "kind": "class",
+          "doc": "How `FileTasks.makeTempFile` names its file.",
+          "signature": "class TempFileSettings",
+          "deprecated": false,
+          "members": [
+            {
+              "name": "prefix",
+              "kind": "method",
+              "optional": false,
+              "signature": "prefix(start: string): this",
+              "doc": "How the file's name starts (default `zuke-`)."
+            },
+            {
+              "name": "suffix",
+              "kind": "method",
+              "optional": false,
+              "signature": "suffix(end: string): this",
+              "doc": "How the file's name ends, such as an extension (default none)."
+            },
+            {
+              "name": "prefix_",
+              "kind": "property",
+              "optional": false,
+              "signature": "prefix_: string | undefined",
+              "doc": "How the file's name starts; see {@link prefix}."
+            },
+            {
+              "name": "suffix_",
+              "kind": "property",
+              "optional": false,
+              "signature": "suffix_: string | undefined",
+              "doc": "How the file's name ends; see {@link suffix}."
             }
           ]
         },
