@@ -3384,6 +3384,13 @@
               "optional": false,
               "signature": "isDirectory: boolean",
               "doc": "Whether it is a directory; a link to one is not."
+            },
+            {
+              "name": "isSymlink",
+              "kind": "property",
+              "optional": false,
+              "signature": "isSymlink: boolean",
+              "doc": "Whether it is a symbolic link, whatever it points at."
             }
           ]
         },
@@ -4350,7 +4357,7 @@
               "kind": "method",
               "optional": false,
               "signature": "makeTempDirectory(configure?: Configure<TempDirectorySettings>): Promise<string>",
-              "doc": "Create a directory of its own under the system's temporary directory and\nreturn its path. Removing it is the caller's job."
+              "doc": "Create a directory of its own under the system's temporary directory, or\nthe directory `dir` names, and return its path. Removing it is the\ncaller's job."
             },
             {
               "name": "makeTempFile",
@@ -10237,11 +10244,25 @@
               "doc": "How the directory's name starts (default `zuke-`)."
             },
             {
+              "name": "dir",
+              "kind": "method",
+              "optional": false,
+              "signature": "dir(parent: string): this",
+              "doc": "The directory to make it in (default the system's temporary directory),\nfor scratch space a tool must find under a project, such as a formatter\nthat reads the project's configuration."
+            },
+            {
               "name": "prefix_",
               "kind": "property",
               "optional": false,
               "signature": "prefix_: string | undefined",
               "doc": "How the directory's name starts; see {@link prefix}."
+            },
+            {
+              "name": "dir_",
+              "kind": "property",
+              "optional": false,
+              "signature": "dir_: string | undefined",
+              "doc": "Where the directory goes; see {@link dir}."
             }
           ]
         },
