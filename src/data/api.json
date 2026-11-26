@@ -55157,7 +55157,7 @@
               "kind": "property",
               "optional": true,
               "signature": "runtime?: string",
-              "doc": "The runtime of a TypeScript build (`--runtime deno|node`). Unset: Deno, asked when interactive."
+              "doc": "The runtime of a TypeScript build (`--runtime deno|node`). Unset: the project's own, else Node; asked when interactive."
             },
             {
               "name": "zuke",
