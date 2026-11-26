@@ -21611,7 +21611,7 @@
               "name": "exposure",
               "kind": "property",
               "optional": false,
-              "signature": "exposure: replicas",
+              "signature": "exposure: string",
               "doc": "Compose runs replicas, so exposure is a share of instances."
             }
           ]
@@ -23558,7 +23558,7 @@
               "name": "exposure",
               "kind": "property",
               "optional": false,
-              "signature": "exposure: replicas",
+              "signature": "exposure: string",
               "doc": "Traffic follows ready pods, so exposure is a share of replicas."
             }
           ]
@@ -26017,7 +26017,7 @@
               "name": "exposure",
               "kind": "property",
               "optional": false,
-              "signature": "exposure: replicas",
+              "signature": "exposure: string",
               "doc": "Exposure is a share of replicas, quantised to whole pods."
             }
           ]
@@ -32772,7 +32772,7 @@
               "name": "exposure",
               "kind": "property",
               "optional": false,
-              "signature": "exposure: traffic",
+              "signature": "exposure: string",
               "doc": "Cloud Run splits requests, so exposure is a traffic share."
             }
           ]
@@ -36457,7 +36457,7 @@
               "name": "exposure",
               "kind": "property",
               "optional": false,
-              "signature": "exposure: traffic",
+              "signature": "exposure: string",
               "doc": "The alias splits invocations, so exposure is a traffic share."
             }
           ]
@@ -38931,7 +38931,7 @@
               "name": "exposure",
               "kind": "property",
               "optional": false,
-              "signature": "exposure: traffic",
+              "signature": "exposure: string",
               "doc": "Container Apps splits requests, so exposure is a traffic share."
             }
           ]
