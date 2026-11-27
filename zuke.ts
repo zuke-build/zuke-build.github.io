@@ -10,9 +10,9 @@
  *   ./zuke dev        # start the Astro dev server
  *   ./zuke --list     # list every target
  */
-import { Build, run, target } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { NpmTasks } from "jsr:@zuke/npm";
+import { Build, run, target } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { NpmTasks } from "@zuke/npm";
 
 class SiteBuild extends Build {
   clean = target()

@@ -165,7 +165,8 @@ link to actually exists in the built HTML.
 
 ## Commands
 
-The build is Zuke's own; `./zuke` bootstraps Deno on first run.
+The build is Zuke's own and runs on Node; `./zuke` bootstraps Node 26 on first
+run when PATH has no Node 26 or newer.
 
 | Task                        | Command              |
 | --------------------------- | -------------------- |
@@ -188,7 +189,7 @@ server serves whatever the last `dist/` build produced.
 
 ```
 zuke.ts                  # the Zuke build (drives everything)
-zuke                     # bootstrap launcher (installs Deno if needed)
+zuke                     # bootstrap launcher (installs Node 26 if needed); zuke.ps1 on Windows
 astro.config.mjs         # Astro configuration
 src/
   layouts/               # Base + Docs + API layouts

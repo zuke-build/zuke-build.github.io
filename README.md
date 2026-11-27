@@ -1,7 +1,7 @@
 # zuke-build.github.io
 
 The marketing and documentation website for **[Zuke](https://github.com/zuke-build/zuke)** —
-a code-first, strongly-typed build automation system for Deno & TypeScript.
+a code-first, strongly-typed build automation system for TypeScript, on Node or Deno.
 
 🔗 **Live site:** https://zuke-build.github.io
 
@@ -18,7 +18,8 @@ toolchain through the typed `@zuke/npm` package.
 ./zuke --list     # list every target
 ```
 
-The `./zuke` launcher bootstraps Deno automatically on first run, so no global
+The build runs on Node. The `./zuke` launcher uses Node 26 or newer from PATH,
+or downloads a pinned one on first run, so no global
 install is required.
 
 ## Developing directly with npm
@@ -37,7 +38,7 @@ npm run check     # astro type-check
 
 ```
 zuke.ts                  # the Zuke build (drives everything)
-zuke                     # bootstrap launcher (installs Deno if needed)
+zuke                     # bootstrap launcher (installs Node 26 if needed); zuke.ps1 on Windows
 astro.config.mjs         # Astro configuration
 src/
   layouts/               # Base + Docs + API layouts

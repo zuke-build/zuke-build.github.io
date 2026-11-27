@@ -5,8 +5,7 @@ dist/
 # dependencies
 node_modules/
 
-# deno / zuke bootstrap
-.deno/
+# zuke bootstrap
 cov_profile/
 *.lcov
 
@@ -20,3 +19,4 @@ cov_profile/
 .omc/
 .claude/
 .impeccable/
+.zuke/
