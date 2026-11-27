@@ -15,9 +15,9 @@ const toc = [
   { id: "dogfood", label: "Dogfooding" },
 ];
 
-const primitiveSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
-import { aiFixer } from "jsr:@zuke/ai";
+const primitiveSnippet = `import { Build, parameter, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
+import { aiFixer } from "@zuke/ai";
 
 class CI extends Build {
   key = parameter("OpenAI API key").secret().required();
@@ -57,8 +57,8 @@ const applySnippet = `aiFixer((f) =>
     .commitFixes()                        // stage, commit & push to the PR branch
 );`;
 
-const agentSnippet = `import { agentFixer } from "jsr:@zuke/ai";
-import { ClaudeTasks } from "jsr:@zuke/claude";
+const agentSnippet = `import { agentFixer } from "@zuke/ai";
+import { ClaudeTasks } from "@zuke/claude";
 
 test = target()
   .executes(() => DenoTasks.test((s) => s.allowAll()))
@@ -77,7 +77,7 @@ const diffSnippet = `aiFixer((f) =>
     .diff((d) => d.fetchBase())
 );`;
 
-const budgetSnippet = `import { budget } from "jsr:@zuke/ai";
+const budgetSnippet = `import { budget } from "@zuke/ai";
 
 class CI extends Build {
   key = parameter("OpenAI API key").secret();
@@ -95,12 +95,12 @@ const budgetCostSnippet = `budget((b) =>
     .maxCost(1.0) // only enforced for models you've priced above
 );`;
 
-const cacheSnippet = `import { aiCache } from "jsr:@zuke/ai";
+const cacheSnippet = `import { aiCache } from "@zuke/ai";
 
 const cache = aiCache((c) => c.dir(".zuke/ai-cache").ttl(86_400)); // 1-day TTL
 aiFixer((f) => f.provider("openai").apiKey(this.key).cache(cache));`;
 
-const suppressSnippet = `import { suppressions } from "jsr:@zuke/ai";
+const suppressSnippet = `import { suppressions } from "@zuke/ai";
 
 securityReviewer((r) =>
   r.provider("openai").apiKey(this.key)

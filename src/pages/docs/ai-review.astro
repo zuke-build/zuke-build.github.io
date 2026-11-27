@@ -42,7 +42,7 @@ const permsSnippet = `permissions:
   contents: read
   pull-requests: write`;
 
-const workflowSnippet = `import { aiReviewWorkflow, securityReviewer } from "jsr:@zuke/ai";
+const workflowSnippet = `import { aiReviewWorkflow, securityReviewer } from "@zuke/ai";
 
 class Pipeline extends Build {
   openaiKey = parameter("OpenAI key").secret().env("OPENAI_API_KEY");
@@ -64,8 +64,8 @@ glReview = aiReviewWorkflow({ host: "gitlab", reviewers: [this.security] });
 azReview = aiReviewWorkflow({ host: "azure", reviewers: [this.security] });
 bbReview = aiReviewWorkflow({ host: "bitbucket", reviewers: [this.security] });`;
 
-const plugSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { securityReviewer } from "jsr:@zuke/ai";
+const plugSnippet = `import { Build, parameter, run, target } from "@zuke/core";
+import { securityReviewer } from "@zuke/ai";
 
 class Pipeline extends Build {
   key = parameter("Anthropic API key").secret().required();
@@ -134,7 +134,7 @@ const discussionTuningSnippet = `securityReviewer((r) =>
     )
 );`;
 
-const genericSnippet = `import { genericReviewer } from "jsr:@zuke/ai";
+const genericSnippet = `import { genericReviewer } from "@zuke/ai";
 
 const a11y = genericReviewer((r) =>
   r.provider("gemini")

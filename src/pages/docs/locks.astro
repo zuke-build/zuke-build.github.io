@@ -23,7 +23,7 @@ export class LockSettings {
   onConflict(render: (holder: LockHolder) => string): this;
 }`;
 
-const exampleSnippet = `import { Build, parameter, target } from "jsr:@zuke/core";
+const exampleSnippet = `import { Build, parameter, target } from "@zuke/core";
 class CD extends Build {
   repo = parameter("service to deploy");
   promote = target()

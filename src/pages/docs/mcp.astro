@@ -31,6 +31,12 @@ zuke setup --mcp --allow-run`;
 
 const mcpJsonSnippet = `{
   "mcpServers": {
+    "zuke": { "command": "node", "args": ["build.ts", "mcp"] }
+  }
+}`;
+
+const mcpJsonDenoSnippet = `{
+  "mcpServers": {
     "zuke": { "command": "deno", "args": ["run", "-A", "build.ts", "mcp"] }
   }
 }`;
@@ -41,18 +47,20 @@ const mcpJsonPythonSnippet = `{
   }
 }`;
 
-const registerSnippet = `claude mcp add zuke -- deno run -A build.ts mcp`;
+const registerSnippet = `claude mcp add zuke -- node build.ts mcp`;
 
-const registerAllowRunSnippet = `claude mcp add zuke -- deno run -A build.ts mcp --allow-run`;
+const registerDenoSnippet = `claude mcp add zuke -- deno run -A build.ts mcp`;
+
+const registerAllowRunSnippet = `claude mcp add zuke -- node build.ts mcp --allow-run`;
 
 const callSnippet = `// tools/call
 { "name": "run:test", "arguments": { "environment": "dev", "coverage": true } }`;
 
-const httpSnippet = `deno run -A build.ts mcp --http 7777`;
+const httpSnippet = `node build.ts mcp --http 7777`;
 
-const httpTokenSnippet = `ZUKE_MCP_TOKEN=… deno run -A build.ts mcp --http 0.0.0.0:7777 --allow-run`;
+const httpTokenSnippet = `ZUKE_MCP_TOKEN=… node build.ts mcp --http 0.0.0.0:7777 --allow-run`;
 
-const originSnippet = `deno run -A build.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
+const originSnippet = `node build.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
 
 const authorizationSnippet = `# expose everything to run, gate promoteToProd behind an operator token, confirm destructive, authenticated HTTP:
 ZUKE_OPERATOR_TOKEN=… ZUKE_MCP_TOKEN=… zuke mcp --http 0.0.0.0:7777 --allow-run --protect promoteToProd --confirm-destructive`;
@@ -94,7 +102,7 @@ const identitySnippet = `class ControlPlane extends Build {
   }
 }`;
 
-const protectedResourceSnippet = `import { Build, protectedResource, run, target } from "jsr:@zuke/core";
+const protectedResourceSnippet = `import { Build, protectedResource, run, target } from "@zuke/core";
 
 class ControlPlane extends Build {
   deploy = target().executes(() => {});
@@ -165,7 +173,7 @@ const authorizeSnippet = `class ControlPlane extends Build {
     startup line goes to stderr so it never corrupts the protocol stream. It runs
     until stdin closes. Here <code>zuke</code> is the installed CLI, which
     forwards to the project's build; <code>./zuke mcp</code> through the
-    launcher, or <code>deno run -A build.ts mcp</code> for a <code>build.ts</code>
+    launcher, or <code>node build.ts mcp</code> for a <code>build.ts</code>
     build, runs the same server.
   </p>
 
@@ -183,6 +191,15 @@ const authorizeSnippet = `class ControlPlane extends Build {
   <p>What it writes for a <code>build.ts</code> build:</p>
   <Code code={mcpJsonSnippet} lang="json" />
   <p>
+    A project still on Deno gets the Deno variant instead (Deno builds are
+    supported until October 2027):
+  </p>
+  <Code code={mcpJsonDenoSnippet} lang="json" />
+  <p>
+    <code>zuke setup --runtime node</code> in a Deno project rewrites that entry
+    to the Node one, keeping its other arguments.
+  </p>
+  <p>
     For a <a href="/docs/python">Python build</a> it registers the
     <code>zuke</code> command instead, which serves the build on the engine it
     carries, with no Deno:
@@ -191,9 +208,12 @@ const authorizeSnippet = `class ControlPlane extends Build {
   <p>
     Any client also takes the command directly — any client that speaks
     stdio MCP works the same way. In Claude Code, give it
-    <code>deno run -A build.ts mcp</code>:
+    <code>node build.ts mcp</code> (<code>deno run -A build.ts mcp</code> on
+    Deno):
   </p>
   <CopyCode code={registerSnippet} lang="bash" />
+  <p>The Deno variant:</p>
+  <CopyCode code={registerDenoSnippet} lang="bash" />
   <p>Add <code>--allow-run</code> when you want the agent to execute targets:</p>
   <CopyCode code={registerAllowRunSnippet} lang="bash" />
 
@@ -549,7 +569,7 @@ export interface RunEvent {
     <strong>Trust model.</strong> Over stdio, the server speaks only to the
     process that launched it, so its trust boundary is the local machine:
     anyone who can start <code>zuke mcp</code> already has a shell there and
-    could run <code>deno run -A build.ts &lt;target&gt;</code> directly — the
+    could run <code>node build.ts &lt;target&gt;</code> directly — the
     server grants no capability beyond what launching it already implies.
     <code>--http</code> changes that: it gives the server a real network
     endpoint, so it defaults to loopback (no remote party at all) and

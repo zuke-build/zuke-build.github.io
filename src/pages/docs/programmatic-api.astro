@@ -23,10 +23,10 @@ const blocksSnippet = `import {
   GraphError,
   plan, // (rootTarget) => TargetBuilder[]  (topological order)
   validateGraph, // (targets) => void  (throws GraphError)
-} from "jsr:@zuke/core";`;
+} from "@zuke/core";`;
 
-const runSnippet = `import { run } from "jsr:@zuke/core";
-import { consoleRenderer } from "jsr:@zuke/console";
+const runSnippet = `import { run } from "@zuke/core";
+import { consoleRenderer } from "@zuke/console";
 
 class MyBuild extends Build { /* … */ }
 
@@ -36,7 +36,7 @@ await run(MyBuild, {
   renderer: consoleRenderer,
 });`;
 
-const executeSnippet = `import { discoverTargets, execute } from "jsr:@zuke/core";
+const executeSnippet = `import { discoverTargets, execute } from "@zuke/core";
 import { MyBuild } from "./build.ts";
 
 const build = new MyBuild();
@@ -55,7 +55,7 @@ const resultSnippet = `interface BuildResult {
   runId?: string; // this run's id, for \`zuke runs show\` / \`zuke cancel\`
 }`;
 
-const discoverSnippet = `import { discoverGroups, discoverTargets } from "jsr:@zuke/core";
+const discoverSnippet = `import { discoverGroups, discoverTargets } from "@zuke/core";
 
 const build = new MyBuild();
 const targets = discoverTargets(build); // Map<string, TargetBuilder>
@@ -65,7 +65,7 @@ targets.get("release.publish"); // a component target, under its dotted path
 
 // discoverGroups(build) does the same for declared parallel groups.`;
 
-const describeSnippet = `import { describeCli } from "jsr:@zuke/core";
+const describeSnippet = `import { describeCli } from "@zuke/core";
 
 const cli = describeCli(new MyBuild());
 for (const t of cli.targets) console.log(t.name, "→", t.dependsOn.join(", "));
@@ -73,7 +73,7 @@ for (const t of cli.targets) console.log(t.name, "→", t.dependsOn.join(", "));
 // Drop .secret() parameters from the surface (what \`zuke register\` writes):
 const safe = describeCli(new MyBuild(), { omitSecrets: true });`;
 
-const rendererSnippet = `import { defaultRenderer, execute, type Renderer } from "jsr:@zuke/core";
+const rendererSnippet = `import { defaultRenderer, execute, type Renderer } from "@zuke/core";
 
 const quiet: Renderer = {
   ...defaultRenderer,
@@ -82,7 +82,7 @@ const quiet: Renderer = {
 };
 await execute(build, target, { renderer: quiet });`;
 
-const cacheSnippet = `import { execute, type BuildCache } from "jsr:@zuke/core";
+const cacheSnippet = `import { execute, type BuildCache } from "@zuke/core";
 
 // A minimal in-memory cache — never touches .zuke/cache.json.
 const cache: BuildCache = {
@@ -97,7 +97,7 @@ const graphSnippet = `import {
   GraphError,
   plan,
   validateGraph,
-} from "jsr:@zuke/core";
+} from "@zuke/core";
 
 const build = new MyBuild();
 const targets = discoverTargets(build);

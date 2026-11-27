@@ -11,9 +11,9 @@ const toc = [
   { id: "core", label: "Engine & plugin packages" },
 ];
 
-const introSnippet = `import { DenoTasks } from "jsr:@zuke/deno";
-import { NpmTasks } from "jsr:@zuke/npm";
-import { CmdTasks } from "jsr:@zuke/cmd";
+const introSnippet = `import { DenoTasks } from "@zuke/deno";
+import { NpmTasks } from "@zuke/npm";
+import { CmdTasks } from "@zuke/cmd";
 
 // Configure a fluent settings object in a lambda; the task builds the argv.
 await DenoTasks.test((s) => s.allowAll().coverage("cov_profile"));
@@ -29,7 +29,7 @@ await EslintTasks.lint((s) => s.fromPath());
 // Repo-wide, no code change — a per-call setting still wins over this.
 // ZUKE_TOOL_RESOLUTION=node_modules   (or "path")`;
 
-const defineSnippet = `import { defineTool } from "jsr:@zuke/core/tooling";
+const defineSnippet = `import { defineTool } from "@zuke/core/tooling";
 
 const terraform = defineTool("terraform");
 await terraform((s) => s.arg("plan").option("out", "plan.tfplan"));

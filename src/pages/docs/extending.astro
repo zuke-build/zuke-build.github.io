@@ -16,7 +16,7 @@ const wrapperSnippet = `import {
   type Configure,
   runSettings,
   ToolSettings,
-} from "jsr:@zuke/core/tooling";
+} from "@zuke/core/tooling";
 
 // One settings class per subcommand. buildArgs() assembles the argv purely.
 class MyToolSettings extends ToolSettings {
@@ -51,7 +51,7 @@ const argvSnippet = `// buildArgs() is pure, so the full argv is unit-testable w
 const s = new MyToolSettings().fast().args("--verbose");
 assertEquals(s.argv(), ["mytool", "build", "--fast", "--verbose"]);`;
 
-const defineToolSnippet = `import { defineTool } from "jsr:@zuke/core/tooling";
+const defineToolSnippet = `import { defineTool } from "@zuke/core/tooling";
 
 const terraform = defineTool("terraform");
 await terraform((s) => s.arg("plan").option("out", "plan.tfplan"));
@@ -61,7 +61,7 @@ const helmUpgrade = defineTool("helm", { subcommand: "upgrade" });
 await helmUpgrade((s) => s.arg("api", "./chart").flag("install"));
 // → helm upgrade api ./chart --install`;
 
-const pluginSnippet = `import { type Plugin, run } from "jsr:@zuke/core";
+const pluginSnippet = `import { type Plugin, run } from "@zuke/core";
 
 const timing: Plugin = {
   name: "timing",
@@ -79,7 +79,7 @@ const legacy: Plugin = {
 };`;
 
 const factorySnippet = `// @acme/zuke-slack — a package exports a factory that returns a Plugin.
-import type { Plugin } from "jsr:@zuke/core";
+import type { Plugin } from "@zuke/core";
 
 export function slack(opts: { webhook: string }): Plugin {
   return {

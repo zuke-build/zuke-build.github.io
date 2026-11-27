@@ -52,7 +52,7 @@ export interface EffectContext extends TargetContext {
   readonly redriven: boolean; // true when a previous attempt already committed its intent
 }`;
 
-const outcomesSnippet = `import { Build, target } from "jsr:@zuke/core";
+const outcomesSnippet = `import { Build, target } from "@zuke/core";
 
 class Ci extends Build {
   unit = target().proceedAfterFailure().executes(() => {});
@@ -77,7 +77,7 @@ const effectSnippet = `class Ci extends Build {
     });
 }`;
 
-const exampleSnippet = `import { Build, target } from "jsr:@zuke/core";
+const exampleSnippet = `import { Build, target } from "@zuke/core";
 
 class Deploy extends Build {
   ship = target().executes(async (ctx) => {

@@ -12,7 +12,7 @@ const toc = [
   { id: "setup-collision", label: "setup collision guard" },
 ];
 
-const resolutionSnippet = `import { OxlintTasks } from "jsr:@zuke/oxlint";
+const resolutionSnippet = `import { OxlintTasks } from "@zuke/oxlint";
 
 // per call — resolve node_modules/.bin first (or .fromPath() to force PATH)
 await OxlintTasks.lint((s) => s.fromNodeModules());`;
@@ -21,15 +21,15 @@ const envNodeModulesSnippet = `ZUKE_TOOL_RESOLUTION=node_modules`;
 
 const envPathSnippet = `ZUKE_TOOL_RESOLUTION=path`;
 
-const workspaceSnippet = `import { NpmTasks } from "jsr:@zuke/npm";
+const workspaceSnippet = `import { NpmTasks } from "@zuke/npm";
 
 await NpmTasks.run((s) => s.script("build").workspace("app"));         // one workspace
 await NpmTasks.run((s) => s.script("build").workspaces().ifPresent()); // every workspace, skipping those missing the script`;
 
-const managersSnippet = `import { BunTasks } from "jsr:@zuke/bun";
-import { NpxTasks } from "jsr:@zuke/npx";
-import { PnpmTasks } from "jsr:@zuke/pnpm";
-import { YarnTasks } from "jsr:@zuke/yarn";
+const managersSnippet = `import { BunTasks } from "@zuke/bun";
+import { NpxTasks } from "@zuke/npx";
+import { PnpmTasks } from "@zuke/pnpm";
+import { YarnTasks } from "@zuke/yarn";
 
 await PnpmTasks.install((s) => s.frozenLockfile());
 await BunTasks.run((s) => s.script("build"));
@@ -40,7 +40,7 @@ const docSnippet = `zuke doc core                      # jsr:@zuke/core
 zuke doc @scope/pkg                # a scoped package
 zuke doc deno --filter DenoTasks   # extra flags pass through to deno doc`;
 
-const setupSnippet = `deno run -A jsr:@zuke/cli setup --launcher-name zk`;
+const setupSnippet = `zuke setup --launcher-name zk`;
 ---
 
 <DocsLayout

@@ -1,0 +1,172 @@
+---
+import CopyCode from "../../components/CopyCode.astro";
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { id: "what-changes", label: "What changes" },
+  { id: "convert", label: "1. Convert the project" },
+  { id: "fix", label: "2. Fix what Node cannot load" },
+  { id: "run", label: "3. Run it, and commit" },
+  { id: "ci", label: "CI" },
+  { id: "mcp", label: "The editor and MCP" },
+];
+
+const convertSnippet = `zuke setup --runtime node`;
+
+const runSnippet = `./zuke --list   # installs Node and the dependencies on the first run
+./zuke          # the default target`;
+
+const importSnippet = `// before: Node cannot load a jsr: specifier
+import { DockerTasks } from "jsr:@zuke/docker@^1";
+// after: the bare name, which package.json now declares
+import { DockerTasks } from "@zuke/docker";`;
+---
+
+<DocsLayout
+  title="Moving to Node"
+  description="Move an existing Zuke build from Deno to Node: what zuke setup --runtime node converts in place, the imports and Deno.* calls Node cannot load, and what happens to CI and the MCP registration. Builds on Deno are supported until October 2027."
+  toc={toc}
+>
+  <p class="lead">
+    A Zuke build runs on Node or on Deno. Node is the default for a new project,
+    and it is where Zuke is going: builds on Deno are supported until
+    <strong>October 2027</strong>, and every run of one says so on stderr. This
+    page moves an existing Deno project to Node. Nothing about the build's shape
+    changes: it is the same class, the same targets and the same
+    <code>@zuke/*</code> packages, now installed from npm.
+  </p>
+
+  <h2 id="what-changes">What changes</h2>
+  <table class="dtable">
+    <thead>
+      <tr><th></th><th>On Deno</th><th>On Node</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>zuke.json</code></td><td>no <code>runtime</code> field</td><td><code>"runtime": "node"</code></td></tr>
+      <tr><td>The launchers</td><td>bootstrap a pinned Deno</td><td>bootstrap a pinned Node, then <code>npm ci</code></td></tr>
+      <tr><td>Where <code>@zuke/*</code> is</td><td><code>deno.json</code> imports, from JSR</td><td><code>package.json</code> dependencies, from npm</td></tr>
+      <tr><td>A package's name</td><td><code>jsr:@zuke/docker@^1</code></td><td><code>npm:@zuke-build/docker@^1</code>, aliased <code>@zuke/docker</code></td></tr>
+      <tr><td>The lock</td><td><code>deno.lock</code></td><td><code>package-lock.json</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    The <code>@zuke</code> scope on npm belongs to someone else, so the packages
+    are published as <code>@zuke-build/&lt;name&gt;</code> and installed under
+    the alias <code>@zuke/&lt;name&gt;</code>. The build file's imports read the
+    same on both runtimes.
+  </p>
+
+  <h2 id="convert">1. Convert the project</h2>
+  <p>In the project root, with a <code>zuke</code> that is current:</p>
+  <CopyCode code={convertSnippet} lang="bash" />
+  <p>It converts the project in place, with or without <code>--force</code>:</p>
+  <ul>
+    <li><code>zuke.json</code> gains <code>"runtime": "node"</code> and keeps its other fields.</li>
+    <li>
+      <code>./zuke</code> and <code>zuke.ps1</code> are rewritten as the Node
+      launchers. A file at that name that is not one of Zuke's launchers is left
+      alone.
+    </li>
+    <li>
+      <code>package.json</code> is created or merged: <code>"type":
+      "module"</code>, <code>@zuke/core</code>, and every other
+      <code>@zuke/*</code> package <code>deno.json</code> or an inline
+      <code>jsr:</code> specifier in the build file imports, through its npm
+      alias.
+    </li>
+    <li>
+      <code>.mcp.json</code>'s <code>zuke</code> server, when it runs the build
+      with <code>deno run</code>, is pointed at <code>node</code>, keeping its
+      other arguments. One that passes Deno any other option is left alone, with
+      a note.
+    </li>
+    <li><code>.gitignore</code> gains <code>node_modules/</code>.</li>
+  </ul>
+  <p>
+    The build file and <code>deno.json</code> are kept. Setup reports what it
+    could not do for you, and exits non-zero when the build cannot run yet.
+  </p>
+
+  <h2 id="fix">2. Fix what Node cannot load</h2>
+  <ul>
+    <li>
+      <strong><code>jsr:</code> specifiers in the build file.</strong> Node
+      cannot load one. Import the bare name, which <code>package.json</code> now
+      declares. Setup asks for this as a manual step.
+    </li>
+    <li>
+      <strong>Other imports <code>deno.json</code> mapped.</strong> Setup names
+      them in a note. Declare an npm package for each one the build uses. A
+      JSR-only package such as <code>@std/yaml</code> has an npm form at
+      <code>npm:@jsr/std__yaml</code>, served by JSR's
+      <a href="https://jsr.io/docs/npm-compatibility" target="_blank" rel="noopener noreferrer">npm compatibility registry</a>,
+      which an <code>.npmrc</code> line
+      <code>@jsr:registry=https://npm.jsr.io</code> enables.
+    </li>
+    <li>
+      <strong><code>Deno.*</code> in the build file.</strong> Node has no
+      <code>Deno</code> global. Use the tasks <code>@zuke/core</code> provides on
+      both runtimes: <code>FileTasks</code> for files, <code>EnvTasks</code> for
+      the environment, <code>RuntimeTasks</code> for the working directory,
+      platform and exit, <code>ProcessTasks</code> and the <code>$</code> shell
+      for subprocesses. A target that calls a tool wrapper
+      (<code>DenoTasks</code>, <code>NpmTasks</code>, …) needs no change: the
+      wrapper runs the tool, whichever runtime runs the build.
+    </li>
+  </ul>
+  <CopyCode code={importSnippet} lang="ts" multi />
+  <p>
+    Node 26 runs a TypeScript build file as it is, stripping its types. It does
+    not transform syntax that has runtime meaning, so an <code>enum</code>, a
+    <code>namespace</code> or a constructor parameter property has to become
+    plain code.
+  </p>
+
+  <h2 id="run">3. Run it, and commit</h2>
+  <CopyCode code={runSnippet} lang="bash" multi />
+  <p>
+    The first run writes <code>package-lock.json</code>. Commit it with
+    <code>package.json</code>, <code>zuke.json</code> and the launchers. Once
+    nothing else in the project uses it, delete <code>deno.json</code> and
+    <code>deno.lock</code>.
+  </p>
+
+  <h2 id="ci">CI</h2>
+  <p>
+    A generated workflow runs the build through <code>./zuke</code>, which now
+    bootstraps Node itself, so <code>zuke generate-ci --check</code> passes
+    unchanged. A job that sets <code>denoVersion</code> on the Zuke action, to
+    run <code>deno</code> directly, sets <code>nodeVersion</code> instead.
+  </p>
+
+  <h2 id="mcp">The editor and MCP</h2>
+  <p>
+    Setup points the <code>zuke</code> server in <code>.mcp.json</code> at Node
+    itself: <code>deno run -A build.ts mcp</code> becomes <code>node build.ts
+    mcp</code>, with any <code>--allow-run</code> kept. An entry that runs Deno
+    some other way is left as it is, with a note: point it at <code>node &lt;build
+    file&gt; mcp</code> by hand. An editor's TypeScript support reads
+    <code>node_modules</code> once the first <code>./zuke</code> run has
+    installed it. See <a href="/docs/mcp">the MCP server</a>.
+  </p>
+</DocsLayout>
+
+<style>
+  .dtable {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 22px;
+    font-size: 0.9rem;
+  }
+  .dtable th, .dtable td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .dtable th { color: var(--text); font-weight: 700; }
+  .dtable td { color: var(--text-dim); }
+  .dtable :global(code) { font-size: 0.85em; overflow-wrap: anywhere; }
+</style>

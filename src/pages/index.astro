@@ -6,14 +6,14 @@ import CopyCode from "../components/CopyCode.astro";
 import { toolGroups, corePackages, packageCount } from "../data/tools.ts";
 import { adopters } from "../data/users.ts";
 
-const heroSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const heroSnippet = `import { Build, FileTasks, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class MyBuild extends Build {
   // declare a pipeline → generates .github/workflows
   ci = cicd({ provider: "github" });
 
-  clean = target().executes(() => Deno.remove("dist", { recursive: true }));
+  clean = target().executes(() => FileTasks.remove("dist", { recursive: true }));
   restore = target().executes(() => DenoTasks.cache((s) => s.paths("mod.ts")));
 
   compile = target()
@@ -52,8 +52,8 @@ class MyBuild(Build):
 
 run(MyBuild)`;
 
-const ciBuildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const ciBuildSnippet = `import { Build, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class MyBuild extends Build {
   // one line → .github/workflows/ci.yml, one job per target
@@ -114,7 +114,7 @@ const sha = await $\`git rev-parse HEAD\`.text();   // trimmed stdout
 await $\`deno test -A\`;                              // throws on non-zero
 const code = await $\`flaky-cmd\`.noThrow().code();   // never throws`;
 
-const consoleSnippet = `import { ConsoleTasks as Log } from "jsr:@zuke/console";
+const consoleSnippet = `import { ConsoleTasks as Log } from "@zuke/console";
 
 Log.rule("Release");
 Log.info("pushing [bold]core@1.2.0[/]");        // markup: [tag]…[/]
@@ -131,9 +131,9 @@ Log.table(
   [["@zuke/core", "18 kB"], ["@zuke/cli", "12 kB"]],
 );`;
 
-const healSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
-import { aiFixer } from "jsr:@zuke/ai";
+const healSnippet = `import { Build, parameter, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
+import { aiFixer } from "@zuke/ai";
 
 class CI extends Build {
   key = parameter("OpenAI API key").secret().required();
@@ -156,8 +156,8 @@ class CI extends Build {
 
 await run(CI);`;
 
-const cacheSnippet = `import { Build, HttpCacheStore, cicd, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const cacheSnippet = `import { Build, HttpCacheStore, cicd, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class CI extends Build {
   // Restore built outputs on a local miss; upload
@@ -170,7 +170,7 @@ class CI extends Build {
   }
 
   build = target()
-    .inputs("src", "deno.json")   // fingerprint → cache key
+    .inputs("src", "package.json") // fingerprint → cache key
     .outputs("dist")              // archived to the store
     .executes(() => DenoTasks.run((s) => s.script("build.ts")));
 
@@ -197,7 +197,7 @@ zuke mcp
 zuke mcp --allow-run
 
 # or register by hand with any MCP client (Claude Code shown)
-claude mcp add zuke -- deno run -A build.ts mcp`;
+claude mcp add zuke -- node build.ts mcp`;
 
 // MCP clients that can drive a Zuke build, shown as chips.
 const mcpClients = [
@@ -238,7 +238,7 @@ const featureGroups = [
       { t: "Testable and reusable", d: "A build is a class. Unit-test a target like any other code, run a build in-process from a test, and share targets through a base class or a package." },
       { t: "Automatic topological order", d: "Declare what each target dependsOn; Zuke resolves the graph and runs everything in order, exactly once." },
       { t: "One engine, thin SDKs", d: "Scheduling, caching, retries, locks, services, CI generation and every tool wrapper live in the engine once. An SDK only describes the build and runs the bodies." },
-      { t: "Zero runtime dependencies", d: "Nothing else to install, and each SDK stays on its own stack: a TypeScript build's launcher fetches Deno, a Python build's fetches the zuke binary. Neither ever needs the other's toolchain." },
+      { t: "Zero runtime dependencies", d: "Nothing else to install, and each SDK stays on its own stack: a TypeScript build's launcher fetches Node, a Python build's fetches the zuke binary. Neither ever needs the other's toolchain." },
       { t: "Extensible by design", d: "Extend ToolSettings to build your own typed wrapper for any tool — no fork required." },
       { t: "Starts from what you have", d: "zuke import reads your package.json scripts or Makefile and writes a target per task — && chains become steps, run delegations become dependsOn." },
     ],
@@ -258,7 +258,7 @@ const featureGroups = [
     label: "ship & automate",
     items: [
       { t: "Code-first CI/CD", d: "Declare pipelines with cicd() and generate GitHub, GitLab, Azure, or Bitbucket YAML — verified up to date on every run." },
-      { t: "A typed tool ecosystem", d: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Docker, Kubernetes, Vite and more, all on JSR.` },
+      { t: "A typed tool ecosystem", d: `Strongly-typed wrappers for ${packageCount}+ tools — Deno, npm, Docker, Kubernetes, Vite and more, on npm and JSR.` },
       { t: "Announce to chat", d: "Post build status to Slack, Teams, and Discord from a target — typed messages with levels, fields, and links." },
       { t: "Pins that can't quietly rot", d: "zuke outdated reads the lock — not the import map — so an inline jsr: specifier several minors behind is named, and --exit-code gates on it." },
       { t: "A supply chain you can verify", d: "Every package publishes to JSR over OIDC trusted publishing — no long-lived registry token exists — and JSR records a Sigstore provenance attestation naming the workflow and commit that built the version." },
@@ -370,9 +370,9 @@ const hardeningIcons: Record<string, string> = {
 
 // ░░ Canary releases (@zuke/canary) ░░
 // Mirrors the Cloud Run example in the Zuke repo's docs/canary.md.
-const canarySnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { canary, httpProbe, prometheus } from "jsr:@zuke/canary";
-import { cloudRunCanary } from "jsr:@zuke/gcloud";
+const canarySnippet = `import { Build, parameter, run, target } from "@zuke/core";
+import { canary, httpProbe, prometheus } from "@zuke/canary";
+import { cloudRunCanary } from "@zuke/gcloud";
 
 // Google Managed Prometheus, read with no gcloud on the runner.
 const PROM = "https://monitoring.googleapis.com/v1/projects/my-project/location/global/prometheus";
@@ -481,12 +481,14 @@ const cdMoreIcons: Record<string, string> = {
           <CopyBlock
             label="Install the CLI — pick one"
             lines={[
-              "# from JSR, for a Deno user",
-              "deno install -A -g -n zuke jsr:@zuke/cli",
+              "# from npm",
+              "npm install -g @zuke-build/cli",
               "# with Homebrew, macOS and Linux",
               "brew install zuke-build/tap/zuke",
               "# with Chocolatey, Windows",
               "choco install zuke",
+              "# from JSR, for Deno (supported until October 2027)",
+              "deno install -A -g -n zuke jsr:@zuke/cli",
             ]}
           />
           <CopyBlock
@@ -494,7 +496,7 @@ const cdMoreIcons: Record<string, string> = {
             lines={[
               "# a TypeScript build, build.ts",
               "zuke setup",
-              "# or a Python build, no Deno needed",
+              "# or a Python build, no Node or Deno needed",
               "zuke setup --sdk python",
               "zuke",
               "zuke generate-ci",
@@ -1875,21 +1877,21 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
       <div class="cta panel" data-reveal>
         <h2>Ship your first typed build in minutes.</h2>
         <p>
-          Install the CLI — from JSR with Deno, or with Homebrew on macOS and
+          Install the CLI — from npm, or with Homebrew on macOS and
           Linux and Chocolatey on Windows — scaffold a <code>build.ts</code>, and
           run your first target. Already have <code>package.json</code> scripts or a
           <code>Makefile</code>? Swap <code>zuke setup</code> for
           <code>zuke import</code> and start from a target per task instead of a
           blank page. Writing Python? Install with Homebrew or Chocolatey, and
           <code>zuke setup --sdk python</code> scaffolds a <code>build.py</code>
-          on the same engine, with no Deno anywhere — see the
+          on the same engine, with no Node or Deno anywhere — see the
           <a href="/docs/python">Python quickstart</a> — and more language SDKs
           are coming.
         </p>
         <CopyBlock
           label="Install the CLI — pick one"
           lines={[
-            "deno install -A -g -n zuke jsr:@zuke/cli",
+            "npm install -g @zuke-build/cli",
             "brew install zuke-build/tap/zuke",
             "choco install zuke",
           ]}

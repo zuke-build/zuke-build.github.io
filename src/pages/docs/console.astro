@@ -15,7 +15,7 @@ const toc = [
   { id: "renderer", label: "Renderer integration" },
 ];
 
-const importSnippet = `import { ConsoleTasks as Log } from "jsr:@zuke/console";`;
+const importSnippet = `import { ConsoleTasks as Log } from "@zuke/console";`;
 
 const loggingSnippet = `Log.trace("resolved 42 source files");      // most verbose
 Log.debug("cache hit for 'check'");
@@ -102,12 +102,12 @@ const configureSnippet = `Log.configure({
 Log.level();        // read the active threshold
 Log.reset();        // restore every option to its default`;
 
-const rendererSnippet = `import { Build, run } from "jsr:@zuke/core";
+const rendererSnippet = `import { Build, run } from "@zuke/core";
 import {
   consoleRenderer,
   createConsoleRenderer,
   defaultTheme,
-} from "jsr:@zuke/console";
+} from "@zuke/console";
 
 // Route the whole build's banners and summary through @zuke/console:
 await run(MyBuild, { renderer: consoleRenderer });

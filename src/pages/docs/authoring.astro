@@ -12,8 +12,8 @@ const toc = [
   { id: "build", label: "What the Build declares" },
 ];
 
-const introSnippet = `import { Build, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const introSnippet = `import { Build, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class Ci extends Build {
   lint = target()
@@ -76,7 +76,7 @@ const lifecycleSnippet = `flaky = target()
     await fetch("https://example.com/health");
   });`;
 
-const resilienceSnippet = `import { externalSignal, target } from "jsr:@zuke/core";
+const resilienceSnippet = `import { externalSignal, target } from "@zuke/core";
 
 awaitApproval = target()
   .dependsOn(this.deploy)

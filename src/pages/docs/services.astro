@@ -10,9 +10,9 @@ const toc = [
   { id: "notes", label: "Notes and limits" },
 ];
 
-const serviceSnippet = `import { Build, run, service, target, tcpReachable } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { DenoTasks } from "jsr:@zuke/deno";
+const serviceSnippet = `import { Build, run, service, target, tcpReachable } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { DenoTasks } from "@zuke/deno";
 
 class E2E extends Build {
   api = service()

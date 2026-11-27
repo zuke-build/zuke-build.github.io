@@ -17,7 +17,7 @@ const toc = [
   { id: "host", label: "CI & host detection" },
 ];
 
-const shellSnippet = `import { $ } from "jsr:@zuke/core/shell";
+const shellSnippet = `import { $ } from "@zuke/core/shell";
 
 await $\`deno test -A\`;                              // throws CommandError on non-zero exit
 const sha = await $\`git rev-parse HEAD\`.text();      // trimmed stdout
@@ -46,13 +46,13 @@ await $\`echo \${dirty}\`;          // prints the literal string; runs nothing e
 const ref = "--output=/tmp/leak";  // untrusted
 await $\`git diff --name-only \${ref}\`;   // git honours it as an option`;
 
-const splitSnippet = `import { splitShellArgs } from "jsr:@zuke/core/shell";
+const splitSnippet = `import { splitShellArgs } from "@zuke/core/shell";
 
 splitShellArgs(\`deno test --filter "my suite"\`);
 // → ["deno", "test", "--filter", "my suite"]
 // Unclosed quote → ShellArgsError naming the quote and its offset.`;
 
-const filesSnippet = `import { FileTasks } from "jsr:@zuke/core";
+const filesSnippet = `import { FileTasks } from "@zuke/core";
 
 await FileTasks.cleanDirectory("dist");          // empty it (if it exists)
 await FileTasks.createDirectory("dist/assets");  // mkdir -p
@@ -65,14 +65,14 @@ if (await FileTasks.exists("deno.json")) {
   await FileTasks.writeText("VERSION", cfg.name);
 }`;
 
-const globSnippet = `import { glob } from "jsr:@zuke/core";
+const globSnippet = `import { glob } from "@zuke/core";
 
 const sources = await glob("src/**/*.ts");                 // sorted, relative
 const specs = await glob("**/*.{test,spec}.ts", { cwd: "packages" });
 
 await DenoTasks.fmt((s) => s.check().paths(...sources));`;
 
-const httpSnippet = `import { httpDownload, httpJson, httpText } from "jsr:@zuke/core";
+const httpSnippet = `import { httpDownload, httpJson, httpText } from "@zuke/core";
 
 await httpDownload("https://example.com/tool.tar.gz", ".zuke/tool.tar.gz");
 const notes = await httpText("https://example.com/CHANGELOG.txt");
@@ -81,7 +81,7 @@ const release = await httpJson<{ tag_name: string }>(
 );
 // a non-2xx response throws an HttpError carrying .status`;
 
-const compressionSnippet = `import { createTarGzip, extractTarGzip, gzip } from "jsr:@zuke/core";
+const compressionSnippet = `import { createTarGzip, extractTarGzip, gzip } from "@zuke/core";
 
 await createTarGzip(["dist/app.js", "README.md"], "artifact.tar.gz");
 await extractTarGzip("artifact.tar.gz", "out");
@@ -89,8 +89,8 @@ await extractTarGzip("artifact.tar.gz", "out");
 // in-memory primitives, built on the platform CompressionStream
 const packed = await gzip(new TextEncoder().encode("hello"));`;
 
-const installSnippet = `import { installRelease } from "jsr:@zuke/core";
-import { CmdTasks } from "jsr:@zuke/cmd";
+const installSnippet = `import { installRelease } from "@zuke/core";
+import { CmdTasks } from "@zuke/cmd";
 
 const arches = { x86_64: "amd64", aarch64: "arm64" } as const;
 
@@ -108,7 +108,7 @@ const bin = await installRelease({
 // returns the installed binary's AbsolutePath — ready for .toolPath(...)
 await CmdTasks.exec(String(bin), (s) => s.args("version"));`;
 
-const assertSnippet = `import { assert, assertExists, assertFileExists, fail } from "jsr:@zuke/core";
+const assertSnippet = `import { assert, assertExists, assertFileExists, fail } from "@zuke/core";
 
 const token = assertExists(Deno.env.get("TOKEN"), "TOKEN is required"); // narrows
 assert(this.environment.value !== "", "environment must be set");
@@ -116,7 +116,7 @@ await assertFileExists("dist/app.js");
 
 if (unreachable) fail("should never happen"); // always throws AssertionError`;
 
-const pathsSnippet = `import { absolutePath, repoRoot } from "jsr:@zuke/core";
+const pathsSnippet = `import { absolutePath, repoRoot } from "@zuke/core";
 
 const root = absolutePath("/app");
 const main = root("src", "main.ts");  // callable → /app/src/main.ts
@@ -128,7 +128,7 @@ main.relativeTo(root); // "src/main.ts"
 repoRoot("dist");      // <repo root>/dist — resolved at runtime via zuke.json
 await $\`deno run \${main}\`;  // toString() drops straight into $\`\` and args()`;
 
-const hostSnippet = `import { detectCiHost, hostPlatform, isCI, operatingSystem } from "jsr:@zuke/core";
+const hostSnippet = `import { detectCiHost, hostPlatform, isCI, operatingSystem } from "@zuke/core";
 
 deploy = target()
   .onlyWhen(() => isCI())          // run only on a CI runner

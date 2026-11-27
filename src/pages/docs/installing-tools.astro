@@ -16,8 +16,8 @@ const toc = [
   { id: "security", label: "Security" },
 ];
 
-const installOneSnippet = `import { ToolTasks } from "jsr:@zuke/core";
-import { CmdTasks } from "jsr:@zuke/cmd";
+const installOneSnippet = `import { ToolTasks } from "@zuke/core";
+import { CmdTasks } from "@zuke/cmd";
 
 const bin = await ToolTasks.install((s) =>
   s
@@ -39,9 +39,9 @@ await ToolTasks.install((s) =>
   s.name("helm").url(helmUrl).checksum(({ os, arch }) => sums[\`\${os}-\${arch}\`])
 );`;
 
-const toolchainSnippet = `import { Build, target, toolchain } from "jsr:@zuke/core";
-import { HelmTasks } from "jsr:@zuke/helm";
-import { KubectlTasks } from "jsr:@zuke/kubectl";
+const toolchainSnippet = `import { Build, target, toolchain } from "@zuke/core";
+import { HelmTasks } from "@zuke/helm";
+import { KubectlTasks } from "@zuke/kubectl";
 
 const arches = { x86_64: "amd64", aarch64: "arm64" } as const;
 
@@ -67,8 +67,8 @@ class Deploy extends Build {
   });
 }`;
 
-const treeSnippet = `import { ToolTasks, prependPath } from "jsr:@zuke/core";
-import { CmdTasks } from "jsr:@zuke/cmd";
+const treeSnippet = `import { ToolTasks, prependPath } from "@zuke/core";
+import { CmdTasks } from "@zuke/cmd";
 
 const v = "22.11.0";
 
@@ -104,9 +104,9 @@ const treeChainSnippet = `tools = toolchain((t) =>
 const bins = await this.tools.install();
 prependPath(bins.get("node")!("bin"));`;
 
-const usingSnippet = `import { HelmTasks } from "jsr:@zuke/helm";
-import { CmdTasks } from "jsr:@zuke/cmd";
-import { defineTool } from "jsr:@zuke/core/tooling";
+const usingSnippet = `import { HelmTasks } from "@zuke/helm";
+import { CmdTasks } from "@zuke/cmd";
+import { defineTool } from "@zuke/core/tooling";
 
 const bin = await ToolTasks.install((s) => s.name("helm").url(helmUrl));
 
@@ -141,8 +141,8 @@ const ciSnippet = `steps:
   - uses: actions/checkout@v4
   - run: ./zuke deploy   # installs helm + kubectl on first use, then runs`;
 
-const npmToolSnippet = `import { Build, target, toolchain } from "jsr:@zuke/core";
-import { VitestTasks } from "jsr:@zuke/vitest";
+const npmToolSnippet = `import { Build, target, toolchain } from "@zuke/core";
+import { VitestTasks } from "@zuke/vitest";
 
 class Test extends Build {
   tools = toolchain((t) => t.npm({ name: "vitest", version: "4.1.9" }));

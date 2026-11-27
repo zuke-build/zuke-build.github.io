@@ -27,8 +27,8 @@ export function resumeWhen(check: () => boolean | Promise<boolean>, options?: { 
 // …and from @zuke/gh, built on the same exported WaitTrigger / WaitContext seam:
 export function githubWorkflow(configure: Configure<GithubWorkflowSettings>): WaitTrigger`;
 
-const ghWaitSnippet = `import { Build, run, target } from "jsr:@zuke/core";
-import { githubWorkflow, readWorkflowResult } from "jsr:@zuke/gh";
+const ghWaitSnippet = `import { Build, run, target } from "@zuke/core";
+import { githubWorkflow, readWorkflowResult } from "@zuke/gh";
 
 class Release extends Build {
   e2e = target().waitsFor((s) =>
@@ -59,7 +59,7 @@ const deadlineSnippet = `class Ci extends Build {
   }
 }`;
 
-const deploySnippet = `import { Build, externalSignal, target } from "jsr:@zuke/core";
+const deploySnippet = `import { Build, externalSignal, target } from "@zuke/core";
 
 class Deploy extends Build {
   deployToSit = target().executes(async (ctx) => {
@@ -92,7 +92,7 @@ export type ForEachFactory<Item> = (item: Item, index: number) => Record<string,
 concurrency(limit: number): this            // clamped ≥1; default = host CPU count
 continueOnItemFailure(on?: boolean): this`;
 
-const batchDeploySnippet = `import { Build, parameter, target } from "jsr:@zuke/core";
+const batchDeploySnippet = `import { Build, parameter, target } from "@zuke/core";
 
 class CD extends Build {
   repos = parameter("services to deploy").required().array();
