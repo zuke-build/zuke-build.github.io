@@ -58751,7 +58751,7 @@
               "kind": "method",
               "optional": false,
               "signature": "secrets(...secrets: ReviewSecret[]): this",
-              "doc": "Pass these repository secrets to the command job's review step as env vars\n— the build's parameters, whose env names the workflow reads off them, or\nplain names. Only the command job receives them; the `pull_request` job is\nunchanged. Secrets both jobs should hold go on\n{@link AiReviewWorkflowSpec.secrets} instead."
+              "doc": "Pass these repository secrets to the command job's review step as env vars\n— the build's parameters, whose env names the workflow reads off them, or\nplain names. Only the command job receives them; the `pull_request` job is\nunchanged. Secrets both jobs should hold go on\n{@link AiReviewWorkflowSpec.secrets} instead.\n\nA command that adds a secret the `pull_request` job lacks reviews in its\nown job on every pull request. Only when every secret it names is also on\nthe `pull_request` job does it re-run that job's review and grant\n`actions: write`: the re-run would otherwise drop what the secret enables."
             },
             {
               "name": "role",
