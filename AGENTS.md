@@ -4,7 +4,7 @@ Guidance for working in this repository. Read this before making changes.
 
 This is the marketing and documentation website for
 **[Zuke](https://github.com/zuke-build/zuke)** — an [Astro](https://astro.build)
-site whose every build step is driven by Zuke itself (see [`zuke.ts`](./zuke.ts)).
+site whose every build step is driven by Zuke itself (see [`build.ts`](./build.ts)).
 
 > This file, `AGENTS.md`, is the single source of truth for both humans and
 > agents. `CLAUDE.md` is a thin pointer whose entire content is `@AGENTS.md`, so
@@ -188,7 +188,7 @@ server serves whatever the last `dist/` build produced.
 ## Repository layout
 
 ```
-zuke.ts                  # the Zuke build (drives everything)
+build.ts                 # the Zuke build (drives everything)
 zuke                     # bootstrap launcher (installs Node 26 if needed); zuke.ps1 on Windows
 astro.config.mjs         # Astro configuration
 src/
