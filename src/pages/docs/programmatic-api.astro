@@ -141,9 +141,9 @@ console.log(\`\${order.length} targets, in execution order\`);`;
   </h2>
   <p>
     <code>run(BuildClass, options?)</code> is what you call at the bottom of a
-    build file. It instantiates the build, parses <code>Deno.args</code>, runs the
+    build file. It instantiates the build, parses the command-line arguments, runs the
     requested command, and sets the process exit code. It returns
-    <code>Promise&lt;void&gt;</code> and calls <code>Deno.exit</code> itself, so
+    <code>Promise&lt;void&gt;</code> and exits the process itself, so
     it's the <em>launcher</em>, not the seam you drive a build through in code —
     for that, reach for <a href="#execute"><code>execute</code></a>.
   </p>
@@ -169,7 +169,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
     resolves the build's <a href="/docs/concepts#parameters">parameters</a>, plans
     the graph from <code>rootTarget</code>, runs each target body in order (or
     concurrently with <code>parallel</code>), and resolves to a
-    <code>BuildResult</code> — it never calls <code>Deno.exit</code>, which is
+    <code>BuildResult</code> — it never exits the process, which is
     exactly what makes it testable. The <code>rootTarget</code> is a
     <code>TargetBuilder</code>, which you get from
     <a href="#discover"><code>discoverTargets</code></a>.
@@ -214,7 +214,7 @@ console.log(\`\${order.length} targets, in execution order\`);`;
       <tr><td><code>stateStore</code></td><td><code>StateStore | false</code></td><td>Supply the durable <a href="/docs/state">state store</a> directly; <code>false</code> disables state entirely.</td></tr>
       <tr><td><code>actor</code></td><td><code>string</code></td><td>Who to attribute the run to in its state record (<code>--actor</code>).</td></tr>
       <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td>Cancel the run when this aborts, running the succeeded targets' compensations.</td></tr>
-      <tr><td><code>readEnv</code></td><td><code>(name) =&gt; string | undefined</code></td><td>Environment reader for parameter fallback; defaults to <code>Deno.env.get</code> (a test seam).</td></tr>
+      <tr><td><code>readEnv</code></td><td><code>(name) =&gt; string | undefined</code></td><td>Environment reader for parameter fallback; defaults to <code>EnvTasks.get</code> (a test seam).</td></tr>
       <tr><td><code>prompt</code></td><td><code>(flag, desc) =&gt; string | undefined</code></td><td>Prompt for a missing required parameter; defaults to an interactive TTY prompt off CI (a test seam).</td></tr>
       <tr><td><code>github</code></td><td><code>boolean</code></td><td>Force GitHub Actions output formatting on/off (auto-detected otherwise).</td></tr>
       <tr><td><code>color</code></td><td><code>boolean</code></td><td>Force ANSI colour on/off (auto-detected otherwise).</td></tr>

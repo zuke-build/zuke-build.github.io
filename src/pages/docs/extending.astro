@@ -90,8 +90,9 @@ export function slack(opts: { webhook: string }): Plugin {
   };
 }
 
-// Consumer's build file — register one or several plugins at once:
-await run(MyBuild, { plugins: [slack({ webhook: Deno.env.get("SLACK_URL")! })] });`;
+// Consumer's build file — register one or several plugins at once
+// (EnvTasks and run come from @zuke/core):
+await run(MyBuild, { plugins: [slack({ webhook: EnvTasks.get("SLACK_URL") ?? "" })] });`;
 ---
 
 <DocsLayout

@@ -39,7 +39,7 @@ await ToolTasks.install((s) =>
   s.name("helm").url(helmUrl).checksum(({ os, arch }) => sums[\`\${os}-\${arch}\`])
 );`;
 
-const toolchainSnippet = `import { Build, target, toolchain } from "@zuke/core";
+const toolchainSnippet = `import { Build, RuntimeTasks, target, toolchain } from "@zuke/core";
 import { HelmTasks } from "@zuke/helm";
 import { KubectlTasks } from "@zuke/kubectl";
 
@@ -50,7 +50,7 @@ class Deploy extends Build {
     t
       .tool((s) =>
         s.name("helm").archive("tar.gz")
-          .binaryPath(\`linux-\${arches[Deno.build.arch]}/helm\`)
+          .binaryPath(\`linux-\${arches[RuntimeTasks.arch()]}/helm\`)
           .checksum(helmSum)
           .url(({ arch }) => \`https://get.helm.sh/helm-v3.15.2-linux-\${arches[arch]}.tar.gz\`)
       )

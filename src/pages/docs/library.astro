@@ -89,7 +89,7 @@ await extractTarGzip("artifact.tar.gz", "out");
 // in-memory primitives, built on the platform CompressionStream
 const packed = await gzip(new TextEncoder().encode("hello"));`;
 
-const installSnippet = `import { installRelease } from "@zuke/core";
+const installSnippet = `import { installRelease, RuntimeTasks } from "@zuke/core";
 import { CmdTasks } from "@zuke/cmd";
 
 const arches = { x86_64: "amd64", aarch64: "arm64" } as const;
@@ -98,7 +98,7 @@ const bin = await installRelease({
   name: "helm",
   destDir: ".zuke/bin",
   archive: "tar.gz",                       // unpack a tarball ("raw" by default)
-  binaryPath: \`\${Deno.build.os}-\${arches[Deno.build.arch]}/helm\`,
+  binaryPath: \`\${RuntimeTasks.os()}-\${arches[RuntimeTasks.arch()]}/helm\`,
   url: (p) =>
     \`https://get.helm.sh/helm-v3.14.0-\${p.osLabel({ macos: "darwin" })}-\${
       arches[p.arch]
@@ -108,9 +108,9 @@ const bin = await installRelease({
 // returns the installed binary's AbsolutePath — ready for .toolPath(...)
 await CmdTasks.exec(String(bin), (s) => s.args("version"));`;
 
-const assertSnippet = `import { assert, assertExists, assertFileExists, fail } from "@zuke/core";
+const assertSnippet = `import { assert, assertExists, assertFileExists, EnvTasks, fail } from "@zuke/core";
 
-const token = assertExists(Deno.env.get("TOKEN"), "TOKEN is required"); // narrows
+const token = assertExists(EnvTasks.get("TOKEN"), "TOKEN is required"); // narrows
 assert(this.environment.value !== "", "environment must be set");
 await assertFileExists("dist/app.js");
 

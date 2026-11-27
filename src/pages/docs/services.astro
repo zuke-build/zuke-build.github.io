@@ -29,9 +29,9 @@ await run(E2E);`;
 
 const spawnSnippet = `.start(() => $\`docker compose up\`.spawn())`;
 
-const handleSnippet = `.start(() => {
-  const server = Deno.serve({ port: 8080 }, handler);
-  return { stop: () => server.shutdown() };
+const handleSnippet = `.start(async () => {
+  const server = await NetTasks.serve(handler, (s) => s.port(8080));
+  return { stop: () => server.close() };
 })`;
 
 const stopSnippet = `.start(() => openPool())
