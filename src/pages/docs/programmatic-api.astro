@@ -37,7 +37,7 @@ await run(MyBuild, {
 });`;
 
 const executeSnippet = `import { discoverTargets, execute } from "jsr:@zuke/core";
-import { MyBuild } from "./zuke.ts";
+import { MyBuild } from "./build.ts";
 
 const build = new MyBuild();
 const target = discoverTargets(build).get("test");
@@ -115,11 +115,11 @@ console.log(\`\${order.length} targets, in execution order\`);`;
 
 <DocsLayout
   title="Programmatic API"
-  description="Beyond authoring a zuke.ts, @zuke/core exports the pieces that drive a build so you can embed Zuke in another tool or test it in code: run and execute, discoverTargets, describeCli, the Renderer interface, BuildCache, and the graph helpers."
+  description="Beyond authoring a build.ts, @zuke/core exports the pieces that drive a build so you can embed Zuke in another tool or test it in code: run and execute, discoverTargets, describeCli, the Renderer interface, BuildCache, and the graph helpers."
   toc={toc}
 >
   <p class="lead">
-    A <code>zuke.ts</code> is usually driven by the CLI. But
+    A <code>build.ts</code> is usually driven by the CLI. But
     <a href="/docs/library"><code>@zuke/core</code></a> exports the same building
     blocks the CLI uses, so you can <strong>drive a build yourself</strong> — run
     a target from another program, assert on the result in a test, or introspect

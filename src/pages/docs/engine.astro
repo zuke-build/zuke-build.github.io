@@ -209,7 +209,7 @@ const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuk
 
   <h2 id="typescript">TypeScript builds</h2>
   <p>
-    A <code>zuke.ts</code> build is the same model with one process fewer.
+    A <code>build.ts</code> build is the same model with one process fewer.
     <code>@zuke/core</code> <em>is</em> the engine, as a library: a TypeScript
     build imports it, and <code>run(MyBuild)</code> hosts the build in-process
     with no socket in between. The <code>@zuke/engine</code> package is that
@@ -250,8 +250,8 @@ const helloSnippet = `→ {"jsonrpc":"2.0","method":"hello","params":{"sdk":"zuk
 
   <h2 id="zuke-json">zuke.json &amp; the launcher</h2>
   <p>
-    A project with a <code>zuke.ts</code> runs it directly. A project with no
-    <code>zuke.ts</code> holds a build another SDK hosts, and its
+    A project with a <code>build.ts</code> runs it directly. A project with no
+    <code>build.ts</code> holds a build another SDK hosts, and its
     <code>zuke.json</code> says how: <code>sdk.command</code> is the worker's
     argv, and <code>engine</code> is the exact <code>@zuke/engine</code> release
     to run it with — <code>"1.4.0"</code>, never a range, so the engine cannot

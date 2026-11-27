@@ -31,7 +31,7 @@ zuke setup --mcp --allow-run`;
 
 const mcpJsonSnippet = `{
   "mcpServers": {
-    "zuke": { "command": "deno", "args": ["run", "-A", "zuke.ts", "mcp"] }
+    "zuke": { "command": "deno", "args": ["run", "-A", "build.ts", "mcp"] }
   }
 }`;
 
@@ -41,18 +41,18 @@ const mcpJsonPythonSnippet = `{
   }
 }`;
 
-const registerSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp`;
+const registerSnippet = `claude mcp add zuke -- deno run -A build.ts mcp`;
 
-const registerAllowRunSnippet = `claude mcp add zuke -- deno run -A zuke.ts mcp --allow-run`;
+const registerAllowRunSnippet = `claude mcp add zuke -- deno run -A build.ts mcp --allow-run`;
 
 const callSnippet = `// tools/call
 { "name": "run:test", "arguments": { "environment": "dev", "coverage": true } }`;
 
-const httpSnippet = `deno run -A zuke.ts mcp --http 7777`;
+const httpSnippet = `deno run -A build.ts mcp --http 7777`;
 
-const httpTokenSnippet = `ZUKE_MCP_TOKEN=… deno run -A zuke.ts mcp --http 0.0.0.0:7777 --allow-run`;
+const httpTokenSnippet = `ZUKE_MCP_TOKEN=… deno run -A build.ts mcp --http 0.0.0.0:7777 --allow-run`;
 
-const originSnippet = `deno run -A zuke.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
+const originSnippet = `deno run -A build.ts mcp --http 7777 --allowed-origin https://studio.example.com`;
 
 const authorizationSnippet = `# expose everything to run, gate promoteToProd behind an operator token, confirm destructive, authenticated HTTP:
 ZUKE_OPERATOR_TOKEN=… ZUKE_MCP_TOKEN=… zuke mcp --http 0.0.0.0:7777 --allow-run --protect promoteToProd --confirm-destructive`;
@@ -165,7 +165,7 @@ const authorizeSnippet = `class ControlPlane extends Build {
     startup line goes to stderr so it never corrupts the protocol stream. It runs
     until stdin closes. Here <code>zuke</code> is the installed CLI, which
     forwards to the project's build; <code>./zuke mcp</code> through the
-    launcher, or <code>deno run -A zuke.ts mcp</code> for a <code>zuke.ts</code>
+    launcher, or <code>deno run -A build.ts mcp</code> for a <code>build.ts</code>
     build, runs the same server.
   </p>
 
@@ -173,14 +173,14 @@ const authorizeSnippet = `class ControlPlane extends Build {
   <p>
     The scaffolder can do it for you. <code>zuke setup --mcp</code> (and
     <code>zuke import --mcp</code>) writes a project-scoped
-    <code>.mcp.json</code> next to <code>zuke.ts</code> that registers this
+    <code>.mcp.json</code> next to <code>build.ts</code> that registers this
     server as <code>zuke</code>, in the format Claude Code, Codex and most
     stdio clients read — so the build is agent-ready from its first commit.
     <code>--allow-run</code> registers it with execution enabled. An existing
     file is merged around its other servers.
   </p>
   <CopyCode code={setupMcpSnippet} lang="bash" multi />
-  <p>What it writes for a <code>zuke.ts</code> build:</p>
+  <p>What it writes for a <code>build.ts</code> build:</p>
   <Code code={mcpJsonSnippet} lang="json" />
   <p>
     For a <a href="/docs/python">Python build</a> it registers the
@@ -191,7 +191,7 @@ const authorizeSnippet = `class ControlPlane extends Build {
   <p>
     Any client also takes the command directly — any client that speaks
     stdio MCP works the same way. In Claude Code, give it
-    <code>deno run -A zuke.ts mcp</code>:
+    <code>deno run -A build.ts mcp</code>:
   </p>
   <CopyCode code={registerSnippet} lang="bash" />
   <p>Add <code>--allow-run</code> when you want the agent to execute targets:</p>
@@ -549,7 +549,7 @@ export interface RunEvent {
     <strong>Trust model.</strong> Over stdio, the server speaks only to the
     process that launched it, so its trust boundary is the local machine:
     anyone who can start <code>zuke mcp</code> already has a shell there and
-    could run <code>deno run -A zuke.ts &lt;target&gt;</code> directly — the
+    could run <code>deno run -A build.ts &lt;target&gt;</code> directly — the
     server grants no capability beyond what launching it already implies.
     <code>--http</code> changes that: it gives the server a real network
     endpoint, so it defaults to loopback (no remote party at all) and

@@ -37,6 +37,8 @@ const installChocoSnippet = `choco install zuke`;
 
 const setupSnippet = `zuke setup          # or: zuke setup --mcp, to register the build for your agent too`;
 
+const setupNodeSnippet = `zuke setup --runtime node`;
+
 const firstRunSnippet = `./zuke`;
 
 const buildSnippet = `import { Build, run, target } from "jsr:@zuke/core";
@@ -112,8 +114,9 @@ Total                  17.8s
 
   <h2 id="install">Install</h2>
   <p>
-    Zuke runs on <a href="https://deno.com" target="_blank" rel="noopener noreferrer">Deno</a> and ships on
-    <a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>. Install the CLI one of three
+    By default Zuke runs on <a href="https://deno.com" target="_blank" rel="noopener noreferrer">Deno</a> and ships on
+    <a href="https://jsr.io/@zuke" target="_blank" rel="noopener noreferrer">JSR</a>; a project can run on Node instead
+    (<a href="#node">below</a>), and the CLI is also on npm as <code>@zuke-build/cli</code>. Install the CLI one of three
     ways — each installs the same program. From JSR, on any OS with Deno 2.x:
   </p>
   <CopyCode code={installCliSnippet} lang="bash" />
@@ -125,11 +128,11 @@ Total                  17.8s
   <p>With Chocolatey on Windows:</p>
   <CopyCode code={installChocoSnippet} lang="bash" />
   <p>
-    Then scaffold <code>zuke.ts</code>, the launchers, and config in your
+    Then scaffold <code>build.ts</code>, the launchers, and config in your
     project:
   </p>
   <CopyCode code={setupSnippet} lang="bash" />
-  <p>And run it — the <code>./zuke</code> launcher bootstraps Deno if needed:</p>
+  <p>And run it — the <code>./zuke</code> launcher bootstraps Deno if needed (or Node, for a <a href="#node">Node project</a>):</p>
   <CopyCode code={firstRunSnippet} lang="bash" />
   <div class="note">
     <p>
@@ -146,14 +149,37 @@ Total                  17.8s
 
   <h2 id="scaffold">Scaffold a build</h2>
   <p>
-    <code>zuke setup</code> creates a <code>zuke.ts</code> at your project root
+    <code>zuke setup</code> creates a <code>build.ts</code> at your project root
     alongside the <code>zuke</code> / <code>zuke.ps1</code> launchers and a small
-    <code>zuke.json</code>. The <code>zuke.ts</code> file <em>is</em> your build —
-    edit it like any other TypeScript module.
+    <code>zuke.json</code>. The <code>build.ts</code> file <em>is</em> your build —
+    edit it like any other TypeScript module. The wizard asks what to call the
+    file (<code>zuke setup --build-file &lt;name&gt;</code> answers up front) and
+    records the name in <code>zuke.json</code>'s <code>build</code> field. A
+    project that already has a <code>zuke.ts</code> keeps it.
+  </p>
+
+  <h2 id="node">Scaffold a Node project</h2>
+  <p>
+    A build can run on Node 26, which strips TypeScript types natively, instead
+    of Deno. Deno is still what <code>zuke setup</code> scaffolds by default; ask
+    for Node with <code>--runtime node</code>:
+  </p>
+  <CopyCode code={setupNodeSnippet} lang="bash" />
+  <p>
+    That writes a starter <code>build.ts</code>, a <code>package.json</code>
+    (created, or merged: <code>"type": "module"</code> and the
+    <code>@zuke/core</code> dependency, <code>npm:@zuke-build/core@^1</code>,
+    are added only when absent), a <code>zuke.json</code> with
+    <code>"runtime": "node"</code>, and launchers that bootstrap a pinned,
+    checksum-verified Node when none is on <code>PATH</code>. There is no
+    <code>deno.json</code>, and no Deno anywhere. <code>zuke add docker</code>
+    then installs <code>@zuke/docker</code> from npm, and <code>zuke
+    remove</code>, <code>cache</code> and <code>relock</code> run npm too — see
+    <a href="/docs/cli#node-projects">the CLI reference</a>.
   </p>
   <p>
     Already have <code>package.json</code> scripts or a <code>Makefile</code>?
-    <code>zuke import</code> reads them and generates a <code>zuke.ts</code> with
+    <code>zuke import</code> reads them and generates a <code>build.ts</code> with
     one <code>target()</code> per task — a working starting point to refine into
     typed wrappers, rather than a blank page. It auto-detects the source
     (<code>package.json</code> first, then a <code>Makefile</code>); pass

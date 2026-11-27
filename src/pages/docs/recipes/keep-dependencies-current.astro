@@ -91,7 +91,7 @@ const outputSnippet = `@zuke/git     1.5.0  →  1.11.0
   <h1>Recipe: know when your dependencies fall behind</h1>
   <p class="lead">
     A build that pins its tools inline — <code>jsr:@zuke/git@^1</code> in
-    <code>zuke.ts</code> and its helper modules, rather than in a
+    <code>build.ts</code> and its helper modules, rather than in a
     <code>deno.json</code> imports map — has no manifest for
     <code>deno outdated</code> to read. The lock keeps resolving the versions
     recorded when the build was written, and <code>--frozen</code> is perfectly
