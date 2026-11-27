@@ -9,7 +9,7 @@ a code-first, strongly-typed build automation system for TypeScript, on Node or 
 
 This site is an [Astro](https://astro.build) project, but every build step is
 driven by **Zuke itself** — we use the tool this site documents to build the
-site. The build graph lives in [`zuke.ts`](./zuke.ts) and wraps the Node
+site. The build graph lives in [`build.ts`](./build.ts) and wraps the Node
 toolchain through the typed `@zuke/npm` package.
 
 ```sh
@@ -37,7 +37,7 @@ npm run check     # astro type-check
 ## Project structure
 
 ```
-zuke.ts                  # the Zuke build (drives everything)
+build.ts                 # the Zuke build (drives everything)
 zuke                     # bootstrap launcher (installs Node 26 if needed); zuke.ps1 on Windows
 astro.config.mjs         # Astro configuration
 src/

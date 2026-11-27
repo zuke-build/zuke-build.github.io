@@ -10,7 +10,7 @@
 #
 # Uses the node on PATH when it is Node 26 or newer, else a pinned,
 # checksum-verified Node it downloads once, then installs the project's
-# dependencies and runs zuke.ts.
+# dependencies and runs build.ts.
 #
 # Honoured environment variables:
 #   ZUKE_NODE_HOME  where Node is kept (default: ~/.zuke/node), one directory
@@ -223,4 +223,4 @@ if [ -n "$(install_needed)" ]; then
   trap - EXIT
 fi
 
-exec node zuke.ts "$@"
+exec node build.ts "$@"

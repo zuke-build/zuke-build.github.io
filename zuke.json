@@ -1,4 +1,5 @@
 {
   "name": "ZukeWebsite",
+  "build": "build.ts",
   "runtime": "node"
 }

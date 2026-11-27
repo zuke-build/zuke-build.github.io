@@ -23,14 +23,14 @@ CI/CD as code, generated and verified. You declare your pipeline once in real ty
 ## Conversion & proof
 
 - Primary CTA: install the CLI and run a build (`npm install -g @zuke-build/cli` → `zuke setup` → run a target). The whole page points here.
-- Secondary CTA: browse examples — real `zuke.ts` builds, including this site's own build graph rendered to HTML — for visitors who want proof before they install.
+- Secondary CTA: browse examples — real `build.ts` builds, including this site's own build graph rendered to HTML — for visitors who want proof before they install.
 - The line a visitor remembers after 10 seconds: your build and your CI are the same typed code, and Zuke keeps them honest.
 - Belief ladder (what a visitor must accept, in order, before installing):
   1. String-keyed task runners and hand-written CI YAML are fragile — a rename breaks them and nothing catches it.
   2. A build defined as ordinary typed code is refactor-safe, testable and reusable: references are real values the type checker sees, in TypeScript or Python.
   3. Zuke generates the CI/CD YAML from that same typed build and verifies it's up to date, so the pipeline can't silently drift.
   4. It's low-risk to try: zero runtime dependencies, published on npm, and the launcher installs Node for you on first run.
-- Proof on hand: this site dogfoods Zuke (it builds itself via `zuke.ts`); a rendered build graph and worked examples stand in for testimonials. No customer logos or case studies supplied yet — add them to `.impeccable/assets/proof/` when available.
+- Proof on hand: this site dogfoods Zuke (it builds itself via `build.ts`); a rendered build graph and worked examples stand in for testimonials. No customer logos or case studies supplied yet — add them to `.impeccable/assets/proof/` when available.
 
 ## Brand Personality
 
