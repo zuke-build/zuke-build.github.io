@@ -30,7 +30,7 @@ const incrementalSnippet = `compile = target()
 const cacheKeySnippet = `compile = target()
   .inputs("src")
   .cacheKey(() => this.configuration.value)   // rebuild when the config flips
-  .cacheKey(() => Deno.version.deno)          // …or the toolchain moves
+  .cacheKey(() => RuntimeTasks.facts().version) // …or the runtime moves
   .executes(/* … */);`;
 
 const aiReviewCacheSnippet = `import { aiCache, securityReviewer } from "@zuke/ai";

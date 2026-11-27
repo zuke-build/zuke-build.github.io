@@ -209,7 +209,7 @@ await run(E2E);`,
     tag: "Incremental caching",
     title: "Skip unchanged work with the build cache",
     desc: "Declare a target's .inputs() and .outputs() to make it incremental — Zuke fingerprints the inputs (SHA-256, directories hashed recursively), skips the target when nothing changed and every output still exists, and reports it `cached`. .cacheKey() folds in non-file values like a parameter or the toolchain version. Fingerprints live in .zuke/cache.json; pass --no-cache to rebuild everything. @zuke/ai adds a separate aiCache for review/fix responses.",
-    code: `import { Build, parameter, run, target } from "@zuke/core";
+    code: `import { Build, parameter, run, RuntimeTasks, target } from "@zuke/core";
 import { DenoTasks } from "@zuke/deno";
 
 class CachedBuild extends Build {
@@ -219,10 +219,10 @@ class CachedBuild extends Build {
   // declared output still exists — the run reports this target as \`cached\`.
   bundle = target()
     .description("Bundle the app — only when sources or config change")
-    .inputs("src", "deno.json")          // re-run when these change…
+    .inputs("src", "package.json")       // re-run when these change…
     .outputs("dist/app.js")              // …or when the output goes missing
     .cacheKey(() => this.mode.value)     // …or when the build mode flips
-    .cacheKey(() => Deno.version.deno)   // …or the toolchain moves
+    .cacheKey(() => RuntimeTasks.facts().version) // …or the runtime moves
     .executes(async () => {
       await DenoTasks.run((s) => s.script("build.ts"));
     });
@@ -329,7 +329,7 @@ await run(Deploy);`,
     tag: "Canary release",
     title: "Roll out to Kubernetes 10% at a time — and back in one step",
     desc: "canary() from @zuke/canary turns one settings lambda into a rollout: rollout.stage puts the candidate beside stable at 0%, each step widens its share and bakes while HTTP probes, a Prometheus query and your own metric reader — a typed PrometheusTasks query from @zuke/prometheus — check it, and rollout.promote sends it everything. kubectlCanary drives a stable and a canary Deployment, exposing by replica count — the canary grows and is ready before stable shrinks, so no step drops capacity. .durable() parks the run at each bake instead of holding a CI job open; zuke resume --check from a cron picks it back up. A failed check, a failed step, an approval that times out, or zuke cancel all run the one rollout.abort.",
-    code: `import { Build, parameter, run, target } from "@zuke/core";
+    code: `import { Build, parameter, run, RuntimeTasks, target } from "@zuke/core";
 import { canary, httpProbe, metricThreshold, prometheus } from "@zuke/canary";
 import { kubectlCanary } from "@zuke/kubectl";
 import { PrometheusTasks } from "@zuke/prometheus";
@@ -390,7 +390,7 @@ await run(Deploy);`,
     tag: "Fan-out",
     title: "Deploy a batch of repos with per-item isolation",
     desc: "Run the same ordered pipeline over a runtime list with .forEach() — items concurrent (up to concurrency), stages sequential per item. One repo failing doesn't stop the others with continueOnItemFailure(); the batch fails at the end if any item did. Every item is first-class: sub-targets named deployBatch[api].deploy get their own summary row and run-record entry, so zuke runs show and MCP report a verdict per repo. The list is an .array() parameter, validated element-by-element before anything runs.",
-    code: `import { Build, parameter, run, target } from "@zuke/core";
+    code: `import { Build, parameter, run, RuntimeTasks, target } from "@zuke/core";
 
 class CD extends Build {
   // A validated list — each element checked before any target runs.
@@ -671,7 +671,7 @@ await run(DeployBuild);`,
     tag: "AI / review",
     title: "AI code-review gate",
     desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff (plus the whole changed files and your conventions doc), asks the model for a structured risk score, refutes its own findings in an adversarial .verify() pass, breaks the build when the score crosses your threshold, and upserts the verdict as a PR comment. With .discussion() it also reads the thread: quote a finding's ID to contest it and the reviewer upholds or dismisses it on the merits, remembering the dismissal on later runs. aiReviewWorkflow() generates the matching CI workflow from the reviewer.",
-    code: `import { Build, parameter, run, target } from "@zuke/core";
+    code: `import { Build, parameter, run, RuntimeTasks, target } from "@zuke/core";
 import { DenoTasks } from "@zuke/deno";
 import { aiReviewWorkflow, securityReviewer } from "@zuke/ai";
 
@@ -715,7 +715,7 @@ await run(ReviewBuild);`,
     tag: "AI / self-healing",
     title: "Self-healing build",
     desc: "Attach an aiFixer to a target with .recoverWith(). When it fails, @zuke/ai diagnoses the failure from the command, its stderr, and the diff — then posts a committable suggestion, or applies the fix, commits, and re-runs the real command to verify it goes green. agentFixer can instead hand the failure to a coding agent that edits files itself.",
-    code: `import { Build, parameter, run, target } from "@zuke/core";
+    code: `import { Build, parameter, run, RuntimeTasks, target } from "@zuke/core";
 import { DenoTasks } from "@zuke/deno";
 import { agentFixer, aiFixer } from "@zuke/ai";
 import { ClaudeTasks } from "@zuke/claude";

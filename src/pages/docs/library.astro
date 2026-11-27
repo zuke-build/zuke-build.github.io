@@ -162,7 +162,7 @@ const cpu = hostPlatform().archLabel({ x86_64: "amd64", aarch64: "arm64" });`;
 
   <h2 id="shell">The <code>$</code> shell</h2>
   <p>
-    Ergonomic process execution built on <code>Deno.Command</code>. A
+    Ergonomic process execution built on the runtime's own process API, on Node or Deno. A
     <code>$</code> tagged template builds a <strong>lazy</strong> command;
     awaiting it runs the process and throws a <code>CommandError</code> on a
     non-zero exit.
