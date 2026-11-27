@@ -197,7 +197,7 @@ zuke mcp
 zuke mcp --allow-run
 
 # or register by hand with any MCP client (Claude Code shown)
-claude mcp add zuke -- deno run -A zuke.ts mcp`;
+claude mcp add zuke -- deno run -A build.ts mcp`;
 
 // MCP clients that can drive a Zuke build, shown as chips.
 const mcpClients = [
@@ -492,7 +492,7 @@ const cdMoreIcons: Record<string, string> = {
           <CopyBlock
             label="Then scaffold and run"
             lines={[
-              "# a TypeScript build, zuke.ts",
+              "# a TypeScript build, build.ts",
               "zuke setup",
               "# or a Python build, no Deno needed",
               "zuke setup --sdk python",
@@ -510,7 +510,7 @@ const cdMoreIcons: Record<string, string> = {
           <span class="codecard__dot"></span>
           <div class="hero__tabs">
             <button class="hero__tab is-active" role="tab" aria-selected="true"
-              aria-controls="hero-src" id="hero-tab-src" type="button">zuke.ts</button>
+              aria-controls="hero-src" id="hero-tab-src" type="button">build.ts</button>
             <button class="hero__tab" role="tab" aria-selected="false"
               aria-controls="hero-py" id="hero-tab-py" type="button">build.py</button>
             <button class="hero__tab" role="tab" aria-selected="false"
@@ -698,7 +698,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <span class="engine-flow__arrow" aria-hidden="true">⇄</span>
         <div class="engine-flow__box">
           <span class="engine-flow__k">worker</span>
-          <code>build.py</code> <span class="engine-flow__or">or</span> <code>zuke.ts</code>
+          <code>build.py</code> <span class="engine-flow__or">or</span> <code>build.ts</code>
           <span class="engine-flow__d">describes the targets, runs their bodies — in your language</span>
         </div>
       </div>
@@ -715,7 +715,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <ul class="ticks">
           <li>TypeScript builds run the engine in-process; any other language runs beside it as a worker.</li>
           <li>Every typed tool wrapper reaches every language — SDK facades are generated from the engine's spec.</li>
-          <li>Published conformance cases are the contract: an SDK that passes them behaves exactly like <code>zuke.ts</code>.</li>
+          <li>Published conformance cases are the contract: an SDK that passes them behaves exactly like <code>build.ts</code>.</li>
           <li>Python is the first SDK, more language SDKs are coming — the engine is the same for all of them.</li>
         </ul>
         <div class="engine-links">
@@ -748,7 +748,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <span class="codecard__dot"></span>
           <span class="codecard__dot"></span>
           <span class="codecard__dot"></span>
-          <span class="codecard__name">zuke.ts</span>
+          <span class="codecard__name">build.ts</span>
         </div>
         <CopyCode code={ciBuildSnippet} lang="ts" />
       </div>
@@ -869,7 +869,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span>
             <span class="codecard__dot"></span>
             <span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+            <span class="codecard__name">build.ts</span>
           </div>
           <CopyCode code={consoleSnippet} lang="ts" />
         </div>
@@ -960,7 +960,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
             <span class="codecard__dot"></span>
             <span class="codecard__dot"></span>
             <span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+            <span class="codecard__name">build.ts</span>
           </div>
           <CopyCode code={cacheSnippet} lang="ts" />
         </div>
@@ -1201,7 +1201,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
           <span class="codecard__dot"></span>
           <span class="codecard__dot"></span>
           <span class="codecard__dot"></span>
-          <span class="codecard__name">zuke.ts</span>
+          <span class="codecard__name">build.ts</span>
         </div>
         <CopyCode code={healSnippet} lang="ts" />
       </div>
@@ -1316,7 +1316,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <p class="lead">
           Two agent skills — <code>zuke-setup</code> scaffolds Zuke into a
           project, <code>zuke-write-build</code> writes or edits a
-          <code>zuke.ts</code> — teach an assistant to author builds with the
+          <code>build.ts</code> — teach an assistant to author builds with the
           typed API instead of guessing. Authored once as portable
           <a href="https://agentskills.io" target="_blank" rel="noopener noreferrer"><code>SKILL.md</code></a>
           folders, they're distributed from the repo's own skills marketplace,
@@ -1375,7 +1375,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <div class="codecard panel">
           <div class="codecard__bar">
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+            <span class="codecard__name">build.ts</span>
           </div>
           <CopyCode code={resumeSnippet} lang="ts" />
         </div>
@@ -1401,7 +1401,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <div class="codecard panel">
           <div class="codecard__bar">
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+            <span class="codecard__name">build.ts</span>
           </div>
           <CopyCode code={lockSnippet} lang="ts" />
         </div>
@@ -1465,7 +1465,7 @@ build    <span class="t-ok">Succeeded</span>      2.2s
         <div class="codecard panel">
           <div class="codecard__bar">
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+            <span class="codecard__name">build.ts</span>
           </div>
           <CopyCode code={fanOutSnippet} lang="ts" />
         </div>
@@ -1654,7 +1654,7 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
         <div class="codecard panel">
           <div class="codecard__bar">
             <span class="codecard__dot"></span><span class="codecard__dot"></span><span class="codecard__dot"></span>
-            <span class="codecard__name">zuke.ts</span>
+            <span class="codecard__name">build.ts</span>
           </div>
           <CopyCode code={canarySnippet} lang="ts" />
         </div>
@@ -1876,7 +1876,7 @@ run:promoteToProd   <span class="t-name">carol</span>    <span class="t-err">den
         <h2>Ship your first typed build in minutes.</h2>
         <p>
           Install the CLI — from JSR with Deno, or with Homebrew on macOS and
-          Linux and Chocolatey on Windows — scaffold a <code>zuke.ts</code>, and
+          Linux and Chocolatey on Windows — scaffold a <code>build.ts</code>, and
           run your first target. Already have <code>package.json</code> scripts or a
           <code>Makefile</code>? Swap <code>zuke setup</code> for
           <code>zuke import</code> and start from a target per task instead of a

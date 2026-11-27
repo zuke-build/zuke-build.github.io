@@ -198,7 +198,7 @@ const verifySnippet = `./zuke coreFloorCheck`;
   <div class="note">
     <p>
       Zuke's own gate enforces this on itself: every entrypoint that loads
-      <code>zuke.ts</code> runs <code>--frozen</code>, and a
+      <code>build.ts</code> runs <code>--frozen</code>, and a
       <code>lockCheck</code> target fails if a run modified the lock — so a
       stale lock is caught before CI rather than silently healed on whichever
       machine happened to run the gate.

@@ -71,7 +71,7 @@ export const sdks: Sdk[] = [
     id: "typescript",
     label: "TypeScript",
     lang: "ts",
-    buildFile: "zuke.ts",
+    buildFile: "build.ts",
     api: typescriptApi,
     apiBase: "/api",
     apiSource: "with <code>deno doc</code> from the <code>@zuke/*</code> packages",

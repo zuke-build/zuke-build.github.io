@@ -153,7 +153,7 @@ const generatedSnippet = `class Ci extends Build {
     On <strong><code>pull_request_target</code></strong> it is not. That event
     runs with the base repository's secrets and a writable token, so a
     <code>ref</code> aimed at a contributor's head puts <em>their</em>
-    <code>zuke.ts</code> in the workspace — and the last step executes it. No
+    build file in the workspace — and the last step executes it. No
     configuration makes that safe, so the action refuses it outright:
   </p>
   <Code code={refusalSnippet} lang="text" theme="night-owl" />

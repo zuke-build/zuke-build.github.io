@@ -466,7 +466,7 @@ await run(MyBuild, {
     title: "Drive agents from a build registry",
     desc: "Record a build in a shared registry so a registry-backed MCP server can discover and run it — no redeploy, no new instructions. zuke register writes a secret-free BuildDescriptor (its targets, parameters, and launch location); zuke mcp --registry serves every registered pipeline as tools, re-reading the catalog on each call so a build registered later — even by another repo's CI — appears without restarting the server. Execution stays behind the same allow-list, operator-token, and audit-log gates as the single-build server.",
     code: `// Record this build (writes .zuke/builds/<id>.json, or your HTTP registry):
-//   deno run -A zuke.ts register
+//   deno run -A build.ts register
 //
 // Serve every registered pipeline; new registrations appear with no restart:
 //   zuke mcp --registry --allow-run --http 0.0.0.0:7777
@@ -819,7 +819,7 @@ await run(CiBuild);`,
       <h1>Real builds, start to finish.</h1>
       <p class="lead">
         Five runnable projects to clone, then a catalogue of complete
-        <code>zuke.ts</code> files you can drop into your own. They show
+        <code>build.ts</code> files you can drop into your own. They show
         targets, typed dependencies, tool wrappers, and the <code>$</code>
         shell working together.
       </p>
@@ -834,13 +834,13 @@ await run(CiBuild);`,
       <p class="lead">
         Every folder under
         <a href={REPO_EXAMPLES} target="_blank" rel="noopener noreferrer"><code>examples/</code></a>
-        has its own <code>zuke.ts</code>, config and README, runs from its own
+        has its own <code>build.ts</code>, config and README, runs from its own
         directory, and is type-checked against the source on every CI run — so
         what you copy is what works.
       </p>
       <CopyCode code={`git clone https://github.com/zuke-build/zuke
 cd zuke/examples/deno-library
-deno run -A zuke.ts --list`} lang="bash" />
+deno run -A build.ts --list`} lang="bash" />
     </header>
     <ul class="starters__grid">
       {starters.map((s) => (
@@ -915,7 +915,7 @@ deno run -A zuke.ts --list`} lang="bash" />
                 <span class="codecard__dot"></span>
                 <span class="codecard__dot"></span>
                 <span class="codecard__dot"></span>
-                <span class="codecard__name">zuke.ts</span>
+                <span class="codecard__name">build.ts</span>
               </div>
               <CopyCode code={ex.code ?? ""} lang="ts" />
             </div>
