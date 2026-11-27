@@ -1,52 +1,226 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 the Zuke contributors
+# SPDX-License-Identifier: MIT
 #
-# Zuke bootstrap launcher — a `./build.sh`-style entry point for Deno.
+# Zuke launcher for a build that runs on Node.
 #
-#   ./zuke build       # install + type-check + build into dist/
-#   ./zuke dev         # start the Astro dev server
-#   ./zuke --list      # list every target
+#   ./zuke               # run the default target
+#   ./zuke <target>      # run one target and its prerequisites
+#   ./zuke --list        # list every target
 #
-# Ensures Deno is available (installing it on first use if missing), then runs
-# the project's build file (zuke.ts). No global install required.
+# Uses the node on PATH when it is Node 26 or newer, else a pinned,
+# checksum-verified Node it downloads once, then installs the project's
+# dependencies and runs zuke.ts.
 #
 # Honoured environment variables:
-#   DENO_INSTALL   where Deno is installed/looked for (default: ~/.deno)
-#   DENO_VERSION   which Deno to install on bootstrap. Defaults to a pinned,
-#                  known-good version (see DEFAULT_DENO_VERSION) for reproducible
-#                  and more predictable installs; set to "latest" for the newest
-#                  release, or to a specific version ("v2.8.3" or "2.8.3").
+#   ZUKE_NODE_HOME  where Node is kept (default: ~/.zuke/node), one directory
+#                   per release
+#   NODE_VERSION    which Node to download, an exact release (e.g. 26.13.1).
+#                   Defaults to the pinned, verified 26.13.1.
+#   NODE_SHA256     required alongside a NODE_VERSION override: the SHA-256 of
+#                   the release asset for the current platform. This launcher
+#                   never downloads an unverified binary.
 set -euo pipefail
 
-DEFAULT_DENO_VERSION="v2.8.3"
+DEFAULT_NODE_VERSION="26.13.1"
+MIN_NODE_MAJOR=26
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$script_dir"
+# SHA-256 of each `node-v<version>-<platform>.tar.gz` asset, from
+# https://nodejs.org/dist/v26.13.1/SHASUMS256.txt. Generated from @zuke/cli's
+# node_pin.ts: change the pin there.
+node_checksum_for() {
+  case "$1" in
+    darwin-arm64)
+      echo "aec2514ea1ceb2ba52455e9ec65986f6749a06dd759e5db2a72e6889668c9735" ;;
+    darwin-x64)
+      echo "82bb96078a24ca50b9c9a38f2379e6be6d87171fcd400fc14c8934b3bce96e2f" ;;
+    linux-arm64)
+      echo "80a330b35415382878df18d41afbd106ea89bfb3be0087d6608e289a14c5cc7d" ;;
+    linux-x64)
+      echo "518674de2b621728a5e4486f5fb3b7d2900bb3cc4aa97969edaa463db99f9778" ;;
+    *)
+      return 1 ;;
+  esac
+}
 
-deno_install="${DENO_INSTALL:-$HOME/.deno}"
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$dir"
 
-if command -v deno >/dev/null 2>&1; then
-  deno_bin="$(command -v deno)"
-elif [ -x "$deno_install/bin/deno" ]; then
-  deno_bin="$deno_install/bin/deno"
-else
-  echo "zuke: Deno not found — installing it now..." >&2
-  if ! command -v curl >/dev/null 2>&1; then
-    echo "zuke: curl is required to bootstrap Deno; install Deno manually:" >&2
-    echo "      https://docs.deno.com/runtime/getting_started/installation/" >&2
-    exit 1
-  fi
-  export DENO_INSTALL="$deno_install"
-  deno_version="${DENO_VERSION:-$DEFAULT_DENO_VERSION}"
-  if [ "$deno_version" = "latest" ]; then
-    curl -fsSL https://deno.land/install.sh | sh >/dev/null
-  else
-    case "$deno_version" in
-      v*) ;;
-      *) deno_version="v$deno_version" ;;
-    esac
-    curl -fsSL https://deno.land/install.sh | sh -s "$deno_version" >/dev/null
-  fi
-  deno_bin="$deno_install/bin/deno"
+node_version="${NODE_VERSION:-$DEFAULT_NODE_VERSION}"
+node_version="${node_version#v}"
+node_home="${ZUKE_NODE_HOME:-$HOME/.zuke/node}/v$node_version"
+
+# The major version of the node on PATH, empty when there is none or it cannot
+# say (a version-manager shim with no runtime installed, say).
+path_major=""
+if command -v node >/dev/null 2>&1; then
+  path_major="$(node --version 2>/dev/null | sed -n 's/^v\([0-9][0-9]*\)\..*/\1/p')" || path_major=""
 fi
 
-exec "$deno_bin" run -A zuke.ts "$@"
+if [ -n "$path_major" ] && [ "$path_major" -ge "$MIN_NODE_MAJOR" ]; then
+  node_dir="$(dirname "$(command -v node)")"
+elif [ -x "$node_home/bin/node" ]; then
+  node_dir="$node_home/bin"
+else
+  echo "zuke: Node $MIN_NODE_MAJOR or newer not found — installing $node_version now..." >&2
+  for cmd in curl tar; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      echo "zuke: $cmd is required to download Node; install Node $MIN_NODE_MAJOR or newer instead." >&2
+      exit 1
+    fi
+  done
+
+  case "$(uname -s)" in
+    Linux) os_part="linux" ;;
+    Darwin) os_part="darwin" ;;
+    *)
+      echo "zuke: unsupported OS for the checksum-verified Node download: $(uname -s)." >&2
+      exit 1
+      ;;
+  esac
+  case "$(uname -m)" in
+    x86_64 | amd64) arch_part="x64" ;;
+    arm64 | aarch64) arch_part="arm64" ;;
+    *)
+      echo "zuke: unsupported architecture for the checksum-verified Node download: $(uname -m)." >&2
+      exit 1
+      ;;
+  esac
+  platform="${os_part}-${arch_part}"
+
+  if [ "$node_version" = "$DEFAULT_NODE_VERSION" ]; then
+    expected_sha256="$(node_checksum_for "$platform")" || {
+      echo "zuke: no pinned checksum for $platform." >&2
+      exit 1
+    }
+  elif [ -n "${NODE_SHA256:-}" ]; then
+    expected_sha256="$NODE_SHA256"
+  else
+    echo "zuke: NODE_VERSION=$node_version overrides the pinned $DEFAULT_NODE_VERSION," >&2
+    echo "      but no checksum is pinned for it. Set NODE_SHA256 to the expected" >&2
+    echo "      SHA-256 of node-v$node_version-$platform.tar.gz, or unset NODE_VERSION." >&2
+    exit 1
+  fi
+
+  asset="node-v${node_version}-${platform}.tar.gz"
+  download_url="https://nodejs.org/dist/v${node_version}/${asset}"
+  work_dir="$(mktemp -d)"
+  trap 'rm -rf "$work_dir"' EXIT
+  archive="$work_dir/$asset"
+
+  # The download fetches over the network, which is occasionally flaky (e.g. a
+  # transient 5xx from the CDN). Retry a few times with backoff so a blip
+  # doesn't fail the whole run.
+  download_node() {
+    curl -fsSL -o "$archive" "$download_url"
+  }
+  attempt=1
+  max_attempts=4
+  until download_node; do
+    if [ "$attempt" -ge "$max_attempts" ]; then
+      echo "zuke: failed to download Node after $max_attempts attempts." >&2
+      exit 1
+    fi
+    delay=$((attempt * 3))
+    echo "zuke: Node download failed (attempt $attempt/$max_attempts); retrying in ${delay}s..." >&2
+    sleep "$delay"
+    attempt=$((attempt + 1))
+  done
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual_sha256="$(sha256sum "$archive" | awk '{print $1}')"
+  elif command -v shasum >/dev/null 2>&1; then
+    actual_sha256="$(shasum -a 256 "$archive" | awk '{print $1}')"
+  else
+    echo "zuke: neither sha256sum nor shasum is available to verify the download." >&2
+    exit 1
+  fi
+  if [ "$actual_sha256" != "$expected_sha256" ]; then
+    echo "zuke: checksum mismatch for $asset:" >&2
+    echo "      expected $expected_sha256" >&2
+    echo "      got      $actual_sha256" >&2
+    exit 1
+  fi
+
+  # Unpack into a sibling of the final directory, on the same filesystem, then
+  # rename it into place: the rename is atomic, so an interrupted run never
+  # leaves a half-extracted Node that looks installed.
+  node_root="$(dirname "$node_home")"
+  mkdir -p "$node_root"
+  staging="$(mktemp -d "$node_root/.v$node_version.XXXXXX")"
+  trap 'rm -rf "$work_dir" "$staging"' EXIT
+  tar -xzf "$archive" -C "$staging" --strip-components=1
+  # The rename publishes ours. If a concurrent launcher published first, mv
+  # either fails (their rename won the race) or nests ours inside theirs; we
+  # drop ours and use theirs. Nothing already at $node_home is ever deleted: it
+  # may be another run's Node.
+  mv "$staging" "$node_home" 2>/dev/null || true
+  rm -rf "$node_home/$(basename "$staging")"
+  # Here, not only in the trap: the exec below replaces this shell, so the
+  # EXIT trap never runs on success.
+  rm -rf "$staging" "$work_dir"
+  if [ ! -x "$node_home/bin/node" ]; then
+    echo "zuke: $node_home exists but holds no bin/node; remove it and run again." >&2
+    exit 1
+  fi
+  node_dir="$node_home/bin"
+fi
+
+# This node first on PATH, so the npm and npx the build runs are its own.
+export PATH="$node_dir:$PATH"
+
+# Written only after npm succeeds, so a failed install is retried next run.
+installed=node_modules/.zuke-installed
+
+# The npm command this checkout needs, or nothing when its install is current.
+install_needed() {
+  if [ -f package-lock.json ]; then
+    if [ ! -f "$installed" ] || [ package-lock.json -nt "$installed" ]; then
+      echo ci
+    fi
+  elif [ -f package.json ] && [ ! -f "$installed" ]; then
+    echo install
+  fi
+}
+
+if [ -n "$(install_needed)" ]; then
+  # One install at a time per checkout: a second launcher waits for the lock,
+  # then finds the first one's install current. The lock is created with
+  # noclobber, which fails when it exists, and holds its owner's process id. A
+  # lock whose owner is gone is reported, never removed: deciding that for
+  # another run is a guess two waiting runs could both act on.
+  lock=.zuke/install.lock
+  mkdir -p .zuke
+  waited=0
+  until (set -C; echo "$$" > "$lock") 2>/dev/null; do
+    holder="$(cat "$lock" 2>/dev/null || true)"
+    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+      echo "zuke: $lock was left by an install that did not finish (process $holder); remove it and run again." >&2
+      exit 1
+    fi
+    if [ "$waited" -ge 600 ]; then
+      echo "zuke: another launcher has held $lock for 10 minutes; if none is running, remove it and run again." >&2
+      exit 1
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  trap 'rm -f "$lock"' EXIT
+  case "$(install_needed)" in
+    ci)
+      rm -f "$installed"
+      npm ci --ignore-scripts
+      mkdir -p node_modules && : > "$installed"
+      ;;
+    install)
+      echo "zuke: no package-lock.json here yet — running npm install so one can be written." >&2
+      npm install --ignore-scripts
+      mkdir -p node_modules && : > "$installed"
+      ;;
+  esac
+  # Released here, because the exec below skips the EXIT trap.
+  rm -f "$lock"
+  trap - EXIT
+fi
+
+exec node zuke.ts "$@"
