@@ -13,12 +13,14 @@ const toc = [
   { id: "env", label: "Environment variables" },
 ];
 
-const installCliSnippet = `# from JSR, for a Deno user
-deno install -A -g -n zuke jsr:@zuke/cli
+const installCliSnippet = `# from npm (Node 24.12 or newer)
+npm install -g @zuke-build/cli
 # with Homebrew, macOS and Linux
 brew install zuke-build/tap/zuke
 # with Chocolatey, Windows
-choco install zuke`;
+choco install zuke
+# from JSR, for Deno, supported until October 2027
+deno install -A -g -n zuke jsr:@zuke/cli`;
 
 const installSetupSnippet = `zuke setup`;
 
@@ -28,7 +30,7 @@ const setupSnippet = `zuke setup                        # scaffold into the curr
 zuke setup --dir services/api     # scaffold into a subdirectory
 zuke setup --name ApiBuild --yes  # name the Build class, skip prompts
 zuke setup --build-file ci.ts     # name the build file (default build.ts)
-zuke setup --runtime node         # a Node project: package.json, no Deno
+zuke setup --runtime deno         # a Deno project instead (the default is Node)
 zuke setup --launcher-name make   # write ./make when a zuke/ dir is in the way
 zuke setup --mcp                  # also write .mcp.json so agents find the build
 zuke setup --no-bootstrap         # launchers that need their runtime on PATH
@@ -39,7 +41,7 @@ zuke import --from package.json   # force the source
 zuke import --from makefile --yes
 zuke import --from pyproject      # a build.py from a pyproject.toml task table`;
 
-const upgradeSnippet = `zuke upgrade                      # the global CLI, from JSR, to the latest release
+const upgradeSnippet = `zuke upgrade                      # a JSR-installed CLI, to the latest release
 zuke upgrade 2.4.0                # or to an exact one
 zuke upgrade --engine             # a Python project: its launchers and pin, to the latest zuke
 zuke upgrade --engine 2.4.0 --dry-run`;
@@ -140,9 +142,9 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   </p>
   <p>Install the global CLI (project scaffolding) once — pick one:</p>
   <CopyCode code={installCliSnippet} lang="bash" multi />
-  <p>Scaffold <code>build.ts</code> and the <code>./zuke</code> launcher (add <code>--runtime node</code> for a <a href="#node-projects">Node project</a>):</p>
+  <p>Scaffold <code>build.ts</code> and the <code>./zuke</code> launcher (a new project is a <a href="#node-projects">Node project</a>; add <code>--runtime deno</code> for a Deno one):</p>
   <CopyCode code={installSetupSnippet} lang="bash" />
-  <p>Everything after setup runs through the scaffolded launcher (for a <code>build.ts</code> build on Deno, <code>./zuke build</code> is <code>deno run -A build.ts build</code>):</p>
+  <p>Everything after setup runs through the scaffolded launcher (for a <code>build.ts</code> build on Node, <code>./zuke build</code> is <code>node build.ts build</code>; on Deno, <code>deno run -A build.ts build</code>):</p>
   <CopyCode code={installLaunchSnippet} lang="bash" />
 
   <h2 id="two-commands">Two commands named <code>zuke</code></h2>
@@ -153,15 +155,15 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   <ul>
     <li>
       <strong>The global CLI</strong> (<code>@zuke/cli</code>, installed from
-      JSR, Homebrew, or Chocolatey) is the pre-build tool: it scaffolds a project
+      npm, Homebrew, Chocolatey, or JSR) is the pre-build tool: it scaffolds a project
       (<code>setup</code>, <code>import</code>), documents packages
       (<code>doc</code>), and reports its own <code>--version</code>. You run it
       as <code>zuke</code> before a build file exists.
     </li>
     <li>
       <strong>The build launcher</strong> — the <code>./zuke</code> script
-      <code>setup</code> writes, which for a <code>build.ts</code> build on Deno is just
-      <code>deno run -A build.ts</code>, and for a Python build runs the
+      <code>setup</code> writes, which for a <code>build.ts</code> build is just
+      <code>node build.ts</code> (<code>deno run -A build.ts</code> on Deno), and for a Python build runs the
       <code>zuke</code> binary it pins — drives <em>your</em> build: it runs targets and hosts every build-aware
       command (<code>graph</code>, <code>generate-ci</code>,
       <code>completions</code>, <code>runs</code>, <code>resume</code>,
@@ -203,13 +205,13 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
       <tr><td><code>--dir &lt;path&gt;</code></td><td>directory to scaffold into (default <code>.</code>)</td></tr>
       <tr><td><code>--name &lt;Class&gt;</code></td><td>the <code>Build</code> subclass name for the build file (default <code>MyBuild</code>)</td></tr>
       <tr><td><code>--build-file &lt;name&gt;</code></td><td>the build file's name, for a TypeScript project (default <code>build.ts</code>; the wizard asks when this is omitted). It is recorded in <code>zuke.json</code>. A project that already has a <code>zuke.json</code> or a <code>zuke.ts</code> keeps its build file, and naming another is refused. A file of that name that isn't a Zuke build is never taken over</td></tr>
-      <tr><td><code>--runtime &lt;deno|node&gt;</code></td><td>what runs the build file. <code>deno</code> is the default. <code>node</code> scaffolds a <a href="#node-projects">Node project</a> instead: a <code>package.json</code> with <code>"type": "module"</code> and <code>@zuke/core</code> through the npm alias <code>npm:@zuke-build/core@^1</code>, a <code>zuke.json</code> with <code>"runtime": "node"</code>, Node launchers, and no <code>deno.json</code></td></tr>
+      <tr><td><code>--runtime &lt;deno|node&gt;</code></td><td>what runs the build file. A new project defaults to <code>node</code>, and an existing project keeps its runtime. <code>node</code> scaffolds a <a href="#node-projects">Node project</a>: a <code>package.json</code> with <code>"type": "module"</code> and <code>@zuke/core</code> through the npm alias <code>npm:@zuke-build/core@^1</code>, a <code>zuke.json</code> with <code>"runtime": "node"</code>, Node launchers, and no <code>deno.json</code>. In an existing Deno project, <code>--runtime node</code> converts it in place (see <a href="/docs/moving-to-node">Moving to Node</a>). <code>deno</code> asks for a Deno project, supported until October 2027</td></tr>
       <tr><td><code>--launcher-name &lt;name&gt;</code></td><td>base name for the launcher scripts — used when a <code>zuke/</code> directory already occupies the name. Must be a single path segment</td></tr>
       <tr><td><code>--force</code>, <code>-f</code></td><td>overwrite existing files</td></tr>
       <tr><td><code>--yes</code>, <code>-y</code></td><td>accept defaults without prompting</td></tr>
       <tr><td><code>--mcp</code></td><td>also write a <code>.mcp.json</code> registering the build's own <a href="/docs/mcp">MCP server</a>, so an agent client picks the build up from the first commit. An existing file is merged around its other servers, and an existing <code>zuke</code> entry is kept unless <code>--force</code> is set</td></tr>
       <tr><td><code>--allow-run</code></td><td>register the MCP server with execution enabled; implies <code>--mcp</code></td></tr>
-      <tr><td><code>--bootstrap</code> / <code>--no-bootstrap</code></td><td>which launchers to write. The default (and what <code>--yes</code> takes) downloads the build's pinned, checksum-verified runtime when it is missing: Deno for a <code>build.ts</code> build, Node for one scaffolded with <code>--runtime node</code>, the <code>zuke</code> binary for a Python one. So a checkout needs nothing up front. <code>--no-</code> writes launchers that require that runtime on <code>PATH</code> and fail closed without it — for a project that must never download a tool from its build entry point. <code>--bootstrap-deno</code> / <code>--no-bootstrap-deno</code> are the older spellings</td></tr>
+      <tr><td><code>--bootstrap</code> / <code>--no-bootstrap</code></td><td>which launchers to write. The default (and what <code>--yes</code> takes) downloads the build's pinned, checksum-verified runtime when it is missing: Node for a <code>build.ts</code> build, Deno for one on Deno, the <code>zuke</code> binary for a Python one. So a checkout needs nothing up front. <code>--no-</code> writes launchers that require that runtime on <code>PATH</code> and fail closed without it — for a project that must never download a tool from its build entry point. <code>--bootstrap-deno</code> / <code>--no-bootstrap-deno</code> are the older spellings</td></tr>
       <tr><td><code>--sdk python</code></td><td>scaffold a build the Python SDK describes instead: a starter <code>build.py</code>, a <code>zuke.json</code> naming its <code>sdk.command</code> and the <code>@zuke/engine</code> release, and launchers that run the <code>zuke</code> binary. No <code>deno.json</code>, and nothing from Deno's stack. See the <a href="/docs/python">Python quickstart</a></td></tr>
       <tr><td><code>--zuke &lt;version&gt;</code></td><td>with <code>--sdk python</code>, the <code>zuke</code> release the launchers pin (default: the running <code>zuke</code>'s own); <code>zuke.json</code> pins the engine inside it</td></tr>
     </tbody>
@@ -252,7 +254,8 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   </p>
   <p>
     <code>zuke upgrade [&lt;version&gt;]</code> reinstalls a JSR-installed CLI
-    at the latest release, or at <code>&lt;version&gt;</code>. A Homebrew or
+    at the latest release, or at <code>&lt;version&gt;</code>. On an npm install it prints <code>npm install -g @zuke-build/cli@latest</code>
+    and runs nothing. A Homebrew or
     Chocolatey install is told to run <code>brew upgrade zuke</code> or
     <code>choco upgrade zuke</code> instead. With <code>--engine</code> it moves
     a Python project rather than the CLI: it rewrites the <code>./zuke</code>
@@ -268,9 +271,10 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
   <h3 id="node-projects">Node projects</h3>
   <p>
     A <code>zuke.json</code> with <code>"runtime": "node"</code> runs the build
-    file on Node 26, which strips TypeScript types itself, instead of Deno.
-    Deno is still what <code>zuke setup</code> scaffolds unless you pass
-    <code>--runtime node</code>. Setup then writes launchers that bootstrap a
+    file on Node 26, which strips TypeScript types itself. Node is what
+    <code>zuke setup</code> scaffolds for a new project; an existing project keeps
+    its runtime, and <code>--runtime deno</code> asks for Deno (supported until
+    October 2027, and every run of a Deno build says so on stderr). Setup writes launchers that bootstrap a
     pinned, checksum-verified Node when none is on <code>PATH</code>, and
     <code>zuke add</code>, <code>remove</code>, <code>cache</code> and
     <code>relock</code> run npm for it, using the <code>npm</code> on
@@ -626,6 +630,8 @@ ZUKE_STATE_DIR=.zuke/runs ./zuke runs list`;
 
 <style>
   .dtable {
+    display: block;
+    overflow-x: auto;
     width: 100%;
     border-collapse: collapse;
     margin: 18px 0 22px;

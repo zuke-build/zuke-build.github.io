@@ -56,9 +56,9 @@ const examples: Example[] = [
     tag: "Node / Astro",
     title: "Static site build",
     desc: "Drive an npm-based static site through Zuke — this very website is built exactly like this.",
-    code: `import { Build, run, target } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { NpmTasks } from "jsr:@zuke/npm";
+    code: `import { Build, run, target } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { NpmTasks } from "@zuke/npm";
 
 class SiteBuild extends Build {
   clean = target()
@@ -87,10 +87,10 @@ await run(SiteBuild);`,
     tag: "Node / monorepo",
     title: "Drive an npm workspace — no npx, no global installs",
     desc: "Zuke drops into a Node monorepo without a rewrite. The JS-ecosystem wrappers resolve node_modules/.bin npx-style — walking up to the hoisted binary, falling back to PATH — so a workspace package needs no .toolPath(). NpmTasks.run().workspaces() runs one script across every workspace (.ifPresent() skips those that don't define it). And toolchain().npm() provisions a version-pinned CLI straight from the npm registry — cached, no ambient npm ci — so the tool that isn't installed locally is still hermetic. Set ZUKE_TOOL_RESOLUTION=node_modules to flip every wrapper repo-wide.",
-    code: `import { Build, run, target, toolchain } from "jsr:@zuke/core";
-import { NpmTasks } from "jsr:@zuke/npm";
-import { OxlintTasks } from "jsr:@zuke/oxlint";
-import { VitestTasks } from "jsr:@zuke/vitest";
+    code: `import { Build, run, target, toolchain } from "@zuke/core";
+import { NpmTasks } from "@zuke/npm";
+import { OxlintTasks } from "@zuke/oxlint";
+import { VitestTasks } from "@zuke/vitest";
 
 class Monorepo extends Build {
   // A CLI that ships on npm, not as a release binary — provisioned and
@@ -134,8 +134,8 @@ await run(Monorepo);`,
     tag: "Deno library",
     title: "CI gate for a Deno package",
     desc: "Format, lint, type-check, and test with a coverage gate — the kind of pipeline you'd run on every pull request.",
-    code: `import { Build, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+    code: `import { Build, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class CiBuild extends Build {
   format = target()
@@ -169,9 +169,9 @@ await run(CiBuild);`,
     tag: "Service targets",
     title: "Spin up services for end-to-end tests",
     desc: "Declare a long-lived process a build depends on with service() — a dev server, a database, a mock API. Zuke starts it, polls .readyWhen() (tcpReachable, or your own health probe) until it's ready, keeps it alive while dependents run, then stops it in a finally so a failed test never leaks a process. It replaces the start-in-background, sleep-and-hope, remember-to-kill shell dance. $`…`.spawn() starts a process without awaiting it and returns a handle whose .stop() sends SIGTERM.",
-    code: `import { Build, run, service, target, tcpReachable } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { DenoTasks } from "jsr:@zuke/deno";
+    code: `import { Build, run, service, target, tcpReachable } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { DenoTasks } from "@zuke/deno";
 
 class E2E extends Build {
   // A database container — ready once the port accepts connections.
@@ -209,8 +209,8 @@ await run(E2E);`,
     tag: "Incremental caching",
     title: "Skip unchanged work with the build cache",
     desc: "Declare a target's .inputs() and .outputs() to make it incremental — Zuke fingerprints the inputs (SHA-256, directories hashed recursively), skips the target when nothing changed and every output still exists, and reports it `cached`. .cacheKey() folds in non-file values like a parameter or the toolchain version. Fingerprints live in .zuke/cache.json; pass --no-cache to rebuild everything. @zuke/ai adds a separate aiCache for review/fix responses.",
-    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+    code: `import { Build, parameter, run, RuntimeTasks, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class CachedBuild extends Build {
   mode = parameter("Build mode").default("release");
@@ -219,10 +219,10 @@ class CachedBuild extends Build {
   // declared output still exists — the run reports this target as \`cached\`.
   bundle = target()
     .description("Bundle the app — only when sources or config change")
-    .inputs("src", "deno.json")          // re-run when these change…
+    .inputs("src", "package.json")       // re-run when these change…
     .outputs("dist/app.js")              // …or when the output goes missing
     .cacheKey(() => this.mode.value)     // …or when the build mode flips
-    .cacheKey(() => Deno.version.deno)   // …or the toolchain moves
+    .cacheKey(() => RuntimeTasks.facts().version) // …or the runtime moves
     .executes(async () => {
       await DenoTasks.run((s) => s.script("build.ts"));
     });
@@ -242,8 +242,8 @@ await run(CachedBuild);`,
     tag: "Distributed builds",
     title: "Remote cache & CI fan-out",
     desc: "Scale the cache past one machine. A remoteCache() override shares a target's built outputs across machines — a local miss restores them from the store instead of rebuilding, and a successful run uploads them for the next machine (reported cached, just like a local hit). Two backends ship: a mounted directory (FileSystemCacheStore) or any HTTP object store like S3/GCS/R2 (HttpCacheStore) — or set ZUKE_REMOTE_CACHE_* in CI with no code change. cicd({ fanOut: true }) then emits one CI job per target, wired by dependsOn so independent targets run in parallel and share work through the store. Narrow a run to what changed with `zuke ci --affected=origin/main`.",
-    code: `import { Build, HttpCacheStore, cicd, parameter, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+    code: `import { Build, HttpCacheStore, cicd, parameter, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class CI extends Build {
   cacheToken = parameter("Cache auth token").secret().env("CACHE_TOKEN");
@@ -281,7 +281,7 @@ await run(CI);`,
     tag: "Orchestration / CD",
     title: "A durable deploy → wait → promote state machine",
     desc: "A cross-run CD pipeline that survives the process exiting between steps. deployToSit takes a cross-run lock (one deploy of a repo at a time), records what it did in ctx.state, and registers a rollback. awaitTesting suspends the run on an external signal — the process exits 0 and the run parks in the state store. Days later, zuke resume <id> --signal testing-approved continues in a fresh process and promoteToProd reads the approval payload. zuke cancel runs the compensation in reverse order; a state store makes it all durable and inspectable with zuke runs show <id>.",
-    code: `import { Build, externalSignal, parameter, run, target } from "jsr:@zuke/core";
+    code: `import { Build, externalSignal, parameter, run, target } from "@zuke/core";
 
 class Deploy extends Build {
   repo = parameter("service to deploy").required();
@@ -329,10 +329,10 @@ await run(Deploy);`,
     tag: "Canary release",
     title: "Roll out to Kubernetes 10% at a time — and back in one step",
     desc: "canary() from @zuke/canary turns one settings lambda into a rollout: rollout.stage puts the candidate beside stable at 0%, each step widens its share and bakes while HTTP probes, a Prometheus query and your own metric reader — a typed PrometheusTasks query from @zuke/prometheus — check it, and rollout.promote sends it everything. kubectlCanary drives a stable and a canary Deployment, exposing by replica count — the canary grows and is ready before stable shrinks, so no step drops capacity. .durable() parks the run at each bake instead of holding a CI job open; zuke resume --check from a cron picks it back up. A failed check, a failed step, an approval that times out, or zuke cancel all run the one rollout.abort.",
-    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { canary, httpProbe, metricThreshold, prometheus } from "jsr:@zuke/canary";
-import { kubectlCanary } from "jsr:@zuke/kubectl";
-import { PrometheusTasks } from "jsr:@zuke/prometheus";
+    code: `import { Build, parameter, run, target } from "@zuke/core";
+import { canary, httpProbe, metricThreshold, prometheus } from "@zuke/canary";
+import { kubectlCanary } from "@zuke/kubectl";
+import { PrometheusTasks } from "@zuke/prometheus";
 
 const PROM = "https://prometheus.example.com";
 
@@ -390,7 +390,7 @@ await run(Deploy);`,
     tag: "Fan-out",
     title: "Deploy a batch of repos with per-item isolation",
     desc: "Run the same ordered pipeline over a runtime list with .forEach() — items concurrent (up to concurrency), stages sequential per item. One repo failing doesn't stop the others with continueOnItemFailure(); the batch fails at the end if any item did. Every item is first-class: sub-targets named deployBatch[api].deploy get their own summary row and run-record entry, so zuke runs show and MCP report a verdict per repo. The list is an .array() parameter, validated element-by-element before anything runs.",
-    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
+    code: `import { Build, parameter, run, target } from "@zuke/core";
 
 class CD extends Build {
   // A validated list — each element checked before any target runs.
@@ -414,8 +414,8 @@ await run(CD);`,
     tag: "Scheduled CI",
     title: "A timezone-aware scheduled pipeline",
     desc: "Declare the schedule in code, in local time. GitHub Actions only understands UTC cron, so Zuke compiles { cron, tz } into the right UTC cron(s) — and for a daylight-saving zone, generates a wall-clock guard step so the job fires at the intended local time year-round, across the DST switch. No hand-maintained UTC math, no external Cloud Scheduler. zuke generate-ci --check keeps the committed workflow in sync.",
-    code: `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+    code: `import { Build, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class Nightly extends Build {
   test = target()
@@ -442,8 +442,8 @@ await run(Nightly);`,
     tag: "Observability",
     title: "Export runs to OpenTelemetry",
     desc: "One plugin turns every run into OpenTelemetry traces and metrics over OTLP/HTTP, into your existing Grafana/Tempo stack — @zuke/otel is dependency-free and hand-rolls the OTLP JSON so core stays OTel-free. You get a run span with a child span per target, plus counters for runs started, suspended, and settled (succeeded/failed/cancelled). A run that suspends and resumes days later in another process still lands as one trace — the trace id derives from the run id — with the wait visible as the gap. Requires a state store; otel() with no endpoint is inert, so it's safe to leave in everywhere.",
-    code: `import { run } from "jsr:@zuke/core";
-import { otel } from "jsr:@zuke/otel";
+    code: `import { run } from "@zuke/core";
+import { otel } from "@zuke/otel";
 import { MyBuild } from "./build.ts";
 
 await run(MyBuild, {
@@ -472,7 +472,7 @@ await run(MyBuild, {
 //   zuke mcp --registry --allow-run --http 0.0.0.0:7777
 //
 // Point builds at a shared HTTP registry so the catalog spans machines:
-import { Build, HttpBuildRegistry, parameter, run, target } from "jsr:@zuke/core";
+import { Build, HttpBuildRegistry, parameter, run, target } from "@zuke/core";
 
 class Api extends Build {
   registryUrl = parameter("registry URL").required();
@@ -495,10 +495,10 @@ await run(Api);`,
     tag: "Coverage / Codecov",
     title: "Upload coverage to Codecov",
     desc: "Run tests with coverage, turn the profile into an lcov report, and ship it to Codecov with @zuke/codecov. CodecovTasks wraps codecovcli upload-process — the token is read from CODECOV_TOKEN, so it never lands in argv.",
-    code: `import { Build, run, target } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { DenoTasks } from "jsr:@zuke/deno";
-import { CodecovTasks } from "jsr:@zuke/codecov";
+    code: `import { Build, run, target } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { DenoTasks } from "@zuke/deno";
+import { CodecovTasks } from "@zuke/codecov";
 
 class CoverageBuild extends Build {
   test = target()
@@ -535,9 +535,9 @@ await run(CoverageBuild);`,
     tag: "Docker / release",
     title: "Build & publish a container",
     desc: "Stamp an image with the current git SHA, build it, and push to a registry — mixing tool wrappers with the $ shell.",
-    code: `import { Build, run, target } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { DockerTasks } from "jsr:@zuke/docker";
+    code: `import { Build, run, target } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { DockerTasks } from "@zuke/docker";
 
 class ReleaseBuild extends Build {
   image = target()
@@ -565,9 +565,9 @@ await run(ReleaseBuild);`,
     tag: "Hermetic toolchain",
     title: "Provision a pinned toolchain",
     desc: "Declare the CLIs a build drives with toolchain() and Zuke fetches them on first use — concurrently, pinned by SHA-256, verified before anything runs, and cached under .zuke/tools. A fresh clone or a bare CI runner needs no 'install helm/kubectl first' step, and every machine runs the exact same binary. ToolTasks.install() does the same for a single tool.",
-    code: `import { Build, run, target, toolchain } from "jsr:@zuke/core";
-import { HelmTasks } from "jsr:@zuke/helm";
-import { KubectlTasks } from "jsr:@zuke/kubectl";
+    code: `import { Build, run, target, toolchain } from "@zuke/core";
+import { HelmTasks } from "@zuke/helm";
+import { KubectlTasks } from "@zuke/kubectl";
 
 class Deploy extends Build {
   // The CLIs this build drives. install() fetches them concurrently — pinned by
@@ -604,7 +604,7 @@ await run(Deploy);`,
     tag: "Secrets",
     title: "Source secrets from a manager — redacted everywhere",
     desc: "Mark a parameter .secret() and Zuke redacts its resolved value from every log, summary, and error (and emits ::add-mask:: on GitHub Actions). Add .from(execSecret(...)) or .from(fileSecret(...)) to pull the value from a secret manager — 1Password, Vault, gcloud, or a mounted file — but only when a flag or env var didn't already supply it. The same build stays portable: an env var in CI, your vault locally, no code change.",
-    code: `import { Build, execSecret, fileSecret, parameter, run, target } from "jsr:@zuke/core";
+    code: `import { Build, execSecret, fileSecret, parameter, run, target } from "@zuke/core";
 
 class Release extends Build {
   // From 1Password locally; from the REGISTRY_TOKEN env var in CI (env wins).
@@ -635,8 +635,8 @@ await run(Release);`,
     tag: "Notifications",
     title: "Announce status to Slack, Teams & Discord",
     desc: "Post build status to a chat channel with AnnounceTasks — a typed message with a level, detail fields, and an action link. The webhook URL rides through a masked secret parameter.",
-    code: `import { AnnounceTasks, Build, parameter, run, target } from "jsr:@zuke/core";
-import { DockerTasks } from "jsr:@zuke/docker";
+    code: `import { AnnounceTasks, Build, parameter, run, target } from "@zuke/core";
+import { DockerTasks } from "@zuke/docker";
 
 class DeployBuild extends Build {
   // the webhook embeds a secret — source it, never hard-code it
@@ -671,9 +671,9 @@ await run(DeployBuild);`,
     tag: "AI / review",
     title: "AI code-review gate",
     desc: "Gate a target on an AI security review with @zuke/ai. The reviewer reads the diff (plus the whole changed files and your conventions doc), asks the model for a structured risk score, refutes its own findings in an adversarial .verify() pass, breaks the build when the score crosses your threshold, and upserts the verdict as a PR comment. With .discussion() it also reads the thread: quote a finding's ID to contest it and the reviewer upholds or dismisses it on the merits, remembering the dismissal on later runs. aiReviewWorkflow() generates the matching CI workflow from the reviewer.",
-    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
-import { aiReviewWorkflow, securityReviewer } from "jsr:@zuke/ai";
+    code: `import { Build, parameter, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
+import { aiReviewWorkflow, securityReviewer } from "@zuke/ai";
 
 class ReviewBuild extends Build {
   key = parameter("OpenAI API key").secret().env("OPENAI_API_KEY");
@@ -715,10 +715,10 @@ await run(ReviewBuild);`,
     tag: "AI / self-healing",
     title: "Self-healing build",
     desc: "Attach an aiFixer to a target with .recoverWith(). When it fails, @zuke/ai diagnoses the failure from the command, its stderr, and the diff — then posts a committable suggestion, or applies the fix, commits, and re-runs the real command to verify it goes green. agentFixer can instead hand the failure to a coding agent that edits files itself.",
-    code: `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
-import { agentFixer, aiFixer } from "jsr:@zuke/ai";
-import { ClaudeTasks } from "jsr:@zuke/claude";
+    code: `import { Build, parameter, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
+import { agentFixer, aiFixer } from "@zuke/ai";
+import { ClaudeTasks } from "@zuke/claude";
 
 class CiBuild extends Build {
   key = parameter("OpenAI API key").secret().env("OPENAI_API_KEY");
@@ -768,8 +768,8 @@ await run(CiBuild);`,
     tag: "CI/CD",
     title: "Generate your CI pipeline",
     desc: "Declare the pipeline in the build with cicd(). Zuke writes the provider YAML and verifies it stays in sync — no hand-edited workflow files.",
-    code: `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+    code: `import { Build, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class CiBuild extends Build {
   // → generates .github/workflows on \`zuke generate-ci\`

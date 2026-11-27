@@ -30,10 +30,10 @@ const incrementalSnippet = `compile = target()
 const cacheKeySnippet = `compile = target()
   .inputs("src")
   .cacheKey(() => this.configuration.value)   // rebuild when the config flips
-  .cacheKey(() => Deno.version.deno)          // …or the toolchain moves
+  .cacheKey(() => RuntimeTasks.facts().version) // …or the runtime moves
   .executes(/* … */);`;
 
-const aiReviewCacheSnippet = `import { aiCache, securityReviewer } from "jsr:@zuke/ai";
+const aiReviewCacheSnippet = `import { aiCache, securityReviewer } from "@zuke/ai";
 
 review = target()
   .validateBefore(
@@ -53,7 +53,7 @@ const aiFixerCacheSnippet = `test = target()
     ),
   );`;
 
-const remoteOverrideSnippet = `import { Build, HttpCacheStore, parameter, target } from "jsr:@zuke/core";
+const remoteOverrideSnippet = `import { Build, HttpCacheStore, parameter, target } from "@zuke/core";
 
 class CI extends Build {
   cacheToken = parameter("Cache auth token").secret().env("CACHE_TOKEN");
@@ -82,7 +82,7 @@ const affectedBranchSnippet = `zuke ci --affected=origin/main`;
 
 const affectedMergeBaseSnippet = `zuke ci --affected=main...`;
 
-const customStoreSnippet = `import { type CacheEntry, type CacheStore } from "jsr:@zuke/ai";
+const customStoreSnippet = `import { type CacheEntry, type CacheStore } from "@zuke/ai";
 
 const memory = new Map<string, CacheEntry>();
 const inMemory: CacheStore = {

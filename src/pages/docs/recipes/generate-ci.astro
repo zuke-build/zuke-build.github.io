@@ -10,8 +10,8 @@ const toc = [
   { id: "providers", label: "One declaration, four providers" },
 ];
 
-const buildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const buildSnippet = `import { Build, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class MyBuild extends Build {
   // one line → .github/workflows/ci.yml, one job per target
@@ -56,8 +56,8 @@ jobs:
       - uses: zuke-build/zuke@7a62523b… # v1.0.1
       - run: ./zuke test`;
 
-const providersSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const providersSnippet = `import { Build, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class Pipeline extends Build {
   ci = cicd({ provider: "github", fanOut: true }); // .github/workflows/ci.yml

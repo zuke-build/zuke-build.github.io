@@ -21,8 +21,8 @@ resourceAttribute(name, value): this
 resourceAttributes(map): this
 timeout(duration): this        // "5s"; default 10s`;
 
-const explicitSnippet = `import { run } from "jsr:@zuke/core";
-import { otel } from "jsr:@zuke/otel";
+const explicitSnippet = `import { run } from "@zuke/core";
+import { otel } from "@zuke/otel";
 await run(MyBuild, {
   plugins: [
     otel((s) => s.endpoint("http://localhost:4318").serviceName("my-build").header("authorization", "Bearer …")),

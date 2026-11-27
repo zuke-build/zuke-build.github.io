@@ -11,8 +11,8 @@ const toc = [
   { id: "refresh", label: "Refreshing the lock" },
 ];
 
-const buildSnippet = `import { Build, cicd, run, target } from "jsr:@zuke/core";
-import { DenoTasks } from "jsr:@zuke/deno";
+const buildSnippet = `import { Build, cicd, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";
 
 class MyBuild extends Build {
   // The ordinary gate: hermetic, on every push and pull request.

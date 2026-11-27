@@ -10,9 +10,9 @@ const toc = [
   { id: "notes", label: "Notes and limits" },
 ];
 
-const serviceSnippet = `import { Build, run, service, target, tcpReachable } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { DenoTasks } from "jsr:@zuke/deno";
+const serviceSnippet = `import { Build, run, service, target, tcpReachable } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { DenoTasks } from "@zuke/deno";
 
 class E2E extends Build {
   api = service()
@@ -29,9 +29,9 @@ await run(E2E);`;
 
 const spawnSnippet = `.start(() => $\`docker compose up\`.spawn())`;
 
-const handleSnippet = `.start(() => {
-  const server = Deno.serve({ port: 8080 }, handler);
-  return { stop: () => server.shutdown() };
+const handleSnippet = `.start(async () => {
+  const server = await NetTasks.serve(handler, (s) => s.port(8080));
+  return { stop: () => server.close() };
 })`;
 
 const stopSnippet = `.start(() => openPool())

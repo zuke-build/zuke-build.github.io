@@ -18,8 +18,8 @@ const toc = [
   { id: "rollback", label: "Rolling back" },
 ];
 
-const overviewSnippet = `import { Build, run, target } from "jsr:@zuke/core";
-import { canary, httpProbe, prometheus } from "jsr:@zuke/canary";
+const overviewSnippet = `import { Build, run, target } from "@zuke/core";
+import { canary, httpProbe, prometheus } from "@zuke/canary";
 
 class Deploy extends Build {
   rollout = canary((c) =>
@@ -40,7 +40,7 @@ class Deploy extends Build {
 
 await run(Deploy);`;
 
-const cloudRunSnippet = `import { cloudRunCanary } from "jsr:@zuke/gcloud";
+const cloudRunSnippet = `import { cloudRunCanary } from "@zuke/gcloud";
 
 c.platform(
   cloudRunCanary((r) =>
@@ -49,7 +49,7 @@ c.platform(
   ),
 )`;
 
-const kubectlSnippet = `import { kubectlCanary } from "jsr:@zuke/kubectl";
+const kubectlSnippet = `import { kubectlCanary } from "@zuke/kubectl";
 
 c.platform(
   kubectlCanary((k) =>
@@ -59,7 +59,7 @@ c.platform(
   ),
 )`;
 
-const helmSnippet = `import { helmCanary } from "jsr:@zuke/helm";
+const helmSnippet = `import { helmCanary } from "@zuke/helm";
 
 c.platform(
   helmCanary((h) =>
@@ -69,7 +69,7 @@ c.platform(
   ),
 )`;
 
-const composeSnippet = `import { dockerComposeCanary } from "jsr:@zuke/docker-compose";
+const composeSnippet = `import { dockerComposeCanary } from "@zuke/docker-compose";
 
 c.platform(
   dockerComposeCanary((d) =>
@@ -81,9 +81,9 @@ c.platform(
   ),
 )`;
 
-const customSnippet = `import { Build, run, target } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { canary, type CanaryPlatform, httpProbe } from "jsr:@zuke/canary";
+const customSnippet = `import { Build, run, target } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { canary, type CanaryPlatform, httpProbe } from "@zuke/canary";
 
 // Two Docker Compose services behind a weighted proxy, scripted by hand.
 const compose: CanaryPlatform = {
@@ -130,8 +130,8 @@ const durableSnippet = `rollout = canary((c) =>
 const resumeSnippet = `# from a cron: reopen every parked gate whose time is up
 zuke resume --check`;
 
-const thresholdSnippet = `import { metricThreshold } from "jsr:@zuke/canary";
-import { PrometheusTasks } from "jsr:@zuke/prometheus";
+const thresholdSnippet = `import { metricThreshold } from "@zuke/canary";
+import { PrometheusTasks } from "@zuke/prometheus";
 
 metricThreshold((m) =>
   m.name("p99 seconds").max(0.5).read(async () =>

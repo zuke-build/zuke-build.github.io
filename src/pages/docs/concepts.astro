@@ -67,7 +67,7 @@ flaky = target()
   .retry(2, 1_000)   // …retried twice, 1s apart, on failure
   .executes(async () => { await $\`curl -fsSL https://example.com/health\`; });`;
 
-const shellSnippet = `import { $ } from "jsr:@zuke/core/shell";
+const shellSnippet = `import { $ } from "@zuke/core/shell";
 
 await $\`deno test -A\`;                       // throws on non-zero exit
 const sha = await $\`git rev-parse HEAD\`.text(); // trimmed stdout
@@ -77,8 +77,8 @@ const code = await $\`flaky-cmd\`.noThrow().code(); // exit code, never throws
 const branch = "feature/$(rm -rf /)";
 await $\`git checkout \${branch}\`;             // treated as a single literal arg`;
 
-const toolsSnippet = `import { NpmTasks } from "jsr:@zuke/npm";
-import { DockerTasks } from "jsr:@zuke/docker";
+const toolsSnippet = `import { NpmTasks } from "@zuke/npm";
+import { DockerTasks } from "@zuke/docker";
 
 await NpmTasks.ci();                              // npm ci
 await NpmTasks.run((s) => s.script("build"));     // npm run build
@@ -95,7 +95,7 @@ const paramSnippet = `class MyBuild extends Build {
     });
 }`;
 
-const cicdSnippet = `import { Build, cicd, target } from "jsr:@zuke/core";
+const cicdSnippet = `import { Build, cicd, target } from "@zuke/core";
 
 class MyBuild extends Build {
   // declare a pipeline as a build field
@@ -128,7 +128,7 @@ const fanOutSnippet = `class CI extends Build {
   });
 }`;
 
-const announceSnippet = `import { AnnounceTasks, Build, parameter, target } from "jsr:@zuke/core";
+const announceSnippet = `import { AnnounceTasks, Build, parameter, target } from "@zuke/core";
 
 class MyBuild extends Build {
   // the webhook embeds a secret — never hard-code it
@@ -159,7 +159,7 @@ await AnnounceTasks.slack((s) =>
 await AnnounceTasks.discord((s) => s.bot().token(t).channel(id).text("…"));
 await AnnounceTasks.teams((s) => s.bot().token(t).team(id).channel(c).text("…"));`;
 
-const extendSnippet = `import { type Configure, runSettings, ToolSettings } from "jsr:@zuke/core/tooling";
+const extendSnippet = `import { type Configure, runSettings, ToolSettings } from "@zuke/core/tooling";
 
 class MyToolSettings extends ToolSettings {
   #args: string[] = [];
@@ -176,7 +176,7 @@ export const MyToolTasks = {
 
 // → await MyToolTasks.build((s) => s.fast().cwd("app"));`;
 
-const pluginSnippet = `import { type Plugin, run } from "jsr:@zuke/core";
+const pluginSnippet = `import { type Plugin, run } from "@zuke/core";
 
 const timing: Plugin = {
   name: "timing",

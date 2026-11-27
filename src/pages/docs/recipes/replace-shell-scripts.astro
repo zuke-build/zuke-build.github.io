@@ -28,7 +28,7 @@ git tag -a "v$VERSION" -m "Release $VERSION"
 git push origin --follow-tags`;
 
 const tsSnippet = `#!/usr/bin/env -S deno run -A
-import { $ } from "jsr:@zuke/core/shell";
+import { $ } from "@zuke/core/shell";
 
 const [version, flag] = Deno.args;
 if (version === undefined) {
@@ -51,10 +51,10 @@ if (flag === "--dry-run") {
 const runSnippet = `deno run -A scripts/release.ts 1.1.0 --dry-run
 deno run -A scripts/release.ts 1.1.0`;
 
-const targetsSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
-import { $ } from "jsr:@zuke/core/shell";
-import { DenoTasks } from "jsr:@zuke/deno";
-import { GitTasks } from "jsr:@zuke/git";
+const targetsSnippet = `import { Build, parameter, run, target } from "@zuke/core";
+import { $ } from "@zuke/core/shell";
+import { DenoTasks } from "@zuke/deno";
+import { GitTasks } from "@zuke/git";
 
 class Release extends Build {
   version = parameter("The version to release, e.g. 1.1.0").required();

@@ -16,7 +16,7 @@ const toc = [
   { id: "reading", label: "Reading a value" },
 ];
 
-const introSnippet = `import { Build, parameter, run, target } from "jsr:@zuke/core";
+const introSnippet = `import { Build, parameter, run, target } from "@zuke/core";
 
 class Deploy extends Build {
   environment = parameter("Target environment")
@@ -86,7 +86,7 @@ workers = parameter("Upload workers").number().default(4); // number
 // A boolean is implicitly defaulted to false, so it is always non-optional.
 dryRun = parameter("Dry run").boolean();                   // boolean`;
 
-const secretSnippet = `import { execSecret } from "jsr:@zuke/core";
+const secretSnippet = `import { execSecret } from "@zuke/core";
 
 // .secret() masks the resolved value everywhere Zuke prints.
 token = parameter("Deploy token").secret().required();

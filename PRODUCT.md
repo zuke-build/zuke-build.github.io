@@ -22,14 +22,14 @@ CI/CD as code, generated and verified. You declare your pipeline once in real ty
 
 ## Conversion & proof
 
-- Primary CTA: install the CLI and run a build (`deno install … @zuke/cli` → `zuke setup` → run a target). The whole page points here.
+- Primary CTA: install the CLI and run a build (`npm install -g @zuke-build/cli` → `zuke setup` → run a target). The whole page points here.
 - Secondary CTA: browse examples — real `zuke.ts` builds, including this site's own build graph rendered to HTML — for visitors who want proof before they install.
 - The line a visitor remembers after 10 seconds: your build and your CI are the same typed code, and Zuke keeps them honest.
 - Belief ladder (what a visitor must accept, in order, before installing):
   1. String-keyed task runners and hand-written CI YAML are fragile — a rename breaks them and nothing catches it.
   2. A build defined as ordinary typed code is refactor-safe, testable and reusable: references are real values the type checker sees, in TypeScript or Python.
   3. Zuke generates the CI/CD YAML from that same typed build and verifies it's up to date, so the pipeline can't silently drift.
-  4. It's low-risk to try: zero runtime dependencies, published on JSR, and the launcher installs Deno for you on first run.
+  4. It's low-risk to try: zero runtime dependencies, published on npm, and the launcher installs Node for you on first run.
 - Proof on hand: this site dogfoods Zuke (it builds itself via `zuke.ts`); a rendered build graph and worked examples stand in for testimonials. No customer logos or case studies supplied yet — add them to `.impeccable/assets/proof/` when available.
 
 ## Brand Personality
@@ -46,7 +46,7 @@ Precise, confident, technical. Zuke speaks to developers as peers who value corr
 
 - **Show the mechanism.** Every claim earns its place with real code, a live output mockup, or a rendered graph. Prefer a runnable example to an adjective.
 - **Practice what you preach.** The site is built by Zuke itself; that dogfooding is proof, and the page should keep surfacing it.
-- **Types are the story, not the runtime.** Refactor-safety, generated-and-verified CI, and typed tool wrappers are the throughline — reinforce it, don't bury it under feature breadth. Deno is how the engine ships, not the pitch; the language of the build is the visitor's own.
+- **Types are the story, not the runtime.** Refactor-safety, generated-and-verified CI, and typed tool wrappers are the throughline — reinforce it, don't bury it under feature breadth. The runtime (Node, or Deno until October 2027) is how the engine ships, not the pitch; the language of the build is the visitor's own.
 - **Confident, never hyped.** Substance over superlatives. The AI capabilities are gated, concrete primitives, not the brand's whole voice.
 - **Distinct on purpose.** Actively avoid the AI-slop defaults; the neon dev-tool identity is a deliberate stance to protect, not a template to fill.
 

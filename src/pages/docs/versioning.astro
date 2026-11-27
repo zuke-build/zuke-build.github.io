@@ -20,8 +20,8 @@ const floorSnippet = `{
 }`;
 
 const pinSnippet = `// Take patches and non-breaking minors automatically:
-import { Build, run, target } from "jsr:@zuke/core@^1";
-import { DenoTasks } from "jsr:@zuke/deno@^1";`;
+import { Build, run, target } from "@zuke/core";
+import { DenoTasks } from "@zuke/deno";`;
 
 const diagnoseSnippet = `# What did the lockfile actually resolve for core?
 deno info jsr:@zuke/gh
@@ -53,8 +53,9 @@ const verifySnippet = `./zuke coreFloorCheck`;
     promise: a <code>1.x</code> release never breaks a public symbol, so a minor
     or patch upgrade is safe to take without reading the diff, and a breaking
     change bumps the <strong>major</strong> version. Depend on
-    <code>jsr:@zuke/core@^1</code> (and <code>jsr:@zuke/deno@^1</code>, …) and
-    let minors resolve.
+    <code>npm:@zuke-build/core@^1</code>, aliased <code>@zuke/core</code> (and
+    the other packages the same way), or <code>jsr:@zuke/core@^1</code> on Deno,
+    and let minors resolve.
   </p>
   <p>
     release-please's <code>bump-minor-pre-major</code> is <strong>off</strong>,
