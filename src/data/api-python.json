@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "zuke@1.4.0",
+  "generated": "zuke@1.5.0",
   "packages": [
     {
       "name": "zuke",
@@ -1292,7 +1292,7 @@
     {
       "name": "zuke.tools.ai",
       "dir": "ai",
-      "summary": "`@zuke/ai` 2.13.1: `@zuke/ai` — AI-powered code review for Zuke builds.",
+      "summary": "`@zuke/ai` 2.13.2: `@zuke/ai` — AI-powered code review for Zuke builds.",
       "symbols": [
         {
           "name": "AiTasks",
@@ -1647,7 +1647,7 @@
     {
       "name": "zuke.tools.apple",
       "dir": "apple",
-      "summary": "`@zuke/apple` 1.1.0: `@zuke/apple` — typed task wrappers for Apple's code-signing tools in Zuke builds: `codesign`, `xcrun notarytool`, `security` and `ditto`.",
+      "summary": "`@zuke/apple` 1.1.1: `@zuke/apple` — typed task wrappers for Apple's code-signing tools in Zuke builds: `codesign`, `xcrun notarytool`, `security` and `ditto`.",
       "symbols": [
         {
           "name": "AltoolSettings",
@@ -8634,7 +8634,7 @@
     {
       "name": "zuke.tools.chocolatey",
       "dir": "chocolatey",
-      "summary": "`@zuke/chocolatey` 1.1.0: `@zuke/chocolatey` — ship a prebuilt Windows binary through [Chocolatey](https://chocolatey.org) from a Zuke build: `ChocoTasks` wraps the `choco` CLI, and `ChocolateyTasks` renders a package for a zip hosted on a release, verifies it installs, publishes it, and declares the CI job that verifies it on Windows.",
+      "summary": "`@zuke/chocolatey` 1.1.1: `@zuke/chocolatey` — ship a prebuilt Windows binary through [Chocolatey](https://chocolatey.org) from a Zuke build: `ChocoTasks` wraps the `choco` CLI, and `ChocolateyTasks` renders a package for a zip hosted on a release, verifies it installs, publishes it, and declares the CI job that verifies it on Windows.",
       "symbols": [
         {
           "name": "ChocoApikeySettings",
@@ -9764,7 +9764,7 @@
     {
       "name": "zuke.tools.console",
       "dir": "console",
-      "summary": "`@zuke/console` 1.5.0: `@zuke/console` — task-shaped console output for Zuke builds, so a build never reaches for `console.log`.",
+      "summary": "`@zuke/console` 1.5.1: `@zuke/console` — task-shaped console output for Zuke builds, so a build never reaches for `console.log`.",
       "symbols": [
         {
           "name": "ConsoleTasks",
@@ -16668,7 +16668,7 @@
     {
       "name": "zuke.tools.docker_compose",
       "dir": "docker_compose",
-      "summary": "`@zuke/docker-compose` 1.3.1: `@zuke/docker-compose` — typed Docker Compose task wrappers for Zuke builds.",
+      "summary": "`@zuke/docker-compose` 1.3.2: `@zuke/docker-compose` — typed Docker Compose task wrappers for Zuke builds.",
       "symbols": [
         {
           "name": "DockerComposeBuildSettings",
@@ -18250,7 +18250,7 @@
     {
       "name": "zuke.tools.dprint",
       "dir": "dprint",
-      "summary": "`@zuke/dprint` 1.1.0: `@zuke/dprint` — typed `dprint` task wrappers for Zuke builds.",
+      "summary": "`@zuke/dprint` 1.2.0: `@zuke/dprint` — typed `dprint` task wrappers for Zuke builds.",
       "symbols": [
         {
           "name": "DprintCheckSettings",
@@ -18264,7 +18264,16 @@
           "kind": "class",
           "doc": "Settings for `dprint fmt` (format files in place).",
           "signature": "class DprintFmtSettings(DprintSettings)",
-          "deprecated": false
+          "deprecated": false,
+          "members": [
+            {
+              "name": "stdin",
+              "kind": "method",
+              "optional": false,
+              "signature": "stdin(name: str, text: str) -> Self",
+              "doc": "Format `text` instead of files, as the file `name` would be formatted\n(`--stdin`): `name` is a file name, a path, or just an extension such as\n`ts`, and picks the plugin and the config's rules. The result is the\ncommand's stdout, and nothing is written."
+            }
+          ]
         },
         {
           "name": "DprintSettings",
@@ -21543,7 +21552,7 @@
     {
       "name": "zuke.tools.gh",
       "dir": "gh",
-      "summary": "`@zuke/gh` 1.15.0: `@zuke/gh` — typed GitHub tooling for Zuke builds: the `gh` (GitHub CLI) task wrapper plus {@link githubWorkflow}, a wait trigger that dispatches and awaits an external GitHub Actions workflow.",
+      "summary": "`@zuke/gh` 1.15.1: `@zuke/gh` — typed GitHub tooling for Zuke builds: the `gh` (GitHub CLI) task wrapper plus {@link githubWorkflow}, a wait trigger that dispatches and awaits an external GitHub Actions workflow.",
       "symbols": [
         {
           "name": "GhApiSettings",
@@ -25285,7 +25294,7 @@
     {
       "name": "zuke.tools.git",
       "dir": "git",
-      "summary": "`@zuke/git` 1.6.0: `@zuke/git` — typed `git` task wrappers for Zuke builds.",
+      "summary": "`@zuke/git` 1.6.1: `@zuke/git` — typed `git` task wrappers for Zuke builds.",
       "symbols": [
         {
           "name": "GitAddSettings",
@@ -29240,7 +29249,7 @@
     {
       "name": "zuke.tools.google",
       "dir": "google",
-      "summary": "`@zuke/google` 1.0.0: `@zuke/google` — Google Play publishing for Zuke builds, through the Google Play Developer API.",
+      "summary": "`@zuke/google` 1.0.1: `@zuke/google` — Google Play publishing for Zuke builds, through the Google Play Developer API.",
       "symbols": [
         {
           "name": "GooglePlaySettings",
@@ -36640,7 +36649,7 @@
     {
       "name": "zuke.tools.prometheus",
       "dir": "prometheus",
-      "summary": "`@zuke/prometheus` 1.1.1: A typed client for the Prometheus HTTP API, for Zuke builds.",
+      "summary": "`@zuke/prometheus` 1.1.2: A typed client for the Prometheus HTTP API, for Zuke builds.",
       "symbols": [
         {
           "name": "PrometheusAwsSettings",
@@ -38033,7 +38042,7 @@
     {
       "name": "zuke.tools.signpath",
       "dir": "signpath",
-      "summary": "`@zuke/signpath` 1.0.0: `@zuke/signpath` — Authenticode signing through [SignPath](https://about.signpath.io) from Zuke builds, and `signtool verify` to check the result.",
+      "summary": "`@zuke/signpath` 1.0.1: `@zuke/signpath` — Authenticode signing through [SignPath](https://about.signpath.io) from Zuke builds, and `signtool verify` to check the result.",
       "symbols": [
         {
           "name": "SignPathConnectionSettings",
