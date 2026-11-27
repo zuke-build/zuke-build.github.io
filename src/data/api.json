@@ -4689,6 +4689,13 @@
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
             },
             {
+              "name": "putStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "putStream(key: string, artifact: ReadableStream<Uint8Array<ArrayBuffer>>): Promise<void>",
+              "doc": "Store the archive `artifact` streams under `key`. A stream that fits one\npart is a single `put`; a larger one goes to the blob in 8 MiB blocks,\ncommitted by one block list, so memory stays at a few blocks. An upload\nthat fails part way leaves uncommitted blocks, which the blob service\ndiscards, and an entry never finalized, so no half-written archive is\never served."
+            },
+            {
               "name": "maxInflatedBytes",
               "kind": "property",
               "optional": true,
@@ -4999,6 +5006,13 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "putStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "putStream(key: string, artifact: ReadableStream<Uint8Array<ArrayBuffer>>): Promise<void>",
+              "doc": "Store the archive `artifact` streams under `key`. For an Azure Blob SAS\nURL a stream larger than one part is uploaded in 8 MiB blocks, so memory\nstays at a few blocks; uncommitted blocks of a failed upload are discarded\nby the service. Any other server may refuse a body of unknown length, so\nthe archive is buffered and sent with {@link HttpCacheStore.put}."
             },
             {
               "name": "maxInflatedBytes",
@@ -8452,7 +8466,7 @@
         {
           "name": "S3CacheStore",
           "kind": "class",
-          "doc": "A {@link RemoteCacheStore} over an S3-compatible bucket: the HTTP store's\n`GET`/`PUT <url>/<key>`, each request carrying `x-amz-content-sha256` and\na SigV4 `Authorization` for the service `s3`.\n\nA miss is a `404`, which S3 answers only to a caller allowed `s3:ListBucket`\non the bucket; without it a missing key is a `403`, reported as a lookup\nfailure (and a rebuild) rather than a miss. Grant `s3:GetObject`,\n`s3:PutObject` and `s3:ListBucket`. Entries are never evicted by the store:\nput a lifecycle rule on the prefix.",
+          "doc": "A {@link RemoteCacheStore} over an S3-compatible bucket: the HTTP store's\n`GET`/`PUT <url>/<key>`, each request carrying `x-amz-content-sha256` and\na SigV4 `Authorization` for the service `s3`.\n\nA miss is a `404`, which S3 answers only to a caller allowed `s3:ListBucket`\non the bucket; without it a missing key is a `403`, reported as a lookup\nfailure (and a rebuild) rather than a miss. Grant `s3:GetObject`,\n`s3:PutObject` and `s3:ListBucket`; a streamed upload larger than one part\nis a multipart upload, aborted on failure, which needs `s3:AbortMultipartUpload`\nto clean up (add a lifecycle rule aborting incomplete multipart uploads as\na backstop). Entries are never evicted by the store:\nput a lifecycle rule on the prefix.",
           "signature": "class S3CacheStore",
           "deprecated": false,
           "members": [
@@ -8476,6 +8490,13 @@
               "optional": false,
               "signature": "put(key: string, artifact: Uint8Array): Promise<void>",
               "doc": "Store `artifact` (a gzipped tar of a target's outputs) under `key`."
+            },
+            {
+              "name": "putStream",
+              "kind": "method",
+              "optional": false,
+              "signature": "putStream(key: string, artifact: ReadableStream<Uint8Array<ArrayBuffer>>): Promise<void>",
+              "doc": "Store the archive `artifact` streams under `key`. A stream that fits one\n8 MiB part is a single `PUT`; a larger one is a multipart upload, each\npart signed `UNSIGNED-PAYLOAD`, so memory stays at a few parts. If any\nrequest fails, the upload is aborted, so no parts are left to be billed."
             },
             {
               "name": "maxInflatedBytes",
@@ -8868,7 +8889,7 @@
         {
           "name": "signSigV4",
           "kind": "function",
-          "doc": "Sign `request` for `service` in `region` at the instant `now` (epoch ms).\nPure apart from WebCrypto: the same inputs give the same signature.",
+          "doc": "Sign `request` for `service` in `region` at the instant `now` (epoch ms).\nPure apart from WebCrypto: the same inputs give the same signature. The\npayload hash is the SHA-256 of `request.body`, unless the caller set the\n`x-amz-content-sha256` header to `UNSIGNED-PAYLOAD`: then the body is not\nhashed and that value is signed, as S3 accepts for a streamed part.",
           "signature": "async function signSigV4(request: AwsSignableRequest, credentials: AwsCredentials, region: string, service: string, now: number): Promise<AwsSignature>",
           "deprecated": false
         },
