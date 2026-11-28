@@ -1116,7 +1116,7 @@
         {
           "name": "BuildLocation",
           "kind": "typeAlias",
-          "doc": "Where a registered build lives, so a runner can launch it. Two forms: a\n`module` (the entry file `deno run` executes — the form `zuke register`\nwrites) or an explicit `command` (a launch argv, for a build fronted by a\nwrapper script). Both carry the working directory and, in CI, the repository.",
+          "doc": "Where a registered build lives, so a runner can launch it. Two forms: a\n`module` (the entry file its runtime executes — the form `zuke register`\nwrites) or an explicit `command` (a launch argv, for a build fronted by a\nwrapper script). Both carry the working directory and, in CI, the repository.",
           "signature": "type BuildLocation = unknown | unknown",
           "deprecated": false
         },
@@ -1237,6 +1237,13 @@
               "doc": "The run's id, when a run identity was established (always, in practice —\nevery {@link \"./executor.ts\".execute} generates one). Lets the caller point\na follow-up (`zuke runs show`, `zuke cancel`) at this run."
             }
           ]
+        },
+        {
+          "name": "BuildRuntime",
+          "kind": "typeAlias",
+          "doc": "The runtimes a registered {@link BuildLocation} module can launch on.",
+          "signature": "type BuildRuntime = deno | node",
+          "deprecated": false
         },
         {
           "name": "BuildSummary",
